@@ -106,7 +106,7 @@ function stripComments(source: string, isCss: boolean): string {
 }
 
 /**
- * Two LICENSED spans are blanked (space-filled, newline-preserving — line numbers
+ * LICENSED spans are blanked (space-filled, newline-preserving — line numbers
  * of later findings stay exact) after comment stripping, BEFORE any matching:
  *
  *   1. `@supports` PRELUDES (`@supports … {` up to the block brace). A prelude is

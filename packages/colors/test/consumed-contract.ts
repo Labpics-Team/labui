@@ -53,10 +53,9 @@ export const SEMANTIC_ROLE_PREFIXES: readonly string[] =
   readCssTsPrefixConst('SEMANTIC_ROLE_PREFIXES');
 
 /**
- * Locally-provided / engine-gap token prefixes (bucket 3). Provisional values
- * labui ships today; each maps to a `local-or-gap` entry that MUST appear in
- * `docs/external-deps/lab-colors.md` (CH-03). Keep this list and that doc in
- * sync — the `engine-gaps doc consistency` test cross-checks them.
+ * Locally-provided / engine-gap token prefixes (bucket 3). The classifier
+ * distinguishes local runtime inputs from the externally supplied palette.
+ * Materials geometry and decoration inputs are documented in its README.
  *
  * Sources of the declarations:
  *   - `packages/shadow/src/generated/shadow.css`: `--lab-shadow-*`,

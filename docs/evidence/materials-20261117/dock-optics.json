@@ -1,0 +1,194 @@
+{
+  "date": "2026-11-17",
+  "sourceFile": "LuaiBd4anRi4DMZayKAnY2",
+  "sourceNode": "7671:9049",
+  "sourceGeometry": "figma-dock-details.json",
+  "results": {
+    "circular": {
+      "date": "2026-11-17T16:15:38.342Z",
+      "browser": "140.0.7339.186",
+      "source": "LuaiBd4anRi4DMZayKAnY2",
+      "model": "circular-production-before",
+      "exteriorMae": 0.04472222222222222,
+      "rows": [
+        {
+          "id": "7671:10814",
+          "mae": 4.116799081575412,
+          "max": 30
+        },
+        {
+          "id": "7671:10816",
+          "mae": 2.480192176616295,
+          "max": 24
+        },
+        {
+          "id": "7671:10818",
+          "mae": 2.785397237045534,
+          "max": 40
+        }
+      ]
+    },
+    "maskOnly": {
+      "date": "2026-11-17T16:21:30.401Z",
+      "browser": "140.0.7339.186",
+      "source": "LuaiBd4anRi4DMZayKAnY2",
+      "model": "shape",
+      "exteriorMae": 0.04472222222222222,
+      "rows": [
+        {
+          "id": "7671:10814",
+          "mae": 4.09558660456864,
+          "max": 30
+        },
+        {
+          "id": "7671:10816",
+          "mae": 2.46895416687447,
+          "max": 24
+        },
+        {
+          "id": "7671:10818",
+          "mae": 2.7675427659468355,
+          "max": 37
+        }
+      ]
+    },
+    "contourAndWhiteSoftLight": {
+      "date": "2026-11-17T17:07:43.636Z",
+      "browser": "140.0.7339.186",
+      "source": "LuaiBd4anRi4DMZayKAnY2",
+      "model": "shape-pegtop-contour",
+      "exteriorMae": 0.04472222222222222,
+      "rows": [
+        {
+          "id": "7671:10814",
+          "mae": 1.3439265260329014,
+          "max": 42
+        },
+        {
+          "id": "7671:10816",
+          "mae": 2.214203780360082,
+          "max": 24
+        },
+        {
+          "id": "7671:10818",
+          "mae": 2.3368078067594302,
+          "max": 36
+        }
+      ]
+    },
+    "paintsBeforeLens": {
+      "date": "2026-11-17T16:28:44.383Z",
+      "browser": "140.0.7339.186",
+      "source": "LuaiBd4anRi4DMZayKAnY2",
+      "model": "shape-paint-before-lens",
+      "exteriorMae": 0.04472222222222222,
+      "rows": [
+        {
+          "id": "7671:10814",
+          "mae": 6.569684161089586,
+          "max": 77
+        },
+        {
+          "id": "7671:10816",
+          "mae": 2.804432031652619,
+          "max": 33
+        },
+        {
+          "id": "7671:10818",
+          "mae": 3.06734493707712,
+          "max": 81
+        }
+      ]
+    },
+    "blurAfterLens": {
+      "date": "2026-11-17T16:28:45.991Z",
+      "browser": "140.0.7339.186",
+      "source": "LuaiBd4anRi4DMZayKAnY2",
+      "model": "shape-blur-after-lens",
+      "exteriorMae": 0.04472222222222222,
+      "rows": [
+        {
+          "id": "7671:10814",
+          "mae": 3.981357546345218,
+          "max": 26
+        },
+        {
+          "id": "7671:10816",
+          "mae": 2.4544411750037405,
+          "max": 23
+        },
+        {
+          "id": "7671:10818",
+          "mae": 2.7557561551377323,
+          "max": 36
+        }
+      ]
+    },
+    "strength085": {
+      "date": "2026-11-17T17:47:25.112Z",
+      "browser": "140.0.7339.186",
+      "source": "LuaiBd4anRi4DMZayKAnY2",
+      "model": "shape-pegtop-contour-refraction-0.85",
+      "exteriorMae": 0.04472222222222222,
+      "rows": [
+        {
+          "id": "7671:10814",
+          "mae": 1.2528407237811958,
+          "max": 23
+        },
+        {
+          "id": "7671:10816",
+          "mae": 2.213206323874121,
+          "max": 19
+        },
+        {
+          "id": "7671:10818",
+          "mae": 2.329277010290426,
+          "max": 32
+        }
+      ]
+    }
+  },
+  "backplate": {
+    "sourceNode": "7671:10812",
+    "bounds": [-114, 226, 828, 159],
+    "row": {
+      "y": 157,
+      "xStart": 114,
+      "xEndExclusive": 714,
+      "mae": {
+        "svg": 8.572222222222223,
+        "whitePegtop": 1.0772222222222223
+      },
+      "center": {
+        "figma": [49, 186, 255],
+        "svg": [66, 175, 255],
+        "whitePegtop": [49, 184, 255]
+      }
+    }
+  },
+  "strengthCheck": [
+    {
+      "factor": 0.5,
+      "refract": 0.6,
+      "error": [7.0117248647727095, 5.4386091350103065, 2.063653694146092, 2.9114629345484415]
+    },
+    {
+      "factor": 0.5,
+      "refract": 0.75,
+      "error": [4.660552378295439, 4.436354055268827, 1.8381069729235442, 2.1016103284202043]
+    },
+    {
+      "factor": 0.5,
+      "refract": 0.85,
+      "error": [3.1207746315153204, 3.6846530586940687, 1.694223586119248, 1.6808635947985926]
+    },
+    {
+      "factor": 0.5,
+      "refract": 1,
+      "error": [2.25056183258164, 2.8923451279428405, 1.5274484276437128, 1.621417832953612]
+    }
+  ],
+  "decision": "Keep refraction strength 1 and frost before lens; white soft-light transfer is diagnostic/source-specific, not a generic production blend replacement.",
+  "limitation": "Remaining thin-rim brightness and dispersion difference; no claim of complete SURFACES visual acceptance."
+}
