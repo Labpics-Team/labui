@@ -76,12 +76,15 @@ export async function displayPixels(page, xs) {
   const y = Math.floor(origin / width);
   let markerWidth = 0;
   while (x + markerWidth < width && isMarker((origin + markerWidth) * 4)) markerWidth++;
-  const scale = markerWidth / 4;
-  assert(scale >= 1 && scale <= 3 && Number.isInteger(scale), 'marker has a whole screen scale');
-  const sampleY = y + 50 * scale;
+  const scale = markerWidth / 8;
+  assert(
+    scale >= 1 && scale <= 3 && Number.isInteger(scale),
+    `marker has a whole screen scale (width=${markerWidth}, origin=${x},${y})`,
+  );
+  const sampleY = y + (50 - 16) * scale;
   assert(sampleY < height);
   return xs.map((cssX) => {
-    const sampleX = x + cssX * scale;
+    const sampleX = x + (cssX - 16) * scale;
     assert(sampleX < width);
     const at = (sampleY * width + sampleX) * 4;
     return Array.from(pixels.slice(at, at + 4));

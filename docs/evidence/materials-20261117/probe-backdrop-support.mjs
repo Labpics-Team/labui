@@ -53,7 +53,7 @@ async function settle(page) {
     await page.evaluate(() => {
       const marker = document.createElement('div');
       marker.style.cssText =
-        'position:fixed;left:0;top:0;width:4px;height:4px;background:rgb(7 251 137);z-index:2147483647;pointer-events:none';
+        'position:fixed;left:16px;top:16px;width:8px;height:8px;background:rgb(7 251 137);z-index:2147483647;pointer-events:none';
       document.body.append(marker);
     });
     // XWD has no compositor fence; bounded settling is specific to this diagnostic.
@@ -68,6 +68,9 @@ for (const name of ['chromium', 'firefox', 'webkit']) {
   const browser = await engines[name].launch({
     headless: !display,
     ...(name === 'chromium' ? { channel: 'chromium' } : {}),
+    ...(display && platform() === 'linux' && name === 'webkit'
+      ? { args: ['--hardware-acceleration-policy=always'] }
+      : {}),
   });
   const page = await browser.newPage({ viewport: { width: 800, height: 300 } });
   if (display) await page.bringToFront();
