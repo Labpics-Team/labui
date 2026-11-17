@@ -23,7 +23,7 @@ describe('анализатор ядра → манифест', () => {
     expect(manifest.components.find((c) => c.tag === 'lab-field')).toBeUndefined();
   });
 
-  it('button: публичные пропы, без ariaLabel; события пусты; слоты default+icon', () => {
+  it('button: публичные пропы, без ariaLabel; события пусты; слоты default+description+icon+icon-end', () => {
     const btn = byTag('lab-button');
     expect(btn.props.map((p) => p.name)).toEqual([
       'type',
@@ -40,7 +40,7 @@ describe('анализатор ядра → манифест', () => {
     expect(btn.props.find((p) => p.name === 'htmlType')?.attr).toBe('html-type');
     expect(btn.events).toEqual([]);
     expect(btn.slots.default).toBe(true);
-    expect(btn.slots.named).toEqual(['icon']);
+    expect(btn.slots.named).toEqual(['description', 'icon', 'icon-end']);
   });
 
   it('классификация видов: булев / строка / prop (массивы через converter/attribute:false)', () => {

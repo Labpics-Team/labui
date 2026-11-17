@@ -15,6 +15,7 @@
       "require": "./dist/index.cjs"
     },
     "./tokens.css": "./dist/tokens.css",
+    "./components.json": "./dist/components.json",
     "./tokens.dtcg.json": "./dist/tokens.dtcg.json",
     "./motion.css": "./dist/motion.css",
     "./motion.dtcg.json": "./dist/motion.dtcg.json",

@@ -48,6 +48,16 @@ export function generateDtcg(tokens: ResolvedTokens): string {
     state: numberGroup(tokens.states),
     opacity: numberGroup(tokens.opacity),
   };
+  for (const token of tokens.components) {
+    doc[token.kind] ??= {};
+    const group = doc[token.kind] as DtcgGroup;
+    if (group[token.name])
+      throw new Error(`Duplicate component token: ${token.kind}/${token.name}`);
+    Object.assign(
+      group,
+      token.dtcgType === 'dimension' ? dimensionGroup([token]) : numberGroup([token]),
+    );
+  }
   return `${JSON.stringify(doc, null, 2)}\n`;
 }
 

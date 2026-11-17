@@ -768,7 +768,11 @@
       "fx-glow-success-bloom-alpha": 0.0,
       "fx-glow-info-alpha": 0.0,
       "fx-glow-info-subtle-alpha": 0.0,
-      "fx-glow-info-bloom-alpha": 0.0
+      "fx-glow-info-bloom-alpha": 0.0,
+      "fx-control-inner": {
+        "anchor": "ink",
+        "opacity": 0.12
+      }
     },
     "dark": {
       "bg-material-base-01": {
@@ -956,7 +960,11 @@
       "fx-glow-success-bloom-alpha": 0.1761,
       "fx-glow-info-alpha": 0.0356,
       "fx-glow-info-subtle-alpha": 0.0119,
-      "fx-glow-info-bloom-alpha": 0.2015
+      "fx-glow-info-bloom-alpha": 0.2015,
+      "fx-control-inner": {
+        "anchor": "ink",
+        "opacity": 0.2
+      }
     }
   }
 }

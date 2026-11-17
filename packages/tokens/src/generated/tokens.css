@@ -4,6 +4,54 @@
  * @labpics/ui-tokens build` to regenerate from the single config source.
  */
 :root {
+  /* Shared loading shape */
+  --lab-shape-loader: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Crect%20x%3D%2211%22%20y%3D%222%22%20width%3D%222%22%20height%3D%227%22%20rx%3D%221%22%20opacity%3D%220.125%22%20transform%3D%22rotate(0%2012%2012)%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%222%22%20width%3D%222%22%20height%3D%227%22%20rx%3D%221%22%20opacity%3D%220.25%22%20transform%3D%22rotate(45%2012%2012)%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%222%22%20width%3D%222%22%20height%3D%227%22%20rx%3D%221%22%20opacity%3D%220.375%22%20transform%3D%22rotate(90%2012%2012)%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%222%22%20width%3D%222%22%20height%3D%227%22%20rx%3D%221%22%20opacity%3D%220.5%22%20transform%3D%22rotate(135%2012%2012)%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%222%22%20width%3D%222%22%20height%3D%227%22%20rx%3D%221%22%20opacity%3D%220.625%22%20transform%3D%22rotate(180%2012%2012)%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%222%22%20width%3D%222%22%20height%3D%227%22%20rx%3D%221%22%20opacity%3D%220.75%22%20transform%3D%22rotate(225%2012%2012)%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%222%22%20width%3D%222%22%20height%3D%227%22%20rx%3D%221%22%20opacity%3D%220.875%22%20transform%3D%22rotate(270%2012%2012)%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%222%22%20width%3D%222%22%20height%3D%227%22%20rx%3D%221%22%20opacity%3D%221%22%20transform%3D%22rotate(315%2012%2012)%22%2F%3E%3C%2Fsvg%3E");
+
+  /* Component metrics — shared with native from components.json */
+  --lab-font-weight-button: 500;
+  --lab-space-button-label-x: 0.5rem;
+  --lab-space-button-label-gap: 0.5rem;
+  --lab-state-button-description-opacity: 72%;
+  --lab-size-button-s: 2.25rem;
+  --lab-size-button-s-icon: 1.25rem;
+  --lab-radius-button-s: 624.9375rem;
+  --lab-space-button-s-x: 0.75rem;
+  --lab-space-button-s-y: 0.5rem;
+  --lab-font-size-button-s: 0.875rem;
+  --lab-line-height-button-s: 0.8571;
+  --lab-font-weight-button-s-description: 500;
+  --lab-letter-spacing-button-s-description: 0em;
+  --lab-state-button-s-description-accent-plain-opacity: 72%;
+  --lab-letter-spacing-button-s: 0em;
+  --lab-size-button-m: 3rem;
+  --lab-size-button-m-icon: 1.5rem;
+  --lab-radius-button-m: 1rem;
+  --lab-space-button-m-x: 0.75rem;
+  --lab-space-button-m-y: 0.75rem;
+  --lab-font-size-button-m: 1rem;
+  --lab-line-height-button-m: 1.5;
+  --lab-font-weight-button-m-description: 400;
+  --lab-letter-spacing-button-m-description: -0.015625em;
+  --lab-state-button-m-description-accent-plain-opacity: 100%;
+  --lab-letter-spacing-button-m: 0em;
+  --lab-size-button-l: 3.5rem;
+  --lab-size-button-l-icon: 1.5rem;
+  --lab-radius-button-l: 1rem;
+  --lab-space-button-l-x: 1rem;
+  --lab-space-button-l-y: 1rem;
+  --lab-font-size-button-l: 1rem;
+  --lab-line-height-button-l: 1.5;
+  --lab-font-weight-button-l-description: 400;
+  --lab-letter-spacing-button-l-description: -0.015625em;
+  --lab-state-button-l-description-accent-plain-opacity: 100%;
+  --lab-letter-spacing-button-l: 0em;
+  --lab-state-button-highlight: 20%;
+  --lab-state-button-hover-highlight: 32%;
+  --lab-state-button-pressed-shade: 12%;
+  --lab-space-button-inner-x: 0rem;
+  --lab-space-button-inner-y: -0.0625rem;
+  --lab-space-button-inner-blur: 0.0625rem;
+
   /* Spacing — linear rem multiplier (root font-size scales all) */
   --lab-space-0: 0rem;
   --lab-space-1: 0.25rem;

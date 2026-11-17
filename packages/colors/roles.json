@@ -192,7 +192,8 @@
       "--lab-fx-glow-warning-subtle",
       "--lab-fx-glow-warning-subtle-alpha",
       "--lab-fx-glow-warning-subtle-core",
-      "--lab-fx-skeleton-highlight"
+      "--lab-fx-skeleton-highlight",
+      "--lab-fx-control-inner"
     ],
     "Misc": ["--lab-badge-label-contrast", "--lab-badge-label-default", "--lab-control-bg"],
     "Component": [
