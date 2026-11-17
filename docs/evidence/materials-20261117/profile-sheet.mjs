@@ -145,7 +145,7 @@ try {
     phases,
   };
   await page.screenshot({ path: output(`sheet-live-${mode}.png`) });
-  await writeFile(output(`sheet-live-${mode}.json`), JSON.stringify(report, null, 2));
+  await writeFile(output(`sheet-live-${mode}.json`), `${JSON.stringify(report, null, 2)}\n`);
   console.info(JSON.stringify(report, null, 2));
 } finally {
   await browser.close();

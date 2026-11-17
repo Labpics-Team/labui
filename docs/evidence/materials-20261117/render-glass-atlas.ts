@@ -103,7 +103,7 @@ try {
   console.info(report);
   await writeFile(
     output('glass-atlas-pixels.json'),
-    JSON.stringify(
+    `${JSON.stringify(
       {
         kind: 'renderer-equivalence, not Figma calibration',
         browser: browser.version(),
@@ -113,7 +113,7 @@ try {
       },
       null,
       2,
-    ),
+    )}\n`,
   );
 } finally {
   await browser.close();
