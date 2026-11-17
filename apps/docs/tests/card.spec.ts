@@ -191,6 +191,38 @@ test('Lit: одна подпись не создаёт пустую группу
     .toBe(60);
 });
 
+test('React SSR: общая CSS сохраняет геометрию и набор до и после hydration', async ({ page }) => {
+  let releaseScripts = () => {};
+  const scripts = new Promise<void>((resolve) => {
+    releaseScripts = resolve;
+  });
+  await page.route('**/*.js', async (route) => {
+    await scripts;
+    await route.continue();
+  });
+  try {
+    await page.goto('/_fixtures/card-content.html', { waitUntil: 'commit' });
+    const card = page.getByTestId('react-ssr');
+    const title = card.getByRole('heading', { name: 'Title' });
+    await expect(title).toBeVisible();
+    await page.evaluate(() => document.fonts.load('500 20px Geist'));
+    await expect(card).toHaveCSS('height', '94px');
+    await expect(card.locator('.lab-card-content')).toHaveCSS('padding', '24px');
+    await expect(title).toHaveCSS('font-size', '20px');
+    await expect(title).toHaveCSS('font-weight', '500');
+    await expect(page.locator('#react-ssr-root')).not.toHaveAttribute('data-hydrated');
+    const serverTitle = await title.elementHandle();
+    const before = { card: await card.boundingBox(), title: await title.boundingBox() };
+    releaseScripts();
+    await expect(page.locator('#react-ssr-root')).toHaveAttribute('data-hydrated', '');
+    expect(await serverTitle?.evaluate((element) => element.isConnected)).toBe(true);
+    expect({ card: await card.boundingBox(), title: await title.boundingBox() }).toEqual(before);
+  } finally {
+    releaseScripts();
+    if (!page.isClosed()) await page.unroute('**/*.js');
+  }
+});
+
 test('media: пользовательское изображение сохраняет естественную высоту в обоих исполнениях', async ({
   page,
 }) => {

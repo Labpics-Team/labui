@@ -61,9 +61,24 @@ function cardSsrPlugin(): Plugin {
         await import('@labpics/ui-core/button');
         await import('@labpics/ui-core/card');
         const { html: staticHtml, unsafeStatic } = await import('lit/static-html.js');
-        return html.replace(/<lab-card\b[^>]*>[\s\S]*?<\/lab-card>/g, (markup) =>
+        let output = html.replace(/<lab-card\b[^>]*>[\s\S]*?<\/lab-card>/g, (markup) =>
           renderToString(staticHtml`${unsafeStatic(markup)}`),
         );
+        if (output.includes('<!-- @@REACT_CARD@@ -->')) {
+          const { Card } = await import('@labpics/ui-react/card');
+          const { createElement } = await import('react');
+          const { renderToString: renderReact } = await import('react-dom/server');
+          const props = {
+            'data-testid': 'react-ssr',
+            heading: 'Title',
+            description: 'Description',
+          };
+          output = output.replace(
+            '<!-- @@REACT_CARD@@ -->',
+            renderReact(createElement(Card, props)),
+          );
+        }
+        return output;
       },
     },
   };

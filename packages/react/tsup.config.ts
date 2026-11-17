@@ -75,5 +75,13 @@ export default libraryPreset({
   // — no separate stylesheet-import step. Without this, tsup emits a sibling
   // .css file but does NOT re-link it from the ESM output, so consumers silently
   // lose the styles (caught by the Lit↔React parity test).
-  injectStyle: true,
+  // Lit SSR installs a minimal document shim, not a browser head. Shared
+  // React/Lit server entrypoints must not try to insert styles into that shim.
+  injectStyle: (css) => `
+    if (typeof document !== 'undefined' && document.head?.appendChild) {
+      const style = document.createElement('style');
+      style.textContent = ${css};
+      document.head.appendChild(style);
+    }
+  `,
 });
