@@ -35,9 +35,11 @@ with (evidence / "logcat.txt").open("w") as log:
                          f"{package}.test/androidx.test.runner.AndroidJUnitRunner")
             (evidence / f"{method}.txt").write_text(output)
             print(output)
+            for extension in ["png", "xml"]:
+                run("pull", f"/sdcard/Android/data/{package}/files/verification.{extension}",
+                    str(evidence / f"{method}.{extension}"))
             if not re.search(r"OK \(1 test\)", output):
                 raise RuntimeError(f"Android scenario failed: {method}")
-            run("pull", f"/sdcard/Android/data/{package}/files/verification.png", str(evidence / f"{method}.png"))
     finally:
         logger.terminate()
         logger.wait(timeout=10)
