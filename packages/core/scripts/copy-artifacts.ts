@@ -40,7 +40,9 @@ function main(): void {
   copyFileSync(shadowPkg, join(dist, 'shadow.css'));
   copyFileSync(tokensPkg, join(dist, 'tokens.css'));
 
-  process.stdout.write(`ui-core: copied ${[...ownFiles, 'shadow.css', 'tokens.css'].join(', ')} to dist\n`);
+  process.stdout.write(
+    `ui-core: copied ${[...ownFiles, 'shadow.css', 'tokens.css'].join(', ')} to dist\n`,
+  );
 }
 
 main();
