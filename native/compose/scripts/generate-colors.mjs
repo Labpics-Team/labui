@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -21,6 +21,8 @@ const lines = [
   '',
   'internal object LabInitialColors {',
 ];
+const programs = [];
+const files = [];
 for (const theme of ['light', 'dark']) {
   for (const contrast of ['normal', 'more']) {
     const prepared = prepareThemeProgram(theme, contrast);
@@ -62,6 +64,24 @@ for (const theme of ['light', 'dark']) {
       const resolved = color(role);
       if (resolved) colors.set(role, resolved);
     }
+    const slots = new Map(prepared.outputs.map(({ slot, name }) => [name, slot]));
+    function slot(role, seen = new Set()) {
+      if (slots.has(role)) return slots.get(role);
+      if (seen.has(role)) throw new Error(`Cyclic Colors output alias ${role}`);
+      seen.add(role);
+      const value = prepared.roles[role];
+      return typeof value === 'string' && value.startsWith('@') ? slot(value.slice(1), seen) : null;
+    }
+    const key = `${theme}${contrast}`;
+    programs.push({
+      key,
+      background: [...prepared.background].map((value) => (value < 128 ? value : value - 256)),
+      roles: [...colors.keys()].map((name) => ({ name, slot: slot(name) })),
+    });
+    files.push([
+      new URL(`../src/commonMain/composeResources/files/colors-${key}.bin`, import.meta.url),
+      prepared.bytes,
+    ]);
     lines.push(`    val ${theme}${contrast} = LabColorOutput(mapOf(`);
     for (const [role, value] of colors) lines.push(`        "${role}" to ${value},`);
     lines.push('    ))');
@@ -78,8 +98,47 @@ lines.push(
   '',
 );
 const output = new URL('../src/commonMain/kotlin/pics/lab/ui/LabInitialColors.kt', import.meta.url);
-const content = lines.join('\n');
-if (process.argv.includes('--check')) {
-  if ((await readFile(output, 'utf8')) !== content)
-    throw new Error('Native baseline Colors outputs are stale');
-} else await writeFile(output, content);
+files.push([output, lines.join('\n')]);
+const programLines = [
+  '// Generated from the same prepareThemeProgram as web. Do not edit.',
+  'package pics.lab.ui',
+  '',
+  'import pics.lab.ui.resources.Res',
+  '',
+  'public suspend fun loadLabColorProgram(preferences: LabPreferences = LabPreferences()): LabPreparedColorProgram {',
+  '    val key = when (preferences.appearance) {',
+  '        LabAppearance.Light -> if (preferences.increasedContrast) "lightmore" else "lightnormal"',
+  '        LabAppearance.Dark -> if (preferences.increasedContrast) "darkmore" else "darknormal"',
+  '    }',
+  '    val (background, roles) = when (key) {',
+];
+for (const { key, background, roles } of programs) {
+  programLines.push(`        "${key}" -> byteArrayOf(${background.join(', ')}) to listOf(`);
+  for (const { name, slot } of roles) {
+    if (!Number.isSafeInteger(slot) || slot < 0 || slot > 2147483647)
+      throw new Error(`Native role ${name} has no representable output slot`);
+    programLines.push(`            LabColorRole("${name}", ${slot}),`);
+  }
+  programLines.push('        )');
+}
+programLines.push(
+  '        else -> error("Unknown Lab color profile")',
+  '    }',
+  '    return LabPreparedColorProgram(Res.readBytes("files/colors-$key.bin"), background, roles)',
+  '}',
+  '',
+);
+files.push([
+  new URL('../src/commonMain/kotlin/pics/lab/ui/LabColorPrograms.kt', import.meta.url),
+  programLines.join('\n'),
+]);
+for (const [path, content] of files) {
+  const bytes = Buffer.from(content);
+  if (process.argv.includes('--check')) {
+    if (!(await readFile(path)).equals(bytes))
+      throw new Error(`Native Colors artifact is stale: ${path}`);
+  } else {
+    await mkdir(new URL('.', path), { recursive: true });
+    await writeFile(path, bytes);
+  }
+}
