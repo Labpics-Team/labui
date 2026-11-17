@@ -1,5 +1,6 @@
 import type { TokensConfig } from '../config/types.js';
 import { buildBorders } from './borders.js';
+import { buildComponentTokens } from './components.js';
 import { buildOpacity } from './opacity.js';
 import { buildRadii } from './radii.js';
 import { buildSizes } from './sizes.js';
@@ -15,6 +16,8 @@ import { buildZIndex } from './zindex.js';
  * generator (CSS / TS / DTCG) renders from, guaranteeing no divergence.
  */
 export interface ResolvedTokens {
+  /** Authored component metrics; these are not steps of the global scales. */
+  readonly components: readonly ResolvedToken[];
   readonly spacing: readonly ResolvedToken[];
   readonly spacingAliases: readonly ResolvedAlias[];
   readonly sizes: readonly ResolvedToken[];
@@ -49,6 +52,7 @@ export function buildTokens(config: TokensConfig): ResolvedTokens {
   const opacity = buildOpacity(config.opacity);
 
   return {
+    components: buildComponentTokens(),
     spacing: spacing.tokens,
     spacingAliases: spacing.aliases,
     sizes: sizes.tokens,

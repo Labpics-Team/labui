@@ -106,7 +106,7 @@ export const buttonDoc: ComponentDoc = {
       index: 4,
       name: 'Spinner',
       description:
-        'Always present in the DOM, shown only while loading. It overlays the centre and the label is hidden via visibility — so the button never changes size when it starts loading (zero layout shift).',
+        'Always present in the DOM, shown only while loading. It overlays the centre; the main label becomes transparent, Description stays visible, and decorative icons are hidden while their space and the accessible name remain.',
     },
     {
       index: 5,
@@ -239,6 +239,15 @@ export const buttonDoc: ComponentDoc = {
       {
         name: 'icon / iconSlot',
         description: 'Leading icon content. Lit uses slot="icon"; React uses the iconSlot prop.',
+      },
+      {
+        name: 'description',
+        description:
+          'Второстепенная подпись рядом с действием. Lit: slot="description"; React: description.',
+      },
+      {
+        name: 'icon-end / iconEnd',
+        description: 'Декоративная иконка после подписи. Lit: slot="icon-end"; React: iconEnd.',
       },
     ],
   },

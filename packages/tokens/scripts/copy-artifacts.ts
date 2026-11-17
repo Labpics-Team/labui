@@ -17,6 +17,7 @@ function main(): void {
   for (const file of ['tokens.css', 'tokens.dtcg.json', 'motion.css', 'motion.dtcg.json']) {
     copyFileSync(join(generated, file), join(dist, file));
   }
+  copyFileSync(join(here, '..', 'src', 'components.json'), join(dist, 'components.json'));
   process.stdout.write('tokens: copied css + dtcg artifacts (dimension + motion) to dist\n');
 }
 

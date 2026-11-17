@@ -395,6 +395,7 @@ section { margin-top:48px; } h2 { margin:0 0 20px; font-size:18px; font-weight:6
 
 const FIXTURE = `import '@labpics/ui-core/button';
 import '@labpics/ui-core/theme.css';
+import '@labpics/ui-core/tokens.css';
 import { glyph, glyphCapabilities } from '@labpics/icons/symbols/reload';
 import { renderGlyphSvg } from '@labpics/icons/ir/render';
 import { compileSymbolEffect } from '@labpics/icons/motion';
@@ -408,7 +409,7 @@ for (const variant of ['outline', 'filled']) {
   const capabilities = glyphCapabilities(variant);
   const figure = document.createElement('figure');
   const button = document.createElement('lab-button');
-  button.setAttribute('size', 'l');
+  button.setAttribute('size', 'm');
   button.setAttribute('icon', '');
   button.setAttribute('type', 'neutral');
   button.setAttribute('aria-label', 'Обновить');
@@ -534,7 +535,7 @@ const stateHeading = document.createElement('h2');
 stateHeading.id = stateCapabilitiesValue.group + '-heading'; stateHeading.textContent = configuration.buttonLabel;
 const stateSample = document.createElement('div'); stateSample.className = 'state-sample';
 const stateButton = document.createElement('lab-button');
-for (const [name, value] of Object.entries({ size: 'l', icon: '', type: 'neutral',
+for (const [name, value] of Object.entries({ size: 'm', icon: '', type: 'neutral',
   'aria-label': configuration.buttonLabel,
   'data-state-group': stateCapabilitiesValue.group })) stateButton.setAttribute(name, value);
 const initialState = renderStateSvg(stateCapabilitiesValue.defaultState);

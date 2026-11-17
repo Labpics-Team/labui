@@ -13,6 +13,14 @@ import type { ResolvedAlias, ResolvedToken } from '../domain/token.js';
  */
 export function generateTs(tokens: ResolvedTokens): string {
   const parts: string[] = [banner()];
+  parts.push(
+    scaleConst(
+      'component',
+      tokens.components.map((token) => ({ ...token, name: `${token.kind}-${token.name}` })),
+      [],
+      true,
+    ),
+  );
 
   parts.push(scaleConst('space', tokens.spacing, tokens.spacingAliases));
   parts.push(scaleConst('size', tokens.sizes, tokens.sizesAliases));
@@ -48,10 +56,11 @@ function scaleConst(
   exportName: string,
   tokens: readonly ResolvedToken[],
   aliases: readonly ResolvedAlias[] = [],
+  fullName = false,
 ): string {
   const entries: Array<[string, string]> = [];
   for (const t of tokens) {
-    entries.push([t.name, `var(${cssVarName(t.kind, t.name)})`]);
+    entries.push([t.name, `var(${fullName ? `--lab-${t.name}` : cssVarName(t.kind, t.name)})`]);
   }
   for (const a of aliases) {
     // Reference the alias's OWN custom property, not its target's: collapsing

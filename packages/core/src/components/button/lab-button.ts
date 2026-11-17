@@ -95,31 +95,47 @@ export class LabButton extends LabElement {
 
   static override styles = css`
     :host {
-      /* Size knobs the size axis maps onto. Dimension tokens may carry a literal
-         fallback so the control is usable before tokens load (css.ts rule);
-         colour roles below never do. */
-      --_radius: ${litVar('--lab-radius-control', '0.5rem')};
-      --_font: ${litVar('--lab-font-size-md', '1rem')};
-      --_pad-x: ${litVar('--lab-space-md', '1rem')};
-      --_pad-y: ${litVar('--lab-space-sm', '0.5rem')};
-      --_gap: ${litVar('--lab-space-sm', '0.5rem')};
-      --_min: ${litVar('--lab-size-control-h-m', '2.5rem')}; /* connected --lab-size-control-h-* per playbook #137 */
-
+      --_radius: ${litVar('--lab-radius-button-m')};
+      --_font: ${litVar('--lab-font-size-button-m')};
+      --_line: ${litVar('--lab-line-height-button-m')};
+      --_tracking: ${litVar('--lab-letter-spacing-button-m')};
+      --_pad-x: ${litVar('--lab-space-button-m-x')};
+      --_pad-y: ${litVar('--lab-space-button-m-y')};
+      --_min: ${litVar('--lab-size-button-m')};
+      --_icon: ${litVar('--lab-size-button-m-icon')};
+      --_description-weight: var(--lab-font-weight-button-m-description);
+      --_description-tracking: var(--lab-letter-spacing-button-m-description);
+      --_description-accent-plain: var(--lab-state-button-m-description-accent-plain-opacity);
       display: inline-flex;
       vertical-align: middle;
     }
 
     :host([size='s']) {
-      --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
-      --_pad-x: ${litVar('--lab-space-sm', '0.5rem')};
-      --_pad-y: ${litVar('--lab-space-xs', '0.25rem')};
-      --_min: ${litVar('--lab-size-control-h-s', '2rem')}; /* connected --lab-size-control-h to button (s) */
+      --_radius: ${litVar('--lab-radius-button-s')};
+      --_font: ${litVar('--lab-font-size-button-s')};
+      --_line: ${litVar('--lab-line-height-button-s')};
+      --_tracking: ${litVar('--lab-letter-spacing-button-s')};
+      --_pad-x: ${litVar('--lab-space-button-s-x')};
+      --_pad-y: ${litVar('--lab-space-button-s-y')};
+      --_min: ${litVar('--lab-size-button-s')};
+      --_icon: ${litVar('--lab-size-button-s-icon')};
+      --_description-weight: var(--lab-font-weight-button-s-description);
+      --_description-tracking: var(--lab-letter-spacing-button-s-description);
+      --_description-accent-plain: var(--lab-state-button-s-description-accent-plain-opacity);
     }
+
     :host([size='l']) {
-      --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
-      --_pad-x: ${litVar('--lab-space-lg', '1.5rem')};
-      --_pad-y: ${litVar('--lab-space-md', '1rem')};
-      --_min: ${litVar('--lab-size-control-h-l', '3rem')};
+      --_radius: ${litVar('--lab-radius-button-l')};
+      --_font: ${litVar('--lab-font-size-button-l')};
+      --_line: ${litVar('--lab-line-height-button-l')};
+      --_tracking: ${litVar('--lab-letter-spacing-button-l')};
+      --_pad-x: ${litVar('--lab-space-button-l-x')};
+      --_pad-y: ${litVar('--lab-space-button-l-y')};
+      --_min: ${litVar('--lab-size-button-l')};
+      --_icon: ${litVar('--lab-size-button-l-icon')};
+      --_description-weight: var(--lab-font-weight-button-l-description);
+      --_description-tracking: var(--lab-letter-spacing-button-l-description);
+      --_description-accent-plain: var(--lab-state-button-l-description-accent-plain-opacity);
     }
 
     button {
@@ -128,16 +144,17 @@ export class LabButton extends LabElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: var(--_gap);
+      gap: 0;
       width: 100%;
       min-height: var(--_min);
-      padding: var(--_pad-y) var(--_pad-x);
+      padding: calc(var(--_pad-y) - var(--lab-stroke-hairline)) calc(var(--_pad-x) - var(--lab-stroke-hairline));
       border-radius: var(--_radius);
       border: ${litVar('--lab-stroke-hairline')} solid transparent;
       font: inherit;
       font-size: var(--_font);
-      line-height: ${litVar('--lab-line-height-md', '1.5')};
-      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
+      line-height: var(--_line);
+      letter-spacing: var(--_tracking);
+      font-weight: ${litVar('--lab-font-weight-button')};
       cursor: pointer;
       transition:
         background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
@@ -210,123 +227,91 @@ export class LabButton extends LabElement {
       color: ${litVar('--lab-label-danger')};
     }
 
-    /* ── interactive states (hover / active / focus) ───────────────────── */
-    /* Паттерн стейт-оверлеев #109 — см. button.css (React-близнец): роль
-       покоя + color-mix к тинту рецепта D под @supports; fallback ниже. */
-    @supports (color: color-mix(in oklab, red, blue)) {
-    :host([type='accent'][kind='fill']) button:hover:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-accent')}, black ${litVar('--lab-state-hover', '8%')});
+    :host([kind='fill']) button {
+      --_highlight: var(--lab-state-button-highlight);
+      --_light: var(--lab-label-static-light-primary);
+      background-image: linear-gradient(to bottom, color-mix(in srgb, var(--_light) var(--_highlight), transparent), transparent);
+      box-shadow: inset var(--lab-space-button-inner-x) var(--lab-space-button-inner-y) var(--lab-space-button-inner-blur) var(--lab-fx-control-inner);
     }
-    :host([type='accent'][kind='fill']) button:active:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-accent')}, black ${litVar('--lab-state-pressed', '14%')});
+    :host([kind='fill']) button:hover:not(:disabled) {
+      --_highlight: var(--lab-state-button-hover-highlight);
     }
-    :host([type='accent'][kind='tinted']) button:hover:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-accent-tinted')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+    :host([kind='fill']) button:active:not(:disabled) {
+      --_light: var(--lab-label-static-dark-primary);
+      --_highlight: var(--lab-state-button-pressed-shade);
     }
-    :host([type='accent'][kind='tinted']) button:active:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-accent-tinted')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
+
+    .label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--lab-space-button-label-gap);
+      min-height: var(--_icon);
+      padding-inline: var(--lab-space-button-label-x);
     }
-    :host([type='accent'][kind='border']) button:hover:not(:disabled) {
-      color: color-mix(in oklab, ${litVar('--lab-label-accent')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
-      border-color: color-mix(in oklab, ${litVar('--lab-border-accent')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+    .label[hidden] { display: none; }
+    :host([icon]) .label { display: none; }
+    slot[name='description'] {
+      color: color-mix(in srgb, currentColor var(--lab-state-button-description-opacity), transparent);
+      font-weight: var(--_description-weight);
+      letter-spacing: var(--_description-tracking);
     }
-    :host([type='accent'][kind='border']) button:active:not(:disabled) {
-      color: color-mix(in oklab, ${litVar('--lab-label-accent')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
-      border-color: color-mix(in oklab, ${litVar('--lab-border-accent')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
+    :host([type='accent'][kind='border']) slot[name='description'],
+    :host([type='accent'][kind='ghost']) slot[name='description'] {
+      color: color-mix(in srgb, currentColor var(--_description-accent-plain), transparent);
     }
-    :host([type='accent'][kind='ghost']) button:hover:not(:disabled) {
-      color: color-mix(in oklab, ${litVar('--lab-label-accent')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+    ::slotted([slot='icon']), ::slotted([slot='icon-end']) {
+      width: var(--_icon);
+      height: var(--_icon);
+      flex: none;
     }
-    :host([type='accent'][kind='ghost']) button:active:not(:disabled) {
-      color: color-mix(in oklab, ${litVar('--lab-label-accent')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
-    }
-    :host([type='neutral'][kind='fill']) button:hover:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-neutral')}, black ${litVar('--lab-state-hover', '8%')});
-    }
-    :host([type='neutral'][kind='fill']) button:active:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-neutral')}, black ${litVar('--lab-state-pressed', '14%')});
-    }
-    :host([type='neutral'][kind='tinted']) button:hover:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-primary')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
-    }
-    :host([type='neutral'][kind='tinted']) button:active:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-primary')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
-    }
-    :host([type='neutral'][kind='border']) button:hover:not(:disabled) {
-      color: color-mix(in oklab, ${litVar('--lab-label-primary')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
-      border-color: color-mix(in oklab, ${litVar('--lab-border-base')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
-    }
-    :host([type='neutral'][kind='border']) button:active:not(:disabled) {
-      color: color-mix(in oklab, ${litVar('--lab-label-primary')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
-      border-color: color-mix(in oklab, ${litVar('--lab-border-base')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
-    }
-    :host([type='neutral'][kind='ghost']) button:hover:not(:disabled) {
-      color: color-mix(in oklab, ${litVar('--lab-label-primary')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
-    }
-    :host([type='neutral'][kind='ghost']) button:active:not(:disabled) {
-      color: color-mix(in oklab, ${litVar('--lab-label-primary')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
-    }
-    :host([type='danger'][kind='fill']) button:hover:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-danger')}, black ${litVar('--lab-state-hover', '8%')});
-    }
-    :host([type='danger'][kind='fill']) button:active:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-danger')}, black ${litVar('--lab-state-pressed', '14%')});
-    }
-    :host([type='danger'][kind='tinted']) button:hover:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-danger-tinted')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
-    }
-    :host([type='danger'][kind='tinted']) button:active:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-danger-tinted')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
-    }
-    :host([type='danger'][kind='border']) button:hover:not(:disabled) {
-      color: color-mix(in oklab, ${litVar('--lab-label-danger')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
-      border-color: color-mix(in oklab, ${litVar('--lab-border-danger')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
-    }
-    :host([type='danger'][kind='border']) button:active:not(:disabled) {
-      color: color-mix(in oklab, ${litVar('--lab-label-danger')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
-      border-color: color-mix(in oklab, ${litVar('--lab-border-danger')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
-    }
-    :host([type='danger'][kind='ghost']) button:hover:not(:disabled) {
-      color: color-mix(in oklab, ${litVar('--lab-label-danger')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
-    }
-    :host([type='danger'][kind='ghost']) button:active:not(:disabled) {
-      color: color-mix(in oklab, ${litVar('--lab-label-danger')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
-    }
-    }
-    /* Fallback без мёртвого hover: k = (1−p)^3 — ΔL-эквивалент микса к
-       чёрному (вывод — в button.css React-близнеца). Disabled гасится ниже
-       каскадом (filter: none). */
-    @supports not (color: color-mix(in oklab, red, blue)) {
-      button:hover {
-        filter: brightness(0.7787);
-      }
-      button:active {
-        filter: brightness(0.6361);
-      }
-    }
+
+:host([type='accent']) { --_hover-fill: var(--lab-fill-brand-tertiary); --_pressed-fill: var(--lab-fill-brand-primary); --_rest-border: var(--lab-border-brand-soft); --_pressed-border: var(--lab-border-brand-base); }
+:host([type='neutral']) { --_hover-fill: var(--lab-fill-quaternary); --_pressed-fill: var(--lab-fill-tertiary); --_rest-border: var(--lab-border-soft); --_pressed-border: var(--lab-border-base); }
+:host([type='danger']) { --_hover-fill: var(--lab-fill-danger-tertiary); --_pressed-fill: var(--lab-fill-danger-primary); --_rest-border: var(--lab-border-danger-soft); --_pressed-border: var(--lab-border-danger-base); }
+:host([type][kind='border']) button { border-color: var(--_rest-border); }
+:host([kind='tinted']) button:hover:not(:disabled),
+:host([kind='border']) button:hover:not(:disabled),
+:host([kind='ghost']) button:hover:not(:disabled) { background-color: var(--_hover-fill); }
+:host([kind='tinted']) button:active:not(:disabled) { background-color: var(--_pressed-fill); }
+:host([kind='border']) button:active:not(:disabled),
+:host([kind='ghost']) button:active:not(:disabled) { background-color: transparent; }
+:host([kind='border']) button:active:not(:disabled) { border-color: var(--_pressed-border); }
     button:focus-visible {
       outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
       outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     /* ── disabled ──────────────────────────────────────────────────────── */
-    :host([disabled]) button,
-    button[disabled] {
+    :host([type][kind]) button:disabled {
       cursor: not-allowed;
-      opacity: 0.45;
+      background-color: var(--lab-fill-quaternary);
+      background-image: none;
+      box-shadow: none;
+      color: var(--lab-label-quaternary);
+      opacity: 1;
       filter: none;
+    }
+
+
+    :host([type][kind='border']) button:disabled,
+    :host([type][kind='ghost']) button:disabled { background-color: transparent; }
+    :host([type][kind='border']) button:disabled { border-color: var(--lab-border-soft); }
+    :host([type='neutral']:not([kind='fill'])) slot[name='description'] { color: var(--lab-label-secondary); }
+    :host([type][kind]) button:disabled slot[name='description'] { color: inherit; }
+    :host([kind='fill']) button:active:not(:disabled) {
+      box-shadow: inset var(--lab-space-button-inner-x) calc(-1 * var(--lab-space-button-inner-y)) var(--lab-space-button-inner-blur) var(--lab-fx-control-inner);
     }
 
     /* ── loading: spinner replaces the label without collapsing layout ──── */
     :host([loading]) button {
       cursor: progress;
     }
-    .label {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--_gap);
+    :host([loading]) slot[name='icon'], :host([loading]) slot[name='icon-end'] {
+      visibility: hidden;
     }
-    :host([loading]) .label {
+    .main { display: inline-flex; align-items: center; justify-content: center; position: relative; min-width: var(--_icon); }
+    :host([loading]) .main {
       /* color: transparent — see button.css (React twin) for the full WCAG
          4.1.2 rationale: neither visibility:hidden NOR opacity:0 is safe here
          (WebKit drops opacity:0 content from its a11y tree too), so only a
@@ -337,16 +322,19 @@ export class LabButton extends LabElement {
     .spinner {
       display: none;
       position: absolute;
-      width: 1em;
-      height: 1em;
-      border: ${litVar('--lab-stroke-thick')} solid currentColor;
-      border-right-color: transparent;
-      border-radius: ${litVar('--lab-radius-full', '9999px')};
-      animation: spin 0.7s linear infinite;
+      width: var(--_icon);
+      height: var(--_icon);
+      color: var(--lab-label-quaternary);
+      background: currentColor;
+      mask: var(--lab-shape-loader) center / contain no-repeat;
+      animation: spin var(--lab-motion-loader-period) var(--lab-motion-loader-steps) infinite;
     }
     :host([loading]) .spinner {
       display: block;
     }
+    .icon-spinner { display: none !important; }
+    :host([icon][loading]) .icon-spinner { display: block !important; }
+    :host([loading]) button[data-empty-label] .icon-spinner { display: block !important; }
 
     @media (prefers-reduced-motion: reduce) {
       .spinner {
@@ -374,24 +362,30 @@ export class LabButton extends LabElement {
     // forwarded onto the inner <button>. We forward it only in that icon-only case,
     // and mark the (decorative) icon slot aria-hidden then so it cannot contribute a
     // competing name. Mirrors the React twin ⇒ both renderers resolve the SAME name.
-    const iconOnly = !this.hasDefaultSlotContent();
+    const hasLabel = this.hasDefaultSlotContent() || !!this.querySelector?.('[slot="description"]');
+    const iconOnly = this.icon || !hasLabel;
     const innerAriaLabel = iconOnly && this.ariaLabel ? this.ariaLabel : undefined;
     return html`
       <button
         type=${this.htmlType}
+        ?data-empty-label=${!hasLabel}
         ?disabled=${inactive}
         aria-label=${ifDefined(innerAriaLabel)}
         aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
       >
-        <span class="spinner" aria-hidden="true"></span>
-        <span class="label">
-          <slot name="icon" aria-hidden=${ifDefined(innerAriaLabel ? 'true' : undefined)}></slot>
-          <slot></slot>
+        <span class="spinner icon-spinner" aria-hidden="true"></span>
+        <slot name="icon" aria-hidden="true"></slot>
+        <span class="label" ?hidden=${!hasLabel || this.icon} aria-hidden=${ifDefined(iconOnly ? 'true' : undefined)}>
+          <span class="main"><slot @slotchange=${this.onSlotChange}></slot><span class="spinner" aria-hidden="true"></span></span>
+          <slot name="description" @slotchange=${this.onSlotChange}></slot>
         </span>
+        <slot name="icon-end" aria-hidden="true"></slot>
       </button>
     `;
   }
+
+  private readonly onSlotChange = () => this.requestUpdate();
 }
 
 declare global {

@@ -161,6 +161,7 @@
   --lab-control-bg: rgb(255 255 255);
   --lab-fill-neutral: rgb(232 232 236);
   --lab-label-on-neutral: rgb(16 16 18);
+  --lab-fx-control-inner: rgb(16 16 18 / 0.12);
   --lab-fx-focus-ring-brand: var(--lab-label-brand-primary);
   --lab-fx-focus-ring-danger: var(--lab-label-danger-primary);
   --lab-fx-focus-ring-neutral: var(--lab-label-primary);
@@ -376,6 +377,7 @@
   --lab-control-bg: rgb(120 120 128 / 0.361);
   --lab-fill-neutral: rgb(35 35 39);
   --lab-label-on-neutral: rgb(246 248 250);
+  --lab-fx-control-inner: rgb(16 16 18 / 0.2);
   --lab-fx-focus-ring-brand: var(--lab-label-brand-primary);
   --lab-fx-focus-ring-danger: var(--lab-label-danger-primary);
   --lab-fx-focus-ring-neutral: var(--lab-label-primary);
@@ -592,6 +594,7 @@
   --lab-control-bg: rgb(120 120 128 / 0.361);
   --lab-fill-neutral: rgb(35 35 39);
   --lab-label-on-neutral: rgb(246 248 250);
+  --lab-fx-control-inner: rgb(16 16 18 / 0.2);
   --lab-fx-focus-ring-brand: var(--lab-label-brand-primary);
   --lab-fx-focus-ring-danger: var(--lab-label-danger-primary);
   --lab-fx-focus-ring-neutral: var(--lab-label-primary);
@@ -805,6 +808,7 @@
   --lab-control-bg: rgb(255 255 255);
   --lab-fill-neutral: rgb(232 232 236);
   --lab-label-on-neutral: rgb(16 16 18);
+  --lab-fx-control-inner: rgb(16 16 18 / 0.12);
   --lab-fx-focus-ring-brand: var(--lab-label-brand-primary);
   --lab-fx-focus-ring-danger: var(--lab-label-danger-primary);
   --lab-fx-focus-ring-neutral: var(--lab-label-primary);
@@ -1020,6 +1024,7 @@
   --lab-control-bg: rgb(120 120 128 / 0.361);
   --lab-fill-neutral: rgb(35 35 39);
   --lab-label-on-neutral: rgb(246 248 250);
+  --lab-fx-control-inner: rgb(16 16 18 / 0.2);
   --lab-fx-focus-ring-brand: var(--lab-label-brand-primary);
   --lab-fx-focus-ring-danger: var(--lab-label-danger-primary);
   --lab-fx-focus-ring-neutral: var(--lab-label-primary);
@@ -1236,6 +1241,7 @@
   --lab-control-bg: rgb(120 120 128 / 0.361);
   --lab-fill-neutral: rgb(35 35 39);
   --lab-label-on-neutral: rgb(246 248 250);
+  --lab-fx-control-inner: rgb(16 16 18 / 0.2);
   --lab-fx-focus-ring-brand: var(--lab-label-brand-primary);
   --lab-fx-focus-ring-danger: var(--lab-label-danger-primary);
   --lab-fx-focus-ring-neutral: var(--lab-label-primary);

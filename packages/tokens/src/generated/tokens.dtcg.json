@@ -275,6 +275,138 @@
           "css": "8rem"
         }
       }
+    },
+    "button-label-x": {
+      "$type": "dimension",
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.5rem"
+        }
+      }
+    },
+    "button-label-gap": {
+      "$type": "dimension",
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.5rem"
+        }
+      }
+    },
+    "button-s-x": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.75rem"
+        }
+      }
+    },
+    "button-s-y": {
+      "$type": "dimension",
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.5rem"
+        }
+      }
+    },
+    "button-m-x": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.75rem"
+        }
+      }
+    },
+    "button-m-y": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.75rem"
+        }
+      }
+    },
+    "button-l-x": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "button-l-y": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "button-inner-x": {
+      "$type": "dimension",
+      "$value": {
+        "value": 0,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0rem"
+        }
+      }
+    },
+    "button-inner-y": {
+      "$type": "dimension",
+      "$value": {
+        "value": -1,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "-0.0625rem"
+        }
+      }
+    },
+    "button-inner-blur": {
+      "$type": "dimension",
+      "$value": {
+        "value": 1,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.0625rem"
+        }
+      }
     }
   },
   "size": {
@@ -721,6 +853,78 @@
           "css": "40rem"
         }
       }
+    },
+    "button-s": {
+      "$type": "dimension",
+      "$value": {
+        "value": 36,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2.25rem"
+        }
+      }
+    },
+    "button-s-icon": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.25rem"
+        }
+      }
+    },
+    "button-m": {
+      "$type": "dimension",
+      "$value": {
+        "value": 48,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "3rem"
+        }
+      }
+    },
+    "button-m-icon": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
+    },
+    "button-l": {
+      "$type": "dimension",
+      "$value": {
+        "value": 56,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "3.5rem"
+        }
+      }
+    },
+    "button-l-icon": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
     }
   },
   "radius": {
@@ -879,6 +1083,42 @@
       "$extensions": {
         "com.labpics.ui-tokens": {
           "css": "1.1"
+        }
+      }
+    },
+    "button-s": {
+      "$type": "dimension",
+      "$value": {
+        "value": 9999,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "624.9375rem"
+        }
+      }
+    },
+    "button-m": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "button-l": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
         }
       }
     }
@@ -1150,6 +1390,42 @@
           }
         }
       }
+    },
+    "button-s": {
+      "$type": "dimension",
+      "$value": {
+        "value": 14,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.875rem"
+        }
+      }
+    },
+    "button-m": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "button-l": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
     }
   },
   "line-height": {
@@ -1192,6 +1468,18 @@
     "6xl": {
       "$type": "number",
       "$value": 0.8582
+    },
+    "button-s": {
+      "$type": "number",
+      "$value": 0.8571
+    },
+    "button-m": {
+      "$type": "number",
+      "$value": 1.5
+    },
+    "button-l": {
+      "$type": "number",
+      "$value": 1.5
     }
   },
   "font-weight": {
@@ -1210,6 +1498,22 @@
     "bold": {
       "$type": "number",
       "$value": 700
+    },
+    "button": {
+      "$type": "number",
+      "$value": 500
+    },
+    "button-s-description": {
+      "$type": "number",
+      "$value": 500
+    },
+    "button-m-description": {
+      "$type": "number",
+      "$value": 400
+    },
+    "button-l-description": {
+      "$type": "number",
+      "$value": 400
     }
   },
   "letter-spacing": {
@@ -1252,6 +1556,30 @@
     "6xl": {
       "$type": "number",
       "$value": -0.0469
+    },
+    "button-s-description": {
+      "$type": "number",
+      "$value": 0
+    },
+    "button-s": {
+      "$type": "number",
+      "$value": 0
+    },
+    "button-m-description": {
+      "$type": "number",
+      "$value": -0.0156
+    },
+    "button-m": {
+      "$type": "number",
+      "$value": 0
+    },
+    "button-l-description": {
+      "$type": "number",
+      "$value": -0.0156
+    },
+    "button-l": {
+      "$type": "number",
+      "$value": 0
     }
   },
   "measure": {
@@ -1375,6 +1703,34 @@
       "$type": "number",
       "$value": 0.14,
       "$description": "Доля тинта рецепта D в нажатом состоянии — глубже hover."
+    },
+    "button-description-opacity": {
+      "$type": "number",
+      "$value": 0.72
+    },
+    "button-s-description-accent-plain-opacity": {
+      "$type": "number",
+      "$value": 0.72
+    },
+    "button-m-description-accent-plain-opacity": {
+      "$type": "number",
+      "$value": 1
+    },
+    "button-l-description-accent-plain-opacity": {
+      "$type": "number",
+      "$value": 1
+    },
+    "button-highlight": {
+      "$type": "number",
+      "$value": 0.2
+    },
+    "button-hover-highlight": {
+      "$type": "number",
+      "$value": 0.32
+    },
+    "button-pressed-shade": {
+      "$type": "number",
+      "$value": 0.12
     }
   },
   "opacity": {
