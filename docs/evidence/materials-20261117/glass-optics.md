@@ -126,5 +126,6 @@ Native `mix-blend-mode` в isolated capture работает в macOS WebKit (д
 но Chromium/Firefox дают ошибку до 115: изолированная группа не содержит
 отфильтрованный внешний backdrop. Эти исходы сохранены в display JSON из
 [run44052641877](https://github.com/Labpics-Team/labui/actions/runs/44052641877).
-Production fallback пока не заменён. Linux WebKit в Xvfb пока
+Следующий [production-срез paints](paint-renderers.md) заменил этот fallback,
+сохранив ограничение пространственного grain в Gecko. Linux WebKit в Xvfb пока
 не даёт полезного accelerated backdrop и не служит визуальным эталоном Safari.
