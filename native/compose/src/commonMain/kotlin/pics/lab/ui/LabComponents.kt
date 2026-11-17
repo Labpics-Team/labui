@@ -3,6 +3,7 @@ package pics.lab.ui
 
 internal data class LabButtonMetrics(val height: Float, val radius: Float, val paddingX: Float, val paddingY: Float, val icon: Float, val fontSize: Float, val lineHeight: Float, val letterSpacing: Float, val descriptionFontWeight: Float, val descriptionLetterSpacing: Float, val descriptionAccentPlainOpacity: Float)
 internal data class LabInputMetrics(val height: Float, val radius: Float, val paddingX: Float, val paddingY: Float, val contentHeight: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float)
+internal data class LabSwitchMetrics(val trackWidth: Float, val trackHeight: Float, val controlHeight: Float, val labelGap: Float, val fontSize: Float, val lineHeight: Float, val letterSpacing: Float, val fontWeight: Float)
 
 internal object LabComponents {
     val ButtonS = LabButtonMetrics(36f, 9999f, 12f, 8f, 20f, 14f, 12f, 0f, 500f, 0f, 0.72f)
@@ -44,6 +45,24 @@ internal object LabComponents {
     const val CardRadius = 16f
     const val CardPadding = 24f
     const val CardGap = 16f
+    const val CardCornerSmoothing = 0.6f
+    const val CardStrokeWidth = 1f
+    const val CardMediaHeight = 200f
+    const val CardCaptionGap = 8f
+    const val CardTextGap = 2f
+    const val CardTitleGap = 4f
+    const val CardTextTitleFontSize = 20f
+    const val CardTextTitleLineHeight = 20f
+    const val CardTextTitleFontWeight = 500f
+    const val CardTextTitleLetterSpacing = -0.33f
+    const val CardTextDescriptionFontSize = 16f
+    const val CardTextDescriptionLineHeight = 24f
+    const val CardTextDescriptionFontWeight = 400f
+    const val CardTextDescriptionLetterSpacing = -0.25f
+    const val CardTextCaptionFontSize = 14f
+    const val CardTextCaptionLineHeight = 12f
+    const val CardTextCaptionFontWeight = 500f
+    const val CardTextCaptionLetterSpacing = 0f
     const val SheetTopRadius = 32f
     const val SheetPaddingX = 16f
     const val SheetPaddingBottom = 16f
@@ -69,4 +88,53 @@ internal object LabComponents {
     const val SnackbarTimerStrokeWidth = 3f
     const val SnackbarTimerWarningSeconds = 2f
     val SnackbarTimerSweeps = listOf(360f, 270f, 225f, 135f, 75f)
+    val SwitchS = LabSwitchMetrics(28f, 16f, 24f, 8f, 16f, 24f, -0.25f, 400f)
+    val SwitchM = LabSwitchMetrics(36f, 20f, 24f, 8f, 16f, 24f, -0.25f, 400f)
+    val SwitchL = LabSwitchMetrics(44f, 24f, 24f, 12f, 20f, 20f, -0.33f, 500f)
+    const val SwitchThumbPadding = 2f
+    const val SwitchThumbHoverPadding = 1f
+    const val SwitchThumbPressedPadding = 4f
+    const val SwitchThumbFillRole = "bg-static-light"
+    const val SwitchThumbDisabledFillRole = "control-bg"
+    val SwitchThumbShadow get() = LabShadows.xs
+    val SwitchThumbHoverShadow get() = LabShadows.s
+    val SwitchThumbDisabledShadow = emptyList<LabShadowLayer>()
+    val SwitchThumbNeutralIconHoverShadow get() = LabShadows.xs
+    val SwitchThumbColoredPressedShadow = listOf(
+        LabShadowLayer(0f, 0f, 1f, 0f, "bg-static-dark", 0.12f),
+        LabShadowLayer(0f, 1f, 1f, 0f, "bg-static-dark", 0.04f),
+        LabShadowLayer(0f, 3f, 2f, 0f, "bg-static-dark", 0.02f),
+        LabShadowLayer(0f, 6f, 2f, 0f, "bg-static-dark", 0.01f),
+    )
+    const val SwitchThumbColoredPressedShadowMinimumTrackHeight = 20f
+    const val SwitchTrackNeutralRole = "fill-secondary"
+    const val SwitchTrackNeutralHoverRole = "fill-primary"
+    const val SwitchTrackAccentRole = "fill-accent"
+    const val SwitchTrackDangerRole = "fill-danger"
+    const val SwitchTrackDisabledRole = "fill-tertiary"
+    const val SwitchLabelRole = "label-primary"
+    const val SwitchColoredFillHighlight = 0.2f
+    const val SwitchColoredFillHoverHighlight = 0.32f
+    const val SwitchColoredFillPressedShade = 0.12f
+    const val SwitchColoredFillGradientDirection = "top-to-bottom"
+    const val SwitchColoredFillGradientTailOpacityDefault = 0f
+    const val SwitchColoredFillGradientTailOpacityHover = 0.0001f
+    const val SwitchColoredFillGradientTailOpacityPressed = 0.0001f
+    const val SwitchInnerShadowX = 0f
+    const val SwitchInnerShadowY = -1f
+    const val SwitchInnerShadowPressedY = 1f
+    const val SwitchInnerShadowBlur = 1f
+    const val SwitchInnerShadowColorRole = "fx-control-inner"
+    const val SwitchFocusWidth = 2f
+    const val SwitchFocusOffset = 2f
+    const val SwitchFocusNeutralRole = "label-primary"
+    const val SwitchFocusAccentRole = "border-focus"
+    const val SwitchFocusDangerRole = "label-danger"
+    const val SwitchCutoutViewBox = 8f
+    const val SwitchCutoutDiameterRatio = 0.5f
+    const val SwitchCutoutOnWindingRule = "EVENODD"
+    const val SwitchCutoutOnData = "M 7.635610517625218 0.09004448477756646 C 7.983656103329632 0.2757832909707034 8.10328593643757 0.6877623968927002 7.902811901013137 1.0102255870284567 L 3.799476721347746 7.610456581436975 C 3.4971543396331435 8.09674358769225 2.755387473545853 8.135316874720674 2.396231818043499 7.683424404152019 L 0.14168859926511418 4.84674109766281 C -0.09647133042804071 4.54708645671381 -0.027348674390513195 4.125292176841569 0.2960784184531714 3.9046376557352764 C 0.6195054679489442 3.6839828133348624 1.0747617100265714 3.7480247640656943 1.3129216397197263 4.047679405014694 L 3.0091021078268905 6.181826769133788 L 6.64242871067445 0.33760590255856143 C 6.842902746098884 0.015142692341922448 7.287565625487393 -0.09569428125380533 7.635610517625218 0.09004448477756646 Z"
+    const val SwitchCutoutOffWindingRule = "NONZERO"
+    const val SwitchCutoutOffData = "M 6.9128887406063635 0.1495871834623516 C 7.174744708699412 -0.06398525199944971 7.560755252477094 -0.048922332108651434 7.804838861833421 0.19516127724767568 C 8.048922471189748 0.4392448866040028 8.063985391080546 0.8252554502504135 7.8504129556187445 1.0871114183434614 L 7.804838861833421 1.1378939799899654 L 4.942785772115067 3.999946910758495 L 7.804838861833421 6.862000000476849 L 7.8504129556187445 6.912782562123353 C 8.063985391080546 7.174638530216401 8.048922471189748 7.560649073994084 7.804838861833421 7.804732683350411 C 7.560755252477094 8.04881629270674 7.174744708699412 8.063879212597536 6.9128887406063635 7.850306777135735 L 6.862106178959859 7.804732683350411 L 4.000053089241505 4.9426795936320564 L 1.1379998405733256 7.804732683350411 C 0.8776435839466081 8.065088939977128 0.45562345406393767 8.065088939977128 0.19526719743722018 7.804732683350411 C -0.06508905918949734 7.5443764267236935 -0.06508905918949734 7.122356257103567 0.19526719743722018 6.862000000476849 L 3.057320406367943 3.999946910758495 L 0.19526719743722018 1.1378939799899654 L 0.14969310365189606 1.0871114183434614 C -0.06387933180990524 0.8252554502504135 -0.04881641191910693 0.4392448866040028 0.19526719743722018 0.19516127724767568 C 0.4393508067935473 -0.048922332108651434 0.8253613108337736 -0.06398525199944971 1.0872172789268215 0.1495871834623516 L 1.1379998405733256 0.19516127724767568 L 4.000053089241505 3.0572142278849332 L 6.862106178959859 0.19516127724767568 L 6.9128887406063635 0.1495871834623516 Z"
+    const val SwitchCutoutHideOnColoredPressed = true
 }

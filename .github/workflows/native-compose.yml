@@ -119,6 +119,7 @@ jobs:
             native/compose/consumer/build/compose/logs
             native/compose/build/test-results
             native/compose/build/snackbar-render
+            native/compose/build/switch-render
             native/compose/colors/build/test-results
           retention-days: 7
 
