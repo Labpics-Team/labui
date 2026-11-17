@@ -117,8 +117,9 @@ scroll anchoring и имеет layout containment; natural extent измеряе
 [Run 44118210819](https://github.com/Labpics-Team/labui/actions/runs/44118210819)
 прошёл на Linux/macOS: 12 flows × 10 stages × 3 browsers, snapshot и actual display;
 отдельно все десять авторских paints проверены внутри прокрученного capture на
-шести цветных фонах. [Полные данные](material-scroll-origins.json): 1440 scroll
-и 408 paint rows. Общий CI `44118210711` также прошёл.
+шести цветных фонах. В логе 1440 scroll и 408 paint rows; отдельно сохранены
+[720 scroll и 204 paint строки реального display](material-scroll-origins.json).
+Общий CI `44118210711` также прошёл.
 Независимая проверка повторила 48 Firefox/WebKit сценариев; дополнительно
 Chromium/Firefox/WebKit за 20 idle и 20 scroll кадров дали ноль runtime rAF
 и getComputedStyle. Переключение overflow visible→hidden и dispose при pending
