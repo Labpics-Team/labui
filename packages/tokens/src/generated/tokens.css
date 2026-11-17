@@ -88,6 +88,10 @@
   --lab-space-input-helper-gap: 0.5rem;
   --lab-space-input-helper-x: 0.25rem;
   --lab-stroke-input: 0.0625rem;
+  --lab-size-input-adornment: 2rem;
+  --lab-size-input-icon: 1rem;
+  --lab-space-input-adornment-outer: 0.75rem;
+  --lab-space-input-adornment-inner: 0.25rem;
   --lab-radius-card-surface: 1rem;
   --lab-space-card-padding: 1.5rem;
   --lab-space-card-gap: 1rem;

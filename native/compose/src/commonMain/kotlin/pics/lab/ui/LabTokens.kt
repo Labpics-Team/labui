@@ -46,6 +46,8 @@ internal object LabTokens {
     const val SpaceInputLabelOverhang: Float = 8f
     const val SpaceInputHelperGap: Float = 8f
     const val SpaceInputHelperX: Float = 4f
+    const val SpaceInputAdornmentOuter: Float = 12f
+    const val SpaceInputAdornmentInner: Float = 4f
     const val SpaceCardPadding: Float = 24f
     const val SpaceCardGap: Float = 16f
     const val SpaceSheetX: Float = 16f
@@ -101,6 +103,8 @@ internal object LabTokens {
     const val SizeInputMContent: Float = 24f
     const val SizeInputL: Float = 56f
     const val SizeInputLContent: Float = 24f
+    const val SizeInputAdornment: Float = 32f
+    const val SizeInputIcon: Float = 16f
     const val SizeSheetDragArea: Float = 24f
     const val SizeSheetDragWidth: Float = 36f
     const val SizeSheetDragHeight: Float = 4f

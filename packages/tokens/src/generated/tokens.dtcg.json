@@ -528,6 +528,30 @@
         }
       }
     },
+    "input-adornment-outer": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.75rem"
+        }
+      }
+    },
+    "input-adornment-inner": {
+      "$type": "dimension",
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.25rem"
+        }
+      }
+    },
     "card-padding": {
       "$type": "dimension",
       "$value": {
@@ -1187,6 +1211,30 @@
       "$extensions": {
         "com.labpics.ui-tokens": {
           "css": "1.5rem"
+        }
+      }
+    },
+    "input-adornment": {
+      "$type": "dimension",
+      "$value": {
+        "value": 32,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2rem"
+        }
+      }
+    },
+    "input-icon": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
         }
       }
     },
