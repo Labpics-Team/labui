@@ -22,12 +22,27 @@ interface PaintResource {
 }
 const trees = new WeakMap<Document | ShadowRoot, Map<string, PaintResource>>();
 
+type PaintRenderer = 'backdrop-svg' | 'capture-svg' | 'capture-blend' | 'normal';
+/** CSS.supports accepts SVG backdrop filters that Gecko/WebKit don't render.
+ * These narrow adapters follow actual display pixels, not screenshot support.
+ * iOS Firefox uses WebKit, so its FxiOS token must not select Gecko's adapter.
+ */
+function paintRenderer(): PaintRenderer {
+  if (supportsBackdropFilterUrl()) return 'backdrop-svg';
+  const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent;
+  if (/Firefox\//.test(ua)) return 'capture-svg';
+  if (/AppleWebKit\//.test(ua) && CSS.supports('mix-blend-mode', 'color-dodge'))
+    return 'capture-blend';
+  return 'normal';
+}
+
 function acquire(
   el: HTMLElement,
   key: string,
   paints: MaterialPaints,
   noiseUrl: string | undefined,
   noiseSize: string,
+  renderer: PaintRenderer,
 ): PaintResource {
   const root = el.getRootNode();
   const tree = root.nodeType === 11 ? (root as ShadowRoot) : el.ownerDocument;
@@ -41,12 +56,12 @@ function acquire(
     existing.refs++;
     return existing;
   }
-  if (!supportsBackdropFilterUrl()) {
+  if (renderer === 'normal' || renderer === 'capture-blend') {
     const compiled = compileMaterialPaint(paints);
     const c = compiled.fill.a > 0 ? compiled.fill : paints.normal;
     const resource = {
       filter: null,
-      fill: `rgb(${c.r} ${c.g} ${c.b} / ${c.a})`,
+      fill: renderer === 'capture-blend' ? 'transparent' : `rgb(${c.r} ${c.g} ${c.b} / ${c.a})`,
       key,
       resources,
       refs: 1,
@@ -113,7 +128,9 @@ function release(resource: PaintResource | undefined): void {
 }
 
 export function attach(el: HTMLElement): EngineHandle {
+  const renderer = paintRenderer();
   let held: PaintResource | undefined;
+  let capture: HTMLElement | undefined;
   let signature = '';
   let disposed = false;
   const clear = (): void => {
@@ -123,6 +140,9 @@ export function attach(el: HTMLElement): EngineHandle {
     el.style.removeProperty('--_material-paint-filter');
     el.style.removeProperty('--_surface-paint');
     el.style.removeProperty('--_noise');
+    capture?.remove();
+    capture = undefined;
+    el.removeAttribute('data-lab-material-paint-renderer');
   };
   const refresh = (): void => {
     if (disposed) return;
@@ -148,6 +168,7 @@ export function attach(el: HTMLElement): EngineHandle {
       { normal, blend, blendMode: materialBlendMode(theme) },
       noiseUrl,
       noiseSize,
+      renderer,
     );
     const previous = held;
     held = resource;
@@ -158,6 +179,22 @@ export function attach(el: HTMLElement): EngineHandle {
     );
     el.style.setProperty('--_surface-paint', resource.fill);
     if (resource.filter) el.style.setProperty('--_noise', 'none');
+    if (renderer === 'capture-svg' || renderer === 'capture-blend') {
+      if (!capture) {
+        capture = el.ownerDocument.createElement('div');
+        capture.className = 'lab-material__paint';
+        capture.setAttribute('aria-hidden', 'true');
+        const layers =
+          renderer === 'capture-svg' ? ['capture'] : ['capture', 'grain', 'normal', 'blend'];
+        for (const layer of layers) {
+          const node = el.ownerDocument.createElement('div');
+          node.className = `lab-material__${layer}`;
+          capture.append(node);
+        }
+        el.prepend(capture);
+      }
+      el.setAttribute('data-lab-material-paint-renderer', renderer);
+    }
     release(previous);
   };
   refresh();
