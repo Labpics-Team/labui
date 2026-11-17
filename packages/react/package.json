@@ -25,7 +25,8 @@
   "sideEffects": ["**/*.css"],
   "scripts": {
     "build": "tsup",
-    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@labpics/ui-core": "workspace:*",

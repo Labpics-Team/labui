@@ -244,7 +244,12 @@ test('Lit участвует в FormData, validation, reset и disabled fieldset
   await expect(form).toHaveAttribute('data-submitted', 'true');
   await input.fill('wrong');
   expect(await form.evaluate((element: HTMLFormElement) => element.checkValidity())).toBe(false);
-  await form.evaluate((element: HTMLFormElement) => element.reset());
+  expect(
+    await form.evaluate((element: HTMLFormElement) => {
+      element.reset();
+      return new FormData(element).get('address');
+    }),
+  ).toBe('studio@example.com');
   await expect(input).toHaveValue('studio@example.com');
   await page.locator('#native-group').evaluate((element: HTMLFieldSetElement) => {
     element.disabled = true;
@@ -261,6 +266,92 @@ test('Lit участвует в FormData, validation, reset и disabled fieldset
     element.formStateRestoreCallback('restored@example.com'),
   );
   await expect(input).toHaveValue('restored@example.com');
+});
+
+test('Lit сохраняет нативное minlength после пользовательского ввода и render', async ({
+  page,
+}) => {
+  const host = litHost(page, 'lit-neutral');
+  await host.evaluate((element: LabInput) => {
+    element.inputType = 'text';
+    element.minLength = 5;
+  });
+  const input = host.getByRole('textbox');
+  await input.pressSequentially('abc');
+  await host.evaluate((element: LabInput) => element.updateComplete);
+  expect(await input.evaluate((element: HTMLInputElement) => element.validity.tooShort)).toBe(true);
+  expect(await host.evaluate((element: LabInput) => element.checkValidity())).toBe(false);
+  await input.pressSequentially('de');
+  await host.evaluate((element: LabInput) => element.updateComplete);
+  expect(await host.evaluate((element: LabInput) => element.checkValidity())).toBe(true);
+});
+
+test('Enter использует default submitter и уважает отмену события и правила HTML', async ({
+  page,
+}) => {
+  for (const mode of [
+    'submitter',
+    'disabled',
+    'cancel-key',
+    'cancel-click',
+    'two-fields',
+    'one-field',
+    'novalidate',
+  ]) {
+    await page.evaluate((mode) => {
+      document.querySelector('#enter-form')?.remove();
+      const form = document.createElement('form');
+      form.id = 'enter-form';
+      form.dataset.submits = '0';
+      form.dataset.clicks = '0';
+      const field = document.createElement('lab-input');
+      field.label = 'Поле отправки';
+      field.name = 'text';
+      field.required = true;
+      field.value = mode === 'novalidate' ? '' : 'value';
+      form.append(field);
+      if (mode === 'two-fields') {
+        const another = document.createElement('lab-input');
+        another.name = 'second';
+        another.label = 'Другое поле';
+        form.append(another);
+      }
+      if (!['two-fields', 'one-field'].includes(mode)) {
+        const submit = document.createElement('button');
+        submit.type = 'submit';
+        submit.name = 'action';
+        submit.value = 'save';
+        submit.disabled = mode === 'disabled';
+        submit.formNoValidate = mode === 'novalidate';
+        submit.textContent = 'Сохранить форму';
+        submit.addEventListener('click', (event) => {
+          form.dataset.clicks = String(Number(form.dataset.clicks) + 1);
+          if (mode === 'cancel-click') event.preventDefault();
+        });
+        form.append(submit);
+      }
+      if (mode === 'cancel-key')
+        document.addEventListener('keydown', (event) => event.preventDefault(), { once: true });
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        form.dataset.submits = String(Number(form.dataset.submits) + 1);
+        form.dataset.submitter = event.submitter?.getAttribute('value') ?? '';
+        form.dataset.action = new FormData(form, event.submitter).get('action')?.toString() ?? '';
+      });
+      document.body.append(form);
+    }, mode);
+    const form = page.locator('#enter-form');
+    await form.getByRole('textbox', { name: 'Поле отправки', exact: true }).press('Enter');
+    // Observe the queued default action before asserting its absence/presence.
+    await form.evaluate(() => new Promise((resolve) => setTimeout(resolve, 0)));
+    const submitted = ['submitter', 'one-field', 'novalidate'].includes(mode);
+    await expect(form).toHaveAttribute('data-submits', submitted ? '1' : '0');
+    if (mode === 'submitter' || mode === 'novalidate') {
+      await expect(form).toHaveAttribute('data-clicks', '1');
+      await expect(form).toHaveAttribute('data-submitter', 'save');
+      await expect(form).toHaveAttribute('data-action', 'save');
+    }
+  }
 });
 
 test('слоты и длинная подпись сохраняют доступное имя и ширину поля', async ({ page }) => {

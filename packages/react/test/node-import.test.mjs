@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+import test from 'node:test';
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
+
+const require = createRequire(import.meta.url);
+for (const format of ['esm', 'cjs']) {
+  test(`shared component CSS permits ${format} imports and server render`, async () => {
+    const load = format === 'esm' ? (name) => import(name) : (name) => require(name);
+    const { Input } = await load('@labpics/ui-react/input');
+    const { Sheet } = await load('@labpics/ui-react/sheet');
+    assert.ok(Sheet);
+    const output = renderToString(
+      createElement(Input, {
+        label: 'Почта',
+        name: 'email',
+        defaultValue: 'studio@example.com',
+      }),
+    );
+    assert.match(output, /studio@example.com/);
+    assert.match(output, /Почта/);
+    assert.match(output, /name="email"/);
+  });
+}

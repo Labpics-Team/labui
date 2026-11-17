@@ -5,6 +5,7 @@
  * leading/trailing — авторские области по краям поля; подпись не закрашивает фон.
  */
 import { type PropertyValues, type TemplateResult, css, html, nothing, unsafeCSS } from 'lit';
+import { live } from 'lit/directives/live.js';
 import { LabElement } from '../../lit/lab-element.js';
 import {
   type FieldA11yInput,
@@ -19,6 +20,20 @@ import { inputCss } from './styles.js';
 export type { LabFieldSize as LabInputSize, LabFieldType as LabInputType };
 
 let inputSeq = 0;
+const implicitSubmissionTypes = new Set([
+  'text',
+  'search',
+  'tel',
+  'url',
+  'email',
+  'password',
+  'date',
+  'month',
+  'week',
+  'time',
+  'datetime-local',
+  'number',
+]);
 
 export class LabInput extends LabElement {
   static formAssociated = true;
@@ -114,7 +129,7 @@ export class LabInput extends LabElement {
     unsafeCSS(inputCss),
     css`
       :host { display: block; min-width: 0; }
-      ::slotted([slot='leading']), ::slotted([slot='trailing']) {
+      ::slotted(svg), ::slotted(img), ::slotted(lab-icon) {
         flex: none;
         width: var(--lab-size-input-icon);
         height: var(--lab-size-input-icon);
@@ -152,10 +167,18 @@ export class LabInput extends LabElement {
     this.disabledByForm = disabled;
   }
   formResetCallback(): void {
-    this.value = this.resetValue ?? '';
+    this.restoreValue(this.resetValue ?? '');
   }
   formStateRestoreCallback(state: string | File | FormData): void {
-    if (typeof state === 'string') this.value = state;
+    if (typeof state === 'string') this.restoreValue(state);
+  }
+  private restoreValue(value: string): void {
+    this.value = value;
+    const input = this.renderRoot.querySelector<HTMLInputElement>('input');
+    if (input) {
+      input.value = value;
+      this.syncForm(input);
+    } else this.internals?.setFormValue(this.disabled || this.disabledByForm ? null : value);
   }
   checkValidity(): boolean {
     return this.internals?.checkValidity() ?? true;
@@ -207,6 +230,46 @@ export class LabInput extends LabElement {
     );
   };
 
+  private readonly onKeyDown = (event: KeyboardEvent): void => {
+    const input = event.target as HTMLInputElement;
+    const form = this.internals?.form;
+    if (
+      event.key !== 'Enter' ||
+      event.isComposing ||
+      !form ||
+      !implicitSubmissionTypes.has(input.type)
+    )
+      return;
+    // Trusted keyboard dispatch can run microtasks between bubbling listeners.
+    // A following task observes cancellation at every ancestor.
+    setTimeout(() => {
+      if (
+        event.defaultPrevented ||
+        !this.isConnected ||
+        this.internals?.form !== form ||
+        input.disabled
+      )
+        return;
+      const root = form.getRootNode() as Document | ShadowRoot;
+      const submitter = [
+        ...root.querySelectorAll<HTMLButtonElement | HTMLInputElement>('button, input'),
+      ].find(
+        (element) =>
+          element.form === form && (element.type === 'submit' || element.type === 'image'),
+      );
+      if (submitter) {
+        if (!submitter.matches(':disabled')) submitter.click();
+        return;
+      }
+      const blocking = [...form.elements].filter((element) =>
+        element instanceof HTMLInputElement
+          ? implicitSubmissionTypes.has(element.type)
+          : element instanceof LabInput && implicitSubmissionTypes.has(element.inputType),
+      );
+      if (blocking.length <= 1) form.requestSubmit();
+    }, 0);
+  };
+
   override render(): TemplateResult {
     const ids = fieldPartIds(this.fieldId);
     const showError = fieldErrorIsActive(this.a11yInput());
@@ -225,7 +288,7 @@ export class LabInput extends LabElement {
           id=${ids.control}
           class="lab-field-control"
           part="control"
-          .value=${this.value}
+          .value=${live(this.value)}
           type=${this.inputType}
           name=${this.name || nothing}
           placeholder=${this.placeholder || nothing}
@@ -238,17 +301,7 @@ export class LabInput extends LabElement {
           ?required=${this.required}
           @input=${this.onInput}
           @change=${this.onChange}
-          @keydown=${(event: KeyboardEvent) => {
-            if (
-              event.key === 'Enter' &&
-              !event.isComposing &&
-              !event.defaultPrevented &&
-              this.internals?.form
-            ) {
-              event.preventDefault();
-              this.internals.form.requestSubmit();
-            }
-          }}
+          @keydown=${this.onKeyDown}
         />
         <span class="lab-input-adornment lab-input-trailing"><slot name="trailing" @slotchange=${this.onSlotChange}></slot></span>
         <fieldset class="lab-input-outline" aria-hidden="true"><legend>${this.label}${this.required ? ' *' : ''}</legend></fieldset>

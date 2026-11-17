@@ -14,13 +14,22 @@ FormData, validation, reset, form state restore и disabled fieldset;
 React передаёт имя и ограничения своему HTML input. Custom error действует
 на валидность обоих исполнений.
 
-Headless Chrome/WebKit: 35 проверок Input PASS, одна ожидаемая WebKit/CDP
+Headless Chrome/WebKit: 39 проверок Input PASS, одна ожидаемая WebKit/CDP
 проверка пропущена. Проверены размеры, подпись, слоты, темизация, значения,
 ARIA, constraint validation, FormData/reset/restore, focus и forced colors.
-114 тестов Tokens PASS. На production проходят 53 проверки Input, Sheet
+114 тестов Tokens PASS. На production проходят 57 проверок Input, Sheet
 и первого сценария; одна WebKit/CDP проверка пропущена. Независимое ревью
 среза продолжается. Снимки Lit/React в двух темах создаёт input-render.mjs.
 
 Опора исполнения notch: [MUI NotchedOutline](https://github.com/mui/material-ui/blob/master/packages/mui-material/src/OutlinedInput/NotchedOutline.js).
 Рисунок и размеры принадлежат Lab UI, а не MUI. Никакие окна и озвучивание
 на рабочем столе пользователя не запускались.
+
+Независимое ревью исходного среза963ea96 нашло нарушения default submitter,
+minlength после пользовательского ввода, синхронности reset и Node-import CSS.
+Исправления проверены в обоих браузерах: Enter уважает bubbling/click cancellation,
+disabled submit и число полей; live(value) сохраняет нативную length-validity;
+reset немедленно обновляет FormData. Ограничение16px оставлено только glyph,
+а slotted-действие сохраняет собственный размер. ESM/CJS import и React SSR
+проходят две отдельные проверки, включённые в pnpm test. Lit SSR без
+ElementInternals также проверен прямым исполнением.
