@@ -25,7 +25,8 @@ Figma ближе к `2b−b²`, чем к SVG/W3C `D(b)` (sqrt выше 0.25).
 Проверка проведена отдельно на подложке `7671:10812` без Glass, экспортированной
 read-only с absolute bounds. На её строке y=157, x=114…713 средняя ошибка
 падает 8.572→1.077; центральный пиксель Figma `[49,186,255]`, SVG `[66,175,255]`,
-Pegtop `[49,184,255]`. Renderer разрешает этот перевод только для белых paints.
+Pegtop `[49,184,255]`. Диагностический renderer разрешает этот перевод только
+для белых paints; пакетный runtime этого перевода не содержит.
 Произвольный цветной Soft Light этим опытом не установлен.
 [Изолированный исходник](figma-dock-backplate.png),
 [SVG](web-dock-shape-plate.png) и [белый Pegtop](web-dock-shape-pegtop-plate.png).
@@ -48,7 +49,7 @@ SURFACES закрытому renderer Figma. Независимая провер�
 
 Воспроизведение после build Materials: Node 24 и полный Chromium Playwright
 в headless, `DOCK_SMOOTH=1 DOCK_CONTOUR=1 DOCK_SOFT_LIGHT=pegtop`, затем
-`node docs/evidence/materials-20261117/render-dock-holdout.mjs`.
+`pnpm --filter @labpics/ui-materials exec tsx ../../docs/evidence/materials-20261117/render-dock-holdout.mjs`.
 Без переменных строится circular/SVG baseline. `DOCK_ONLY_BACKPLATE=1`
 изолирует подложку; сравнение сохраняет общую исходную систему координат.
 

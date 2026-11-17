@@ -1,743 +1,267 @@
 {
   "date": "2026-11-17",
-  "sourceHead": "5d3df88f9bd289f1aa2b29fc8a89177805fdd539",
-  "productionHead": "cda0453d929649d6f6b63beaac35b1bb959a1efe",
-  "run": "https://github.com/Labpics-Team/labui/actions/runs/44150921335",
+  "sourceHead": "b18a753f3eb378cc33fa29faa132088c092a948f",
+  "run": "https://github.com/Labpics-Team/labui/actions/runs/44158850998",
   "result": "success",
+  "generalCI": "https://github.com/Labpics-Team/labui/actions/runs/44158851009",
+  "iconsCI": "https://github.com/Labpics-Team/labui/actions/runs/44158851006",
   "platforms": [
     {
       "os": "linux",
-      "scrollRows": 720,
-      "paintRows": 204,
+      "job": "https://github.com/Labpics-Team/labui/actions/runs/44158850998/job/134306874721",
+      "result": "success",
+      "modes": [
+        {
+          "capture": "snapshot",
+          "paintRows": 102,
+          "scrollRows": 360,
+          "browsers": [
+            {
+              "browser": "chromium",
+              "version": "140.0.7339.186",
+              "shapeCapture": "headless-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            },
+            {
+              "browser": "firefox",
+              "version": "141.0",
+              "shapeCapture": "headless-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            },
+            {
+              "browser": "webkit",
+              "version": "26.0",
+              "shapeCapture": "headless-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            }
+          ]
+        },
+        {
+          "capture": "display",
+          "paintRows": 102,
+          "scrollRows": 360,
+          "browsers": [
+            {
+              "browser": "chromium",
+              "version": "140.0.7339.186",
+              "shapeCapture": "headed-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            },
+            {
+              "browser": "firefox",
+              "version": "141.0",
+              "shapeCapture": "headed-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            },
+            {
+              "browser": "webkit",
+              "version": "26.0",
+              "shapeCapture": "headed-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            }
+          ]
+        }
+      ],
       "initialSettleRows": 72,
       "initialSettleMutations": 0,
       "initialSettleChanges": [],
-      "displaySamplesRequiringFreshFrame": 494,
-      "maxStaleFrames": 1,
-      "shapeRows": [
-        {
-          "browser": "chromium",
-          "retained": true,
-          "hostUnclipped": true,
-          "overflowInteractive": true,
-          "foregroundStroke": [255, 0, 0],
-          "shadowStack": 2,
-          "borderBox": {
-            "host": [275.3125, 225.3125],
-            "contour": [0, 0, 275.3125, 225.3125],
-            "stroke": [0, 0, 275.3125, 225.3125],
-            "image": [0, 0, 275.3125, 225.3125],
-            "localSvg": [220.25, 180.25]
-          },
-          "shadowPixels": [
-            {
-              "name": "outer-spread",
-              "checked": 234106,
-              "painted": 4985,
-              "mismatches": 0
-            },
-            {
-              "name": "outer-negative-offset",
-              "checked": 236904,
-              "painted": 994,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-spread",
-              "checked": 234614,
-              "painted": 4588,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-negative-offset",
-              "checked": 236183,
-              "painted": 3868,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-border",
-              "checked": 236084,
-              "painted": 3654,
-              "mismatches": 0
-            },
-            {
-              "name": "parallel-layers",
-              "checked": 232886,
-              "painted": 9789,
-              "mismatches": 0
-            }
-          ],
-          "disposed": {
-            "observers": 0,
-            "defs": 0,
-            "position": "",
-            "clip": ""
-          }
-        },
-        {
-          "browser": "firefox",
-          "retained": true,
-          "hostUnclipped": true,
-          "overflowInteractive": true,
-          "foregroundStroke": [255, 0, 0],
-          "shadowStack": 2,
-          "borderBox": {
-            "host": [275.3166809082031, 225.31668090820312],
-            "contour": [0, 0, 275.3166809082031, 225.31668090820312],
-            "stroke": [0, 0, 275.3166809082031, 225.31668090820312],
-            "image": [0, 0, 275.3166809082031, 225.31668090820312],
-            "localSvg": [220.25, 180.25]
-          },
-          "shadowPixels": [
-            {
-              "name": "outer-spread",
-              "checked": 234141,
-              "painted": 4987,
-              "mismatches": 0
-            },
-            {
-              "name": "outer-negative-offset",
-              "checked": 236919,
-              "painted": 1002,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-spread",
-              "checked": 234607,
-              "painted": 4595,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-negative-offset",
-              "checked": 236178,
-              "painted": 3875,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-border",
-              "checked": 236081,
-              "painted": 3659,
-              "mismatches": 0
-            },
-            {
-              "name": "parallel-layers",
-              "checked": 232933,
-              "painted": 9796,
-              "mismatches": 0
-            }
-          ],
-          "disposed": {
-            "observers": 0,
-            "defs": 0,
-            "position": "",
-            "clip": ""
-          }
-        },
-        {
-          "browser": "webkit",
-          "retained": true,
-          "hostUnclipped": true,
-          "overflowInteractive": true,
-          "foregroundStroke": [255, 0, 0],
-          "shadowStack": 2,
-          "borderBox": {
-            "host": [275.3125, 225.3125],
-            "contour": [0, 0, 275.3125, 225.3125],
-            "stroke": [0, 0, 275.3125, 225.3125],
-            "image": [0, 0, 275.3125, 225.3125],
-            "localSvg": [220.25, 180.25]
-          },
-          "shadowPixels": [
-            {
-              "name": "outer-spread",
-              "checked": 234148,
-              "painted": 5007,
-              "mismatches": 0
-            },
-            {
-              "name": "outer-negative-offset",
-              "checked": 236915,
-              "painted": 995,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-spread",
-              "checked": 234591,
-              "painted": 4581,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-negative-offset",
-              "checked": 236174,
-              "painted": 3866,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-border",
-              "checked": 236071,
-              "painted": 3649,
-              "mismatches": 0
-            },
-            {
-              "name": "parallel-layers",
-              "checked": 232929,
-              "painted": 9805,
-              "mismatches": 0
-            }
-          ],
-          "disposed": {
-            "observers": 0,
-            "defs": 0,
-            "position": "",
-            "clip": ""
-          }
-        },
-        {
-          "browser": "chromium",
-          "retained": true,
-          "hostUnclipped": true,
-          "overflowInteractive": true,
-          "foregroundStroke": [255, 0, 0],
-          "shadowStack": 2,
-          "borderBox": {
-            "host": [275.3125, 225.3125],
-            "contour": [0, 0, 275.3125, 225.3125],
-            "stroke": [0, 0, 275.3125, 225.3125],
-            "image": [0, 0, 275.3125, 225.3125],
-            "localSvg": [220.25, 180.25]
-          },
-          "shadowPixels": [
-            {
-              "name": "outer-spread",
-              "checked": 234106,
-              "painted": 4985,
-              "mismatches": 0
-            },
-            {
-              "name": "outer-negative-offset",
-              "checked": 236904,
-              "painted": 994,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-spread",
-              "checked": 234614,
-              "painted": 4588,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-negative-offset",
-              "checked": 236183,
-              "painted": 3868,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-border",
-              "checked": 236084,
-              "painted": 3654,
-              "mismatches": 0
-            },
-            {
-              "name": "parallel-layers",
-              "checked": 232886,
-              "painted": 9789,
-              "mismatches": 0
-            }
-          ],
-          "disposed": {
-            "observers": 0,
-            "defs": 0,
-            "position": "",
-            "clip": ""
-          }
-        },
-        {
-          "browser": "firefox",
-          "retained": true,
-          "hostUnclipped": true,
-          "overflowInteractive": true,
-          "foregroundStroke": [255, 0, 0],
-          "shadowStack": 2,
-          "borderBox": {
-            "host": [275.3166809082031, 225.31668090820312],
-            "contour": [0, 0, 275.3166809082031, 225.31668090820312],
-            "stroke": [0, 0, 275.3166809082031, 225.31668090820312],
-            "image": [0, 0, 275.3166809082031, 225.31668090820312],
-            "localSvg": [220.25, 180.25]
-          },
-          "shadowPixels": [
-            {
-              "name": "outer-spread",
-              "checked": 234141,
-              "painted": 4987,
-              "mismatches": 0
-            },
-            {
-              "name": "outer-negative-offset",
-              "checked": 236919,
-              "painted": 1002,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-spread",
-              "checked": 234607,
-              "painted": 4595,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-negative-offset",
-              "checked": 236178,
-              "painted": 3875,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-border",
-              "checked": 236081,
-              "painted": 3659,
-              "mismatches": 0
-            },
-            {
-              "name": "parallel-layers",
-              "checked": 232933,
-              "painted": 9796,
-              "mismatches": 0
-            }
-          ],
-          "disposed": {
-            "observers": 0,
-            "defs": 0,
-            "position": "",
-            "clip": ""
-          }
-        },
-        {
-          "browser": "webkit",
-          "retained": true,
-          "hostUnclipped": true,
-          "overflowInteractive": true,
-          "foregroundStroke": [255, 0, 0],
-          "shadowStack": 2,
-          "borderBox": {
-            "host": [275.3125, 225.3125],
-            "contour": [0, 0, 275.3125, 225.3125],
-            "stroke": [0, 0, 275.3125, 225.3125],
-            "image": [0, 0, 275.3125, 225.3125],
-            "localSvg": [220.25, 180.25]
-          },
-          "shadowPixels": [
-            {
-              "name": "outer-spread",
-              "checked": 234148,
-              "painted": 5007,
-              "mismatches": 0
-            },
-            {
-              "name": "outer-negative-offset",
-              "checked": 236915,
-              "painted": 995,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-spread",
-              "checked": 234591,
-              "painted": 4581,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-negative-offset",
-              "checked": 236174,
-              "painted": 3866,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-border",
-              "checked": 236071,
-              "painted": 3649,
-              "mismatches": 0
-            },
-            {
-              "name": "parallel-layers",
-              "checked": 232929,
-              "painted": 9805,
-              "mismatches": 0
-            }
-          ],
-          "disposed": {
-            "observers": 0,
-            "defs": 0,
-            "position": "",
-            "clip": ""
-          }
-        }
-      ]
+      "displaySamplesRequiringFreshFrame": 498,
+      "maxStaleFrames": 1
     },
     {
       "os": "macos",
-      "scrollRows": 720,
-      "paintRows": 204,
-      "initialSettleRows": 72,
-      "initialSettleMutations": 0,
-      "initialSettleChanges": [],
-      "displaySamplesRequiringFreshFrame": 8,
-      "maxStaleFrames": 1,
-      "shapeRows": [
+      "job": "https://github.com/Labpics-Team/labui/actions/runs/44158850998/job/134306875308",
+      "result": "success",
+      "modes": [
         {
-          "browser": "chromium",
-          "retained": true,
-          "hostUnclipped": true,
-          "overflowInteractive": true,
-          "foregroundStroke": [255, 0, 0],
-          "shadowStack": 2,
-          "borderBox": {
-            "host": [275.3125, 225.3125],
-            "contour": [0, 0, 275.3125, 225.3125],
-            "stroke": [0, 0, 275.3125, 225.3125],
-            "image": [0, 0, 275.3125, 225.3125],
-            "localSvg": [220.25, 180.25]
-          },
-          "shadowPixels": [
+          "capture": "snapshot",
+          "paintRows": 102,
+          "scrollRows": 360,
+          "browsers": [
             {
-              "name": "outer-spread",
-              "checked": 234188,
-              "painted": 5032,
-              "mismatches": 0
+              "browser": "chromium",
+              "version": "140.0.7339.186",
+              "shapeCapture": "headless-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
             },
             {
-              "name": "outer-negative-offset",
-              "checked": 236926,
-              "painted": 1005,
-              "mismatches": 0
+              "browser": "firefox",
+              "version": "141.0",
+              "shapeCapture": "headless-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
             },
             {
-              "name": "inner-spread",
-              "checked": 234636,
-              "painted": 4608,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-negative-offset",
-              "checked": 236190,
-              "painted": 3881,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-border",
-              "checked": 236129,
-              "painted": 3688,
-              "mismatches": 0
-            },
-            {
-              "name": "parallel-layers",
-              "checked": 233012,
-              "painted": 9870,
-              "mismatches": 0
+              "browser": "webkit",
+              "version": "26.0",
+              "shapeCapture": "headless-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
             }
-          ],
-          "disposed": {
-            "observers": 0,
-            "defs": 0,
-            "position": "",
-            "clip": ""
-          }
+          ]
         },
         {
-          "browser": "firefox",
-          "retained": true,
-          "hostUnclipped": true,
-          "overflowInteractive": true,
-          "foregroundStroke": [255, 0, 0],
-          "shadowStack": 2,
-          "borderBox": {
-            "host": [275.3166809082031, 225.31668090820312],
-            "contour": [0, 0, 275.3166809082031, 225.31668090820312],
-            "stroke": [0, 0, 275.3166809082031, 225.31668090820312],
-            "image": [0, 0, 275.3166809082031, 225.31668090820312],
-            "localSvg": [220.25, 180.25]
-          },
-          "shadowPixels": [
+          "capture": "display",
+          "paintRows": 102,
+          "scrollRows": 360,
+          "browsers": [
             {
-              "name": "outer-spread",
-              "checked": 234141,
-              "painted": 4987,
-              "mismatches": 0
+              "browser": "chromium",
+              "version": "140.0.7339.186",
+              "shapeCapture": "headed-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
             },
             {
-              "name": "outer-negative-offset",
-              "checked": 236919,
-              "painted": 1002,
-              "mismatches": 0
+              "browser": "firefox",
+              "version": "141.0",
+              "shapeCapture": "headed-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
             },
             {
-              "name": "inner-spread",
-              "checked": 234607,
-              "painted": 4595,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-negative-offset",
-              "checked": 236178,
-              "painted": 3875,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-border",
-              "checked": 236081,
-              "painted": 3659,
-              "mismatches": 0
-            },
-            {
-              "name": "parallel-layers",
-              "checked": 232933,
-              "painted": 9796,
-              "mismatches": 0
+              "browser": "webkit",
+              "version": "26.0",
+              "shapeCapture": "headed-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
             }
-          ],
-          "disposed": {
-            "observers": 0,
-            "defs": 0,
-            "position": "",
-            "clip": ""
-          }
-        },
-        {
-          "browser": "webkit",
-          "retained": true,
-          "hostUnclipped": true,
-          "overflowInteractive": true,
-          "foregroundStroke": [255, 0, 0],
-          "shadowStack": 2,
-          "borderBox": {
-            "host": [275.3125, 225.3125],
-            "contour": [0, 0, 275.3125, 225.3125],
-            "stroke": [0, 0, 275.3125, 225.3125],
-            "image": [0, 0, 275.3125, 225.3125],
-            "localSvg": [220.25, 180.25]
-          },
-          "shadowPixels": [
-            {
-              "name": "outer-spread",
-              "checked": 234108,
-              "painted": 4968,
-              "mismatches": 0
-            },
-            {
-              "name": "outer-negative-offset",
-              "checked": 236904,
-              "painted": 990,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-spread",
-              "checked": 234572,
-              "painted": 4584,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-negative-offset",
-              "checked": 236162,
-              "painted": 3871,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-border",
-              "checked": 236062,
-              "painted": 3653,
-              "mismatches": 0
-            },
-            {
-              "name": "parallel-layers",
-              "checked": 232888,
-              "painted": 9775,
-              "mismatches": 0
-            }
-          ],
-          "disposed": {
-            "observers": 0,
-            "defs": 0,
-            "position": "",
-            "clip": ""
-          }
-        },
-        {
-          "browser": "chromium",
-          "retained": true,
-          "hostUnclipped": true,
-          "overflowInteractive": true,
-          "foregroundStroke": [255, 0, 0],
-          "shadowStack": 2,
-          "borderBox": {
-            "host": [275.3125, 225.3125],
-            "contour": [0, 0, 275.3125, 225.3125],
-            "stroke": [0, 0, 275.3125, 225.3125],
-            "image": [0, 0, 275.3125, 225.3125],
-            "localSvg": [220.25, 180.25]
-          },
-          "shadowPixels": [
-            {
-              "name": "outer-spread",
-              "checked": 234188,
-              "painted": 5032,
-              "mismatches": 0
-            },
-            {
-              "name": "outer-negative-offset",
-              "checked": 236926,
-              "painted": 1005,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-spread",
-              "checked": 234636,
-              "painted": 4608,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-negative-offset",
-              "checked": 236190,
-              "painted": 3881,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-border",
-              "checked": 236129,
-              "painted": 3688,
-              "mismatches": 0
-            },
-            {
-              "name": "parallel-layers",
-              "checked": 233012,
-              "painted": 9870,
-              "mismatches": 0
-            }
-          ],
-          "disposed": {
-            "observers": 0,
-            "defs": 0,
-            "position": "",
-            "clip": ""
-          }
-        },
-        {
-          "browser": "firefox",
-          "retained": true,
-          "hostUnclipped": true,
-          "overflowInteractive": true,
-          "foregroundStroke": [255, 0, 0],
-          "shadowStack": 2,
-          "borderBox": {
-            "host": [275.3166809082031, 225.31668090820312],
-            "contour": [0, 0, 275.3166809082031, 225.31668090820312],
-            "stroke": [0, 0, 275.3166809082031, 225.31668090820312],
-            "image": [0, 0, 275.3166809082031, 225.31668090820312],
-            "localSvg": [220.25, 180.25]
-          },
-          "shadowPixels": [
-            {
-              "name": "outer-spread",
-              "checked": 234141,
-              "painted": 4987,
-              "mismatches": 0
-            },
-            {
-              "name": "outer-negative-offset",
-              "checked": 236919,
-              "painted": 1002,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-spread",
-              "checked": 234607,
-              "painted": 4595,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-negative-offset",
-              "checked": 236178,
-              "painted": 3875,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-border",
-              "checked": 236081,
-              "painted": 3659,
-              "mismatches": 0
-            },
-            {
-              "name": "parallel-layers",
-              "checked": 232933,
-              "painted": 9796,
-              "mismatches": 0
-            }
-          ],
-          "disposed": {
-            "observers": 0,
-            "defs": 0,
-            "position": "",
-            "clip": ""
-          }
-        },
-        {
-          "browser": "webkit",
-          "retained": true,
-          "hostUnclipped": true,
-          "overflowInteractive": true,
-          "foregroundStroke": [255, 0, 0],
-          "shadowStack": 2,
-          "borderBox": {
-            "host": [275.3125, 225.3125],
-            "contour": [0, 0, 275.3125, 225.3125],
-            "stroke": [0, 0, 275.3125, 225.3125],
-            "image": [0, 0, 275.3125, 225.3125],
-            "localSvg": [220.25, 180.25]
-          },
-          "shadowPixels": [
-            {
-              "name": "outer-spread",
-              "checked": 234108,
-              "painted": 4968,
-              "mismatches": 0
-            },
-            {
-              "name": "outer-negative-offset",
-              "checked": 236904,
-              "painted": 990,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-spread",
-              "checked": 234572,
-              "painted": 4584,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-negative-offset",
-              "checked": 236162,
-              "painted": 3871,
-              "mismatches": 0
-            },
-            {
-              "name": "inner-border",
-              "checked": 236062,
-              "painted": 3653,
-              "mismatches": 0
-            },
-            {
-              "name": "parallel-layers",
-              "checked": 232888,
-              "painted": 9775,
-              "mismatches": 0
-            }
-          ],
-          "disposed": {
-            "observers": 0,
-            "defs": 0,
-            "position": "",
-            "clip": ""
-          }
+          ]
         }
-      ]
+      ],
+      "initialSettleRows": 72,
+      "initialSettleMutations": 4,
+      "initialSettleChanges": [
+        {
+          "step": "Measure production paint rendering",
+          "browser": "webkit",
+          "layout": "vertical-rl",
+          "mutations": [
+            {
+              "target": "lab-material__paint-runway",
+              "attribute": "style"
+            },
+            {
+              "target": "lab-material__paint-runway",
+              "attribute": "style"
+            },
+            {
+              "target": "lab-material__paint-runway",
+              "attribute": "style"
+            },
+            {
+              "target": "lab-material__paint-runway",
+              "attribute": "style"
+            }
+          ]
+        }
+      ],
+      "displaySamplesRequiringFreshFrame": 10,
+      "maxStaleFrames": 1
     }
   ],
-  "qualification": "Each OS includes snapshots and isolated actual-display capture. A distinct marker identifies each displayed sample; stale frames are retried only while that marker is absent. Pixel errors remain failures. Native CSS shadow comparisons use the zero-smoothing limit and flat 3x3 interiors, retaining an explicit antialiasing boundary. Earlier Linux WebKit observed four initial idle runway mutations before any scrollTo; scrolling itself remains mutation-free.",
-  "previousRun": "https://github.com/Labpics-Team/labui/actions/runs/44143550975"
+  "qualification": "Paint and scroll pixels are measured with browser snapshots and isolated actual-display capture. Shape/shadow comparisons use browser screenshots in both headless and headed runs; they are not claimed as display capture. Six shadow cases use native CSS and two use independently derived CSS geometry in every browser (shadow-reference.md). All use flat 3x3 reference interiors with a 5RGB threshold and zero mismatches. Distinct per-sample RGB markers reject stale display frames; no pixel tolerance is relaxed. Earlier d25597f run44155167179 failed on Firefox native asymmetric inset; b18 fixes native double-paint and separates that buggy reference from analytic CSS geometry. Dock optics remains limited as stated in dock-optics.md."
 }
