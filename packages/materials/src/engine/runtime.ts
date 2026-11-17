@@ -95,7 +95,18 @@ const BINDINGS: readonly EngineBinding[] = [
  * Returns the disposer. Without a DOM it is an inert no-op. Unsupported
  * engines keep the same scoped CSS material without installing a filter.
  */
-export function mountMaterialRuntime(root?: MaterialRoot): () => void {
+export interface MaterialRuntimeOptions {
+  /** Component motion scalars used only for translation or explicit fluid veil
+   * extents. Corner radii, paints and filter recipes must not depend on them.
+   * Actual surface size changes remain observed by each renderer.
+   */
+  readonly motionProperties?: readonly string[];
+}
+
+export function mountMaterialRuntime(
+  root?: MaterialRoot,
+  options: MaterialRuntimeOptions = {},
+): () => void {
   if (typeof document === 'undefined') return () => {};
   const scope = root ?? document;
   const doc = scope.nodeType === 9 ? (scope as Document) : scope.ownerDocument;
@@ -153,6 +164,7 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
   // Engine-owned inline backdrop changes and its state class must not schedule
   // themselves forever. Other style changes (tokens, radii) refresh the subtree.
   const styleProbe = (doc ?? document).createElement('div').style;
+  const motionProperties = new Set(options.motionProperties);
   const externalStyle = (css: string): string => {
     styleProbe.cssText = css;
     // Compositor motion changes sampling coordinates, not local filter
@@ -175,6 +187,7 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
     styleProbe.removeProperty('--_material-paint-filter');
     styleProbe.removeProperty('--_surface-paint');
     styleProbe.removeProperty('--_noise');
+    for (const name of motionProperties) styleProbe.removeProperty(name);
     return styleProbe.cssText;
   };
   const externalClass = (value: string): string =>

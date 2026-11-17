@@ -58,6 +58,7 @@
 
 import { materialProfile } from '../profile';
 import { trailingRaf } from './mount';
+import { type VeilEdge, axisBandStyle } from './veil-axis';
 import { type Point, type Stop, bandBBox, bandify, parseStops } from './veil-math';
 
 /** The strip class material.css binds its base styling and honest fallbacks
@@ -77,6 +78,7 @@ interface VeilState {
   sig: string | null;
   paint: Element | null;
   enabled: boolean;
+  fluid: boolean;
 }
 
 const registry = new WeakMap<HTMLElement, VeilHandle>(); // host → handle (no DOM expando)
@@ -134,6 +136,7 @@ interface VeilConfig {
   levels: number;
   feather: string;
   reduced: boolean;
+  fluidEdge: VeilEdge | null;
 }
 
 /** Read the declarative config: `data-veil` picks the axis (edge preset or the
@@ -146,11 +149,14 @@ function readConfig(el: HTMLElement): VeilConfig {
     const v = cs.getPropertyValue(prop).trim();
     return v || fb;
   };
-  const rect = { width: el.offsetWidth, height: el.offsetHeight };
+  const direction = (el.getAttribute('data-veil') ?? '').trim() || raw('--_veil-direction', '');
+  const preset = PRESETS[direction];
+  const fluidEdge = preset && raw('--lab-veil-axis-length', '') ? (direction as VeilEdge) : null;
+  const rect = fluidEdge
+    ? { width: 1, height: 1 }
+    : { width: el.offsetWidth, height: el.offsetHeight };
   const w = Math.max(1, rect.width);
   const h = Math.max(1, rect.height);
-  const preset =
-    PRESETS[(el.getAttribute('data-veil') ?? '').trim() || raw('--_veil-direction', '')];
   const author = materialProfile.progressive;
   const profileName = (el.getAttribute('data-veil-profile') ||
     raw('--_veil-profile', '')) as keyof typeof author.compositions;
@@ -169,6 +175,7 @@ function readConfig(el: HTMLElement): VeilConfig {
   return {
     w,
     h,
+    fluidEdge,
     from: preset ? preset.from : raw('--lab-veil-from', DEFAULTS.from),
     to: preset ? preset.to : raw('--lab-veil-to', DEFAULTS.to),
     // The canonical profile: strength at the strong end (t=0), easing out to
@@ -198,9 +205,10 @@ const px = (v: number): string => `${v.toFixed(2)}px`;
 function render(state: VeilState): void {
   const { el } = state;
   const c = readConfig(el);
+  state.fluid = !!c.fluidEdge;
   const paint = el.querySelector(':scope > [data-veil-paint]');
 
-  const sig = `${c.w.toFixed(1)}x${c.h.toFixed(1)}|${c.from}|${c.to}|${JSON.stringify(c.passes)}|${c.noise}|${c.levels}|${c.feather}|${c.reduced}|${state.enabled}`;
+  const sig = `${c.fluidEdge ?? `${c.w.toFixed(1)}x${c.h.toFixed(1)}`}|${c.from}|${c.to}|${JSON.stringify(c.passes)}|${c.noise}|${c.levels}|${c.feather}|${c.reduced}|${state.enabled}`;
   if (sig === state.sig && paint === state.paint) return;
   state.sig = sig;
   state.paint = paint;
@@ -315,15 +323,22 @@ function renderPass(
 
       const strip = el.ownerDocument.createElement('div');
       strip.className = VEIL_STRIP_CLASS;
-      strip.style.left = px(box.x);
-      strip.style.top = px(box.y);
-      strip.style.width = px(box.w);
-      strip.style.height = px(box.h);
+      if (c.fluidEdge) {
+        for (const [name, value] of Object.entries(
+          axisBandStyle(c.fluidEdge, iv.t0, iv.t1, rInc, c.feather),
+        ))
+          strip.style.setProperty(name, value);
+      } else {
+        strip.style.left = px(box.x);
+        strip.style.top = px(box.y);
+        strip.style.width = px(box.w);
+        strip.style.height = px(box.h);
+      }
       const blur = `blur(${rInc.toFixed(2)}px)`;
       strip.style.setProperty('backdrop-filter', blur);
       strip.style.setProperty('-webkit-backdrop-filter', blur);
 
-      if (fadeIn || fadeOut) {
+      if (!c.fluidEdge && (fadeIn || fadeOut)) {
         // Gradient-line px positions: the CSS gradient line spans the strip
         // box's extent along the axis; convert t-boundaries to px from its start.
         const gl = Math.abs(box.w * ux) + Math.abs(box.h * uy);
@@ -388,12 +403,15 @@ export function attach(el: HTMLElement): VeilHandle {
     sig: null,
     paint: null,
     enabled: true,
+    fluid: false,
   };
 
   const update = (): void => render(state);
   // Trailing-edge rAF — общий примитив (./mount): шторм ресайза → один render.
   const raf = trailingRaf(update);
-  const ro = new ResizeObserver(raf.schedule);
+  const ro = new ResizeObserver(() => {
+    if (!state.fluid) raf.schedule();
+  });
   ro.observe(el);
   window.addEventListener('resize', raf.schedule);
   const mq =

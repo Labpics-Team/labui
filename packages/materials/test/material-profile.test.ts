@@ -139,6 +139,11 @@ describe('author material profile', () => {
         'utf8',
       ),
     ) as {
+      detents: {
+        frame: { y: number; height: number };
+        body: { bounds: { y: number; height: number } };
+        ghost: { bounds: { y: number; height: number } };
+      }[];
       nodes: {
         id: string;
         absoluteBoundingBox: { y: number; height: number };
@@ -151,6 +156,18 @@ describe('author material profile', () => {
       }[];
     };
     const recipe = materialProfile.compositions.sheet;
+    expect(sheet.detents).toHaveLength(5);
+    for (const detent of sheet.detents) {
+      expect(detent.ghost.bounds.y).toBeCloseTo(detent.frame.y, 3);
+      expect(detent.ghost.bounds.height).toBeCloseTo(
+        detent.body.bounds.y - detent.frame.y + recipe.ghost.overlap,
+        3,
+      );
+      expect(detent.body.bounds.y + detent.body.bounds.height).toBeCloseTo(
+        detent.frame.y + detent.frame.height,
+        3,
+      );
+    }
     const body = sheet.nodes.find((node) => node.id === '7533:4748');
     const ghost = sheet.nodes.find((node) => node.id === '7533:4747');
     const backdrop = sheet.nodes.find((node) => node.id === 'I7533:4749;7098:2611');

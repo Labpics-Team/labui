@@ -110,7 +110,12 @@ neutral paint-композицию через две соседние повер
 не превышает 2 единиц RGB. Данные — `backdrop-display-{linux,darwin}.json`.
 В WebKit macOS простые filters работают, но положительный `brightness` перед
 `opacity` не ограничивает промежуточное значение единицей: ошибка bright-overlay
-до 25, dodge до 66 единиц. Dark-overlay с `invert` даёт ошибку до 1. Следующий
-опыт проверяет явное ограничение через пару `invert(1)`; production fallback
-этой ещё не подтверждённой композицией не заменён. Linux WebKit в Xvfb пока
+до 25, dodge до 66 единиц. Dark-overlay с `invert` даёт ошибку до 1. Пара
+`invert(1)` не меняет результат. Промежуточный `blur(.01px)` перед opacity
+даёт bright-overlay с ошибкой до 2; обычная element opacity сохраняет ошибку 26.
+Native `mix-blend-mode` в isolated capture работает в macOS WebKit (до 1),
+но Chromium/Firefox дают ошибку до 115: изолированная группа не содержит
+отфильтрованный внешний backdrop. Эти исходы сохранены в display JSON из
+[run44052641877](https://github.com/Labpics-Team/labui/actions/runs/44052641877).
+Production fallback пока не заменён. Linux WebKit в Xvfb пока
 не даёт полезного accelerated backdrop и не служит визуальным эталоном Safari.

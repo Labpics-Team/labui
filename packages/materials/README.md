@@ -66,13 +66,28 @@ logical px; web переводит их в sigma делением на два. N
 дочерним `[data-veil-paint]`. Runtime размещает первый blur/noise перед ним,
 вложенные проходы — после, и сохраняет порядок при resize/замене paint.
 
+Для движущегося края `--lab-veil-axis-length` задаёт ту же CSS-длину, что высота
+вертикального или ширина горизонтального veil. Полосы edge preset используют
+эту длину в CSS calc; при её изменении сохраняются DOM, профиль, физические
+радиусы blur и узкие области захвата. Пример: `height:var(--lab-veil-axis-length)`.
+Диагональная ось продолжает пересчитываться по ResizeObserver.
+Компонент передаёт свои переменные движения как
+`mountMaterialRuntime(root, { motionProperties })`, чтобы изменения только этих
+переменных не перечитывали paints. Они могут управлять translation и длиной
+такого veil; роли, радиусы углов и рецепт материала от них зависеть не должны.
+Обычные изменения стилей, темы и физического размера поверхности наблюдаются
+как прежде. Список переменных берётся из той же декларации, что движение.
+
 `compositions.sheet` связывает Body с `elevated`, тенью Shadow `modal` и внешней
 обводкой `border-base`. Ghost ссылается на один `overlay-ghost`, усиливается вниз
 и перекрывает Body на 32 logical px. Web использует `lab-material--sheet` для Body
 и `<div data-veil class="lab-material-ghost--sheet"><i data-veil-paint></i></div>`
 для Ghost. Направление и профиль поступают из общего рецепта; явные `data-veil`
 и `data-veil-profile` могут их переопределить. CSS отдаёт
-`--lab-sheet-ghost-overlap` для размещения Ghost компонентом. Радиусы Body
+`--lab-sheet-ghost-overlap` для размещения Ghost компонентом. Ghost начинается
+у верхней границы viewport; его высота — Body.top относительно viewport + overlap.
+Равные высоты Ghost и Body в Half — частный случай, остальные четыре состояния
+имеют разные высоты. Радиусы Body
 32/32/0/0, размеры и положение принадлежат Sheet. Тени требуют подключённого
 Shadow CSS. [Исходные узлы](../../docs/evidence/materials-20261117/figma-sheet-source.json)
 содержат только прочитанные значения; скрытые Dark paints в REST разрешены

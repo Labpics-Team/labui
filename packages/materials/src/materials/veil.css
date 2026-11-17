@@ -16,9 +16,12 @@
  *   --lab-veil-stops     "<at> <blur>px [easing], …" Figma-like — overrides
  *                        the canonical `0 var(--lab-veil-strength), 1 0px
  *                        ease-out` profile wholesale
- *   --lab-veil-from/-to  axis points for data-veil="axis"      (50% 0% / 50% 100%)
+ *   --lab-veil-from      start point for data-veil="axis"      (50% 0%)
+ *   --lab-veil-to        end point for data-veil="axis"        (50% 100%)
  *   --lab-veil-levels    max strip count                       (default 6)
  *   --lab-veil-feather   cross-fade width along the axis       (default auto)
+ *   --lab-veil-axis-length explicit CSS length for a moving edge preset;
+ *                         keeps bands retained while their extent changes
  *
  * INVARIANT: the host must not form a backdrop root — no filter, opacity < 1,
  * mask or blend on [data-veil] itself, or the strips would blur the element
