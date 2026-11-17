@@ -64,7 +64,9 @@ describe('CSS lens shape', () => {
     const bytes = symmetric.data.slice();
     const generic = __computeDisplacementField(120, 80, [24, 24, 24, 24, 24, 24, 24, 24], 18, 1);
     expect(generic.data).toEqual(bytes);
-    expect(generic.unit).toBeCloseTo(symmetric.unit, 12);
+    // Cached normals use float32; their reconstruction-scale error remains
+    // orders of magnitude below one displacement-map quantization step.
+    expect(Math.abs(generic.unit - symmetric.unit)).toBeLessThan(1e-5);
     const asymmetric = __computeDisplacementField(120, 80, [0, 0, 24, 24, 16, 32, 0, 0], 18, 1);
     const at = (x: number, y: number) =>
       Array.from(asymmetric.data.slice((y * 120 + x) * 4, (y * 120 + x) * 4 + 2));

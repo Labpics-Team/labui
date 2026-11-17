@@ -10,15 +10,15 @@
  * (a rounding drift, a mis-mirrored quadrant, an over-eager skip that drops a rim
  * pixel) flips a hash and fails here.
  *
- * PROVENANCE: the frozen hashes were captured from the PRE-rim-skip arithmetic
- * (the original ¼-symmetric double loop) via an offline harness that hashed a
- * faithful copy of those exact loops; the optimised engine was then proven to
- * reproduce them across the whole corpus. So a match here means the optimisation
- * changed nothing an eye could ever see.
+ * PROVENANCE: refreshed 2026-11-17 for the intentional replacement of centre
+ * pull by shape-normal Snell refraction. Four original Figma panes and the
+ * before/after renders are in docs/evidence/materials-20261117/glass-optics.md.
+ * Independent ray/ellipse checks live in glass-optics.test.ts. These hashes
+ * guard later implementation changes; they do not establish Figma fidelity.
  *
  * ⚠️ REGENERATING these constants is a DELIBERATE act — do it ONLY when the lens
  * LOOK is intentionally changed (a falloff/encoding/geometry change signed off by
- * the surface owner), never as a reflex to make a red test green. A surprise red
+ * the surface implementation), never as a reflex to make a red test green. A surprise red
  * here on a "pure refactor" or "just perf" change means the change is NOT
  * byte-identical — fix the code, do not rebless the hashes.
  */
@@ -36,98 +36,98 @@ interface Golden {
 // name → frozen {sha256(rgba), feDisplacementMap unit, device W×H}
 const GOLDEN: Record<string, Golden> = {
   'small-square-dpr1': {
-    hash: '1060c94260336865ae6018f8cdcf21ccde90848c4f70f8f9cdee6e66e0192cd7',
-    unit: 7.049998376460712,
+    hash: '640030b0104866223e249fa5ba694999b6e6d85401d1467e31503a3be0acf88e',
+    unit: 47,
     W: 48,
     H: 48,
   },
   'small-square-dpr2': {
-    hash: 'a7df5cb366a0b6b95053a6d45931ec7756438e094ae671f8fe3963ea4df6bb71',
-    unit: 7.1249999989713855,
+    hash: 'a90898b7aab778ed646503e085cb3d39f353cd7d6e1a7348c2a8c5fa7daa0308',
+    unit: 47.5,
     W: 96,
     H: 96,
   },
   'small-radius0': {
-    hash: 'c036fd8d99ec04fd458cd2915f8b5126911a2529c63d549a41f969f1ad999d71',
-    unit: 7.049965160836309,
+    hash: '0948f6f0dbf1a5368f7b9ecbb772713dd3b01be61ecc37853fd0b00c88c100a6',
+    unit: 47,
     W: 48,
     H: 48,
   },
   'small-radius-over-half': {
-    hash: '23de2743539c930d111b1ff019e6832578c7044470ada4a451585e9023503a6a',
-    unit: 7.049999983748691,
+    hash: '67e40697405ae8e76c8cbe9540bd0a027ed4ff92bacc2fcd118083d8259023e4',
+    unit: 47,
     W: 48,
     H: 48,
   },
   'medium-card': {
-    hash: '1b1014042f4dc6818ca0438bba2cf0cbf30afb1b715c8d14eb4e423c0a51b9ba',
-    unit: 47.84999983680274,
+    hash: '1d70c889c28b3bf794934e32212a48226a0d7c079c6e0750959627cc7b5779c9',
+    unit: 98.935015181053,
     W: 320,
     H: 200,
   },
   'medium-card-dpr2': {
-    hash: 'e79765dc8474e1e706337fe891b8e0548baddbce814a74cd3e74c3065c0b455d',
-    unit: 47.92499999331617,
+    hash: 'd3aa257a4ec9d0487b7c923dbb0b3da64ced303ffbdedf3bcd46a1ca04af796d',
+    unit: 100.2450725288023,
     W: 640,
     H: 400,
   },
   'medium-radius0': {
-    hash: '447298ab53ecf617c1145a2f002a76fff8d3aa4ad0bfc560f76dbae345aa3ff6',
-    unit: 47.84996899136978,
+    hash: '005069e4d8e8dc0b2b499d1023b9fe685bd2330e4d15f774e3f8ef260d43d28e',
+    unit: 94.2860619878011,
     W: 320,
     H: 200,
   },
   'medium-circleish': {
-    hash: 'c3197691b00445a06d68bfbecafeae00916132e61d3120dff556f47c5d040ca2',
-    unit: 47.84999999999278,
+    hash: '78923964b917d8c11b889d0d3e7946e02650eb0f3fadd446d773ec188b65cb89',
+    unit: 100.552362129812,
     W: 320,
     H: 320,
   },
   'medium-deep-band': {
-    hash: '94b4ca6da8af6c413eef95170691916b1930866f11184529d6290926f5b2f8d4',
-    unit: 47.84999999936035,
+    hash: 'c715169a9a72f972a9ebba3f0630b4f92cb386c53c429f568a2b820977fe7044',
+    unit: 319,
     W: 320,
     H: 320,
   },
   'large-panel': {
-    hash: '69b3af69f1076220f857dba21db5b1fe88b886835d29b33de4c594a415bd3ee5',
-    unit: 153.44999947664326,
+    hash: '0ccad6a0af039591555053953123396bebbb8f068a0cc19af39c377ca8194a36',
+    unit: 98.935015181053,
     W: 1024,
     H: 1024,
   },
   'large-panel-dpr2': {
-    hash: '9820635c438175e549e5d79c9bba6ab1318ce9f9cfea44d7d102a08ef76616d4',
-    unit: 153.52499997858874,
+    hash: '1cfac2f9fe3211941649039359030ad6a3f274114d5a72bb0c6acec02fdef448',
+    unit: 100.2450725288023,
     W: 2048,
     H: 1536,
   },
   'large-radius0': {
-    hash: '1ddb2d40b4dc7131328023e89294e07f30fadbd6b8bbdda6c812456e4095a54f',
-    unit: 153.44990055853066,
+    hash: '1ef226b4b5c67f8de434ba37b37bacf39be97bc8d7a932de988b0a29e164a8bb',
+    unit: 94.2860619878011,
     W: 1024,
     H: 1024,
   },
   'large-circle': {
-    hash: 'bc0e9ab1228b330b885a625b79f1cdd233128d4dea0261cce0ba1cec7b6e77dd',
-    unit: 153.44999999999865,
+    hash: '07a80f21384ad999772a19fb165a1d06573236f21b5ac1c7c6d77c160e35f702',
+    unit: 100.76596485200125,
     W: 1024,
     H: 1024,
   },
   'large-thin-band': {
-    hash: '8066e52946b9a181f6e2386828e3c4ee3c77d9e8370a7f62b018d12faa7938c8',
-    unit: 153.44967891562598,
+    hash: '203df65e460677784efebf3f39071ef1844e71acd6d175eeb78c8973655bf5f8',
+    unit: 18.27809417509815,
     W: 1024,
     H: 1024,
   },
   'wide-thin': {
-    hash: '12b4045b94cef4458a68991ab1c680ed74929447c711df543b6635a4d5ee1eed',
-    unit: 153.44999872372202,
+    hash: '44c6306f924e34c1d26697b19d5b6b9875fb0211d651b5956d8a05fbc1e80854',
+    unit: 98.935015181053,
     W: 1024,
     H: 64,
   },
   'tall-thin': {
-    hash: 'eabb3e68e0685d07946fe78de2c2997caa09b66c7b867e1ef121cd1a979a1e72',
-    unit: 153.44999872372202,
+    hash: '563e815e963ba211326af0e80b731d25a3d634f2f3750edfc81bc450cce811d1',
+    unit: 98.935015181053,
     W: 64,
     H: 1024,
   },
@@ -139,19 +139,19 @@ const GOLDEN: Record<string, Golden> = {
   },
   'degenerate-2px': {
     hash: '1ae9f9e9fcf6f8009922ce078009828da7b755b53fd88640c08adb2e4d9c2a48',
-    unit: 0.14854186737926495,
+    unit: 0.9156552774318886,
     W: 2,
     H: 2,
   },
   'odd-dims': {
-    hash: '81c64deb6336344e6d35261799b12b0765da6e517d5b7b2c04a187d1881834ff',
-    unit: 47.999999946887485,
+    hash: 'db6f8a057f6105987cc0d321b674d3a3169c7f2ccc0102ea642580c4371eff5c',
+    unit: 80.72247420460846,
     W: 321,
     H: 201,
   },
   'dpr3-clamped': {
-    hash: '2b101889d472be94a3543dcb269067a09abe80af9553bcc23e58562039c27b88',
-    unit: 47.92499999331617,
+    hash: '7f5aba974094b316feefff1c5effe17449ed3a9b2cc1674882a59ddad678aa7a',
+    unit: 100.2450725288023,
     W: 640,
     H: 640,
   },

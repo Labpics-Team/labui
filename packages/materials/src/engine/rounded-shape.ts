@@ -86,12 +86,41 @@ export function resolveCornerRadii(w: number, h: number, values: readonly string
 /** Distance inside a quarter-ellipse joined tangentially to two straight rays.
  * Outside values only mark clipping; the lens never samples those pixels.
  */
-function cornerDistance(x: number, y: number, rx: number, ry: number): number {
-  if (rx === 0 || ry === 0 || x >= rx || y >= ry) return Math.min(x, y);
+function cornerDistance(
+  x: number,
+  y: number,
+  rx: number,
+  ry: number,
+  normal?: Float64Array,
+  limit = Number.POSITIVE_INFINITY,
+  sx = 1,
+  sy = 1,
+): number {
+  if (rx === 0 || ry === 0 || x >= rx || y >= ry) {
+    const distance = Math.min(x, y);
+    if (normal && distance < limit) {
+      normal[0] = x < y ? sx : 0;
+      normal[1] = x < y ? 0 : sy;
+    }
+    return distance;
+  }
   const qx = rx - x;
   const qy = ry - y;
-  if (rx === ry) return rx - Math.hypot(qx, qy);
-  if ((qx / rx) ** 2 + (qy / ry) ** 2 >= 1) return 0;
+  if (rx === ry) {
+    const d = Math.hypot(qx, qy);
+    if (normal && rx - d < limit) {
+      normal[0] = (sx * qx) / d;
+      normal[1] = (sy * qy) / d;
+    }
+    return rx - d;
+  }
+  if ((qx / rx) ** 2 + (qy / ry) ** 2 >= 1) {
+    if (normal && 0 < limit) {
+      normal[0] = 0;
+      normal[1] = 0;
+    }
+    return 0;
+  }
   // Nearest point on the ellipse is (a² qx/(t+a²), b² qy/(t+b²)).
   // Both coordinates are positive here. Its unique root lies between
   // max(a*qx-a²,b*qy-b²) and zero, without the singularities at -a²/-b².
@@ -107,7 +136,47 @@ function cornerDistance(x: number, y: number, rx: number, ry: number): number {
     else hi = t;
   }
   const t = (lo + hi) / 2;
-  return Math.hypot((a2 * qx) / (t + a2) - qx, (b2 * qy) / (t + b2) - qy);
+  const nx = (a2 * qx) / (t + a2) - qx;
+  const ny = (b2 * qy) / (t + b2) - qy;
+  const distance = Math.hypot(nx, ny);
+  if (normal && distance < limit) {
+    normal[0] = (sx * nx) / distance;
+    normal[1] = (sy * ny) / distance;
+  }
+  return distance;
+}
+
+/** Return distance and write the inward unit normal at the closest boundary.
+ * Caller retains one two-number scratch; the ellipse solver allocates nothing.
+ */
+export function roundedShapeGeometry(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: CornerRadii,
+  normal: Float64Array,
+): number {
+  const right = w - x;
+  const bottom = h - y;
+  let distance = Math.min(x, y, right, bottom);
+  normal[0] = distance === x ? 1 : distance === right ? -1 : 0;
+  normal[1] = normal[0] !== 0 ? 0 : distance === y ? 1 : -1;
+  // Most pixels meet a straight edge. Enter the ellipse solver only in an
+  // actual corner region; unusually large CSS corners may overlap, so examine
+  // every applicable corner instead of assuming a quadrant partition.
+  if (x < r[0] && y < r[1])
+    distance = Math.min(distance, cornerDistance(x, y, r[0], r[1], normal, distance));
+  if (right < r[2] && y < r[3])
+    distance = Math.min(distance, cornerDistance(right, y, r[2], r[3], normal, distance, -1, 1));
+  if (right < r[4] && bottom < r[5])
+    distance = Math.min(
+      distance,
+      cornerDistance(right, bottom, r[4], r[5], normal, distance, -1, -1),
+    );
+  if (x < r[6] && bottom < r[7])
+    distance = Math.min(distance, cornerDistance(x, bottom, r[6], r[7], normal, distance, 1, -1));
+  return distance;
 }
 
 /** A CSS rounded box is the intersection of its four rounded corner regions.
@@ -120,12 +189,16 @@ export function roundedShapeInside(
   h: number,
   r: CornerRadii,
 ): number {
-  return Math.min(
-    cornerDistance(x, y, r[0], r[1]),
-    cornerDistance(w - x, y, r[2], r[3]),
-    cornerDistance(w - x, h - y, r[4], r[5]),
-    cornerDistance(x, h - y, r[6], r[7]),
-  );
+  const right = w - x;
+  const bottom = h - y;
+  let distance = Math.min(x, y, right, bottom);
+  if (x < r[0] && y < r[1]) distance = Math.min(distance, cornerDistance(x, y, r[0], r[1]));
+  if (right < r[2] && y < r[3]) distance = Math.min(distance, cornerDistance(right, y, r[2], r[3]));
+  if (right < r[4] && bottom < r[5])
+    distance = Math.min(distance, cornerDistance(right, bottom, r[4], r[5]));
+  if (x < r[6] && bottom < r[7])
+    distance = Math.min(distance, cornerDistance(x, bottom, r[6], r[7]));
+  return distance;
 }
 
 export const shapeKey = (shape: RoundedShape): string =>

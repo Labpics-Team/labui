@@ -1,16 +1,15 @@
 /** Shape-aware refraction. Frost, paints and directional light belong to the
  * shared author profile; this engine owns only the retained displacement map. */
 import { materialProfile } from '../profile';
-// The DOM-free math heart (SDF, falloff, lens constant) lives in a sibling pure
-// module so a bare test runner can import and assert it directly. The browser
-// engine simply re-imports those exact symbols — the runtime is byte-identical;
-// only the definition site moved.
-import { MAX_PULL, clamp01, sdRoundRect, smoothstep } from './lg-math';
+import { confineRay, lensBand, lensDisplacement } from './glass-optics';
+// Geometry, optical profile and displacement encoding remain DOM-free.
+import { sdRoundRect } from './lg-math';
 import { ensureHiddenDefs, removeFilter, supportsBackdropFilterUrl } from './mount';
 import {
   type CornerRadii,
   type RoundedShape,
   resolveCornerRadii,
+  roundedShapeGeometry,
   roundedShapeInside,
   shapeKey,
 } from './rounded-shape';
@@ -137,7 +136,7 @@ const SCRATCH_IDLE_MS = 2000;
 /* ── SDF distance-field cache (separable field: geometry × depth) ────────────
  * The signed distance `inside = -sdRoundRect(px,py,w,h,r)` is a pure function of
  * GEOMETRY (w,h,corner,sc) — it does NOT depend on `depth`. Only `band` (=depth)
- * and the double-smoothstep profile applied to `inside/band` do. So the SDF is
+ * and the Snell profile applied to `inside/band` do. So the SDF is
  * SEPARABLE: cache the raw distance field per geometry, and a depth change reuses
  * it with ZERO sdRoundRect recomputes — the sqrt-heavy 43% of the field loop
  * (measured: 894µs→510µs on a 360×220@dpr2 panel) is skipped, only the cheap
@@ -170,7 +169,7 @@ interface SdfEntry {
 }
 const SDF_CACHE_CAP = 4;
 const sdfCache = new Map<string, SdfEntry>(); // geometry (no depth) → distance field
-const asymmetricSdfCache = new Map<string, Float64Array>();
+const asymmetricSdfCache = new Map<string, { distances: Float64Array; normals: Float32Array }>();
 let sdfComputeCount = 0; // cumulative sdRoundRect calls (the counter-assert reads this)
 
 function releaseScratch(): void {
@@ -201,10 +200,10 @@ function armScratchRelease(): void {
  * DEVICE-pixel resolution, plus the feDisplacementMap `scale` unit.
  *   R = x sample-shift, G = y sample-shift (no shift → the neutral byte 128)
  *
- * For each interior pixel the sample position is pulled toward the centre by a
- * factor ~1 at the rim, easing (double-smoothstep) to 0 over a `depth`-px band —
- * a continuous magnifying lens with a clear middle. The pull is always inward,
- * so the lens never samples outside the element.
+ * Rays follow the inward boundary normal, through a convex optical section
+ * with a clear interior. Depth sets thickness and bezel; the available local
+ * size limits both on small controls. Straight edges do not pull diagonally
+ * toward the centre of a long panel.
  *
  * Geometry-only (no strength baked in): the displacement is encoded normalised,
  * and `unit` is the feDisplacementMap `scale` that reconstructs the true pixel
@@ -225,7 +224,7 @@ export function __computeDisplacementField(
 ): { data: Uint8ClampedArray; W: number; H: number; unit: number } {
   if (typeof corner !== 'number') return asymmetricField(w, h, corner, depth, dpr);
   const r = Math.max(0, Math.min(corner, Math.min(w, h) / 2));
-  const band = Math.max(2, Math.min(depth, Math.min(w, h) / 2)); // rim lens thickness
+  const band = lensBand(depth, w, h);
   const sc = Math.max(1, Math.min(dpr || 1, 2)); // device-pixel scale, capped at 2
   const W = Math.max(1, Math.round(w * sc));
   const H = Math.max(1, Math.round(h * sc));
@@ -273,16 +272,9 @@ export function __computeDisplacementField(
   const sInside = sdf.inside;
   const sCovered = sdf.covered;
 
-  // 4-way symmetry: the map is mirror-symmetric about both centre axes. The SDF
-  // sdRoundRect is symmetric in px↔(w−px) and py↔(h−py); the pull magnitude m
-  // depends only on `inside` (symmetric); dx=(cx−px)·pull flips sign across the
-  // vertical axis and dy across the horizontal. So we compute ONLY the rows in
-  // the top half and mirror each into its bottom twin (dx same, dy negated about
-  // its row's value). Within a row we also mirror left↔right (dx negated). This
-  // collapses the expensive SDF/sqrt/double-smoothstep work to ~1/4 of pixels.
-  // Output bytes are bit-identical to the full double loop.
+  // Distance, normal magnitude and optical section share four-way symmetry.
+  // Only the normal's signs change, so one quarter supplies all four quadrants.
   const invSc = 1 / sc;
-  const invBand = 1 / band;
   for (let Y = 0; Y < H; Y++) {
     const Ym = H - 1 - Y;
     if (Ym < Y) break; // bottom half already filled by its top twin
@@ -293,7 +285,7 @@ export function __computeDisplacementField(
     const rowBase = Y * halfW; // this row's slice of the cached distance field
     const covered = sCovered[Y] as number; // columns already computed for this row
     // RIM-SKIP. A pixel is a no-op (dx=dy=0) once inside ≥ band — the
-    // double-smoothstep bottoms out — and, because `inside` RISES monotonically
+    // convex section becomes flat — and, because `inside` RISES monotonically
     // across the left half (distance to a convex-body boundary is concave, so it
     // only climbs toward the centre; verified with a zero-violation monotonicity
     // probe over the whole geometry corpus incl. the r = half circle), every
@@ -324,12 +316,14 @@ export function __computeDisplacementField(
       let dx = 0;
       let dy = 0;
       if (inside > 0) {
-        // 1 at the rim → 0 `band` px inward; double-smoothstep for a gentle,
-        // seamless falloff (the shape that reads as thick glass, not an outline).
-        const m = smoothstep(smoothstep(clamp01(1 - inside * invBand)));
-        const pull = MAX_PULL * m;
-        dx = (cx - px) * pull; // inward pull = magnification
-        dy = cyPy * pull;
+        const qx = r - px;
+        const qy = r - py;
+        const corner = qx > 0 && qy > 0;
+        const nx = corner ? qx / (r - inside) : qx > qy ? 1 : 0;
+        const ny = corner ? qy / (r - inside) : qx > qy ? 0 : 1;
+        const magnitude = confineRay(lensDisplacement(inside, band), cx - px, cyPy, nx, ny);
+        dx = nx * magnitude;
+        dy = ny * magnitude;
       }
       const adx = dx < 0 ? -dx : dx;
       const ady = dy < 0 ? -dy : dy;
@@ -425,22 +419,40 @@ function asymmetricField(w: number, h: number, radii: CornerRadii, depth: number
   const W = Math.max(1, Math.round(w * sc));
   const H = Math.max(1, Math.round(h * sc));
   const N = W * H;
-  const band = Math.max(2, Math.min(depth, Math.min(w, h) / 2));
+  const band = lensBand(depth, w, h);
   const key = `${w}x${h}x${shapeKey(radii)}x${sc}`;
-  let distances = asymmetricSdfCache.get(key);
-  if (!distances) {
-    distances = new Float64Array(N);
+  let field = asymmetricSdfCache.get(key);
+  if (!field) {
+    field = { distances: new Float64Array(N), normals: new Float32Array(2 * N) };
+    const normal = new Float64Array(2);
     for (let y = 0; y < H; y++)
-      for (let x = 0; x < W; x++)
-        distances[y * W + x] = roundedShapeInside((x + 0.5) / sc, (y + 0.5) / sc, w, h, radii);
-    asymmetricSdfCache.set(key, distances);
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x;
+        const px = (x + 0.5) / sc;
+        const py = (y + 0.5) / sc;
+        const distance = roundedShapeInside(px, py, w, h, radii);
+        field.distances[i] = distance;
+        // Straight edges dominate ordinary cards/sheets. Their exact normal
+        // follows directly from the distance, without four normal candidates.
+        if (distance <= 0) continue;
+        if (distance === px) field.normals[2 * i] = 1;
+        else if (distance === w - px) field.normals[2 * i] = -1;
+        else if (distance === py) field.normals[2 * i + 1] = 1;
+        else if (distance === h - py) field.normals[2 * i + 1] = -1;
+        else {
+          roundedShapeGeometry(px, py, w, h, radii, normal);
+          field.normals[2 * i] = normal[0] ?? 0;
+          field.normals[2 * i + 1] = normal[1] ?? 0;
+        }
+      }
+    asymmetricSdfCache.set(key, field);
     while (asymmetricSdfCache.size > SDF_CACHE_CAP) {
       const oldest = asymmetricSdfCache.keys().next().value;
       if (oldest !== undefined) asymmetricSdfCache.delete(oldest);
     }
   } else {
     asymmetricSdfCache.delete(key);
-    asymmetricSdfCache.set(key, distances);
+    asymmetricSdfCache.set(key, field);
   }
   if (!sDx || sDx.length < 2 * N) sDx = new Float32Array(2 * N);
   if (!sRGBA || sRGBA.length < 4 * N) sRGBA = new Uint8ClampedArray(4 * N);
@@ -449,10 +461,19 @@ function asymmetricField(w: number, h: number, radii: CornerRadii, depth: number
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       const i = y * W + x;
-      const inside = distances[i] ?? 0;
-      const pull = inside > 0 ? MAX_PULL * smoothstep(smoothstep(clamp01(1 - inside / band))) : 0;
-      const dx = (w / 2 - (x + 0.5) / sc) * pull;
-      const dy = (h / 2 - (y + 0.5) / sc) * pull;
+      const inside = field.distances[i] ?? 0;
+      if (inside <= 0 || inside >= band) continue;
+      const nx = field.normals[2 * i] ?? 0;
+      const ny = field.normals[2 * i + 1] ?? 0;
+      const magnitude = confineRay(
+        lensDisplacement(inside, band),
+        w / 2 - (x + 0.5) / sc,
+        h / 2 - (y + 0.5) / sc,
+        nx,
+        ny,
+      );
+      const dx = nx * magnitude;
+      const dy = ny * magnitude;
       sDx[2 * i] = dx;
       sDx[2 * i + 1] = dy;
       maxAbs = Math.max(maxAbs, Math.abs(dx), Math.abs(dy));
@@ -460,6 +481,8 @@ function asymmetricField(w: number, h: number, radii: CornerRadii, depth: number
   const gain = 255 / (2 * maxAbs);
   new Uint32Array(data.buffer, data.byteOffset, N).fill(0xff808080);
   for (let i = 0; i < N; i++) {
+    const inside = field.distances[i] ?? 0;
+    if (inside <= 0 || inside >= band) continue;
     data[4 * i] = (sDx[2 * i] ?? 0) * gain + 127.5;
     data[4 * i + 1] = (sDx[2 * i + 1] ?? 0) * gain + 127.5;
   }

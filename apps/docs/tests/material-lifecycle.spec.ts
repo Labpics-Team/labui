@@ -794,6 +794,56 @@ test('the non-SVG paint renderer follows custom roles instead of keeping baked d
   await expect(surface).toHaveCSS('background-color', 'rgba(255, 255, 255, 0.25)');
 });
 
+test('a veil retains authored paint between its own and nested backdrop passes', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const veil = document.createElement('div');
+    veil.id = 'ordered-veil';
+    veil.dataset.veil = 'top';
+    veil.dataset.veilProfile = 'strong';
+    veil.style.cssText = 'width:320px;height:220px';
+    veil.innerHTML = '<div data-veil-paint style="background:linear-gradient(blue,red)"></div>';
+    document.body.append(veil);
+    window.materialFixture.mount(veil);
+  });
+  const veil = page.locator('#ordered-veil');
+  const order = () =>
+    veil.evaluate((el) =>
+      Array.from(el.children).map((child) =>
+        child.hasAttribute('data-veil-paint') ? 'paint' : child.className,
+      ),
+    );
+  const strong = [
+    ...Array(5).fill('lab-veil__strip'),
+    'lab-veil__noise',
+    'paint',
+    ...Array(5).fill('lab-veil__strip'),
+    'lab-veil__noise',
+  ];
+  await expect.poll(order).toEqual(strong);
+  // Replacing a declarative fill changes source order even with identical geometry.
+  await veil.evaluate((el) => {
+    const paint = el.querySelector('[data-veil-paint]');
+    if (!paint) throw new Error('Missing paint');
+    const replacement = paint.cloneNode(true);
+    paint.remove();
+    el.append(replacement);
+  });
+  await expect.poll(order).toEqual(strong);
+  await veil.evaluate((el) => {
+    el.style.width = '360px';
+  });
+  await expect.poll(order).toEqual(strong);
+  await veil.evaluate((el) => el.setAttribute('data-veil-profile', 'overlay-ghost'));
+  await expect
+    .poll(order)
+    .toEqual([...Array(5).fill('lab-veil__strip'), 'lab-veil__noise', 'paint']);
+  await page.evaluate(() => document.documentElement.setAttribute('data-contrast', 'more'));
+  await expect(veil.locator('.lab-veil__strip,.lab-veil__noise')).toHaveCount(0);
+  await expect(veil.locator('[data-veil-paint]')).toHaveCount(1);
+});
+
 test('authored veil profiles retain the two Strong passes and one Overlay Ghost pass', async ({
   page,
   browserName,
