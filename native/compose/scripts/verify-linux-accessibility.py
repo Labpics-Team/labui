@@ -163,6 +163,14 @@ try:
 
         wrapper = Path("/usr/share/java/java-atk-wrapper.jar")
         assert wrapper.is_file(), "Install libatk-wrapper-java-jni before verification"
+        # Temurin's packaged JVM does not add Debian's JNI directory to its
+        # library search path. Resolve the installed native half of this bridge.
+        files = subprocess.check_output(["dpkg-query", "-L", "libatk-wrapper-java-jni"], text=True)
+        native_wrapper = next(Path(name) for name in files.splitlines() if name.endswith("/libatk-wrapper.so"))
+        assert native_wrapper.is_file(), "The system accessibility JNI library is missing"
+        environment["LD_LIBRARY_PATH"] = ":".join([
+            str(native_wrapper.parent), environment.get("LD_LIBRARY_PATH", ""),
+        ])
         environment["JAVA_TOOL_OPTIONS"] = " ".join([
             environment.get("JAVA_TOOL_OPTIONS", ""),
             f"--module-path={wrapper}", "--add-modules=ALL-MODULE-PATH",

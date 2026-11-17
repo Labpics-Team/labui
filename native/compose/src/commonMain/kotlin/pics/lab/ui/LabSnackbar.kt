@@ -29,6 +29,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -37,6 +38,9 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.constrainWidth
+import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -107,23 +111,31 @@ public fun LabSnackbar(
         fontWeight = FontWeight(LabComponents.SnackbarFontWeight.toInt()),
         letterSpacing = 0.sp,
     )
+    val fontScale = LocalDensity.current.fontScale
+    val timerSize = LabComponents.SnackbarTimerSize.dp * fontScale.coerceAtLeast(1f)
+    val button = LabComponents.ButtonS
+    val actionHeight = if (actionLabel == null) 0f else maxOf(button.height,
+        maxOf(button.icon, button.lineHeight * fontScale) + button.paddingY * 2)
+    // Preserve the one-line capsule's corners when text wraps. A radius of half
+    // the entire multiline height would clip the content into an enormous oval.
+    val rowHeight = maxOf(LabComponents.SnackbarLineHeight * fontScale, actionHeight,
+        if (duration == 0L) 0f else timerSize.value)
+    val radius = minOf(LabComponents.SnackbarRadius, rowHeight / 2 + LabComponents.SnackbarPaddingY)
     LabSurface(
         LabComponents.SnackbarMaterial,
         modifier.graphicsLayer { translationY = y.value * density }
             .hoverable(interactions).onFocusChanged { focused = it.hasFocus },
         material,
-        RoundedCornerShape(LabComponents.SnackbarRadius.dp),
+        RoundedCornerShape(radius.dp),
         strokeWidth = LabComponents.SnackbarStrokeWidth.dp,
         strokeColor = colors["border-base"],
     ) {
-        Row(
-            Modifier.padding(start = LabComponents.SnackbarPaddingStart.dp,
+        Layout(
+            modifier = Modifier.padding(start = LabComponents.SnackbarPaddingStart.dp,
                 end = LabComponents.SnackbarPaddingEnd.dp,
                 top = LabComponents.SnackbarPaddingY.dp, bottom = LabComponents.SnackbarPaddingY.dp),
-            horizontalArrangement = Arrangement.spacedBy(LabComponents.SnackbarActionGap.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(Modifier.weight(1f, fill = false),
+            content = {
+            Row(
                 horizontalArrangement = Arrangement.spacedBy(LabComponents.SnackbarLabelGap.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 if (duration != 0L) {
@@ -132,12 +144,11 @@ public fun LabSnackbar(
                     val pose = ceil(remaining.toDouble() / duration * poses.size).toInt().coerceIn(1, poses.size)
                     val color = colors[if (seconds <= LabComponents.SnackbarTimerWarningSeconds)
                         "label-danger" else "label-accent"]
-                    val timerSize = LabComponents.SnackbarTimerSize.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)
                     Box(Modifier.size(timerSize).clearAndSetSemantics {},
                         contentAlignment = Alignment.Center) {
                         Canvas(Modifier.matchParentSize()) {
                             val stroke = LabComponents.SnackbarTimerStrokeWidth.dp.toPx()
-                            drawArc(color, -90f, poses[poses.size - pose], false,
+                            drawArc(color, -90f, -poses[poses.size - pose], false,
                                 Offset(stroke / 2, stroke / 2), Size(size.width - stroke, size.height - stroke),
                                 style = Stroke(stroke, cap = StrokeCap.Round))
                         }
@@ -157,6 +168,24 @@ public fun LabSnackbar(
                 }
             }, kind = LabButtonKind.Ghost, intent = LabIntent.Accent,
                 size = LabControlSize.Small, loading = actionPending)
+            },
+        ) { measurables, constraints ->
+            val loose = constraints.copy(minWidth = 0, minHeight = 0)
+            val action = measurables.getOrNull(1)?.measure(loose)
+            val gap = if (action == null) 0 else LabComponents.SnackbarActionGap.dp.roundToPx()
+            val naturalLabelWidth = measurables[0].maxIntrinsicWidth(Constraints.Infinity)
+            val stacked = action != null && naturalLabelWidth.toLong() + gap + action.width > constraints.maxWidth
+            val label = measurables[0].measure(loose.copy(maxWidth =
+                if (stacked) constraints.maxWidth else (constraints.maxWidth - gap - (action?.width ?: 0)).coerceAtLeast(0)))
+            val width = constraints.constrainWidth(if (stacked) constraints.maxWidth
+                else label.width + gap + (action?.width ?: 0))
+            val height = constraints.constrainHeight(if (stacked) label.height + gap + action.height
+                else maxOf(label.height, action?.height ?: 0))
+            layout(width, height) {
+                label.placeRelative(0, if (stacked) 0 else (height - label.height) / 2)
+                action?.placeRelative(width - action.width,
+                    if (stacked) label.height + gap else (height - action.height) / 2)
+            }
         }
     }
 }
