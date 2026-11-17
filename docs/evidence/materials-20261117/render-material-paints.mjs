@@ -72,6 +72,15 @@ try {
           'author-table2',
           'author-direct',
           'grain-no-alpha',
+          'author-256',
+          'coloured-256',
+          'author-native-host',
+          'coloured-native-host',
+          'grain-native-host',
+          'author-native-flat',
+          'coloured-native-flat',
+          'grain-native-flat',
+          'grain-capture-parent',
         ]) {
           await page.goto(`http://127.0.0.1:${port}`);
           const paints = await page.evaluate(
@@ -114,6 +123,53 @@ try {
               document.body.append(marker);
               const runtime = await import('/runtime.js');
               window.disposeMaterials = runtime.mountMaterialRuntime();
+              if (recipe.endsWith('256')) {
+                for (const node of document.querySelectorAll(
+                  '.lab-material-paint-defs feFuncR,.lab-material-paint-defs feFuncG,.lab-material-paint-defs feFuncB',
+                )) {
+                  const values = node.getAttribute('tableValues').split(' ').map(Number);
+                  node.setAttribute(
+                    'tableValues',
+                    Array.from({ length: 256 }, (_, i) => {
+                      const t = (i * 256) / 255;
+                      const lo = Math.floor(t);
+                      return values[lo] + ((values[lo + 1] ?? values[lo]) - values[lo]) * (t - lo);
+                    }).join(' '),
+                  );
+                }
+              }
+              if (recipe.includes('native')) {
+                for (const surface of document.querySelectorAll('.surface')) {
+                  let wrapper = surface.querySelector('.lab-material__paint');
+                  if (!wrapper) {
+                    wrapper = document.createElement('div');
+                    wrapper.className = 'lab-material__paint';
+                    surface.prepend(wrapper);
+                  }
+                  wrapper.innerHTML = ['capture', 'grain', 'normal', 'blend']
+                    .map((name) => `<div class="lab-material__${name}"></div>`)
+                    .join('');
+                  wrapper.style.display = 'contents';
+                  surface.style.setProperty('--_surface-paint', 'transparent');
+                  surface.style.setProperty('--_material-paint-filter', 'opacity(1)');
+                  surface.setAttribute('data-lab-material-paint-renderer', 'capture-blend');
+                  if (recipe.endsWith('host')) {
+                    surface.style.backdropFilter = 'blur(1px)';
+                    surface.style.webkitBackdropFilter = 'blur(1px)';
+                    wrapper.querySelector('.lab-material__capture').remove();
+                  } else surface.style.isolation = 'auto';
+                }
+              }
+              if (recipe.endsWith('capture-parent')) {
+                for (const surface of document.querySelectorAll('.surface')) {
+                  const wrapper = surface.querySelector('.lab-material__paint');
+                  if (!wrapper) continue;
+                  wrapper.style.filter = getComputedStyle(surface).getPropertyValue(
+                    '--_material-paint-filter',
+                  );
+                  wrapper.querySelector('.lab-material__capture').style.filter = 'none';
+                }
+              }
               if (recipe.endsWith('no-alpha'))
                 for (const node of document.querySelectorAll('.lab-material-paint-defs feFuncA'))
                   node.remove();
@@ -196,6 +252,10 @@ try {
             layers: document.querySelectorAll('.lab-material__paint').length,
           }));
           await page.evaluate(() => window.disposeMaterials());
+          if (recipe.includes('native'))
+            await page.locator('.lab-material__paint').evaluateAll((nodes) => {
+              for (const node of nodes) node.remove();
+            });
           assert.equal(
             await page.locator('.lab-material__paint,.lab-material-paint-defs').count(),
             recipe === 'author-direct' && state.layers ? 6 : 0,
