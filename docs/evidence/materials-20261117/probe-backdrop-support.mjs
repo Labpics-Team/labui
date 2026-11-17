@@ -116,6 +116,21 @@ for (const name of ['chromium', 'firefox', 'webkit']) {
         pixels: await pixelsAt(page, [20, 45, 49, 50, 55, 80]),
       });
     }
+    // Ordinary filters on an otherwise empty capture layer would let all
+    // browsers reuse the same RGB transfer without filtering product content.
+    for (const filter of ['brightness(2)', 'invert(1)', 'url(#transfer)']) {
+      await page.setContent(
+        `<!doctype html><style>body{margin:0;background:#404040}#source{position:fixed;inset:0;background:linear-gradient(90deg,#404040 0 50px,#b0b0b0 50px)}#probe{position:absolute;inset:10px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);filter:${filter};background:rgb(255 255 255 / .001)}</style><svg width="0" height="0"><filter id="transfer" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="2"/><feFuncG type="linear" slope="2"/><feFuncB type="linear" slope="2"/></feComponentTransfer></filter></svg><div id=source></div><div id=probe></div>`,
+      );
+      await settle(page);
+      results.push({
+        browser: name,
+        version: browser.version(),
+        filter,
+        appliedAs: 'filter after backdrop blur',
+        pixels: await pixelsAt(page, [20, 45, 49, 50, 55, 80]),
+      });
+    }
     const background = swatches
       .map((rgb, i) => `rgb(${rgb.join(' ')}) ${i * 30}px ${(i + 1) * 30}px`)
       .join(',');
