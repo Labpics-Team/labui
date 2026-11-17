@@ -123,7 +123,8 @@ describe('inline-seal — acrylic.css несёт РОВНО выход гене�
   const css = readFileSync(resolve(here, '..', 'src', 'materials', 'acrylic.css'), 'utf8');
 
   it('сентинел-регион содержит именно текущий data-URI (ассет не протух)', () => {
-    expect(css).toContain(`--_acrylic-noise: ${acrylicNoiseDataUri()};`);
+    expect(css).toContain(`--_acrylic-noise-source: ${acrylicNoiseDataUri()};`);
+    expect(css).toContain('--_acrylic-noise: var(--_acrylic-noise-source);');
   });
 
   it('в CSS нет забытой заглушки `--_acrylic-noise: none` (генератор отработал)', () => {

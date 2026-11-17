@@ -2,7 +2,12 @@
  * Identical recipes share one immutable SVG resource per document/shadow tree.
  */
 import { parseRgb } from '../luminance';
-import { type MaterialPaints, compileMaterialPaint, materialPaintTables } from '../material-paints';
+import {
+  type MaterialPaints,
+  compileMaterialPaint,
+  materialPaintTables,
+  screenNoiseApproximation,
+} from '../material-paints';
 import { materialBlendMode, materialProfile } from '../profile';
 import {
   type EngineHandle,
@@ -18,6 +23,8 @@ interface PaintResource {
   readonly fill: string;
   readonly key: string;
   readonly resources: Map<string, PaintResource>;
+  readonly grain: 'none' | 'spatial' | 'uniform-bounded' | 'unsupported';
+  readonly grainError?: number;
   refs: number;
 }
 const trees = new WeakMap<Document | ShadowRoot, Map<string, PaintResource>>();
@@ -43,6 +50,7 @@ function acquire(
   noiseUrl: string | undefined,
   noiseSize: string,
   renderer: PaintRenderer,
+  authoredNoise: boolean,
 ): PaintResource {
   const root = el.getRootNode();
   const tree = root.nodeType === 11 ? (root as ShadowRoot) : el.ownerDocument;
@@ -65,6 +73,11 @@ function acquire(
       key,
       resources,
       refs: 1,
+      grain: noiseUrl
+        ? renderer === 'capture-blend'
+          ? ('spatial' as const)
+          : ('unsupported' as const)
+        : ('none' as const),
     };
     resources.set(key, resource);
     return resource;
@@ -79,7 +92,20 @@ function acquire(
   for (const [name, value] of Object.entries({ x: '0', y: '0', width: '1', height: '1' }))
     filter.setAttribute(name, value);
   const transfer = el.ownerDocument.createElementNS(SVGNS, 'feComponentTransfer');
-  if (noiseUrl) {
+  // WebRender applies component transfers to a captured backdrop, but SVG
+  // image/composite primitives see only the element's own SourceGraphic. Keep
+  // the authored grain's bounded midpoint there, not a false spatial texture.
+  const approximation =
+    noiseUrl && authoredNoise && renderer === 'capture-svg'
+      ? screenNoiseApproximation(paints, {
+          r: materialProfile.noise.color[0] ?? 0,
+          g: materialProfile.noise.color[1] ?? 0,
+          b: materialProfile.noise.color[2] ?? 0,
+          a: Math.round(materialProfile.noise.opacity * 255) / 255,
+        })
+      : undefined;
+  const bounded = approximation && approximation.maxError < 1 ? approximation : undefined;
+  if (noiseUrl && renderer === 'backdrop-svg') {
     const noise = el.ownerDocument.createElementNS(SVGNS, 'feImage');
     for (const [name, value] of Object.entries({
       x: '0',
@@ -102,7 +128,7 @@ function acquire(
     filter.append(noise, tile, grain);
     transfer.setAttribute('in', 'grain');
   }
-  const tables = materialPaintTables(paints);
+  const tables = materialPaintTables(paints, bounded?.screen);
   for (const [index, channel] of ['R', 'G', 'B'].entries()) {
     const fn = el.ownerDocument.createElementNS(SVGNS, `feFunc${channel}`);
     fn.setAttribute('type', 'table');
@@ -116,7 +142,21 @@ function acquire(
   transfer.append(alpha);
   filter.append(transfer);
   ensureHiddenDefs('lab-material-paint-defs', el).append(filter);
-  const resource = { filter, fill: 'transparent', key, resources, refs: 1 };
+  const resource: PaintResource = {
+    filter,
+    fill: 'transparent',
+    key,
+    resources,
+    refs: 1,
+    grain: !noiseUrl
+      ? 'none'
+      : renderer === 'backdrop-svg'
+        ? 'spatial'
+        : bounded
+          ? 'uniform-bounded'
+          : 'unsupported',
+    ...(bounded ? { grainError: bounded.maxError } : {}),
+  };
   resources.set(key, resource);
   return resource;
 }
@@ -143,6 +183,8 @@ export function attach(el: HTMLElement): EngineHandle {
     capture?.remove();
     capture = undefined;
     el.removeAttribute('data-lab-material-paint-renderer');
+    el.removeAttribute('data-lab-material-grain');
+    el.removeAttribute('data-lab-material-grain-error');
   };
   const refresh = (): void => {
     if (disposed) return;
@@ -153,7 +195,9 @@ export function attach(el: HTMLElement): EngineHandle {
     const acrylic = el.getAttribute('data-lab-material-mode') === 'acrylic';
     const noiseValue = acrylic ? cs.getPropertyValue('--_acrylic-noise') : '';
     const noiseSize = cs.getPropertyValue('--_acrylic-noise-size').trim();
-    const next = `${normalValue}|${blendValue}|${theme}|${noiseValue}|${noiseSize}`;
+    const authoredNoise =
+      noiseValue.trim() === cs.getPropertyValue('--_acrylic-noise-source').trim();
+    const next = `${normalValue}|${blendValue}|${theme}|${noiseValue}|${noiseSize}|${authoredNoise}`;
     if (next === signature) return;
     const normal = parseRgb(normalValue);
     const blend = parseRgb(blendValue);
@@ -169,6 +213,7 @@ export function attach(el: HTMLElement): EngineHandle {
       noiseUrl,
       noiseSize,
       renderer,
+      authoredNoise,
     );
     const previous = held;
     held = resource;
@@ -179,13 +224,19 @@ export function attach(el: HTMLElement): EngineHandle {
     );
     el.style.setProperty('--_surface-paint', resource.fill);
     if (resource.filter) el.style.setProperty('--_noise', 'none');
+    el.setAttribute('data-lab-material-grain', resource.grain);
+    if (resource.grainError !== undefined)
+      el.setAttribute('data-lab-material-grain-error', String(resource.grainError));
+    else el.removeAttribute('data-lab-material-grain-error');
     if (renderer === 'capture-svg' || renderer === 'capture-blend') {
       if (!capture) {
         capture = el.ownerDocument.createElement('div');
-        capture.className = 'lab-material__paint';
+        capture.className =
+          renderer === 'capture-svg'
+            ? 'lab-material__paint lab-material__capture'
+            : 'lab-material__paint';
         capture.setAttribute('aria-hidden', 'true');
-        const layers =
-          renderer === 'capture-svg' ? ['capture'] : ['capture', 'grain', 'normal', 'blend'];
+        const layers = renderer === 'capture-svg' ? [] : ['capture', 'grain', 'normal', 'blend'];
         for (const layer of layers) {
           const node = el.ownerDocument.createElement('div');
           node.className = `lab-material__${layer}`;

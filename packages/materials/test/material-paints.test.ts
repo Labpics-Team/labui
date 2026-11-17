@@ -4,8 +4,9 @@ import {
   compileMaterialPaint,
   materialPaintOver,
   materialPaintTables,
+  screenNoiseApproximation,
 } from '../src/material-paints';
-import { MATERIAL_TIERS, materialBlendMode } from '../src/profile';
+import { MATERIAL_TIERS, materialBlendMode, materialProfile } from '../src/profile';
 import { readContractMaterials } from './contract-values';
 
 describe('encoded sRGB author paints', () => {
@@ -59,6 +60,7 @@ describe('encoded sRGB author paints', () => {
           blendMode: materialBlendMode(theme),
         };
         const tables = materialPaintTables(paints).map((table) => table.split(' ').map(Number));
+        expect(tables.map((row) => row.length)).toEqual([256, 256, 256]);
         let maximumError = 0;
         for (let i = 0; i < 4096; i++) {
           const value = (i / 4096) * 255;
@@ -78,6 +80,43 @@ describe('encoded sRGB author paints', () => {
         expect(maximumError, `${theme}/${tier}`).toBeLessThan(0.15);
       }
     }
+  });
+
+  it('bounds uniform author grain against every opacity and backdrop through both paints', () => {
+    const { fills } = readContractMaterials();
+    const noise = {
+      r: materialProfile.noise.color[0] ?? 0,
+      g: materialProfile.noise.color[1] ?? 0,
+      b: materialProfile.noise.color[2] ?? 0,
+      a: Math.round(materialProfile.noise.opacity * 255) / 255,
+    };
+    for (const theme of ['light', 'dark'] as const)
+      for (const tier of MATERIAL_TIERS) {
+        const fill = fills.get(`${theme}/${tier}`);
+        if (!fill?.blend) throw new Error('Missing author paints');
+        const paints = {
+          normal: fill.tint,
+          blend: fill.blend,
+          blendMode: materialBlendMode(theme),
+        };
+        const { screen, maxError } = screenNoiseApproximation(paints, noise);
+        expect(maxError).toBeLessThan(1);
+        const over = (value: number, alpha: number) =>
+          materialPaintOver(paints, {
+            r: value + ((255 - value) * noise.r * alpha) / 255,
+            g: value + ((255 - value) * noise.g * alpha) / 255,
+            b: value + ((255 - value) * noise.b * alpha) / 255,
+            a: 1,
+          });
+        for (let value = 0; value <= 255; value += 0.25) {
+          const midpoint = over(value, screen.a);
+          for (const alpha of [0, noise.a]) {
+            const endpoint = over(value, alpha);
+            for (const key of ['r', 'g', 'b'] as const)
+              expect(Math.abs(midpoint[key] - endpoint[key])).toBeLessThanOrEqual(maxError + 1e-9);
+          }
+        }
+      }
   });
 
   it('factors all ten authored paints into a normal first frame and a bounded residual', () => {
