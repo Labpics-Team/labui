@@ -1,6 +1,9 @@
 import XCTest
 
 final class SettingsExperienceTests: XCTestCase {
+    override func setUp() {
+        continueAfterFailure = false
+    }
     func testEditValidateAndSaveThroughNativeAccessibility() {
         let app = XCUIApplication()
         app.launch()
@@ -12,7 +15,8 @@ final class SettingsExperienceTests: XCTestCase {
         sheetImage.name = "Settings sheet"
         sheetImage.lifetime = .keepAlways
         add(sheetImage)
-        let name = app.textFields["Название проекта"]
+        // Compose exposes editable semantics through UIKit's text-view trait, including single-line inputs.
+        let name = app.textViews["Название проекта"]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         name.tap()
         let previous = name.value as? String ?? ""

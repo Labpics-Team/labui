@@ -21,12 +21,11 @@ Desktop/Android используют `pics.lab:ui-colors`: общий Kotlin-hos
 wire и output через самостоятельный SwiftPM-пакет. `SettingsScreen(host)`
 сохраняет theme state при переключении настроек и позволяет повторить ошибку.
 
-До подключения runtime Colors CI собрал Android APK и iOS frameworks, а desktop
-сценарий прошёл на трёх ОС. Следующий CI подтвердил сборку и запуск настоящего
-iOS-приложения, но UI-тест остановился на поиске поля; desktop/Android выявили
-неверное ожидание вложенной папки в Colors ZIP. Распаковка исправлена.
-На Windows локально проходят ввод, валидация, сохранение, Snackbar, события
-текста и возврат фокуса с настоящими Colors и Icons.
+CI `44040655728` подтвердил desktop-сценарий с настоящими Colors и Icons на
+Windows, macOS и Linux: ввод, валидация, сохранение, Snackbar, события текста
+и возврат фокуса. Android потребовал core library desugaring от Colors AAR.
+iOS-приложение собралось, но проверка на iPhone Pro выявила отсутствующий
+`CADisableMinimumFrameDurationOnPhone`; оба требования исправлены в host.
 Это проверка исходников с явными composite-подстановками, ещё не проверка
 опубликованных пакетов или системных screen readers.
 
@@ -35,7 +34,6 @@ iOS-приложения, но UI-тест остановился на поис�
 - Завершить независимое визуальное сравнение материалов на всех платформах.
 - Заменить явные Colors CI-артефакты публичной поставкой и проверить Swift-host
   в настоящем приложении. Новый CI должен подтвердить весь UI-сценарий.
-- Получить полный опубликованный Maven-комплект Motion, включая Apple.
 - Проверить реальные Android/iOS приложения, IME, масштаб 100/125/200%,
   VoiceOver/TalkBack и работу всех материалов.
 - Завершить Linux Java Accessibility → AT-SPI bridge и подтвердить сценарий Orca.
@@ -60,6 +58,8 @@ bash native/compose/gradlew -p native/compose :desktopTest
 
 `motionRepository` позволяет указать локальный Maven для разработки до
 публикации Motion; `motionSource` — явный Gradle composite исходников.
+Обычный путь уже использует публичный `pics.lab:motion-compose:0.1.0`,
+включая Apple, из `maven-compose-v0.1.0`; CI не подставляет исходники Motion.
 `--source <checkout>` у генераторов Colors/components/materials
 позволяет работать против ещё не интегрированного общего профиля. Обычный
 путь генератора всегда находится в этом репозитории.
@@ -83,11 +83,15 @@ Java Accessibility и сохраняет события в `build/accessibility-
 или отдельные `colorsDesktopRepository`/`colorsDesktopVersion` и Android-аналоги.
 Эти настройки должны ссылаться на настоящую Maven-поставку; фиктивной версии
 по умолчанию нет. `:ui-colors:desktopTest` запускает сам native solver.
+Android-приложение включает core library desugaring и `desugar_jdk_libs:2.1.5`,
+как требует поставка Colors AAR; готовая конфигурация находится в `consumer/androidApp`.
 
 Для iOS установите XcodeGen, затем выполните
 `python3 native/compose/consumer/iosApp/prepare.py --colors-archive /path/to/LabColors.swiftpm.zip`
 и откройте созданный проект. Xcode вызывает `embedAndSignAppleFrameworkForXcode`;
 framework, шрифты и Program-ресурсы доставляются штатным Compose-путём.
+`Info.plist` включает `CADisableMinimumFrameDurationOnPhone=true` для iPhone Pro;
+проверка Compose не отключается. В XCTest editable semantics имеют тип `TextView`.
 Пример содержит UI-тест сценария, но он не заменяет проверку VoiceOver.
 
 ### Графический backend desktop host
@@ -98,6 +102,8 @@ framework, шрифты и Program-ресурсы доставляются шт�
 OpenGL в Skiko 0.150.2. Компоненты Lab UI не меняют backend приложения.
 Для своего desktop host используйте тот же порядок из
 `consumer/src/desktopMain/kotlin/pics/lab/ui/sample/DesktopRendering.kt`.
+Стартовое окно ограничено рабочей областью монитора в логических координатах,
+поэтому изменение системного масштаба не оставляет его нижнюю границу за экраном.
 
 Причина выбора воспроизведена 17 ноября 2026 на Windows x64, RTX 3080 Ti,
 Skiko 0.150.2/Haze 2.1.0: пустой Solid Sheet с progressive overlay тратил
