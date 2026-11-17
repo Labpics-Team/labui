@@ -167,10 +167,12 @@ describe('displacement map — byte-identity golden lock', () => {
       const g = GOLDEN[c.name];
       expect(g, `no golden entry for ${c.name}`).toBeDefined();
       const out = __computeDisplacementField(c.w, c.h, c.corner, c.depth, c.dpr);
-      // Device dimensions and the reconstruction scale must match exactly…
+      // Device dimensions and every encoded byte match exactly. Math.pow's last
+      // Float64 bit differs across V8/platform versions; 1e-10 CSS px is far
+      // below the displacement bitmap's 8-bit quantization, without hiding drift.
       expect(out.W).toBe((g as Golden).W);
       expect(out.H).toBe((g as Golden).H);
-      expect(out.unit).toBe((g as Golden).unit);
+      expect(out.unit).toBeCloseTo((g as Golden).unit, 10);
       // …and every RGBA byte of the map (the exact bitmap that becomes the PNG /
       // feDisplacementMap atlas).
       expect(hashBytes(out.data)).toBe((g as Golden).hash);

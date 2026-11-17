@@ -341,6 +341,18 @@ export function scanSource(relPath: string, source: string): Violation[] {
     const gated = valueGated.includes(re);
     re.lastIndex = 0;
     for (let m = re.exec(text); m !== null; m = re.exec(text)) {
+      // These are JS property/index expressions, not CSS named colour values.
+      if (!isCss && gated && /^\s*[.[]/.test(text.slice(m.index + m[0].length))) continue;
+      // A serializer receives every channel from computed data. Keep partially
+      // literal colours visible to the scanner, including numeric alpha.
+      if (
+        !isCss &&
+        re === FUNCTIONAL_HEX_RE &&
+        /^rgba?\(\s*\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s*[/,]\s*\$\{[^}]+\})?\s*\)/i.test(
+          text.slice(m.index),
+        )
+      )
+        continue;
       if (gated && !isColourValuePosition(text, m.index)) continue;
       out.push({
         file: relPath,

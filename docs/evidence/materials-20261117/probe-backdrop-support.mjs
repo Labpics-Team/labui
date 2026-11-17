@@ -69,7 +69,8 @@ for (const name of ['chromium', 'firefox', 'webkit']) {
     headless: !display,
     ...(name === 'chromium' ? { channel: 'chromium' } : {}),
   });
-  const page = await browser.newPage({ viewport: { width: 150, height: 100 } });
+  const page = await browser.newPage({ viewport: { width: 800, height: 300 } });
+  if (display) await page.bringToFront();
   try {
     for (const filter of ['blur(10px)', 'brightness(2)', 'invert(1)', 'contrast(2)']) {
       await page.setContent(
@@ -119,6 +120,9 @@ for (const name of ['chromium', 'firefox', 'webkit']) {
   } finally {
     await browser.close();
   }
+  console.info(
+    `MATERIAL_BROWSER_PIXELS_REPORT=${JSON.stringify({ browser: name, capture: display ? 'display' : 'snapshot', results: results.filter((row) => row.browser === name), compositions: compositions.filter((row) => row.browser === name) })}`,
+  );
 }
 const report = {
   date: new Date().toISOString(),
