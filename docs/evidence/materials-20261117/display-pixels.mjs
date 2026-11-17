@@ -43,7 +43,7 @@ export async function displayPixels(page, xs) {
       // Scan the PNG in the page and transfer only the requested pixels. Sending
       // a full desktop as a JSON array made each macOS sample take seconds.
       return await page.evaluate(
-        `async ({ base64, xs }) => {
+        `(async ({ base64, xs }) => {
         const image = new Image();
         image.src = 'data:image/png;base64,' + base64;
         await image.decode();
@@ -57,8 +57,7 @@ export async function displayPixels(page, xs) {
           height: image.height,
           pixels: context.getImageData(0, 0, image.width, image.height).data,
         }, xs);
-      }`,
-        { base64: png.toString('base64'), xs },
+      })(${JSON.stringify({ base64: png.toString('base64'), xs })})`,
       );
     } finally {
       await rm(directory, { recursive: true, force: true });
