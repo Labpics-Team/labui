@@ -93,6 +93,7 @@ test('acrylic follows the operating system palette without an explicit theme', a
   browserName,
 }) => {
   test.skip(browserName !== 'chromium');
+  await page.locator('html').evaluate((el) => el.removeAttribute('data-theme'));
   await page.emulateMedia({ colorScheme: 'light' });
   await page.addStyleTag({
     content: `:root { --lab-bg-material-soft-01:rgb(96 112 128 / .3) }
@@ -342,4 +343,92 @@ test('a same-origin iframe Document registers its own HTML elements', async ({
       }),
     )
     .toBe(true);
+});
+
+test('an Element scope observes its actual ShadowRoot parent when moved', async ({ page }) => {
+  await page.evaluate(() => {
+    window.materialFixture.stopShadow();
+    const root = document.querySelector('#shadow-host')?.shadowRoot;
+    const surface = root?.querySelector('#shadow-surface');
+    if (!root || !surface) throw new Error('Missing shadow fixture');
+    const target = document.createElement('div');
+    target.id = 'shadow-solid';
+    target.dataset.material = 'solid';
+    root.appendChild(target);
+    window.materialFixture.mount(surface);
+  });
+  const surface = page.locator('#shadow-surface');
+  await expect(surface).toHaveAttribute('data-lab-material-mode', 'glass');
+  await page.evaluate(() => {
+    const root = document.querySelector('#shadow-host')?.shadowRoot;
+    const surface = root?.querySelector('#shadow-surface');
+    if (surface) root?.querySelector('#shadow-solid')?.appendChild(surface);
+  });
+  await expect(surface).toHaveAttribute('data-lab-material-mode', 'solid');
+});
+
+test('slot reassignment rebuilds the composed scope and observes its new ancestors', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const host = document.createElement('div');
+    host.id = 'slotted-host';
+    const root = host.attachShadow({ mode: 'open' });
+    root.innerHTML =
+      '<div data-material="glass"><slot name="glass"></slot></div><div id="acrylic-slot-parent" data-material="acrylic"><slot name="acrylic"></slot></div>';
+    const surface = document.createElement('div');
+    surface.id = 'slotted-surface';
+    surface.className = 'lab-material lab-material--soft';
+    surface.slot = 'glass';
+    host.appendChild(surface);
+    document.body.appendChild(host);
+    window.materialFixture.mount(surface);
+  });
+  const surface = page.locator('#slotted-surface');
+  await expect(surface).toHaveAttribute('data-lab-material-mode', 'glass');
+  await surface.evaluate((el) => {
+    el.slot = 'acrylic';
+  });
+  await expect(surface).toHaveAttribute('data-lab-material-mode', 'acrylic');
+  await page
+    .locator('#acrylic-slot-parent')
+    .evaluate((el) => el.setAttribute('data-material', 'solid'));
+  await expect(surface).toHaveAttribute('data-lab-material-mode', 'solid');
+});
+
+test('a detached shadow host reconnects in a later frame and follows its new scope', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const host = document.querySelector<HTMLElement>('#shadow-host');
+    if (!host) throw new Error('Missing shadow host');
+    host.removeAttribute('data-material');
+    const target = document.createElement('div');
+    target.id = 'reconnect-target';
+    target.dataset.material = 'acrylic';
+    document.body.appendChild(target);
+    Object.assign(window, { detachedMaterialHost: host });
+    host.remove();
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const host = (window as unknown as { detachedMaterialHost: HTMLElement })
+          .detachedMaterialHost;
+        return host.shadowRoot
+          ?.querySelector('#shadow-surface')
+          ?.getAttribute('data-lab-material-mode');
+      }),
+    )
+    .toBeNull();
+  await page.evaluate(() => {
+    const host = (window as unknown as { detachedMaterialHost: HTMLElement }).detachedMaterialHost;
+    document.querySelector('#reconnect-target')?.appendChild(host);
+  });
+  const surface = page.locator('#shadow-surface');
+  await expect(surface).toHaveAttribute('data-lab-material-mode', 'acrylic');
+  await page
+    .locator('#reconnect-target')
+    .evaluate((el) => el.setAttribute('data-material', 'solid'));
+  await expect(surface).toHaveAttribute('data-lab-material-mode', 'solid');
 });

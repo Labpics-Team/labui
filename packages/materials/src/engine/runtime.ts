@@ -203,12 +203,27 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
       .filter((name) => name && name !== 'lab-material--lensed')
       .sort()
       .join(' ');
-  const inheritedAncestors = new Set<Element>();
+  const inheritedAncestors = new Set<Node>();
+  const slotTargets = new Set<Node>();
+  const onSlotChange = (): void => {
+    observe();
+    collect(scope);
+    if (dirty.size) raf.schedule();
+  };
+  // A disconnected element cannot report its future parent. Observe insertion
+  // records only while disconnected; reconnect never scans the document.
+  const reconnect = new MutationObserver(() => {
+    if (!anchor?.isConnected) return;
+    reconnect.disconnect();
+    observe();
+    collect(scope);
+    if (dirty.size) raf.schedule();
+  });
   const mo = new MutationObserver((records) => {
     let relocated = false;
     for (const record of records) {
       if (record.type === 'childList') {
-        if (inheritedAncestors.has(record.target as Element)) {
+        if (inheritedAncestors.has(record.target)) {
           if (
             anchor &&
             [...record.addedNodes, ...record.removedNodes].some(
@@ -222,6 +237,7 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
         for (const node of record.removedNodes) collect(node);
       } else if (isHtmlElement(record.target)) {
         const el = record.target;
+        if (record.attributeName === 'slot') relocated = true;
         if (
           record.attributeName === 'style' &&
           externalStyle(record.oldValue ?? '') === externalStyle(el.style.cssText)
@@ -248,12 +264,19 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
     'class',
     'style',
     'data-veil',
+    'slot',
   ];
   // Explicit lifecycle mount covers closed roots too. Observe inherited mode
   // changes on ancestors without observing their unrelated descendants.
   const observe = (): void => {
     mo.disconnect();
     inheritedAncestors.clear();
+    for (const target of slotTargets) target.removeEventListener('slotchange', onSlotChange);
+    slotTargets.clear();
+    reconnect.disconnect();
+    if (anchor && !anchor.isConnected && doc)
+      reconnect.observe(doc, { childList: true, subtree: true });
+    slotTargets.add(scope);
     mo.observe(scope.nodeType === 9 ? (scope as Document).documentElement : scope, {
       attributes: true,
       attributeOldValue: true,
@@ -267,6 +290,19 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
       ancestor = composedParent(ancestor)
     ) {
       inheritedAncestors.add(ancestor);
+      if (ancestor.localName === 'slot') slotTargets.add(ancestor);
+    }
+    // The composed walk skips the actual ShadowRoot parent. Its childList is
+    // needed to observe moving an Element scope into another shadow container.
+    for (
+      let parent = anchor?.parentNode;
+      parent;
+      parent = isShadowRoot(parent) ? parent.host : parent.parentNode
+    ) {
+      inheritedAncestors.add(parent);
+    }
+    for (const target of slotTargets) target.addEventListener('slotchange', onSlotChange);
+    for (const ancestor of inheritedAncestors) {
       mo.observe(ancestor, {
         attributes: true,
         attributeOldValue: true,
@@ -300,6 +336,9 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
 
   return () => {
     mo.disconnect();
+    reconnect.disconnect();
+    for (const target of slotTargets) target.removeEventListener('slotchange', onSlotChange);
+    slotTargets.clear();
     raf.cancel();
     for (const mq of mediaListeners) mq.removeEventListener('change', refreshAll);
     for (const engine of engines) engine.dispose();
