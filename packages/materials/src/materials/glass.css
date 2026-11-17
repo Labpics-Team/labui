@@ -1,12 +1,11 @@
-/* ── GLASS — рефракция: полупрозрачный тинт + живой backdrop-блюр (одна
- * ступень --_blur-live, Figma BG-blur Base). Этот блок — честная CSS-истина
- * стекла; ЛИНЗУ (настоящее преломление feDisplacementMap) несёт движок
- * engine/liquid-glass.ts на поддерживающих браузерах — см. engine-held.css. */
-[data-material="glass"] .lab-material,
-[data-material="glass"].lab-material {
-  --_base-paint: transparent;
-  --_blur: var(--_blur-live);
-  --_saturate: var(--_saturate-on);
-  --_rim: var(--_rim-active); /* refractive edge catches light → specular rim ON */
-  -webkit-backdrop-filter: blur(48px) saturate(180%);
+/* Glass frost is independent of Backdrop blur. The optional lens binds only
+ * --_material-lens-filter; author paint tone follows it in the same capture.
+ */
+[data-material="glass"] .lab-material:where(:not([data-lab-material-mode])),
+[data-material="glass"].lab-material:where(:not([data-lab-material-mode])),
+.lab-material[data-lab-material-mode="glass"] {
+  --_surface-paint: var(--_first-paint, var(--_tint));
+  --_blur: var(--_glass-frost);
+  --_rim: var(--_glass-rim);
+  --_material-filter: var(--_live-filter);
 }

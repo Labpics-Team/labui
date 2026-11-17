@@ -1,0 +1,637 @@
+{
+  "capturedAt": "2026-11-17T04:32:31.815Z",
+  "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+  "styles": [
+    {
+      "id": "S:1f09f1ba06d9655d736436fb4e594dcd13582100,",
+      "name": "Progressive-blur/Strong",
+      "effects": [
+        {
+          "type": "BACKGROUND_BLUR",
+          "visible": true,
+          "radius": 24,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4044:2018"
+            }
+          },
+          "blurType": "PROGRESSIVE",
+          "startRadius": 0,
+          "startOffset": {
+            "x": 0.5,
+            "y": 1
+          },
+          "endOffset": {
+            "x": 0.5,
+            "y": 0
+          }
+        },
+        {
+          "type": "NOISE",
+          "visible": true,
+          "boundVariables": {},
+          "noiseSize": 0.20000000298023224,
+          "noiseSizeVector": {
+            "x": 0.20000000298023224,
+            "y": 0.20000000298023224
+          },
+          "noiseType": "MONOTONE",
+          "color": {
+            "r": 0.003921568859368563,
+            "g": 0.007843137718737125,
+            "b": 0.019607843831181526,
+            "a": 0.05999999865889549
+          },
+          "density": 1
+        }
+      ]
+    },
+    {
+      "id": "S:66bea076fe91a8c6a182c741a101663325a0e398,",
+      "name": "Progressive-blur/Soft",
+      "effects": [
+        {
+          "type": "BACKGROUND_BLUR",
+          "visible": true,
+          "radius": 12,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4044:2016"
+            }
+          },
+          "blurType": "PROGRESSIVE",
+          "startRadius": 0,
+          "startOffset": {
+            "x": 0.5,
+            "y": 1
+          },
+          "endOffset": {
+            "x": 0.5,
+            "y": 0
+          }
+        },
+        {
+          "type": "NOISE",
+          "visible": true,
+          "boundVariables": {},
+          "noiseSize": 0.20000000298023224,
+          "noiseSizeVector": {
+            "x": 0.20000000298023224,
+            "y": 0.20000000298023224
+          },
+          "noiseType": "MONOTONE",
+          "color": {
+            "r": 0.003921568859368563,
+            "g": 0.007843137718737125,
+            "b": 0.019607843831181526,
+            "a": 0.05999999865889549
+          },
+          "density": 1
+        }
+      ]
+    },
+    {
+      "id": "S:8ee11d1351dfc37a7f347107fc267182d1824f26,",
+      "name": "Progressive-blur/Ghost",
+      "effects": [
+        {
+          "type": "BACKGROUND_BLUR",
+          "visible": true,
+          "radius": 4,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4044:2014"
+            }
+          },
+          "blurType": "PROGRESSIVE",
+          "startRadius": 0,
+          "startOffset": {
+            "x": 0.5,
+            "y": 1
+          },
+          "endOffset": {
+            "x": 0.5,
+            "y": 0
+          }
+        },
+        {
+          "type": "NOISE",
+          "visible": true,
+          "boundVariables": {},
+          "noiseSize": 0.20000000298023224,
+          "noiseSizeVector": {
+            "x": 0.20000000298023224,
+            "y": 0.20000000298023224
+          },
+          "noiseType": "MONOTONE",
+          "color": {
+            "r": 0.003921568859368563,
+            "g": 0.007843137718737125,
+            "b": 0.019607843831181526,
+            "a": 0.03999999910593033
+          },
+          "density": 1
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "6072:1682",
+      "type": "TEXT",
+      "name": "Progressive shadows",
+      "parent": "6072:1675",
+      "width": 1028,
+      "height": 96,
+      "effects": [],
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ]
+    },
+    {
+      "id": "6072:1706",
+      "type": "TEXT",
+      "name": "Progressive blur",
+      "parent": "6072:1695",
+      "width": 779,
+      "height": 96,
+      "effects": [],
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ]
+    },
+    {
+      "id": "7094:3306",
+      "type": "TEXT",
+      "name": "Glass",
+      "parent": "7094:3287",
+      "width": 278,
+      "height": 96,
+      "effects": [],
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ]
+    },
+    {
+      "id": "7101:54859",
+      "type": "FRAME",
+      "name": "Glass",
+      "parent": "7094:3308",
+      "width": 256,
+      "height": 256,
+      "effects": [
+        {
+          "type": "GLASS",
+          "visible": true,
+          "radius": 12,
+          "boundVariables": {},
+          "refraction": 1,
+          "depth": 80,
+          "lightAngle": -45,
+          "lightIntensity": 0.05000000074505806,
+          "dispersion": 0.6000000238418579,
+          "splay": 0
+        }
+      ],
+      "fills": []
+    },
+    {
+      "id": "7101:54857",
+      "type": "FRAME",
+      "name": "Glass",
+      "parent": "7094:3311",
+      "width": 256,
+      "height": 256,
+      "effects": [
+        {
+          "type": "GLASS",
+          "visible": true,
+          "radius": 12,
+          "boundVariables": {},
+          "refraction": 0.800000011920929,
+          "depth": 60,
+          "lightAngle": 0,
+          "lightIntensity": 0.10000000149011612,
+          "dispersion": 0.6000000238418579,
+          "splay": 0
+        }
+      ],
+      "fills": []
+    },
+    {
+      "id": "7101:54855",
+      "type": "FRAME",
+      "name": "Glass",
+      "parent": "7094:3314",
+      "width": 256,
+      "height": 256,
+      "effects": [
+        {
+          "type": "GLASS",
+          "visible": true,
+          "radius": 20,
+          "boundVariables": {},
+          "refraction": 0.800000011920929,
+          "depth": 60,
+          "lightAngle": 0,
+          "lightIntensity": 0.20000000298023224,
+          "dispersion": 0.6000000238418579,
+          "splay": 0
+        }
+      ],
+      "fills": []
+    },
+    {
+      "id": "7101:54854",
+      "type": "FRAME",
+      "name": "Glass",
+      "parent": "7094:3317",
+      "width": 256,
+      "height": 256,
+      "effects": [
+        {
+          "type": "GLASS",
+          "visible": true,
+          "radius": 25,
+          "boundVariables": {},
+          "refraction": 1,
+          "depth": 100,
+          "lightAngle": 0,
+          "lightIntensity": 0.25,
+          "dispersion": 0.6000000238418579,
+          "splay": 0
+        }
+      ],
+      "fills": []
+    }
+  ],
+  "instances": [
+    {
+      "id": "6236:41499",
+      "name": "Layout",
+      "parent": "6236:41498",
+      "effects": [
+        {
+          "type": "BACKGROUND_BLUR",
+          "visible": true,
+          "radius": 4,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4044:2014"
+            }
+          },
+          "blurType": "PROGRESSIVE",
+          "startRadius": 0,
+          "startOffset": {
+            "x": 0.5,
+            "y": 1
+          },
+          "endOffset": {
+            "x": 0.5,
+            "y": 0
+          }
+        },
+        {
+          "type": "NOISE",
+          "visible": true,
+          "boundVariables": {},
+          "noiseSize": 0.20000000298023224,
+          "noiseSizeVector": {
+            "x": 0.20000000298023224,
+            "y": 0.20000000298023224
+          },
+          "noiseType": "MONOTONE",
+          "color": {
+            "r": 0.003921568859368563,
+            "g": 0.007843137718737125,
+            "b": 0.019607843831181526,
+            "a": 0.03999999910593033
+          },
+          "density": 1
+        }
+      ],
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.00009999999747378752,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "width": 435,
+      "height": 320,
+      "children": [
+        "6236:41509"
+      ]
+    },
+    {
+      "id": "7206:32",
+      "name": "Layout",
+      "parent": "7206:31",
+      "effects": [
+        {
+          "type": "BACKGROUND_BLUR",
+          "visible": true,
+          "radius": 12,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4044:2016"
+            }
+          },
+          "blurType": "PROGRESSIVE",
+          "startRadius": 0,
+          "startOffset": {
+            "x": 0.5,
+            "y": 1
+          },
+          "endOffset": {
+            "x": 0.5,
+            "y": 0
+          }
+        },
+        {
+          "type": "NOISE",
+          "visible": true,
+          "boundVariables": {},
+          "noiseSize": 0.20000000298023224,
+          "noiseSizeVector": {
+            "x": 0.20000000298023224,
+            "y": 0.20000000298023224
+          },
+          "noiseType": "MONOTONE",
+          "color": {
+            "r": 0.003921568859368563,
+            "g": 0.007843137718737125,
+            "b": 0.019607843831181526,
+            "a": 0.05999999865889549
+          },
+          "density": 1
+        }
+      ],
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.00009999999747378752,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "width": 435,
+      "height": 320,
+      "children": [
+        "7206:33"
+      ]
+    },
+    {
+      "id": "6236:41501",
+      "name": "Breadcrumb/Light-theme",
+      "parent": "6236:41494",
+      "effects": [
+        {
+          "type": "BACKGROUND_BLUR",
+          "visible": true,
+          "radius": 24,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4044:2018"
+            }
+          },
+          "blurType": "PROGRESSIVE",
+          "startRadius": 0,
+          "startOffset": {
+            "x": 0.5,
+            "y": 1
+          },
+          "endOffset": {
+            "x": 0.5,
+            "y": 0
+          }
+        },
+        {
+          "type": "NOISE",
+          "visible": true,
+          "boundVariables": {},
+          "noiseSize": 0.20000000298023224,
+          "noiseSizeVector": {
+            "x": 0.20000000298023224,
+            "y": 0.20000000298023224
+          },
+          "noiseType": "MONOTONE",
+          "color": {
+            "r": 0.003921568859368563,
+            "g": 0.007843137718737125,
+            "b": 0.019607843831181526,
+            "a": 0.05999999865889549
+          },
+          "density": 1
+        }
+      ],
+      "fills": [
+        {
+          "type": "PATTERN",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "sourceNodeId": "6236:41582",
+          "tileType": "RECTANGULAR",
+          "scalingFactor": 1,
+          "spacing": {
+            "x": 20,
+            "y": 20
+          },
+          "horizontalAlignment": "CENTER",
+          "verticalAlignment": "CENTER"
+        }
+      ],
+      "width": 435,
+      "height": 320,
+      "children": [
+        "6236:41502"
+      ]
+    },
+    {
+      "id": "6236:41502",
+      "name": "Layout",
+      "parent": "6236:41501",
+      "effects": [
+        {
+          "type": "BACKGROUND_BLUR",
+          "visible": true,
+          "radius": 24,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4044:2018"
+            }
+          },
+          "blurType": "PROGRESSIVE",
+          "startRadius": 0,
+          "startOffset": {
+            "x": 0.5,
+            "y": 1
+          },
+          "endOffset": {
+            "x": 0.5,
+            "y": 0
+          }
+        },
+        {
+          "type": "NOISE",
+          "visible": true,
+          "boundVariables": {},
+          "noiseSize": 0.20000000298023224,
+          "noiseSizeVector": {
+            "x": 0.20000000298023224,
+            "y": 0.20000000298023224
+          },
+          "noiseType": "MONOTONE",
+          "color": {
+            "r": 0.003921568859368563,
+            "g": 0.007843137718737125,
+            "b": 0.019607843831181526,
+            "a": 0.05999999865889549
+          },
+          "density": 1
+        }
+      ],
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.00009999999747378752,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "width": 435,
+      "height": 320,
+      "children": [
+        "6236:41511"
+      ]
+    },
+    {
+      "id": "7533:2238",
+      "name": "Ghost",
+      "parent": "6008:2556",
+      "effects": [
+        {
+          "type": "BACKGROUND_BLUR",
+          "visible": true,
+          "radius": 24,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4044:2018"
+            }
+          },
+          "blurType": "PROGRESSIVE",
+          "startRadius": 0,
+          "startOffset": {
+            "x": 0.5,
+            "y": 1
+          },
+          "endOffset": {
+            "x": 0.5,
+            "y": 0
+          }
+        },
+        {
+          "type": "NOISE",
+          "visible": true,
+          "boundVariables": {},
+          "noiseSize": 0.20000000298023224,
+          "noiseSizeVector": {
+            "x": 0.20000000298023224,
+            "y": 0.20000000298023224
+          },
+          "noiseType": "MONOTONE",
+          "color": {
+            "r": 0.003921568859368563,
+            "g": 0.007843137718737125,
+            "b": 0.019607843831181526,
+            "a": 0.05999999865889549
+          },
+          "density": 1
+        }
+      ],
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.00009999999747378752,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4083:5520"
+            }
+          }
+        }
+      ],
+      "width": 482,
+      "height": 212.6666717529297,
+      "children": []
+    }
+  ]
+}

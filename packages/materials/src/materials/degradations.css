@@ -1,12 +1,4 @@
-/* ════════════════════════════════════════════════════════════════════════════
- * DETERMINISTIC DEGRADATIONS — each collapses glass/acrylic to the SOLID canon.
- * Selector lists mirror the mode blocks (equal specificity) and sit AFTER them,
- * so at equal specificity source order lets the degradation win. The solid
- * canon is opaque → label contract always holds, blur cost is zero.
- * Acrylic-v2-движок дополнительно гасит СЕБЯ под теми же медиа в JS
- * (ACRYLIC_ENGINE_MEDIA): его инлайн-стиль сильнее этих листовых правил —
- * паритет списков закреплён acrylic-engine-contract.test.
- * ════════════════════════════════════════════════════════════════════════════ */
+/* DETERMINISTIC DEGRADATIONS — independent Solid role, no optical effects. */
 
 /* 1. No backdrop-filter support → solid. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -14,12 +6,13 @@
   [data-material="glass"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
+  .lab-material[data-lab-material-mode],
   .lab-material {
-    --_base-paint: var(--_base);
+    --_surface-paint: var(--_solid);
     --_blur: 0px;
-    --_saturate: 100%;
     --_noise: none;
     --_rim: none;
+    backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
 }
@@ -31,28 +24,30 @@
   [data-material="glass"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
+  .lab-material[data-lab-material-mode],
   .lab-material {
-    --_base-paint: var(--_base);
+    --_surface-paint: var(--_solid);
     --_blur: 0px;
-    --_saturate: 100%;
     --_noise: none;
     --_rim: none;
+    backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
 }
 
-/* 3. prefers-contrast: more → solid (strengthen: opaque tint, maximum contrast). */
+/* 3. prefers-contrast: more → solid (independent author surface). */
 @media (prefers-contrast: more) {
   [data-material="glass"] .lab-material,
   [data-material="glass"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
+  .lab-material[data-lab-material-mode],
   .lab-material {
-    --_base-paint: var(--_base);
+    --_surface-paint: var(--_solid);
     --_blur: 0px;
-    --_saturate: 100%;
     --_noise: none;
     --_rim: none;
+    backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
 }
@@ -67,10 +62,10 @@
   [data-material="glass"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
+  .lab-material[data-lab-material-mode],
   .lab-material {
-    --_base-paint: var(--_base);
+    --_surface-paint: var(--_solid);
     --_blur: 0px;
-    --_saturate: 100%;
     --_noise: none;
     --_rim: none;
     background-image: none;

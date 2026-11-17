@@ -16,7 +16,7 @@
 
   /* Neutral shadow anchor (Figma N12, never pure black). The theme blocks
      re-set only its value; a surface may opt into a weak tint below. */
-  --lab-shadow-color: #101012;
+  --lab-shadow-color: var(--lab-bg-static-dark, #101012);
   --lab-shadow-tint-strength: 0;
 
   /* Motion tokens — elevation changes ease their box-shadow, never snap. */
@@ -129,7 +129,7 @@
 }
 
 [data-theme="light"] {
-  --lab-shadow-color: #101012;
+  --lab-shadow-color: var(--lab-bg-static-dark, #101012);
   --lab-shadow-alpha-s1: 0.12;
   --lab-shadow-alpha-s2: 0.04;
   --lab-shadow-alpha-s3: 0.02;
@@ -137,7 +137,7 @@
 }
 
 [data-theme="dark"] {
-  --lab-shadow-color: #101012;
+  --lab-shadow-color: var(--lab-bg-static-dark, #101012);
   --lab-shadow-alpha-s1: 0.12;
   --lab-shadow-alpha-s2: 0.04;
   --lab-shadow-alpha-s3: 0.02;
@@ -146,7 +146,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --lab-shadow-color: #101012;
+    --lab-shadow-color: var(--lab-bg-static-dark, #101012);
     --lab-shadow-alpha-s1: 0.12;
     --lab-shadow-alpha-s2: 0.04;
     --lab-shadow-alpha-s3: 0.02;

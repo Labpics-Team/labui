@@ -1,6 +1,8 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { materialProfile } from '../src/profile';
+import { acrylicNoisePng } from './build-acrylic-noise';
 import { readMaterialCss } from './material-css';
 
 /*
@@ -13,4 +15,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const dist = resolve(here, '..', 'dist');
 
 mkdirSync(dist, { recursive: true });
+copyFileSync(resolve(here, '../src/profile.json'), resolve(dist, 'profile.json'));
 writeFileSync(resolve(dist, 'material.css'), readMaterialCss());
+writeFileSync(resolve(dist, 'noise.png'), acrylicNoisePng());
+writeFileSync(
+  resolve(dist, 'veil-noise.png'),
+  acrylicNoisePng(materialProfile.progressive.styles.strong.noiseOpacity),
+);

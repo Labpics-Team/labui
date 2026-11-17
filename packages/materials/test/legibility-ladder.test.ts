@@ -194,3 +194,18 @@ describe('scrim re-verification composes the FULL paint stack (scrim over tint o
     expect(painted.outcome).toBe('guaranteed');
   });
 });
+
+describe('author material paint contrast', () => {
+  it('does not prove the normal tint while ignoring a color-dodge paint above it', () => {
+    const label = { r: 255, g: 255, b: 255, a: 1 };
+    const normal = { r: 0, g: 0, b: 0, a: 0.9 };
+    expect(resolveOnMaterial(label, normal).outcome).toBe('guaranteed');
+    expect(
+      resolveOnMaterial(label, {
+        normal,
+        blend: { r: 252.45, g: 252.45, b: 252.45, a: 1 },
+        blendMode: 'color-dodge',
+      }).outcome,
+    ).toBe('scrim-required');
+  });
+});

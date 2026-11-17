@@ -1,0 +1,959 @@
+{
+  "capturedAt": "2026-11-17T05:03:37.294Z",
+  "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+  "scenes": [
+    {
+      "id": "7094:3307",
+      "name": "  ",
+      "type": "FRAME",
+      "x": 5040,
+      "y": 508,
+      "width": 1552,
+      "height": 520,
+      "cornerRadius": 32,
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4001:166"
+            }
+          }
+        }
+      ],
+      "effects": [],
+      "children": [
+        {
+          "id": "7094:3308",
+          "name": "Breadcrumb/Light-theme",
+          "type": "FRAME",
+          "x": 100,
+          "y": 100,
+          "width": 320,
+          "height": 320,
+          "cornerRadius": 32,
+          "fills": [
+            {
+              "type": "PATTERN",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "sourceNodeId": "6236:41583",
+              "tileType": "RECTANGULAR",
+              "scalingFactor": 0.8199999928474426,
+              "spacing": {
+                "x": 4,
+                "y": 4
+              },
+              "horizontalAlignment": "CENTER",
+              "verticalAlignment": "CENTER"
+            }
+          ],
+          "effects": [
+            {
+              "type": "BACKGROUND_BLUR",
+              "visible": true,
+              "radius": 128,
+              "boundVariables": {
+                "radius": {
+                  "type": "VARIABLE_ALIAS",
+                  "id": "VariableID:4048:810"
+                }
+              },
+              "blurType": "NORMAL"
+            },
+            {
+              "type": "NOISE",
+              "visible": true,
+              "boundVariables": {},
+              "noiseSize": 0.20000000298023224,
+              "noiseSizeVector": {
+                "x": 0.20000000298023224,
+                "y": 0.20000000298023224
+              },
+              "noiseType": "MONOTONE",
+              "color": {
+                "r": 0.003921568859368563,
+                "g": 0.007843137718737125,
+                "b": 0.019607843831181526,
+                "a": 0.03999999910593033
+              },
+              "density": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "7101:54859",
+              "name": "Glass",
+              "type": "FRAME",
+              "x": 32,
+              "y": 32,
+              "width": 256,
+              "height": 256,
+              "cornerRadius": 9999,
+              "fills": [],
+              "effects": [
+                {
+                  "type": "GLASS",
+                  "visible": true,
+                  "radius": 12,
+                  "boundVariables": {},
+                  "refraction": 1,
+                  "depth": 80,
+                  "lightAngle": -45,
+                  "lightIntensity": 0.05000000074505806,
+                  "dispersion": 0.6000000238418579,
+                  "splay": 0
+                }
+              ],
+              "children": []
+            },
+            {
+              "id": "7094:3310",
+              "name": "Color Name",
+              "type": "TEXT",
+              "x": 136,
+              "y": 148,
+              "width": 48,
+              "height": 24,
+              "cornerRadius": null,
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "blendMode": "NORMAL",
+                  "color": {
+                    "r": 0.062745101749897,
+                    "g": 0.062745101749897,
+                    "b": 0.07058823853731155
+                  },
+                  "boundVariables": {
+                    "color": {
+                      "type": "VARIABLE_ALIAS",
+                      "id": "VariableID:6005:69"
+                    }
+                  }
+                }
+              ],
+              "effects": []
+            }
+          ]
+        },
+        {
+          "id": "7094:3311",
+          "name": "Breadcrumb/Light-theme",
+          "type": "FRAME",
+          "x": 444,
+          "y": 100,
+          "width": 320,
+          "height": 320,
+          "cornerRadius": 32,
+          "fills": [
+            {
+              "type": "PATTERN",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "sourceNodeId": "6236:41583",
+              "tileType": "RECTANGULAR",
+              "scalingFactor": 0.8199999928474426,
+              "spacing": {
+                "x": 4,
+                "y": 4
+              },
+              "horizontalAlignment": "CENTER",
+              "verticalAlignment": "CENTER"
+            }
+          ],
+          "effects": [
+            {
+              "type": "BACKGROUND_BLUR",
+              "visible": true,
+              "radius": 128,
+              "boundVariables": {
+                "radius": {
+                  "type": "VARIABLE_ALIAS",
+                  "id": "VariableID:4048:810"
+                }
+              },
+              "blurType": "NORMAL"
+            },
+            {
+              "type": "NOISE",
+              "visible": true,
+              "boundVariables": {},
+              "noiseSize": 0.20000000298023224,
+              "noiseSizeVector": {
+                "x": 0.20000000298023224,
+                "y": 0.20000000298023224
+              },
+              "noiseType": "MONOTONE",
+              "color": {
+                "r": 0.003921568859368563,
+                "g": 0.007843137718737125,
+                "b": 0.019607843831181526,
+                "a": 0.03999999910593033
+              },
+              "density": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "7101:54857",
+              "name": "Glass",
+              "type": "FRAME",
+              "x": 32,
+              "y": 32,
+              "width": 256,
+              "height": 256,
+              "cornerRadius": 9999,
+              "fills": [],
+              "effects": [
+                {
+                  "type": "GLASS",
+                  "visible": true,
+                  "radius": 12,
+                  "boundVariables": {},
+                  "refraction": 0.800000011920929,
+                  "depth": 60,
+                  "lightAngle": 0,
+                  "lightIntensity": 0.10000000149011612,
+                  "dispersion": 0.6000000238418579,
+                  "splay": 0
+                }
+              ],
+              "children": []
+            },
+            {
+              "id": "7094:3313",
+              "name": "Color Name",
+              "type": "TEXT",
+              "x": 124.5,
+              "y": 148,
+              "width": 71,
+              "height": 24,
+              "cornerRadius": null,
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "blendMode": "NORMAL",
+                  "color": {
+                    "r": 0.062745101749897,
+                    "g": 0.062745101749897,
+                    "b": 0.07058823853731155
+                  },
+                  "boundVariables": {
+                    "color": {
+                      "type": "VARIABLE_ALIAS",
+                      "id": "VariableID:6005:69"
+                    }
+                  }
+                }
+              ],
+              "effects": []
+            }
+          ]
+        },
+        {
+          "id": "7094:3314",
+          "name": "Breadcrumb/Light-theme",
+          "type": "FRAME",
+          "x": 788,
+          "y": 100,
+          "width": 320,
+          "height": 320,
+          "cornerRadius": 32,
+          "fills": [
+            {
+              "type": "PATTERN",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "sourceNodeId": "6236:41583",
+              "tileType": "RECTANGULAR",
+              "scalingFactor": 0.8199999928474426,
+              "spacing": {
+                "x": 6.539999961853027,
+                "y": 6.539999961853027
+              },
+              "horizontalAlignment": "CENTER",
+              "verticalAlignment": "CENTER"
+            }
+          ],
+          "effects": [
+            {
+              "type": "BACKGROUND_BLUR",
+              "visible": true,
+              "radius": 128,
+              "boundVariables": {
+                "radius": {
+                  "type": "VARIABLE_ALIAS",
+                  "id": "VariableID:4048:810"
+                }
+              },
+              "blurType": "NORMAL"
+            },
+            {
+              "type": "NOISE",
+              "visible": true,
+              "boundVariables": {},
+              "noiseSize": 0.20000000298023224,
+              "noiseSizeVector": {
+                "x": 0.20000000298023224,
+                "y": 0.20000000298023224
+              },
+              "noiseType": "MONOTONE",
+              "color": {
+                "r": 0.003921568859368563,
+                "g": 0.007843137718737125,
+                "b": 0.019607843831181526,
+                "a": 0.03999999910593033
+              },
+              "density": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "7101:54855",
+              "name": "Glass",
+              "type": "FRAME",
+              "x": 32,
+              "y": 32,
+              "width": 256,
+              "height": 256,
+              "cornerRadius": 9999,
+              "fills": [],
+              "effects": [
+                {
+                  "type": "GLASS",
+                  "visible": true,
+                  "radius": 20,
+                  "boundVariables": {},
+                  "refraction": 0.800000011920929,
+                  "depth": 60,
+                  "lightAngle": 0,
+                  "lightIntensity": 0.20000000298023224,
+                  "dispersion": 0.6000000238418579,
+                  "splay": 0
+                }
+              ],
+              "children": []
+            },
+            {
+              "id": "7094:3316",
+              "name": "Color Name",
+              "type": "TEXT",
+              "x": 132,
+              "y": 148,
+              "width": 56,
+              "height": 24,
+              "cornerRadius": null,
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "blendMode": "NORMAL",
+                  "color": {
+                    "r": 0.062745101749897,
+                    "g": 0.062745101749897,
+                    "b": 0.07058823853731155
+                  },
+                  "boundVariables": {
+                    "color": {
+                      "type": "VARIABLE_ALIAS",
+                      "id": "VariableID:6005:69"
+                    }
+                  }
+                }
+              ],
+              "effects": []
+            }
+          ]
+        },
+        {
+          "id": "7094:3317",
+          "name": "Breadcrumb/Light-theme",
+          "type": "FRAME",
+          "x": 1132,
+          "y": 100,
+          "width": 320,
+          "height": 320,
+          "cornerRadius": 32,
+          "fills": [
+            {
+              "type": "PATTERN",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "sourceNodeId": "6236:41583",
+              "tileType": "RECTANGULAR",
+              "scalingFactor": 0.8199999928474426,
+              "spacing": {
+                "x": 6.539999961853027,
+                "y": 6.539999961853027
+              },
+              "horizontalAlignment": "CENTER",
+              "verticalAlignment": "CENTER"
+            }
+          ],
+          "effects": [
+            {
+              "type": "BACKGROUND_BLUR",
+              "visible": true,
+              "radius": 128,
+              "boundVariables": {
+                "radius": {
+                  "type": "VARIABLE_ALIAS",
+                  "id": "VariableID:4048:810"
+                }
+              },
+              "blurType": "NORMAL"
+            },
+            {
+              "type": "NOISE",
+              "visible": true,
+              "boundVariables": {},
+              "noiseSize": 0.20000000298023224,
+              "noiseSizeVector": {
+                "x": 0.20000000298023224,
+                "y": 0.20000000298023224
+              },
+              "noiseType": "MONOTONE",
+              "color": {
+                "r": 0.003921568859368563,
+                "g": 0.007843137718737125,
+                "b": 0.019607843831181526,
+                "a": 0.03999999910593033
+              },
+              "density": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "7101:54854",
+              "name": "Glass",
+              "type": "FRAME",
+              "x": 32,
+              "y": 32,
+              "width": 256,
+              "height": 256,
+              "cornerRadius": 9999,
+              "fills": [],
+              "effects": [
+                {
+                  "type": "GLASS",
+                  "visible": true,
+                  "radius": 25,
+                  "boundVariables": {},
+                  "refraction": 1,
+                  "depth": 100,
+                  "lightAngle": 0,
+                  "lightIntensity": 0.25,
+                  "dispersion": 0.6000000238418579,
+                  "splay": 0
+                }
+              ],
+              "children": []
+            },
+            {
+              "id": "7094:3319",
+              "name": "Color Name",
+              "type": "TEXT",
+              "x": 123,
+              "y": 148,
+              "width": 74,
+              "height": 24,
+              "cornerRadius": null,
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "blendMode": "NORMAL",
+                  "color": {
+                    "r": 0.062745101749897,
+                    "g": 0.062745101749897,
+                    "b": 0.07058823853731155
+                  },
+                  "boundVariables": {
+                    "color": {
+                      "type": "VARIABLE_ALIAS",
+                      "id": "VariableID:6005:69"
+                    }
+                  }
+                }
+              ],
+              "effects": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "6236:41494",
+      "name": "  ",
+      "type": "FRAME",
+      "x": 1680,
+      "y": 508,
+      "width": 1552,
+      "height": 520,
+      "cornerRadius": 32,
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4001:166"
+            }
+          }
+        }
+      ],
+      "effects": [],
+      "children": [
+        {
+          "id": "6236:41498",
+          "name": "Breadcrumb/Light-theme",
+          "type": "FRAME",
+          "x": 99.5,
+          "y": 100,
+          "width": 435,
+          "height": 320,
+          "cornerRadius": 32,
+          "fills": [
+            {
+              "type": "PATTERN",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "sourceNodeId": "6236:41582",
+              "tileType": "RECTANGULAR",
+              "scalingFactor": 1,
+              "spacing": {
+                "x": 20,
+                "y": 20
+              },
+              "horizontalAlignment": "CENTER",
+              "verticalAlignment": "CENTER"
+            }
+          ],
+          "effects": [],
+          "children": [
+            {
+              "id": "6236:41499",
+              "name": "Layout",
+              "type": "FRAME",
+              "x": 0,
+              "y": -1.1368683772161603e-13,
+              "width": 435,
+              "height": 320,
+              "cornerRadius": 16,
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 0.00009999999747378752,
+                  "blendMode": "NORMAL",
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  },
+                  "boundVariables": {}
+                }
+              ],
+              "effects": [
+                {
+                  "type": "BACKGROUND_BLUR",
+                  "visible": true,
+                  "radius": 4,
+                  "boundVariables": {
+                    "radius": {
+                      "type": "VARIABLE_ALIAS",
+                      "id": "VariableID:4044:2014"
+                    }
+                  },
+                  "blurType": "PROGRESSIVE",
+                  "startRadius": 0,
+                  "startOffset": {
+                    "x": 0.5,
+                    "y": 1
+                  },
+                  "endOffset": {
+                    "x": 0.5,
+                    "y": 0
+                  }
+                },
+                {
+                  "type": "NOISE",
+                  "visible": true,
+                  "boundVariables": {},
+                  "noiseSize": 0.20000000298023224,
+                  "noiseSizeVector": {
+                    "x": 0.20000000298023224,
+                    "y": 0.20000000298023224
+                  },
+                  "noiseType": "MONOTONE",
+                  "color": {
+                    "r": 0.003921568859368563,
+                    "g": 0.007843137718737125,
+                    "b": 0.019607843831181526,
+                    "a": 0.03999999910593033
+                  },
+                  "density": 1
+                }
+              ],
+              "children": [
+                {
+                  "id": "6236:41509",
+                  "name": "Color Name",
+                  "type": "TEXT",
+                  "x": 185,
+                  "y": 148,
+                  "width": 66,
+                  "height": 24,
+                  "cornerRadius": null,
+                  "fills": [
+                    {
+                      "type": "SOLID",
+                      "visible": true,
+                      "opacity": 1,
+                      "blendMode": "NORMAL",
+                      "color": {
+                        "r": 0.062745101749897,
+                        "g": 0.062745101749897,
+                        "b": 0.07058823853731155
+                      },
+                      "boundVariables": {
+                        "color": {
+                          "type": "VARIABLE_ALIAS",
+                          "id": "VariableID:6005:69"
+                        }
+                      }
+                    }
+                  ],
+                  "effects": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "7206:31",
+          "name": "Breadcrumb/Light-theme",
+          "type": "FRAME",
+          "x": 558.5,
+          "y": 100,
+          "width": 435,
+          "height": 320,
+          "cornerRadius": 32,
+          "fills": [
+            {
+              "type": "PATTERN",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "sourceNodeId": "6236:41582",
+              "tileType": "RECTANGULAR",
+              "scalingFactor": 1,
+              "spacing": {
+                "x": 20,
+                "y": 20
+              },
+              "horizontalAlignment": "CENTER",
+              "verticalAlignment": "CENTER"
+            }
+          ],
+          "effects": [],
+          "children": [
+            {
+              "id": "7206:32",
+              "name": "Layout",
+              "type": "FRAME",
+              "x": 0,
+              "y": -1.1368683772161603e-13,
+              "width": 435,
+              "height": 320,
+              "cornerRadius": 16,
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 0.00009999999747378752,
+                  "blendMode": "NORMAL",
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  },
+                  "boundVariables": {}
+                }
+              ],
+              "effects": [
+                {
+                  "type": "BACKGROUND_BLUR",
+                  "visible": true,
+                  "radius": 12,
+                  "boundVariables": {
+                    "radius": {
+                      "type": "VARIABLE_ALIAS",
+                      "id": "VariableID:4044:2016"
+                    }
+                  },
+                  "blurType": "PROGRESSIVE",
+                  "startRadius": 0,
+                  "startOffset": {
+                    "x": 0.5,
+                    "y": 1
+                  },
+                  "endOffset": {
+                    "x": 0.5,
+                    "y": 0
+                  }
+                },
+                {
+                  "type": "NOISE",
+                  "visible": true,
+                  "boundVariables": {},
+                  "noiseSize": 0.20000000298023224,
+                  "noiseSizeVector": {
+                    "x": 0.20000000298023224,
+                    "y": 0.20000000298023224
+                  },
+                  "noiseType": "MONOTONE",
+                  "color": {
+                    "r": 0.003921568859368563,
+                    "g": 0.007843137718737125,
+                    "b": 0.019607843831181526,
+                    "a": 0.05999999865889549
+                  },
+                  "density": 1
+                }
+              ],
+              "children": [
+                {
+                  "id": "7206:33",
+                  "name": "Color Name",
+                  "type": "TEXT",
+                  "x": 194,
+                  "y": 148,
+                  "width": 48,
+                  "height": 24,
+                  "cornerRadius": null,
+                  "fills": [
+                    {
+                      "type": "SOLID",
+                      "visible": true,
+                      "opacity": 1,
+                      "blendMode": "NORMAL",
+                      "color": {
+                        "r": 0.062745101749897,
+                        "g": 0.062745101749897,
+                        "b": 0.07058823853731155
+                      },
+                      "boundVariables": {
+                        "color": {
+                          "type": "VARIABLE_ALIAS",
+                          "id": "VariableID:6005:69"
+                        }
+                      }
+                    }
+                  ],
+                  "effects": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "6236:41501",
+          "name": "Breadcrumb/Light-theme",
+          "type": "FRAME",
+          "x": 1017.5,
+          "y": 100,
+          "width": 435,
+          "height": 320,
+          "cornerRadius": 32,
+          "fills": [
+            {
+              "type": "PATTERN",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "sourceNodeId": "6236:41582",
+              "tileType": "RECTANGULAR",
+              "scalingFactor": 1,
+              "spacing": {
+                "x": 20,
+                "y": 20
+              },
+              "horizontalAlignment": "CENTER",
+              "verticalAlignment": "CENTER"
+            }
+          ],
+          "effects": [
+            {
+              "type": "BACKGROUND_BLUR",
+              "visible": true,
+              "radius": 24,
+              "boundVariables": {
+                "radius": {
+                  "type": "VARIABLE_ALIAS",
+                  "id": "VariableID:4044:2018"
+                }
+              },
+              "blurType": "PROGRESSIVE",
+              "startRadius": 0,
+              "startOffset": {
+                "x": 0.5,
+                "y": 1
+              },
+              "endOffset": {
+                "x": 0.5,
+                "y": 0
+              }
+            },
+            {
+              "type": "NOISE",
+              "visible": true,
+              "boundVariables": {},
+              "noiseSize": 0.20000000298023224,
+              "noiseSizeVector": {
+                "x": 0.20000000298023224,
+                "y": 0.20000000298023224
+              },
+              "noiseType": "MONOTONE",
+              "color": {
+                "r": 0.003921568859368563,
+                "g": 0.007843137718737125,
+                "b": 0.019607843831181526,
+                "a": 0.05999999865889549
+              },
+              "density": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "6236:41502",
+              "name": "Layout",
+              "type": "FRAME",
+              "x": 4.547473508864641e-13,
+              "y": -1.1368683772161603e-13,
+              "width": 435,
+              "height": 320,
+              "cornerRadius": 16,
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 0.00009999999747378752,
+                  "blendMode": "NORMAL",
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  },
+                  "boundVariables": {}
+                }
+              ],
+              "effects": [
+                {
+                  "type": "BACKGROUND_BLUR",
+                  "visible": true,
+                  "radius": 24,
+                  "boundVariables": {
+                    "radius": {
+                      "type": "VARIABLE_ALIAS",
+                      "id": "VariableID:4044:2018"
+                    }
+                  },
+                  "blurType": "PROGRESSIVE",
+                  "startRadius": 0,
+                  "startOffset": {
+                    "x": 0.5,
+                    "y": 1
+                  },
+                  "endOffset": {
+                    "x": 0.5,
+                    "y": 0
+                  }
+                },
+                {
+                  "type": "NOISE",
+                  "visible": true,
+                  "boundVariables": {},
+                  "noiseSize": 0.20000000298023224,
+                  "noiseSizeVector": {
+                    "x": 0.20000000298023224,
+                    "y": 0.20000000298023224
+                  },
+                  "noiseType": "MONOTONE",
+                  "color": {
+                    "r": 0.003921568859368563,
+                    "g": 0.007843137718737125,
+                    "b": 0.019607843831181526,
+                    "a": 0.05999999865889549
+                  },
+                  "density": 1
+                }
+              ],
+              "children": [
+                {
+                  "id": "6236:41511",
+                  "name": "Color Name",
+                  "type": "TEXT",
+                  "x": 181,
+                  "y": 148,
+                  "width": 74,
+                  "height": 24,
+                  "cornerRadius": null,
+                  "fills": [
+                    {
+                      "type": "SOLID",
+                      "visible": true,
+                      "opacity": 1,
+                      "blendMode": "NORMAL",
+                      "color": {
+                        "r": 0.062745101749897,
+                        "g": 0.062745101749897,
+                        "b": 0.07058823853731155
+                      },
+                      "boundVariables": {
+                        "color": {
+                          "type": "VARIABLE_ALIAS",
+                          "id": "VariableID:6005:69"
+                        }
+                      }
+                    }
+                  ],
+                  "effects": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,74 +1,19 @@
-/*
- * @labpics/ui-materials/engine — the refraction engine (Liquid Glass).
- *
- * Landed from `prototypes/liquid-glass/liquid-glass.js` per ADR-0003
- * (glass-effects ch-02). PACKAGE-BOUNDARY CHANGES vs the prototype — everything
- * else is a faithful port (same algorithm, same caches, same byte-identical
- * filter guarantees):
- *
- *   · Tokens renamed at the boundary (ADR-0003 §2): the engine reads PRIVATE
- *     `--_lg-refraction / --_lg-depth / --_lg-dispersion` (unitless numbers).
- *     `--lg-radius`/`--lg-saturate` did NOT land as new tokens — the inline
- *     backdrop-filter references the EXISTING mechanics `var(--_blur)` /
- *     `var(--_saturate)` directly, plus `var(--_lg-brightness)` /
- *     `var(--_lg-contrast)`; mode/tier/theme re-binds apply live with no
- *     re-render. `--lg-tint*` never reached JS (colour is the `--lab-*`
- *     contract's); corner still comes from computed `border-radius`.
- *   · The host class is `lab-material--lensed` (not `lab-liquid-glass`): a
- *     package-private state class that re-binds `--_blur` to the
- *     lens-calibrated radius in material.css while the engine holds the
- *     surface.
- *   · A non-refracting / disabled / reduced-transparency surface gets NO
- *     inline style at all — material.css owns the fallback stack (the
- *     prototype's own CSS class used to declare the tail; here the package
- *     stylesheet is the single source of the frost fallback).
- *   · NOT exported from the package index (ADR-0003 §3): the only consumer is
- *     the declarative runtime in `./runtime.ts`.
- *
- * ── The algorithm (unchanged) ───────────────────────────────────────────────
- * `backdrop-filter` blurs a backdrop but cannot bend it. The bend — what makes
- * Liquid Glass a LENS rather than frosted glass — comes from an SVG
- * <feDisplacementMap> whose map encodes, per pixel, WHERE to resample the
- * backdrop: Red = horizontal sample shift, Green = vertical (0.5 = no shift).
- *
- * The map is a continuous magnification: every pixel samples its own position
- * pulled toward the centre by a smooth factor that is strongest at the rounded
- * rim and eases to zero in the flat interior. So the whole surface bends the
- * backdrop like a thick convex lens (strong at the edge, clear in the middle) —
- * NOT a thin band at the border. This is the algorithm proven by
- * github.com/shuding/liquid-glass (the position-warp lens) with the
- * edge-confined chromatic aberration of github.com/rdev/liquid-glass-react.
- *
- * The rim highlight is pure CSS — like both references, we do NOT use
- * feSpecularLighting (a single SVG point-light only lights one corner). The
- * filter is referenced from CSS as `backdrop-filter: url(#id)`, so it must live
- * in the DOM and track the element's size.
- *
- * PERFORMANCE MODEL (what is, and is NOT, optimisable without touching the look):
- *   · Per DRAG frame there is ZERO JS — the element moves on left/top and the
- *     filter region travels with it; the cost is pure GPU compositing of the
- *     (quality-locked) filter, which we deliberately never cheapen.
- *   · The map is geometry-only (size/corner/depth/dpr). It is therefore built
- *     ONCE per geometry, shared across every instance of that geometry through a
- *     refcounted module-level cache (the panel and a same-sized pane build it
- *     once), and never rebuilt on drag / theme / strength / dispersion changes.
- *     Resize storms collapse to a single trailing-edge build. Scratch buffers
- *     are reused across builds to keep GC pressure flat. The PNG encode — the
- *     heaviest chunk of a build — runs OFF the main thread (canvas.toBlob);
- *     only the ¼-symmetric field loop stays synchronous.
- *   · A same-structure re-stamp (strength/dispersion tuning) updates only the
- *     feDisplacementMap scale attributes — no markup re-parse, no feImage href
- *     re-attach, no node churn. The emitted filter is byte-identical.
- *
- * Zero dependencies, browser-native ES module. Pairs with material.css.
- */
-
+/** Shape-aware refraction. Frost, paints and directional light belong to the
+ * shared author profile; this engine owns only the retained displacement map. */
+import { materialProfile } from '../profile';
 // The DOM-free math heart (SDF, falloff, lens constant) lives in a sibling pure
 // module so a bare test runner can import and assert it directly. The browser
 // engine simply re-imports those exact symbols — the runtime is byte-identical;
 // only the definition site moved.
 import { MAX_PULL, clamp01, sdRoundRect, smoothstep } from './lg-math';
-import { ensureHiddenDefs, supportsBackdropFilterUrl } from './mount';
+import { ensureHiddenDefs, removeFilter, supportsBackdropFilterUrl } from './mount';
+import {
+  type CornerRadii,
+  type RoundedShape,
+  resolveCornerRadii,
+  roundedShapeInside,
+  shapeKey,
+} from './rounded-shape';
 
 export interface LiquidGlassParams {
   refraction?: number;
@@ -121,7 +66,7 @@ interface StampedShape {
 interface RenderParams {
   w: number;
   h: number;
-  corner: number;
+  corner: RoundedShape;
   refraction: number;
   depth: number;
   dispersion: number;
@@ -157,30 +102,14 @@ let uid = 0;
 
 /** Скрытый defs-хост линзы — общий примитив (./mount), делится с acrylic-движком
  *  (тот же паттерн, разные className). Раньше — локальная копия `ensureDefs`. */
-const ensureDefs = (): SVGDefsElement => ensureHiddenDefs('lab-lg-defs');
+const ensureDefs = (el: HTMLElement): SVGDefsElement => ensureHiddenDefs('lab-lg-defs', el);
 
-/** The package-private state class: while the engine holds a surface,
- *  material.css re-binds `--_blur` to the lens-calibrated radius under it. */
 export const LENSED_CLASS = 'lab-material--lensed';
-
-/** The frost tail rides the package mechanics tokens as LIVE var() references —
- *  a mode/tier/theme re-bind changes the rendered stack with no JS re-render.
- *  Fallbacks mirror the material.css engine-knob defaults. */
-const FROST_TAIL =
-  'blur(var(--_blur, 4px)) saturate(var(--_saturate, 130%)) brightness(var(--_lg-brightness, 1.05)) contrast(var(--_lg-contrast, 1.2))';
-
-/** Single source of truth for numeric defaults. CSS custom properties override
- *  these per-instance; nothing else hard-codes a fallback. */
-const DEFAULTS = {
-  refraction: 1, // 0..1+ — Figma: refraction. Linear lens strength.
-  depth: 40, // px    — Figma: depth. Thickness of the magnified rim band.
-  dispersion: 0.4, // 0..1 — Figma: dispersion. Rim chromatic fringe.
-  corner: 28, // px   — fallback when border-radius can't be read.
-};
+const DEFAULTS = { ...materialProfile.tiers.base.glass, corner: 0 };
 
 /** Whether this engine REFRACTS the backdrop. The requirement is the browser's
  *  ability to render a url()-referenced SVG filter on a backdrop — the shared
- *  capability probe (./mount), the SAME one acrylic's luminosity chain needs.
+ *  capability probe (./mount), the SAME one the author paint transfer needs.
  *  The name stays glass-specific (its public semantics = "does the lens bend the
  *  backdrop"); the probe underneath is neutral. Everyone else keeps the honest
  *  blur fallback. */
@@ -241,6 +170,7 @@ interface SdfEntry {
 }
 const SDF_CACHE_CAP = 4;
 const sdfCache = new Map<string, SdfEntry>(); // geometry (no depth) → distance field
+const asymmetricSdfCache = new Map<string, Float64Array>();
 let sdfComputeCount = 0; // cumulative sdRoundRect calls (the counter-assert reads this)
 
 function releaseScratch(): void {
@@ -254,6 +184,7 @@ function releaseScratch(): void {
   sCanvas = null;
   sCtx = null;
   sdfCache.clear(); // the distance fields are scratch too — no steady-state retention
+  asymmetricSdfCache.clear();
 }
 
 function armScratchRelease(): void {
@@ -288,10 +219,11 @@ function armScratchRelease(): void {
 export function __computeDisplacementField(
   w: number,
   h: number,
-  corner: number,
+  corner: RoundedShape,
   depth: number,
   dpr: number,
 ): { data: Uint8ClampedArray; W: number; H: number; unit: number } {
+  if (typeof corner !== 'number') return asymmetricField(w, h, corner, depth, dpr);
   const r = Math.max(0, Math.min(corner, Math.min(w, h) / 2));
   const band = Math.max(2, Math.min(depth, Math.min(w, h) / 2)); // rim lens thickness
   const sc = Math.max(1, Math.min(dpr || 1, 2)); // device-pixel scale, capped at 2
@@ -484,6 +416,56 @@ export function __computeDisplacementField(
   return { data, W, H, unit: 2 * maxAbs };
 }
 
+/** General CSS shape path. Ordinary circular symmetric panels retain the
+ * quarter-field fast path above; asymmetric/elliptical shapes cache their full
+ * distances once, so depth/refraction changes do not rerun the ellipse solver.
+ */
+function asymmetricField(w: number, h: number, radii: CornerRadii, depth: number, dpr: number) {
+  const sc = Math.max(1, Math.min(dpr || 1, 2));
+  const W = Math.max(1, Math.round(w * sc));
+  const H = Math.max(1, Math.round(h * sc));
+  const N = W * H;
+  const band = Math.max(2, Math.min(depth, Math.min(w, h) / 2));
+  const key = `${w}x${h}x${shapeKey(radii)}x${sc}`;
+  let distances = asymmetricSdfCache.get(key);
+  if (!distances) {
+    distances = new Float64Array(N);
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++)
+        distances[y * W + x] = roundedShapeInside((x + 0.5) / sc, (y + 0.5) / sc, w, h, radii);
+    asymmetricSdfCache.set(key, distances);
+    while (asymmetricSdfCache.size > SDF_CACHE_CAP) {
+      const oldest = asymmetricSdfCache.keys().next().value;
+      if (oldest !== undefined) asymmetricSdfCache.delete(oldest);
+    }
+  } else {
+    asymmetricSdfCache.delete(key);
+    asymmetricSdfCache.set(key, distances);
+  }
+  if (!sDx || sDx.length < 2 * N) sDx = new Float32Array(2 * N);
+  if (!sRGBA || sRGBA.length < 4 * N) sRGBA = new Uint8ClampedArray(4 * N);
+  const data = sRGBA.length === 4 * N ? sRGBA : sRGBA.subarray(0, 4 * N);
+  let maxAbs = 1e-6;
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      const inside = distances[i] ?? 0;
+      const pull = inside > 0 ? MAX_PULL * smoothstep(smoothstep(clamp01(1 - inside / band))) : 0;
+      const dx = (w / 2 - (x + 0.5) / sc) * pull;
+      const dy = (h / 2 - (y + 0.5) / sc) * pull;
+      sDx[2 * i] = dx;
+      sDx[2 * i + 1] = dy;
+      maxAbs = Math.max(maxAbs, Math.abs(dx), Math.abs(dy));
+    }
+  const gain = 255 / (2 * maxAbs);
+  new Uint32Array(data.buffer, data.byteOffset, N).fill(0xff808080);
+  for (let i = 0; i < N; i++) {
+    data[4 * i] = (sDx[2 * i] ?? 0) * gain + 127.5;
+    data[4 * i + 1] = (sDx[2 * i + 1] ?? 0) * gain + 127.5;
+  }
+  return { data, W, H, unit: 2 * maxAbs };
+}
+
 /**
  * Build ONE displacement map (PNG data-URI) at DEVICE-pixel resolution and wrap
  * it for the browser: the DOM-free field core rasterised onto a reused canvas,
@@ -492,7 +474,7 @@ export function __computeDisplacementField(
 function buildMap(
   w: number,
   h: number,
-  corner: number,
+  corner: RoundedShape,
   depth: number,
   dpr: number,
 ): Omit<MapEntry, 'refs' | 'evicted'> {
@@ -586,7 +568,7 @@ function acquireMap(
   geoKey: string,
   w: number,
   h: number,
-  corner: number,
+  corner: RoundedShape,
   depth: number,
   dpr: number,
 ): MapEntry {
@@ -696,7 +678,7 @@ function applyLens(state: EngineState, map: MapEntry, p: RenderParams, scale: nu
   }
   // Region == element box in element-LOCAL px (filterUnits=userSpaceOnUse) →
   // travels with the element on left/top; the lens stays aligned when dragged
-  // (shuding's anti-seam rule). Do NOT CSS-transform a glass element.
+  // in its own local coordinates; ordinary transforms do not rebuild it.
   filter.setAttribute('x', '0');
   filter.setAttribute('y', '0');
   filter.setAttribute('width', String(p.w));
@@ -713,15 +695,18 @@ function readParams(el: HTMLElement, state: EngineState): RenderParams {
     return Number.isFinite(v) ? v : fb;
   };
   const p = state.params;
-  const rect = el.getBoundingClientRect(); // one reflow read, used for both dims
+  // SVG userSpaceOnUse is local CSS space. A transformed boundingClientRect
+  // would apply scale twice and rebuild the map during an ordinary sheet move.
+  const rect = { width: el.offsetWidth, height: el.offsetHeight };
   return {
     w: Math.max(1, Math.round(rect.width)),
     h: Math.max(1, Math.round(rect.height)),
-    // Number.isFinite, NOT `||`: an explicit `border-radius: 0` is a real
-    // author choice (sharp lens), not an invitation to the default corner.
-    corner: ((r: number): number => Math.round(Number.isFinite(r) ? r : DEFAULTS.corner))(
-      Number.parseFloat(cs.borderTopLeftRadius),
-    ),
+    corner: resolveCornerRadii(rect.width, rect.height, [
+      cs.borderTopLeftRadius,
+      cs.borderTopRightRadius,
+      cs.borderBottomRightRadius,
+      cs.borderBottomLeftRadius,
+    ]),
     refraction: p.refraction ?? num('--_lg-refraction', DEFAULTS.refraction),
     depth: Math.round(p.depth ?? num('--_lg-depth', DEFAULTS.depth)),
     dispersion: p.dispersion ?? num('--_lg-dispersion', DEFAULTS.dispersion),
@@ -739,8 +724,8 @@ function setBackdrop(el: HTMLElement, value: string, state: EngineState | null):
     if (state.lastBackdrop === value) return;
     state.lastBackdrop = value;
   }
-  el.style.setProperty('backdrop-filter', value);
-  el.style.setProperty('-webkit-backdrop-filter', value);
+  if (value) el.style.setProperty('--_material-lens-filter', value);
+  else el.style.removeProperty('--_material-lens-filter');
 }
 
 /** Drop this instance's hold on its cached map (if any).
@@ -777,9 +762,9 @@ function render(state: EngineState): void {
     return;
   }
   // refraction ≈ 0 → plain frost, no displacement (opt-out of the lens). The
-  // tail still adds the engine's brightness/contrast over the CSS stack.
+  // shared CSS keeps author frost and paints active.
   if (p.refraction <= 0.01) {
-    setBackdrop(el, FROST_TAIL, state);
+    setBackdrop(el, '', state);
     dropMap(state);
     return;
   }
@@ -792,7 +777,7 @@ function render(state: EngineState): void {
   // The map depends ONLY on geometry (size/corner/depth/dpr) — not on position,
   // strength, or dispersion. So a DRAG or a refraction/dispersion change never
   // rebuilds it (cheap re-stamp); only resize/corner/depth does.
-  const geoKey = `${p.w}x${p.h}x${p.corner}x${p.depth}x${dpr.toFixed(2)}`;
+  const geoKey = `${p.w}x${p.h}x${shapeKey(p.corner)}x${p.depth}x${dpr.toFixed(2)}`;
   const t0 = state.onPerf ? performance.now() : 0;
 
   const stamp = (map: MapEntry, mapMs: number): void => {
@@ -803,11 +788,7 @@ function render(state: EngineState): void {
     // Frost FIRST, then the lens: blurring the backdrop before the displacement
     // means the lens bends already-soft content (clean refraction) instead of
     // smearing sharp high-contrast edges into streaks.
-    setBackdrop(
-      el,
-      `blur(var(--_blur, 4px)) url(#${id}) saturate(var(--_saturate, 130%)) brightness(var(--_lg-brightness, 1.05)) contrast(var(--_lg-contrast, 1.2))`,
-      state,
-    );
+    setBackdrop(el, `url(#${id})`, state);
     if (state.onPerf) {
       state.onPerf({
         reason: mapMs > 0 ? 'rebuild' : 'restamp',
@@ -874,9 +855,9 @@ function render(state: EngineState): void {
  */
 export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHandle {
   registry.get(el)?.destroy();
-  ensureDefs();
+  const defs = ensureDefs(el);
   const id = `lab-lg-${++uid}`;
-  const filter = document.createElementNS(SVGNS, 'filter');
+  const filter = el.ownerDocument.createElementNS(SVGNS, 'filter');
   filter.id = id;
   filter.setAttribute('color-interpolation-filters', 'sRGB');
   // userSpaceOnUse with the region set to the element box (0,0,w,h) in stamp():
@@ -885,7 +866,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
   // (primitiveUnits is intentionally NOT set: no primitive here carries a
   // primitiveUnits-sensitive length, so it would be a no-op.)
   filter.setAttribute('filterUnits', 'userSpaceOnUse');
-  ensureDefs().appendChild(filter);
+  defs.appendChild(filter);
 
   const { onPerf, ...params } = opts;
   const state: EngineState = {
@@ -947,7 +928,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
     window.removeEventListener('resize', debouncedUpdate);
     mq?.removeEventListener('change', update);
     dropMap(state); // release our hold on the shared cached map
-    filter.remove();
+    removeFilter(filter);
     setBackdrop(el, '', state);
     el.classList.remove(LENSED_CLASS);
     if (registry.get(el) === state) registry.delete(el);
