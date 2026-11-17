@@ -140,7 +140,8 @@ try:
     with tempfile.TemporaryDirectory(prefix="labui-atspi-") as directory:
         environment = {**os.environ, "LABUI_DATA_DIR": str(Path(directory) / "data"),
                        "XDG_CONFIG_HOME": str(Path(directory) / "config"),
-                       "SKIKO_RENDER_API": "SOFTWARE", "NO_AT_BRIDGE": "0"}
+                       "SKIKO_RENDER_API": "SOFTWARE"}
+        environment.pop("NO_AT_BRIDGE", None)
         start(["openbox"], "window-manager", environment)
         subprocess.run(["gsettings", "set", "org.gnome.desktop.a11y.applications",
                         "screen-reader-enabled", "true"], env=environment, check=True)
