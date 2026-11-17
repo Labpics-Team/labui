@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -284,24 +283,42 @@ public fun LabSheetHost(
                                                     )
                                             )
                                         }
-                                        Row(
-                                            Modifier.fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            BasicText(
-                                                title,
-                                                Modifier.weight(1f),
-                                                style = LabType.title(),
-                                            )
-                                            LabButton(
-                                                dismissLabel,
-                                                dismiss,
-                                                Modifier.focusRequester(closeFocus),
-                                                enabled = dismissible,
-                                                intent = LabIntent.Neutral,
-                                                kind = LabButtonKind.Ghost,
-                                                size = LabControlSize.Small,
-                                            )
+                                        Layout(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            content = {
+                                                BasicText(title, style = LabType.title())
+                                                LabButton(
+                                                    dismissLabel,
+                                                    dismiss,
+                                                    Modifier.focusRequester(closeFocus),
+                                                    enabled = dismissible,
+                                                    intent = LabIntent.Neutral,
+                                                    kind = LabButtonKind.Ghost,
+                                                    size = LabControlSize.Small,
+                                                )
+                                            },
+                                        ) { children, constraints ->
+                                            val gap = LabTokens.Space2.dp.roundToPx()
+                                            val loose = constraints.copy(minWidth = 0, minHeight = 0)
+                                            val action = children[1].measure(loose)
+                                            // Keep whole words beside the action when possible.
+                                            // Reposition the same nodes instead of replacing the
+                                            // focused button when font scale or width changes.
+                                            val inline = children[0].minIntrinsicWidth(Constraints.Infinity) +
+                                                gap + action.width <= constraints.maxWidth
+                                            val title = children[0].measure(loose.copy(
+                                                maxWidth = if (inline) constraints.maxWidth - action.width - gap
+                                                    else constraints.maxWidth,
+                                            ))
+                                            val height = if (inline) maxOf(title.height, action.height)
+                                                else title.height + gap + action.height
+                                            layout(constraints.maxWidth, height) {
+                                                title.placeRelative(0, if (inline) (height - title.height) / 2 else 0)
+                                                action.placeRelative(
+                                                    constraints.maxWidth - action.width,
+                                                    if (inline) (height - action.height) / 2 else title.height + gap,
+                                                )
+                                            }
                                         }
                                         Column(
                                             Modifier.fillMaxWidth()

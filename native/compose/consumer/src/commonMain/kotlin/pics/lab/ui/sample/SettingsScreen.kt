@@ -5,10 +5,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
@@ -115,6 +115,7 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
         )
     val title = heading.copy(fontSize = 20.sp, lineHeight = 28.sp)
     val caption = body.copy(fontSize = 13.sp, lineHeight = 18.sp)
+    val switchRow = Modifier.fillMaxWidth().heightIn(min = 48.dp)
     fun edit() {
         val workspace = saved?.workspace ?: return
         name.edit { replace(0, length, workspace.name) }
@@ -161,6 +162,7 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
                         }
                     },
                     "Тёмная тема",
+                    modifier = switchRow,
                 )
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -201,6 +203,7 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
                             }
                         },
                         "Высокий контраст",
+                        modifier = switchRow,
                     )
                     LabSwitch(
                         theme.preferences.reducedMotion,
@@ -210,6 +213,7 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
                             }
                         },
                         "Меньше движения",
+                        modifier = switchRow,
                     )
                     LabSwitch(
                         theme.preferences.reducedTransparency,
@@ -221,6 +225,7 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
                             }
                         },
                         "Меньше прозрачности",
+                        modifier = switchRow,
                     )
                 }
             }
@@ -279,10 +284,10 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
                             Modifier.widthIn(max = 640.dp).fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(24.dp),
                         ) {
-                            Row(
+                            FlowRow(
                                 Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
                                 BasicText("Настройки", style = title)
                                 LabButton(
@@ -376,6 +381,7 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
                             notifications,
                             { notifications = it },
                             "Получать уведомления",
+                            modifier = switchRow,
                             enabled = !saving,
                         )
                         if (saveError)
