@@ -1,6 +1,7 @@
 /** Shape-aware refraction. Frost, paints and directional light belong to the
  * shared author profile; this engine owns only the retained displacement map. */
 import { materialProfile } from '../profile';
+import { type MaterialContour, contourGeometry, materialContour } from './contour';
 import {
   type GlassAtlas,
   type GlassAtlasPlan,
@@ -175,6 +176,7 @@ const SCRATCH_IDLE_MS = 2000;
  * and cleared with the scratch on idle, so steady state retains nothing. */
 interface SdfEntry {
   inside: Float64Array; // quarter distance field, indexed [Y*halfW + X]
+  normals?: Float64Array;
   covered: Int32Array; // per top-half row: how many columns have been computed
   halfW: number;
   halfH: number;
@@ -230,12 +232,22 @@ function armScratchRelease(): void {
 export function __computeDisplacementField(
   w: number,
   h: number,
-  corner: RoundedShape,
+  shape: RoundedShape,
   depth: number,
   dpr: number,
 ): { data: Uint8ClampedArray; W: number; H: number; unit: number } {
-  if (typeof corner !== 'number') return asymmetricField(w, h, corner, depth, dpr);
-  const r = Math.max(0, Math.min(corner, Math.min(w, h) / 2));
+  const corner =
+    typeof shape !== 'number' && 'radii' in shape && (shape.width !== w || shape.height !== h)
+      ? materialContour(w, h, shape.radii, shape.smoothing)
+      : shape;
+  const contour =
+    typeof corner !== 'number' &&
+    'radii' in corner &&
+    corner.radii.every((r) => r === corner.radii[0])
+      ? corner
+      : null;
+  if (typeof corner !== 'number' && !contour) return asymmetricField(w, h, corner, depth, dpr);
+  const r = Math.max(0, Math.min(contour?.radii[0] ?? (corner as number), Math.min(w, h) / 2));
   const band = lensBand(depth, w, h);
   const halfSize = Math.min(w, h) / 2;
   const sc = Math.max(1, Math.min(dpr || 1, 2)); // device-pixel scale, capped at 2
@@ -256,7 +268,7 @@ export function __computeDisplacementField(
   // Separable SDF field: `inside` depends only on geometry (w,h,corner,sc), not
   // on `depth`. Fetch (or lazily create) the per-geometry distance-field cache
   // so a depth change reads the sqrt-heavy `inside` back with 0 recomputes.
-  const sdfKey = `${w}x${h}x${corner}x${sc}`;
+  const sdfKey = `${w}x${h}x${shapeKey(corner)}x${sc}`;
   let sdf = sdfCache.get(sdfKey);
   // Dims guard: the key ⇒ (halfW,halfH) deterministically today, so this never
   // fires — but if a future key edit ever let a mis-sized field answer a key, an
@@ -270,6 +282,7 @@ export function __computeDisplacementField(
   } else {
     sdf = {
       inside: new Float64Array(halfW * halfH),
+      ...(contour ? { normals: new Float64Array(2 * halfW * halfH) } : {}),
       covered: new Int32Array(halfH),
       halfW,
       halfH,
@@ -282,6 +295,8 @@ export function __computeDisplacementField(
   }
   const sInside = sdf.inside;
   const sCovered = sdf.covered;
+  const normals = sdf.normals;
+  const normal = contour ? new Float64Array(2) : null;
 
   // Distance, normal magnitude and optical section share four-way symmetry.
   // Only the normal's signs change, so one quarter supplies all four quadrants.
@@ -315,7 +330,14 @@ export function __computeDisplacementField(
       if (X < covered) {
         inside = sInside[rowBase + X] as number;
       } else {
-        inside = -sdRoundRect(px, py, w, h, r); // >0 inside, 0 at the edge
+        inside =
+          contour && normal
+            ? contourGeometry(contour, px, py, normal)
+            : -sdRoundRect(px, py, w, h, r);
+        if (normals && normal) {
+          normals[2 * (rowBase + X)] = normal[0] ?? 0;
+          normals[2 * (rowBase + X) + 1] = normal[1] ?? 0;
+        }
         sInside[rowBase + X] = inside;
         sdfComputeCount++; // the counter-assert: 0 on a same-geometry depth reuse
       }
@@ -329,8 +351,20 @@ export function __computeDisplacementField(
         const qx = r - px;
         const qy = r - py;
         const corner = qx > 0 && qy > 0;
-        const nx = corner ? qx / (r - inside) : qx > qy ? 1 : 0;
-        const ny = corner ? qy / (r - inside) : qx > qy ? 0 : 1;
+        const nx = normals
+          ? (normals[2 * (rowBase + X)] ?? 0)
+          : corner
+            ? qx / (r - inside)
+            : qx > qy
+              ? 1
+              : 0;
+        const ny = normals
+          ? (normals[2 * (rowBase + X) + 1] ?? 0)
+          : corner
+            ? qy / (r - inside)
+            : qx > qy
+              ? 0
+              : 1;
         const magnitude = lensDisplacement(inside, band, halfSize);
         dx = nx * magnitude;
         dy = ny * magnitude;
@@ -424,7 +458,13 @@ export function __computeDisplacementField(
  * quarter-field fast path above; asymmetric/elliptical shapes cache their full
  * distances once, so depth/refraction changes do not rerun the ellipse solver.
  */
-function asymmetricField(w: number, h: number, radii: CornerRadii, depth: number, dpr: number) {
+function asymmetricField(
+  w: number,
+  h: number,
+  radii: CornerRadii | MaterialContour,
+  depth: number,
+  dpr: number,
+) {
   const sc = Math.max(1, Math.min(dpr || 1, 2));
   const W = Math.max(1, Math.round(w * sc));
   const H = Math.max(1, Math.round(h * sc));
@@ -441,12 +481,15 @@ function asymmetricField(w: number, h: number, radii: CornerRadii, depth: number
         const i = y * W + x;
         const px = (x + 0.5) / sc;
         const py = (y + 0.5) / sc;
-        const distance = roundedShapeInside(px, py, w, h, radii);
+        const distance =
+          'radii' in radii
+            ? contourGeometry(radii, px, py, normal)
+            : roundedShapeInside(px, py, w, h, radii);
         field.distances[i] = distance;
         // Straight edges dominate ordinary cards/sheets. Their exact normal
         // follows directly from the distance, without four normal candidates.
         if (distance <= 0) continue;
-        if (!writeStraightNormal(px, py, w, h, distance, normal)) {
+        if (!('radii' in radii) && !writeStraightNormal(px, py, w, h, distance, normal)) {
           roundedShapeGeometry(px, py, w, h, radii, normal);
         }
         field.normals[2 * i] = normal[0] ?? 0;
@@ -503,7 +546,11 @@ function buildMap(
   dpr: number,
   atlasPlan?: GlassAtlasPlan | null,
 ): Omit<MapEntry, 'refs' | 'evicted'> {
-  const { data, W, H, unit } = __computeDisplacementField(w, h, corner, depth, dpr);
+  const used =
+    typeof corner !== 'number' && 'radii' in corner
+      ? materialContour(w, h, corner.radii, corner.smoothing)
+      : corner;
+  const { data, W, H, unit } = __computeDisplacementField(w, h, used, depth, dpr);
   if (!sCanvas) {
     sCanvas = document.createElement('canvas');
     sCtx = sCanvas.getContext('2d');
@@ -757,15 +804,17 @@ function readParams(el: HTMLElement, state: EngineState): RenderParams {
   // SVG userSpaceOnUse is local CSS space. A transformed boundingClientRect
   // would apply scale twice and rebuild the map during an ordinary sheet move.
   const rect = { width: el.offsetWidth, height: el.offsetHeight };
+  const radii = resolveCornerRadii(rect.width, rect.height, [
+    cs.borderTopLeftRadius,
+    cs.borderTopRightRadius,
+    cs.borderBottomRightRadius,
+    cs.borderBottomLeftRadius,
+  ]);
+  const smoothing = num('--lab-corner-smoothing', 0);
   return {
     w: Math.max(1, Math.round(rect.width)),
     h: Math.max(1, Math.round(rect.height)),
-    corner: resolveCornerRadii(rect.width, rect.height, [
-      cs.borderTopLeftRadius,
-      cs.borderTopRightRadius,
-      cs.borderBottomRightRadius,
-      cs.borderBottomLeftRadius,
-    ]),
+    corner: smoothing > 0 ? materialContour(rect.width, rect.height, radii, smoothing) : radii,
     refraction: p.refraction ?? num('--_lg-refraction', DEFAULTS.refraction),
     depth: Math.round(p.depth ?? num('--_lg-depth', DEFAULTS.depth)),
     dispersion: p.dispersion ?? num('--_lg-dispersion', DEFAULTS.dispersion),

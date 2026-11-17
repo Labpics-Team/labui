@@ -9,6 +9,8 @@ export {
 } from './luminance';
 
 export { mountMaterialRuntime } from './engine/runtime';
+export { mountSurfaceShape } from './engine/contour-surface';
+export type { SurfaceShapeOptions, SurfaceShapeHandle } from './engine/contour-surface';
 export type { MaterialRuntimeOptions } from './engine/runtime';
 export { materialProfile, materialRoles, materialBlendMode } from './profile';
 export type { MaterialBlendMode } from './profile';

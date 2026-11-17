@@ -7,6 +7,7 @@ import { displayPixels } from './display-pixels.mjs';
  */
 export async function verifyScrollPaint(page, origin, browser, display) {
   const rows = [];
+  const contour = process.env.MATERIAL_CONTOUR === '1';
   const flows = {
     block: 'display:block',
     'flex-column': 'display:flex;flex-direction:column;gap:14px',
@@ -24,59 +25,65 @@ export async function verifyScrollPaint(page, origin, browser, display) {
   };
   for (const [layout, flow] of Object.entries(flows)) {
     await page.goto(origin);
-    await page.evaluate(async (flow) => {
-      const nativeResize = window.ResizeObserver;
-      const nativeMutation = window.MutationObserver;
-      const resizes = new Map();
-      const mutations = new Map();
-      window.ResizeObserver = class extends nativeResize {
-        observe(target, options) {
-          if (!resizes.has(this)) resizes.set(this, new Set());
-          resizes.get(this).add(target);
-          super.observe(target, options);
-        }
-        unobserve(target) {
-          resizes.get(this)?.delete(target);
-          super.unobserve(target);
-        }
-        disconnect() {
-          resizes.delete(this);
-          super.disconnect();
-        }
-      };
-      window.MutationObserver = class extends nativeMutation {
-        observe(target, options) {
-          if (!mutations.has(this)) mutations.set(this, new Set());
-          mutations.get(this).add(target);
-          super.observe(target, options);
-        }
-        disconnect() {
-          mutations.delete(this);
-          super.disconnect();
-        }
-      };
-      window.scrollPaintObservers = () => ({
-        resize: [...resizes.values()].reduce((n, values) => n + values.size, 0),
-        mutation: [...mutations.values()].reduce((n, values) => n + values.size, 0),
-      });
-      const style = document.createElement('style');
-      style.textContent = `body{margin:0;background:rgb(0 40 160)}.host{position:relative;width:200px;height:120px;overflow:auto;border-radius:0;transform:translateZ(0);${flow};--_tint:rgb(255 255 255);--_blend:rgb(0 0 0 / 0);--_acrylic-noise:none;--_backdrop-blur:1px;--_rim:none}.content{width:300px;height:300px;flex:none}.peer{position:fixed;left:-1000px;top:0}.marker{position:fixed;left:16px;top:16px;width:8px;height:8px;background:rgb(7 251 137);z-index:2147483647;pointer-events:none}`;
-      document.head.append(style);
-      const host = document.createElement('div');
-      host.id = 'scroll-host';
-      host.className = 'host';
-      host.innerHTML = '<div class="content"></div><div class="content"></div>';
-      const peer = host.cloneNode(true);
-      peer.id = 'scroll-peer';
-      peer.classList.add('peer');
-      document.body.append(host, peer);
-      host.classList.add('lab-material', 'lab-material--soft');
-      const marker = document.createElement('div');
-      marker.className = 'marker';
-      document.body.append(marker);
-      const runtime = await import('/runtime.js');
-      window.stopScrollPaint = runtime.mountMaterialRuntime(host);
-    }, flow);
+    await page.evaluate(
+      async ({ flow, contour }) => {
+        const nativeResize = window.ResizeObserver;
+        const nativeMutation = window.MutationObserver;
+        const resizes = new Map();
+        const mutations = new Map();
+        window.ResizeObserver = class extends nativeResize {
+          observe(target, options) {
+            if (!resizes.has(this)) resizes.set(this, new Set());
+            resizes.get(this).add(target);
+            super.observe(target, options);
+          }
+          unobserve(target) {
+            resizes.get(this)?.delete(target);
+            super.unobserve(target);
+          }
+          disconnect() {
+            resizes.delete(this);
+            super.disconnect();
+          }
+        };
+        window.MutationObserver = class extends nativeMutation {
+          observe(target, options) {
+            if (!mutations.has(this)) mutations.set(this, new Set());
+            mutations.get(this).add(target);
+            super.observe(target, options);
+          }
+          disconnect() {
+            mutations.delete(this);
+            super.disconnect();
+          }
+        };
+        window.scrollPaintObservers = () => ({
+          resize: [...resizes.values()].reduce((n, values) => n + values.size, 0),
+          mutation: [...mutations.values()].reduce((n, values) => n + values.size, 0),
+        });
+        const style = document.createElement('style');
+        style.textContent = `body{margin:0;background:rgb(0 40 160)}.host{position:relative;width:200px;height:120px;overflow:auto;border-radius:0;transform:translateZ(0);${flow};--_tint:rgb(255 255 255);--_blend:rgb(0 0 0 / 0);--_acrylic-noise:none;--_backdrop-blur:1px;--_rim:none}.content{width:300px;height:300px;flex:none}.peer{position:fixed;left:-1000px;top:0}.marker{position:fixed;left:16px;top:16px;width:8px;height:8px;background:rgb(7 251 137);z-index:2147483647;pointer-events:none}`;
+        document.head.append(style);
+        if (contour)
+          style.textContent +=
+            '.host{border-radius:32px;--lab-corner-smoothing:.6;--lab-surface-stroke-width:1px;--lab-surface-stroke-color:transparent}';
+        const host = document.createElement('div');
+        host.id = 'scroll-host';
+        host.className = 'host';
+        host.innerHTML = '<div class="content"></div><div class="content"></div>';
+        const peer = host.cloneNode(true);
+        peer.id = 'scroll-peer';
+        peer.classList.add('peer');
+        document.body.append(host, peer);
+        host.classList.add('lab-material', 'lab-material--soft');
+        const marker = document.createElement('div');
+        marker.className = 'marker';
+        document.body.append(marker);
+        const runtime = await import('/runtime.js');
+        window.stopScrollPaint = runtime.mountMaterialRuntime(host);
+      },
+      { flow, contour },
+    );
     const settle = async () => {
       await page.evaluate(
         () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
@@ -112,6 +119,17 @@ export async function verifyScrollPaint(page, origin, browser, display) {
               ]
             : null,
           viewport: [host.clientWidth, host.clientHeight],
+          contours: Array.from(
+            host.querySelectorAll('.lab-material__contour,.lab-material__contour-stroke'),
+          ).map((node) => {
+            const r = node.getBoundingClientRect();
+            return [
+              r.x - rect.x - host.clientLeft,
+              r.y - rect.y - host.clientTop,
+              r.width,
+              r.height,
+            ];
+          }),
           scroll: [host.scrollLeft, host.scrollTop],
           peerScroll: [peer.scrollLeft, peer.scrollTop],
           runway: !!host.querySelector('.lab-material__paint-runway'),
@@ -135,6 +153,11 @@ export async function verifyScrollPaint(page, origin, browser, display) {
         );
         assert(result.capture[2] >= result.viewport[0] && result.capture[3] >= result.viewport[1]);
       }
+      for (const box of result.contours)
+        assert(
+          Math.abs(box[0]) < 1 && Math.abs(box[1]) < 1,
+          `${browser}/${layout}/${stage}: contour remains at viewport origin ${box}`,
+        );
       let pixels;
       if (display) pixels = await displayPixels(page, [50, 150]);
       else {
@@ -232,7 +255,9 @@ export async function verifyScrollPaint(page, origin, browser, display) {
     await page.evaluate(() => window.stopScrollPaint());
     assert.equal(
       await page
-        .locator('.lab-material__paint,.lab-material__paint-runway,.lab-material-paint-defs')
+        .locator(
+          '.lab-material__paint,.lab-material__paint-runway,.lab-material-paint-defs,.lab-material__contour,.lab-material__contour-stroke,.lab-material-contour-defs',
+        )
         .count(),
       0,
     );

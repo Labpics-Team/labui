@@ -24,7 +24,12 @@ export function glassAtlasPlan(
   // With a fractional pixel scale, rounding the full bitmap changes the right
   // and bottom sampling phase as dimensions change. Keep that exact field path.
   if (!Number.isInteger(dpr)) return null;
-  const radius = typeof corner === 'number' ? corner : Math.max(...corner);
+  const radius =
+    typeof corner === 'number'
+      ? corner
+      : 'radii' in corner
+        ? Math.max(...corner.corners.flatMap((c) => [c.x, c.y]))
+        : Math.max(...corner);
   const band = lensBand(depth, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
   const padding = Math.ceil(Math.max(radius, band) * dpr) / dpr;
   const minimum = Math.max(2 * padding + 1, 2 * lensReach(depth));
