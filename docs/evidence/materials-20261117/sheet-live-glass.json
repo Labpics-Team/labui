@@ -1,0 +1,119 @@
+{
+  "date": "2026-11-17T12:15:50.722Z",
+  "mode": "glass",
+  "before": {
+    "mode": "glass",
+    "filter": "blur(12.5px) url(\"#lab-lg-1\") url(\"#lab-material-paint-1\")",
+    "width": 640,
+    "height": 422,
+    "strips": 5
+  },
+  "browser": "140.0.7339.186",
+  "viewport": "1000x812@2",
+  "path": "live dev scene, 5 keyboard detent changes and a 20-frame drag",
+  "scopeMotion": false,
+  "detailedTrace": false,
+  "gpu": ["NVIDIA GeForce RTX 3080 Ti", "Microsoft Basic Render Driver"],
+  "gpuFeatures": {
+    "2d_canvas": "enabled",
+    "direct_rendering_display_compositor": "disabled_off_ok",
+    "gpu_compositing": "enabled",
+    "multiple_raster_threads": "enabled_on",
+    "opengl": "enabled_on",
+    "rasterization": "enabled",
+    "raw_draw": "disabled_off_ok",
+    "skia_graphite": "disabled_off",
+    "trees_in_viz": "disabled_off",
+    "video_decode": "enabled",
+    "video_encode": "enabled",
+    "vulkan": "disabled_off",
+    "webgl": "enabled",
+    "webgl2": "enabled",
+    "webgpu": "enabled",
+    "webnn": "disabled_off"
+  },
+  "errors": [],
+  "frames": {
+    "count": 322,
+    "medianMs": 8.5,
+    "p95Ms": 20.799999999999955,
+    "maxMs": 112.5,
+    "over25ms": 2,
+    "slow": [
+      {
+        "stage": "key:Home",
+        "intervalMs": 25.200000000000045,
+        "at": 1675.5
+      },
+      {
+        "stage": "drag",
+        "intervalMs": 112.5,
+        "at": 4408.5
+      }
+    ]
+  },
+  "resizes": 556,
+  "svgMutations": 1260,
+  "svgStructure": 0,
+  "svgHrefWrites": 0,
+  "veilMutations": 0,
+  "mapWrites": 0,
+  "pngEncodes": 0,
+  "phases": {
+    "Layout": {
+      "count": 304,
+      "sumMs": 35.716999999999985,
+      "p95Ms": 0.175,
+      "maxMs": 0.25
+    },
+    "UpdateLayoutTree": {
+      "count": 312,
+      "sumMs": 268.48299999999983,
+      "p95Ms": 1.283,
+      "maxMs": 1.707
+    },
+    "Paint": {
+      "count": 2651,
+      "sumMs": 162.8689999999998,
+      "p95Ms": 0.295,
+      "maxMs": 0.736
+    },
+    "RasterTask": {
+      "count": 0,
+      "sumMs": 0,
+      "p95Ms": 0,
+      "maxMs": 0
+    },
+    "CompositeLayers": {
+      "count": 0,
+      "sumMs": 0,
+      "p95Ms": 0,
+      "maxMs": 0
+    },
+    "FunctionCall": {
+      "count": 3098,
+      "sumMs": 401.38299999999884,
+      "p95Ms": 0.951,
+      "maxMs": 3.208
+    },
+    "FireAnimationFrame": {
+      "count": 910,
+      "sumMs": 361.15399999999994,
+      "p95Ms": 1.476,
+      "maxMs": 1.951
+    },
+    "MinorGC": {
+      "count": 2,
+      "sumMs": 1.045,
+      "p95Ms": 0.542,
+      "maxMs": 0.542
+    },
+    "MajorGC": {
+      "count": 4,
+      "sumMs": 6.618,
+      "p95Ms": 2.211,
+      "maxMs": 2.211
+    }
+  },
+  "keys": ["Home", "ArrowDown", "ArrowDown", "ArrowDown", "ArrowUp"]
+}
