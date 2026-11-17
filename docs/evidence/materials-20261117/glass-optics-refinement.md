@@ -72,6 +72,13 @@ Golden hashes обновлены намеренно после визуальн�
 прототипу и для Effects, и для Dock. [Независимая проверка](glass-independent-review.md)
 фиксирует конкретную версию и собственные опыты движения.
 
+CI на `ac42e1b`: Linux/macOS Material pixels PASS — 1440 scroll rows,
+408 paint rows и 96 сравнений теней; mutations при scroll и расхождений теней
+сверх допуска нет. Paint/scroll снимаются также с isolated actual-display,
+тени — browser screenshots. [Точная квалификация и ссылки](glass-ci-checks.json)
+отдельно сохраняют отказ общего security на новом advisory picomatch;
+оптическая проверка не подменяет его разбор.
+
 Воспроизведение после build Materials, в полном headless Chromium:
 
 ```sh
