@@ -19,7 +19,8 @@ Headless Chrome/WebKit: 39 проверок Input PASS, одна ожидаем�
 ARIA, constraint validation, FormData/reset/restore, focus и forced colors.
 114 тестов Tokens PASS. На production проходят 57 проверок Input, Sheet
 и первого сценария; одна WebKit/CDP проверка пропущена. Независимое ревью
-среза продолжается. Снимки Lit/React в двух темах создаёт input-render.mjs.
+приняло Input после описанных ниже исправлений. Снимки Lit/React в двух
+темах создаёт input-render.mjs.
 
 Опора исполнения notch: [MUI NotchedOutline](https://github.com/mui/material-ui/blob/master/packages/mui-material/src/OutlinedInput/NotchedOutline.js).
 Рисунок и размеры принадлежат Lab UI, а не MUI. Никакие окна и озвучивание
@@ -33,3 +34,11 @@ reset немедленно обновляет FormData. Ограничение16
 а slotted-действие сохраняет собственный размер. ESM/CJS import и React SSR
 проходят две отдельные проверки, включённые в pnpm test. Lit SSR без
 ElementInternals также проверен прямым исполнением.
+
+Повторное независимое ревью на production подтвердило все исправления
+0cc0454 и нашло один дополнительный случай: исходный inputType="TEXT"
+не учитывался при подсчёте полей, блокирующих implicit submission. Теперь
+подсчёт использует нормализованный браузером HTMLInputElement.type.
+Reviewer проверила TEXT, неизвестный и пустой тип с двумя полями, а также
+отправку единственного поля: 8/8 сценариев в Chromium/WebKit PASS.
+Дополненный Enter-тест прошёл на dev и production, typecheck и Biome PASS.

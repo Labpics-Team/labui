@@ -264,7 +264,10 @@ export class LabInput extends LabElement {
       const blocking = [...form.elements].filter((element) =>
         element instanceof HTMLInputElement
           ? implicitSubmissionTypes.has(element.type)
-          : element instanceof LabInput && implicitSubmissionTypes.has(element.inputType),
+          : element instanceof LabInput &&
+            implicitSubmissionTypes.has(
+              element.renderRoot.querySelector<HTMLInputElement>('input')?.type ?? 'text',
+            ),
       );
       if (blocking.length <= 1) form.requestSubmit();
     }, 0);

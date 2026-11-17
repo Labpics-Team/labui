@@ -295,6 +295,8 @@ test('Enter использует default submitter и уважает отмен�
     'cancel-key',
     'cancel-click',
     'two-fields',
+    'two-fields-uppercase',
+    'two-fields-unknown-type',
     'one-field',
     'novalidate',
   ]) {
@@ -310,13 +312,15 @@ test('Enter использует default submitter и уважает отмен�
       field.required = true;
       field.value = mode === 'novalidate' ? '' : 'value';
       form.append(field);
-      if (mode === 'two-fields') {
+      if (mode.startsWith('two-fields')) {
         const another = document.createElement('lab-input');
         another.name = 'second';
         another.label = 'Другое поле';
+        if (mode === 'two-fields-uppercase') another.inputType = 'TEXT';
+        if (mode === 'two-fields-unknown-type') another.inputType = 'unknown';
         form.append(another);
       }
-      if (!['two-fields', 'one-field'].includes(mode)) {
+      if (!mode.startsWith('two-fields') && mode !== 'one-field') {
         const submit = document.createElement('button');
         submit.type = 'submit';
         submit.name = 'action';
