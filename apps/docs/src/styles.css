@@ -5,18 +5,17 @@
  * engine stays behind the build boundary; docs consume semantic CSS only.
  * The smoke test mutates --lab-label-primary and verifies the heading follows it.
  */
-@import "@labui/colors/contract.css";
+@import "./foundation.css";
 
 /* LabUI dimension tokens — the --lab-space-* / --lab-font-size-* / --lab-z-*
  * contract from @labpics/ui-tokens. The e2e smoke asserts the fluid font-size
  * clamp actually interpolates across viewport widths. */
-@import "@labpics/ui-tokens/tokens.css";
 
 body {
   margin: 0;
   min-height: 100vh;
   background: var(--lab-bg-primary);
-  font-family: system-ui, sans-serif;
+  font-family: var(--lab-font-family);
 }
 
 main {

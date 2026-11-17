@@ -1,9 +1,5 @@
-@import "@labpics/fonts/fonts.css";
-@import "@labui/colors/contract.css";
-@import "@labpics/ui-tokens/tokens.css";
+@import "./foundation.css";
 @import "@labpics/ui-tokens/motion.css";
-@import "@labpics/ui-core/theme.css";
-@import "@labpics/ui-core/selection.css";
 @import "@labpics/ui-core/shadow.css";
 
 * {
@@ -13,7 +9,7 @@ body {
   margin: 0;
   background: var(--lab-bg-grouped-primary);
   color: var(--lab-label-primary);
-  font-family: Geist, sans-serif;
+  font-family: var(--lab-font-family);
   font-size: 1rem;
   line-height: 1.5;
 }

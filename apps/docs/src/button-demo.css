@@ -10,11 +10,7 @@
  * The React <Button> ships its own scoped stylesheet (imported by the
  * component); this file only provides the page frame + the token context.
  */
-@import "@labui/colors/contract.css";
-@import "@labpics/fonts/fonts.css";
-@import "@labpics/ui-tokens/tokens.css";
-@import "@labpics/ui-core/theme.css";
-@import "@labpics/ui-core/selection.css";
+@import "./foundation.css";
 
 body {
   margin: 0;
