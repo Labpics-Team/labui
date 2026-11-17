@@ -7,9 +7,24 @@ import { displayPixels } from './display-pixels.mjs';
  */
 export async function verifyScrollPaint(page, origin, browser, display) {
   const rows = [];
-  for (const layout of ['block', 'flex-column', 'flex-row', 'grid']) {
+  const flows = {
+    block: 'display:block',
+    'flex-column': 'display:flex;flex-direction:column;gap:14px',
+    'flex-row': 'display:flex;flex-direction:row;gap:14px',
+    grid: 'display:grid;grid-template-columns:repeat(2,max-content);gap:14px',
+    rtl: 'direction:rtl',
+    'row-reverse': 'display:flex;flex-direction:row-reverse;gap:14px',
+    'column-reverse': 'display:flex;flex-direction:column-reverse;gap:14px',
+    'vertical-rl': 'writing-mode:vertical-rl',
+    'vertical-lr': 'writing-mode:vertical-lr',
+    'rtl-row-reverse': 'display:flex;direction:rtl;flex-direction:row-reverse',
+    'vertical-rl-column-reverse':
+      'display:flex;writing-mode:vertical-rl;flex-direction:column-reverse',
+    'wrap-reverse': 'display:flex;flex-wrap:wrap-reverse',
+  };
+  for (const [layout, flow] of Object.entries(flows)) {
     await page.goto(origin);
-    await page.evaluate(async (layout) => {
+    await page.evaluate(async (flow) => {
       const nativeResize = window.ResizeObserver;
       const nativeMutation = window.MutationObserver;
       const resizes = new Map();
@@ -45,19 +60,12 @@ export async function verifyScrollPaint(page, origin, browser, display) {
         mutation: [...mutations.values()].reduce((n, values) => n + values.size, 0),
       });
       const style = document.createElement('style');
-      const flow =
-        layout === 'block'
-          ? 'display:block'
-          : layout === 'grid'
-            ? 'display:grid;grid-template-columns:repeat(2,max-content);gap:14px'
-            : `display:flex;flex-direction:${layout === 'flex-row' ? 'row' : 'column'};gap:14px`;
       style.textContent = `body{margin:0;background:rgb(0 40 160)}.host{position:relative;width:200px;height:120px;overflow:auto;border-radius:0;transform:translateZ(0);${flow};--_tint:rgb(255 255 255);--_blend:rgb(0 0 0 / 0);--_acrylic-noise:none;--_backdrop-blur:1px;--_rim:none}.content{width:300px;height:300px;flex:none}.peer{position:fixed;left:-1000px;top:0}.marker{position:fixed;left:16px;top:16px;width:8px;height:8px;background:rgb(7 251 137);z-index:2147483647;pointer-events:none}`;
       document.head.append(style);
       const host = document.createElement('div');
       host.id = 'scroll-host';
       host.className = 'host';
-      host.innerHTML =
-        '<div class="content"></div><div class="content"></div><div class="content"></div>';
+      host.innerHTML = '<div class="content"></div><div class="content"></div>';
       const peer = host.cloneNode(true);
       peer.id = 'scroll-peer';
       peer.classList.add('peer');
@@ -68,7 +76,7 @@ export async function verifyScrollPaint(page, origin, browser, display) {
       document.body.append(marker);
       const runtime = await import('/runtime.js');
       window.stopScrollPaint = runtime.mountMaterialRuntime(host);
-    }, layout);
+    }, flow);
     const settle = async () => {
       await page.evaluate(
         () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
@@ -104,6 +112,8 @@ export async function verifyScrollPaint(page, origin, browser, display) {
               ]
             : null,
           viewport: [host.clientWidth, host.clientHeight],
+          scroll: [host.scrollLeft, host.scrollTop],
+          peerScroll: [peer.scrollLeft, peer.scrollTop],
           runway: !!host.querySelector('.lab-material__paint-runway'),
           observers: window.scrollPaintObservers(),
         };
@@ -161,8 +171,8 @@ export async function verifyScrollPaint(page, origin, browser, display) {
       for (const node of host.querySelectorAll('.lab-material__paint-runway,.lab-material__paint'))
         watch.observe(node, { attributes: true, childList: true, subtree: true });
       for (let i = 0; i < 20; i++) {
-        host.scrollTo(i * 10, i * 10);
-        peer.scrollTo(i * 10, i * 10);
+        host.scrollTo((i - 10) * 20, (i - 10) * 20);
+        peer.scrollTo((i - 10) * 20, (i - 10) * 20);
         await new Promise(requestAnimationFrame);
       }
       host.scrollTo(200, 200);
@@ -190,8 +200,11 @@ export async function verifyScrollPaint(page, origin, browser, display) {
     }
     await page.evaluate(() => {
       for (const host of document.querySelectorAll('.host')) {
-        host.style.padding = '10px';
-        host.style.border = '2px solid transparent';
+        host.style.boxSizing = 'border-box';
+        host.style.width = '210px';
+        host.style.height = '130px';
+        host.style.padding = '7px 11px 13px 17px';
+        host.style.border = '3px solid transparent';
         host.scrollTo(200, 200);
       }
     });
@@ -202,6 +215,20 @@ export async function verifyScrollPaint(page, origin, browser, display) {
     });
     await settle();
     await measure('padded-border-end');
+    await page.evaluate(() => {
+      for (const child of document.querySelectorAll('.content')) {
+        child.style.width = '450px';
+        child.style.height = '450px';
+        child.style.setProperty('--scroll-probe', '1');
+      }
+    });
+    await settle();
+    await measure('restyled-at-end');
+    await page.evaluate(() => {
+      for (const host of document.querySelectorAll('.host')) host.scrollTo(-1e6, -1e6);
+    });
+    await settle();
+    await measure('negative-end');
     await page.evaluate(() => window.stopScrollPaint());
     assert.equal(
       await page
