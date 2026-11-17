@@ -10,10 +10,10 @@
  * (a rounding drift, a mis-mirrored quadrant, an over-eager skip that drops a rim
  * pixel) flips a hash and fails here.
  *
- * PROVENANCE: refreshed 2026-11-17 for the intentional replacement of centre
- * pull by shape-normal Snell refraction and the subsequent shared thickness
- * limit across symmetric/asymmetric corners. Four original Figma panes and the
- * before/after renders are in docs/evidence/materials-20261117/glass-optics.md.
+ * PROVENANCE: refreshed 2026-11-18 for the accepted depth-bounded Snell profile
+ * (base 0.4, index 2.8). This intentional optical change passed independent
+ * Effects/Dock image review; the retained atlas remains byte-identical to each
+ * bounded field. Evidence: docs/evidence/materials-20261117/glass-optics-refinement.md.
  * Independent ray/ellipse checks live in glass-optics.test.ts. These hashes
  * guard later implementation changes; they do not establish Figma fidelity.
  *
@@ -37,97 +37,97 @@ interface Golden {
 // name → frozen {sha256(rgba), feDisplacementMap unit, device W×H}
 const GOLDEN: Record<string, Golden> = {
   'small-square-dpr1': {
-    hash: 'dfd0e0b68842573a5af90c40aa6c81092b3960b5457e8f680a10eb31045e52c5',
+    hash: 'a8d8ccfd7989e10c4c4ae762c9cf4d1a305b447d1e8dda82f2318743483f82ae',
     unit: 47,
     W: 48,
     H: 48,
   },
   'small-square-dpr2': {
-    hash: 'a7eea73cb639fad81d7429cc154d149af253dcc8b764d713bf740525abc85f09',
+    hash: '80c9f9eb036b4657e49dd70902096f563134ac2cc2ceee6b77a88e42c7234660',
     unit: 47.5,
     W: 96,
     H: 96,
   },
   'small-radius0': {
-    hash: '0948f6f0dbf1a5368f7b9ecbb772713dd3b01be61ecc37853fd0b00c88c100a6',
+    hash: 'a37743cf555254144c8368666e8c875a973e9c961ed43f56f45036ada2b7e6ce',
     unit: 47,
     W: 48,
     H: 48,
   },
   'small-radius-over-half': {
-    hash: '67e40697405ae8e76c8cbe9540bd0a027ed4ff92bacc2fcd118083d8259023e4',
+    hash: 'c4f4b5effccf0fe661c9b2069d2f579cdc6e62d09751d70c08724c1e58d6c250',
     unit: 47,
     W: 48,
     H: 48,
   },
   'medium-card': {
-    hash: '1d70c889c28b3bf794934e32212a48226a0d7c079c6e0750959627cc7b5779c9',
-    unit: 98.935015181053,
+    hash: '1a409f74d4ba886cc800888d15d40552fc63b75c3affff66e80d8588de377895',
+    unit: 79,
     W: 320,
     H: 200,
   },
   'medium-card-dpr2': {
-    hash: 'd3aa257a4ec9d0487b7c923dbb0b3da64ced303ffbdedf3bcd46a1ca04af796d',
-    unit: 100.2450725288023,
+    hash: '51450aebfe5e8eb145d6c3b0fd315cacb027cc8d690208ea182264c7a0afcc06',
+    unit: 79.5,
     W: 640,
     H: 400,
   },
   'medium-radius0': {
-    hash: '005069e4d8e8dc0b2b499d1023b9fe685bd2330e4d15f774e3f8ef260d43d28e',
-    unit: 94.2860619878011,
+    hash: '8fd1bb626e2c9f2c260fa99b56c0b0d6d333b717396a805bd57121f758d06687',
+    unit: 79,
     W: 320,
     H: 200,
   },
   'medium-circleish': {
-    hash: '78923964b917d8c11b889d0d3e7946e02650eb0f3fadd446d773ec188b65cb89',
-    unit: 100.552362129812,
+    hash: '5b92ca145c091a010afed1872a596019aa579b552214ccddc1eacfe0adee170c',
+    unit: 79.7336433423158,
     W: 320,
     H: 320,
   },
   'medium-deep-band': {
-    hash: '052c2c2f7e6d3a9a48a08d4885c28404efe416ed6af14600c776db91c630fd55',
+    hash: 'b2438d79b3179dc5a745d6b1dba89c102f9a83ef88c61896d41f5e2d5bd6d46d',
     unit: 319,
     W: 320,
     H: 320,
   },
   'large-panel': {
-    hash: '0ccad6a0af039591555053953123396bebbb8f068a0cc19af39c377ca8194a36',
-    unit: 98.935015181053,
+    hash: '7bd0774f7eb5b3da58bf05b2243d1022ff0508ec7aaae94ad2af4ebd1afe9487',
+    unit: 79,
     W: 1024,
     H: 1024,
   },
   'large-panel-dpr2': {
-    hash: '1cfac2f9fe3211941649039359030ad6a3f274114d5a72bb0c6acec02fdef448',
-    unit: 100.2450725288023,
+    hash: '11f092e88ea6d38da057fe3aa785d803e085a32fe253fd3453ba3bbcdee407c7',
+    unit: 79.5,
     W: 2048,
     H: 1536,
   },
   'large-radius0': {
-    hash: '1ef226b4b5c67f8de434ba37b37bacf39be97bc8d7a932de988b0a29e164a8bb',
-    unit: 94.2860619878011,
+    hash: '40d5b5571b1046ca8ce494a79bc67a4223fca2bbb407876dfe8070fb134e4f3e',
+    unit: 79,
     W: 1024,
     H: 1024,
   },
   'large-circle': {
-    hash: '07a80f21384ad999772a19fb165a1d06573236f21b5ac1c7c6d77c160e35f702',
-    unit: 100.76596485200125,
+    hash: 'd705cf26c0b53867e258550f828c46531621dabf3f9a9d5dca046898fc7d19dd',
+    unit: 79.91198156107235,
     W: 1024,
     H: 1024,
   },
   'large-thin-band': {
-    hash: '203df65e460677784efebf3f39071ef1844e71acd6d175eeb78c8973655bf5f8',
-    unit: 18.27809417509815,
+    hash: '67652c4b9adb919bebd99caa7fc43cf7fa596ec1e7e7ca7439ca23f3664c8592',
+    unit: 15.525016684090016,
     W: 1024,
     H: 1024,
   },
   'wide-thin': {
-    hash: '28604d24432078820f59009701a3ccf6d7a8fd198e66185aabfc6ae735fcc40e',
+    hash: '9edb0be32d262001a0448f209badc9b849f69d2a1107cc8a4d2de9c9c3890cda',
     unit: 63,
     W: 1024,
     H: 64,
   },
   'tall-thin': {
-    hash: '18461823bf32932ea6347e5c8cb94bae00c35c90e1552251d6aaa979717cae48',
+    hash: 'c9ec6cee373dabd3c1a626732c31ebd7aba37096d76d9959bc378bcdaeb5b31d',
     unit: 63,
     W: 64,
     H: 1024,
@@ -140,19 +140,19 @@ const GOLDEN: Record<string, Golden> = {
   },
   'degenerate-2px': {
     hash: '1ae9f9e9fcf6f8009922ce078009828da7b755b53fd88640c08adb2e4d9c2a48',
-    unit: 0.9156552774318886,
+    unit: 0.9036036289687418,
     W: 2,
     H: 2,
   },
   'odd-dims': {
-    hash: 'db6f8a057f6105987cc0d321b674d3a3169c7f2ccc0102ea642580c4371eff5c',
-    unit: 80.72247420460846,
+    hash: '440bb33ee5a52cbbab12d26ee12be2626372ab6d56f99f21969cbb2732a942c2',
+    unit: 65,
     W: 321,
     H: 201,
   },
   'dpr3-clamped': {
-    hash: '7f5aba974094b316feefff1c5effe17449ed3a9b2cc1674882a59ddad678aa7a',
-    unit: 100.2450725288023,
+    hash: 'c5bdcc272438cab82807995987c48ef4745974649a6d141fc99790947e5994a2',
+    unit: 79.5,
     W: 640,
     H: 640,
   },

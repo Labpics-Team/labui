@@ -1,0 +1,37 @@
+{
+  "capturedAt": "2026-11-17T19:58:57.126Z",
+  "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+  "transport": "figma_execute_across_files read-only",
+  "node": {
+    "id": "6236:41583",
+    "name": "Ellipse 11",
+    "type": "ELLIPSE",
+    "x": 1655.5,
+    "y": 125,
+    "width": 10,
+    "height": 10,
+    "visible": true,
+    "opacity": 1,
+    "fills": [
+      {
+        "type": "SOLID",
+        "visible": true,
+        "opacity": 1,
+        "blendMode": "NORMAL",
+        "color": {
+          "r": 0.062745101749897,
+          "g": 0.062745101749897,
+          "b": 0.07058823853731155
+        },
+        "boundVariables": {
+          "color": {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:6005:69"
+          }
+        }
+      }
+    ],
+    "strokes": [],
+    "strokeWeight": 5
+  }
+}

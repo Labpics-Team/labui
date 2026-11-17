@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-17T21:11:30.672Z",
+  "browser": "140.0.7339.186",
+  "source": "LuaiBd4anRi4DMZayKAnY2",
+  "model": "shape-pegtop-contour-inner-bounds-refined",
+  "exteriorMae": 0.04472222222222222,
+  "rows": [
+    {
+      "id": "7671:10814",
+      "mae": 1.1713305415313164,
+      "max": 33
+    },
+    {
+      "id": "7671:10816",
+      "mae": 1.227037720479444,
+      "max": 18
+    },
+    {
+      "id": "7671:10818",
+      "mae": 1.2225325420178546,
+      "max": 30
+    }
+  ]
+}
