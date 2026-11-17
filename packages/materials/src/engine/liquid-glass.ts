@@ -1,6 +1,14 @@
 /** Shape-aware refraction. Frost, paints and directional light belong to the
  * shared author profile; this engine owns only the retained displacement map. */
 import { materialProfile } from '../profile';
+import {
+  type GlassAtlas,
+  type GlassAtlasPlan,
+  buildGlassAtlas,
+  glassAtlasMarkup,
+  glassAtlasPlan,
+  resizeGlassAtlas,
+} from './glass-atlas';
 import { lensBand, lensDisplacement } from './glass-optics';
 // Geometry, optical profile and displacement encoding remain DOM-free.
 import { sdRoundRect } from './lg-math';
@@ -46,6 +54,7 @@ export interface LiquidGlassHandle {
 }
 
 interface MapEntry {
+  atlas?: GlassAtlas;
   href: string | null;
   ready: Promise<string> | null;
   unit: number;
@@ -56,7 +65,7 @@ interface MapEntry {
 }
 
 interface StampedShape {
-  href: string | null;
+  map: MapEntry;
   w: number;
   h: number;
   dispersed: boolean;
@@ -91,6 +100,7 @@ interface EngineState extends LiquidGlassHandle {
   stamped: StampedShape | null;
   /** live feDisplacementMap nodes of the current structure */
   dispNodes: Element[] | null;
+  mapNodes: Element[] | null;
   /** last backdrop-filter string we wrote (skip repeats) */
   lastBackdrop: string | undefined;
   onPerf: ((report: PerfReport) => void) | null;
@@ -490,6 +500,7 @@ function buildMap(
   corner: RoundedShape,
   depth: number,
   dpr: number,
+  atlasPlan?: GlassAtlasPlan | null,
 ): Omit<MapEntry, 'refs' | 'evicted'> {
   const { data, W, H, unit } = __computeDisplacementField(w, h, corner, depth, dpr);
   if (!sCanvas) {
@@ -500,6 +511,21 @@ function buildMap(
   sCanvas.width = W;
   sCanvas.height = H;
   sCtx.putImageData(new ImageData(data, W, H), 0, 0);
+  if (atlasPlan) {
+    const atlas = buildGlassAtlas(sCanvas, atlasPlan, dpr);
+    const ready = Promise.all(
+      atlas.tiles.map(
+        (href) =>
+          new Promise<void>((resolve) => {
+            const im = new Image();
+            im.onload = im.onerror = () => resolve();
+            im.src = href;
+          }),
+      ),
+    ).then(() => atlas.tiles[0] ?? '');
+    armScratchRelease();
+    return { atlas, href: null, ready, unit, mapW: W, mapH: H };
+  }
   // The PNG encode was the LAST big synchronous chunk of a build (heavier than
   // the ¼-symmetric field loop). toBlob snapshots the canvas bitmap AT CALL
   // TIME (spec: a synchronous copy) and encodes off the main thread; the href
@@ -584,6 +610,7 @@ function acquireMap(
   corner: RoundedShape,
   depth: number,
   dpr: number,
+  atlasPlan?: GlassAtlasPlan | null,
 ): MapEntry {
   const hit = mapCache.get(geoKey);
   if (hit) {
@@ -591,7 +618,11 @@ function acquireMap(
     if (hit.refs === 1) touchLru(geoKey, hit); // revived a zombie → mark MRU
     return hit;
   }
-  const entry: MapEntry = { ...buildMap(w, h, corner, depth, dpr), refs: 1, evicted: false };
+  const entry: MapEntry = {
+    ...buildMap(w, h, corner, depth, dpr, atlasPlan),
+    refs: 1,
+    evicted: false,
+  };
   if (entry.ready) {
     // Cache-layer resolver registers FIRST, so by the time any render-layer
     // consumer sees the href, entry.href is already settled.
@@ -646,8 +677,11 @@ function filterMarkup(
   h: number,
   scale: number,
   dispersion: number,
+  tiles?: GlassAtlas,
 ): string {
-  const atlas = `<feImage href="${escAttr(href)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="map"/>`;
+  const atlas = tiles
+    ? glassAtlasMarkup(tiles, w, h)
+    : `<feImage href="${escAttr(href)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="map"/>`;
   const dm = (s: number) =>
     `<feDisplacementMap in="SourceGraphic" in2="map" scale="${fmtScale(s)}" xChannelSelector="R" yChannelSelector="G"`;
 
@@ -677,7 +711,17 @@ function applyLens(state: EngineState, map: MapEntry, p: RenderParams, scale: nu
     ? [fmtScale(scale * (1 + k)), fmtScale(scale), fmtScale(scale * (1 - k))]
     : [fmtScale(scale)];
   const s = state.stamped;
-  if (s && s.href === map.href && s.w === p.w && s.h === p.h && s.dispersed === dispersed) {
+  const sameMap = s && s.map === map;
+  if (sameMap && (map.atlas || (s.w === p.w && s.h === p.h)) && s.dispersed === dispersed) {
+    if (s.w !== p.w || s.h !== p.h) {
+      // Resize is scalar writes, no field loop, image encode/decode, or
+      // replacement SVG nodes. All four physical edges remain present.
+      filter.setAttribute('width', String(p.w));
+      filter.setAttribute('height', String(p.h));
+      if (map.atlas) resizeGlassAtlas(state.mapNodes ?? [], map.atlas.padding, p.w, p.h);
+      s.w = p.w;
+      s.h = p.h;
+    }
     const nodes = state.dispNodes ?? [];
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i] as Element;
@@ -696,9 +740,10 @@ function applyLens(state: EngineState, map: MapEntry, p: RenderParams, scale: nu
   filter.setAttribute('y', '0');
   filter.setAttribute('width', String(p.w));
   filter.setAttribute('height', String(p.h));
-  filter.innerHTML = filterMarkup(map.href ?? '', p.w, p.h, scale, p.dispersion);
+  filter.innerHTML = filterMarkup(map.href ?? '', p.w, p.h, scale, p.dispersion, map.atlas);
   state.dispNodes = Array.from(filter.querySelectorAll('feDisplacementMap'));
-  state.stamped = { href: map.href, w: p.w, h: p.h, dispersed, scales };
+  state.mapNodes = Array.from(filter.querySelectorAll('feImage'));
+  state.stamped = { map, w: p.w, h: p.h, dispersed, scales };
 }
 
 function readParams(el: HTMLElement, state: EngineState): RenderParams {
@@ -756,6 +801,7 @@ function dropMap(state: EngineState): void {
   // but the stamp bookkeeping must reset so a later re-enable rebuilds structure.
   state.stamped = null;
   state.dispNodes = null;
+  state.mapNodes = null;
 }
 
 function render(state: EngineState): void {
@@ -790,7 +836,10 @@ function render(state: EngineState): void {
   // The map depends ONLY on geometry (size/corner/depth/dpr) — not on position,
   // strength, or dispersion. So a DRAG or a refraction/dispersion change never
   // rebuilds it (cheap re-stamp); only resize/corner/depth does.
-  const geoKey = `${p.w}x${p.h}x${shapeKey(p.corner)}x${p.depth}x${dpr.toFixed(2)}`;
+  const atlasPlan = glassAtlasPlan(p.w, p.h, p.corner, p.depth, dpr);
+  const mapW = atlasPlan?.side ?? p.w;
+  const mapH = atlasPlan?.side ?? p.h;
+  const geoKey = `${atlasPlan ? 'atlas:' : ''}${mapW}x${mapH}x${shapeKey(p.corner)}x${p.depth}x${dpr.toFixed(2)}`;
   const t0 = state.onPerf ? performance.now() : 0;
 
   const stamp = (map: MapEntry, mapMs: number): void => {
@@ -850,7 +899,10 @@ function render(state: EngineState): void {
   const prevHeld = state.heldKey;
   const tMap = state.onPerf ? performance.now() : 0;
 
-  const map = acquireMap(geoKey, p.w, p.h, p.corner, p.depth, dpr);
+  const map = acquireMap(geoKey, mapW, mapH, p.corner, p.depth, dpr, atlasPlan);
+  // A second render while the new image is decoding must re-arm THIS map,
+  // never stamp the previous geometry under the newly acquired key.
+  state.map = null;
   state.heldKey = geoKey; // we now hold a ref for this geometry (decode aside)
   state.pendingMap = map; // so a same-geometry re-render mid-decode can re-arm a stamp
   if (prevHeld && prevHeld !== geoKey) releaseMap(prevHeld);
@@ -896,6 +948,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
     pendingMap: null,
     stamped: null,
     dispNodes: null,
+    mapNodes: null,
     lastBackdrop: undefined,
     onPerf: typeof onPerf === 'function' ? onPerf : null,
     update: () => {},
