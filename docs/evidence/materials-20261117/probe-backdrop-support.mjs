@@ -79,12 +79,6 @@ async function pixelsAt(page, xs) {
 
 async function settle(page) {
   if (display) {
-    await page.evaluate(() => {
-      const marker = document.createElement('div');
-      marker.style.cssText =
-        'position:fixed;left:16px;top:16px;width:8px;height:8px;background:rgb(7 251 137);z-index:2147483647;pointer-events:none';
-      document.body.append(marker);
-    });
     // XWD has no compositor fence; bounded settling is specific to this diagnostic.
     await page.waitForTimeout(250);
   }

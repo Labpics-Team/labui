@@ -62,7 +62,7 @@ export async function verifyScrollPaint(page, origin, browser, display) {
           mutation: [...mutations.values()].reduce((n, values) => n + values.size, 0),
         });
         const style = document.createElement('style');
-        style.textContent = `body{margin:0;background:rgb(0 40 160)}.host{position:relative;width:200px;height:120px;overflow:auto;border-radius:0;transform:translateZ(0);${flow};--_tint:rgb(255 255 255);--_blend:rgb(0 0 0 / 0);--_acrylic-noise:none;--_backdrop-blur:1px;--_rim:none}.content{width:300px;height:300px;flex:none}.peer{position:fixed;left:-1000px;top:0}.marker{position:fixed;left:16px;top:16px;width:8px;height:8px;background:rgb(7 251 137);z-index:2147483647;pointer-events:none}`;
+        style.textContent = `body{margin:0;background:rgb(0 40 160)}.host{position:relative;width:200px;height:120px;overflow:auto;border-radius:0;transform:translateZ(0);${flow};--_tint:rgb(255 255 255);--_blend:rgb(0 0 0 / 0);--_acrylic-noise:none;--_backdrop-blur:1px;--_rim:none}.content{width:300px;height:300px;flex:none}.peer{position:fixed;left:-1000px;top:0}`;
         document.head.append(style);
         if (contour)
           style.textContent +=
@@ -76,9 +76,6 @@ export async function verifyScrollPaint(page, origin, browser, display) {
         peer.classList.add('peer');
         document.body.append(host, peer);
         host.classList.add('lab-material', 'lab-material--soft');
-        const marker = document.createElement('div');
-        marker.className = 'marker';
-        document.body.append(marker);
         const runtime = await import('/runtime.js');
         window.stopScrollPaint = runtime.mountMaterialRuntime(host);
       },

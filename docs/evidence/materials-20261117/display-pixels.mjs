@@ -5,27 +5,51 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
+let markerSequence = 0;
+
 /** Page.screenshot() can omit backdrop filters while the display renders them.
  * Read the compositor instead. A page marker determines origin and screen scale,
  * without browser chrome offsets. See Playwright issue43646 / Mozilla1657997.
  */
 export async function displayPixels(page, xs) {
+  // A distinct marker identifies this committed frame, not a previous scene
+  // which happened to place the old fixed green marker at the same position.
+  const sequence = ++markerSequence;
+  const marker = [7, 128 + (sequence % 128), 128 + (Math.floor(sequence / 128) % 128)];
+  await page.evaluate((rgb) => {
+    let element = document.querySelector('[data-material-display-marker]');
+    if (!element) {
+      element = document.createElement('div');
+      element.setAttribute('data-material-display-marker', '');
+      element.style.cssText =
+        'position:fixed;left:16px;top:16px;width:8px;height:8px;z-index:2147483647;pointer-events:none';
+      document.body.append(element);
+    }
+    element.style.background = `rgb(${rgb.join(' ')})`;
+  }, marker);
   // A fresh headed CI browser can be behind its display surface for several
   // compositor turns. Retry only a missing marker; a present-but-wrong sample
   // must remain a visible rendering failure.
   const deadline = Date.now() + 5000;
+  let staleFrames = 0;
   while (true) {
     try {
-      return await captureDisplayPixels(page, xs);
+      const pixels = await captureDisplayPixels(page, xs, marker);
+      if (staleFrames)
+        console.info(
+          `MATERIAL_DISPLAY_SYNC_ROW=${JSON.stringify({ sequence, marker, staleFrames })}`,
+        );
+      return pixels;
     } catch (error) {
       if (!String(error).includes('page marker appears on the display') || Date.now() >= deadline)
         throw error;
+      staleFrames++;
       await page.waitForTimeout(100);
     }
   }
 }
 
-async function captureDisplayPixels(page, xs) {
+async function captureDisplayPixels(page, xs, marker) {
   let frame;
   if (process.platform === 'linux') {
     const data = await readFile(process.env.XWD_FILE);
@@ -59,7 +83,7 @@ async function captureDisplayPixels(page, xs) {
       // Scan the PNG in the page and transfer only the requested pixels. Sending
       // a full desktop as a JSON array made each macOS sample take seconds.
       return await page.evaluate(
-        `(async ({ base64, xs }) => {
+        `(async ({ base64, xs, marker }) => {
         const image = new Image();
         image.src = 'data:image/png;base64,' + base64;
         await image.decode();
@@ -72,8 +96,8 @@ async function captureDisplayPixels(page, xs) {
           width: image.width,
           height: image.height,
           pixels: context.getImageData(0, 0, image.width, image.height).data,
-        }, xs);
-      })(${JSON.stringify({ base64: png.toString('base64'), xs })})`,
+        }, xs, marker);
+      })(${JSON.stringify({ base64: png.toString('base64'), xs, marker })})`,
       );
     } finally {
       await rm(directory, { recursive: true, force: true });
@@ -81,20 +105,22 @@ async function captureDisplayPixels(page, xs) {
   } else {
     throw new Error('Display capture needs Xvfb on Linux or screencapture on macOS');
   }
-  return sampleDisplay(frame, xs);
+  return sampleDisplay(frame, xs, marker);
 }
 
 /** Self-contained so the exact same marker/sample code runs beside the decoded
  * PNG in the browser or the XWD bytes in Node. No desktop pixel array crosses
  * the Playwright protocol.
  */
-function sampleDisplay(frame, xs) {
+export function sampleDisplay(frame, xs, marker) {
   const check = (condition, message = 'sample stays within the display') => {
     if (!condition) throw new Error(message);
   };
   const { width, height, pixels } = frame;
   const isMarker = (offset) =>
-    pixels[offset] === 7 && pixels[offset + 1] === 251 && pixels[offset + 2] === 137;
+    pixels[offset] === marker[0] &&
+    pixels[offset + 1] === marker[1] &&
+    pixels[offset + 2] === marker[2];
   let origin = -1;
   for (let offset = 0; offset < pixels.length; offset += 4) {
     if (isMarker(offset)) {
