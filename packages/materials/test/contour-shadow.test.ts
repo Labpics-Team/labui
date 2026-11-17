@@ -68,4 +68,16 @@ describe('CSS contour shadows', () => {
     expect(outer).toContain('<feFlood flood-opacity="0" result="spread-0"/>');
     expect(outer).not.toContain('feImage');
   });
+
+  it('normalizes overlapping asymmetric radii after a hole contracts', () => {
+    const markup = shadowMarkup(
+      [shadow({ x: 20, y: 10, spread: 20, inset: true })],
+      materialContour(100, 140, [0, 0, 100, 100, 0, 0, 0, 0], 0),
+      [0, 0, 0, 0],
+    );
+    expect(markup).toContain('width="60" height="100"');
+    // The 80px corner no longer fits the 60px hole: scale BOTH axes by .75.
+    expect(images(markup)[0]).toContain('a 60 60');
+    expect(images(markup)[0]).not.toContain('a 80 80');
+  });
 });

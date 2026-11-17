@@ -1,9 +1,9 @@
 {
-  "date": "2026-11-17T18:56:44.112Z",
-  "sourceBase": "5d3df88",
-  "runtimeSha256": "6d68c62f3f42cfb3346925d7866f267249196142ae64535a9f9e36179cc81b54",
+  "date": "2026-11-17T19:05:24.809Z",
+  "sourceBase": "d7153b1",
+  "runtimeSha256": "a0886fc4a38ec646a77cd10aa8c7fc93017db1a43f1ad10279d7b42be6d38696",
   "unit": {
-    "materials": 173,
+    "materials": 174,
     "colors": 181
   },
   "browsers": ["chromium", "webkit"],
@@ -182,6 +182,18 @@
           "checked": 232980,
           "painted": 9838,
           "mismatches": 0
+        },
+        {
+          "name": "asymmetric-inner-spread",
+          "checked": 236312,
+          "painted": 5992,
+          "mismatches": 0
+        },
+        {
+          "name": "asymmetric-inner-contract",
+          "checked": 236296,
+          "painted": 10018,
+          "mismatches": 0
         }
       ],
       "disposed": {
@@ -242,6 +254,18 @@
           "checked": 232929,
           "painted": 9805,
           "mismatches": 0
+        },
+        {
+          "name": "asymmetric-inner-spread",
+          "checked": 236329,
+          "painted": 5964,
+          "mismatches": 0
+        },
+        {
+          "name": "asymmetric-inner-contract",
+          "checked": 236306,
+          "painted": 9979,
+          "mismatches": 0
         }
       ],
       "disposed": {
@@ -252,5 +276,12 @@
       }
     }
   ],
-  "qualification": "Local headless. Full three-engine actual-display qualification follows in isolated CI. Native shadows compared in zero-smoothing limit, on flat 3x3 interiors to exclude edge antialiasing."
+  "qualification": "Local headless. Full three-engine actual-display qualification follows in isolated CI. Native shadows compared in zero-smoothing limit, on flat 3x3 interiors to exclude edge antialiasing.",
+  "independentReview": {
+    "date": "2026-11-17",
+    "status": "PASS",
+    "requiredFindingsRemaining": 0,
+    "scope": "Shared contour, local border-box placement, CSS shadow geometry, lifecycle and browser harness",
+    "finalReproduction": "Both asymmetric inset-spread overlap cases now have zero stable-interior mismatches in Chromium and WebKit; border-only resize and cleanup remain correct."
+  }
 }
