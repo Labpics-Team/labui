@@ -6,6 +6,13 @@
 `outputRgb` / `outputOpacity`. Старый `LabColors.resolveTheme` не используется.
 API подтверждён установленным npm-пакетом, а не состоянием ветки main.
 
+`@labui/colors/program-source` предоставляет `prepareThemeProgram(theme, contrast)`
+для генераторов native: wire-байты ABI v2, соответствие `slot → role`, alias/scalar
+роли и исходный фон. Этот же граф компилирует web runtime. Подготовка не запускает
+WASM; каждый вызов возвращает отдельный буфер байтов и неизменяемые метаданные.
+Native-генератор сохраняет их в ресурсы библиотеки, а платформенный Colors host
+читает цвет через `outputRgb`/`outputOpacity`. CSS не служит форматом обмена.
+
 ## Источник и первый кадр
 
 [labui.config.json](../../packages/colors/labui.config.json) — профиль:

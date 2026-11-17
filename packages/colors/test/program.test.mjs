@@ -1,8 +1,10 @@
 import { readFile } from 'node:fs/promises';
+import { compileProgramWire } from '@labpics/colors';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initializeNodeColors } from '../engine.mjs';
 import config from '../labui.config.json' with { type: 'json' };
 import { themeProfile } from '../profile.mjs';
+import { prepareThemeProgram } from '../program-source.mjs';
 import { createThemeProgram } from '../program.mjs';
 
 beforeAll(initializeNodeColors);
@@ -14,6 +16,59 @@ function resolved(values, name) {
 }
 
 describe('LabUI profile over the published Colors Program', () => {
+  it('shares the native wire, output slots and aliases with every web theme', () => {
+    for (const theme of ['light', 'dark']) {
+      for (const contrast of ['normal', 'more']) {
+        const source = prepareThemeProgram(theme, contrast);
+        const runtime = compileProgramWire(source.bytes, 1);
+        const web = createThemeProgram(theme, contrast);
+        const snapshot = runtime.updateObserved(
+          1n,
+          new Uint32Array([1]),
+          new Uint8Array(source.background),
+          1,
+        );
+        try {
+          expect(snapshot.state).toBe('ready');
+          const values = web.update();
+          const slots = new Map(source.outputs.map(({ slot, name }) => [slot, name]));
+          expect(snapshot.outputCount()).toBe(slots.size);
+          for (let index = 0; index < snapshot.outputCount(); index++) {
+            const name = slots.get(snapshot.outputSlot(index));
+            const rgb = snapshot.outputRgb(index);
+            const alpha = snapshot.outputOpacity(index);
+            expect(values[`--lab-${name}`]).toBe(
+              `rgb(${rgb.join(' ')}${alpha === 1 ? '' : ` / ${alpha}`})`,
+            );
+          }
+          for (const [name, value] of Object.entries(source.roles)) {
+            if (typeof value !== 'string') continue;
+            expect(values[`--lab-${name}`]).toBe(`var(--lab-${value.slice(1)})`);
+            expect(resolved(values, name)).toMatch(/^rgb\(/);
+          }
+        } finally {
+          snapshot.free();
+          runtime.free();
+          web.dispose();
+        }
+      }
+    }
+  });
+
+  it('gives native generators an independent byte buffer and immutable role metadata', () => {
+    const first = prepareThemeProgram();
+    const expected = first.bytes.slice();
+    first.bytes.fill(0);
+    expect(prepareThemeProgram().bytes).toEqual(expected);
+    expect(() => first.outputs.push({ slot: 0, name: 'foreign' })).toThrow();
+    expect(() => {
+      first.outputs[0].name = 'foreign';
+    }).toThrow();
+    expect(() => {
+      first.roles['label-on-accent'] = '@foreign';
+    }).toThrow();
+  });
+
   for (const theme of ['light', 'dark']) {
     it(`${theme}: preserves the authored palette, primary and white on accent`, async () => {
       const program = createThemeProgram(theme);

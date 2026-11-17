@@ -10,6 +10,10 @@
     "./contract.min.css": "./contract.min.css",
     "./roles.json": "./roles.json",
     "./labui.config.json": "./labui.config.json",
+    "./program-source": {
+      "types": "./program-source.d.mts",
+      "import": "./program-source.mjs"
+    },
     "./runtime": {
       "types": "./runtime.d.mts",
       "import": "./runtime.mjs"
@@ -24,6 +28,8 @@
     "runtime.mjs",
     "runtime.d.mts",
     "program.mjs",
+    "program-source.mjs",
+    "program-source.d.mts",
     "profile.mjs"
   ],
   "scripts": {
