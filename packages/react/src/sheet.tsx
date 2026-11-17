@@ -8,11 +8,8 @@ import {
   mountSheetMotion,
   sheetMotionProperties,
 } from '@labpics/ui-core/motion/sheet';
-import {
-  type LabSheetPosition,
-  parseSheetPosition,
-  sheetGeometry,
-} from '@labpics/ui-core/sheet/positions';
+import { measureSheetGeometry } from '@labpics/ui-core/sheet/measure';
+import { type LabSheetPosition, parseSheetPosition } from '@labpics/ui-core/sheet/positions';
 import { mountMaterialRuntime } from '@labpics/ui-materials';
 import * as dialogMachine from '@zag-js/dialog';
 import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
@@ -20,7 +17,7 @@ import '@labpics/ui-materials/material.css';
 import { DialogPortalPlane } from './components/dialog-portal-plane.js';
 import { type ModalTrigger, useModalTrigger } from './components/modal-trigger.js';
 import { useZag } from './use-zag.js';
-import './sheet.css';
+import '@labpics/ui-core/sheet.css';
 
 export type { LabSheetPosition } from '@labpics/ui-core/sheet/positions';
 export type { ModalTrigger, ModalTriggerProps } from './components/modal-trigger.js';
@@ -191,10 +188,6 @@ export function Sheet({
       if (!motion.current || (!motion.current.active && effectiveOpen)) {
         const view = currentFrame.ownerDocument.defaultView;
         if (!view) throw new Error('LabSheet: движение требует окно документа');
-        const measure = (selector: string): number => {
-          const element = currentPositioner.querySelector<HTMLElement>(selector);
-          return element ? Number.parseFloat(view.getComputedStyle(element).height) : 0;
-        };
         motion.current = mountSheetMotion(
           currentFrame,
           currentHandle,
@@ -205,36 +198,7 @@ export function Sheet({
             ...currentPositioner.querySelectorAll('.lab-sheet-preset'),
           ],
           {
-            readGeometry: () => {
-              const viewport = currentPositioner.getBoundingClientRect().height || view.innerHeight;
-              const surfaceStyle = view.getComputedStyle(currentSurface);
-              const gap = measure('.lab-sheet-gap');
-              const bodyHeight = currentBody.getBoundingClientRect().height;
-              const headingHeight =
-                currentFrame.querySelector('.lab-sheet-panel-heading')?.getBoundingClientRect()
-                  .height ?? 0;
-              const natural = bodyHeight + headingHeight;
-              const bodyGap = bodyHeight > 0 && headingHeight > 0 ? gap : 0;
-              currentSurface.style.setProperty(
-                '--_sheet-panel-gap',
-                natural > 0 ? 'var(--_sheet-gap)' : '0px',
-              );
-              currentPanel.style.setProperty(
-                '--_sheet-body-gap',
-                bodyGap > 0 ? 'var(--_sheet-gap)' : '0px',
-              );
-              // Renderer измеряет содержимое и rem-пресеты; clamp и Half принадлежат Core.
-              const flex =
-                measure('.lab-sheet-handle') +
-                Number.parseFloat(surfaceStyle.paddingBottom) +
-                (natural > 0 ? gap + natural + bodyGap : 0);
-              return sheetGeometry(viewport, measure('.lab-sheet-overlap'), {
-                full: measure('.lab-sheet-preset-full'),
-                'two-thirds': measure('.lab-sheet-preset-two-thirds'),
-                'one-third': measure('.lab-sheet-preset-one-third'),
-                flex,
-              });
-            },
+            readGeometry: () => measureSheetGeometry(currentPositioner),
             onPositionChange: changePosition,
             onOpenChange: changeOpen,
             onClosed: () => {

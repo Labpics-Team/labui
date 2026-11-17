@@ -33,6 +33,7 @@
     "./selection.css": "./dist/selection.css",
     "./shadow.css": "./dist/shadow.css",
     "./tokens.css": "./dist/tokens.css",
+    "./sheet.css": "./dist/sheet.css",
     "./package.json": "./package.json",
     "./dialog/shared": {
       "types": "./dist/components/dialog/shared.d.ts",
@@ -48,6 +49,11 @@
       "types": "./dist/motion/sheet.d.ts",
       "import": "./dist/motion/sheet.js",
       "require": "./dist/motion/sheet.cjs"
+    },
+    "./sheet/measure": {
+      "types": "./dist/components/sheet/measure.d.ts",
+      "import": "./dist/components/sheet/measure.js",
+      "require": "./dist/components/sheet/measure.cjs"
     }
   },
   "files": ["dist"],
@@ -56,13 +62,14 @@
     "./dist/selection.css",
     "./dist/shadow.css",
     "./dist/tokens.css",
+    "./dist/sheet.css",
     "./dist/proof/lab-proof.js",
     "./dist/proof/lab-proof.cjs",
     "./dist/components/**"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "test": "vitest run"
   },
   "dependencies": {
@@ -91,7 +98,8 @@
     "lit": "3.3.3",
     "@labpics/motion": "0.5.0",
     "@labpics/ui-tokens": "workspace:*",
-    "@zag-js/dom-query": "1.41.2"
+    "@zag-js/dom-query": "1.41.2",
+    "@labpics/ui-materials": "workspace:*"
   },
   "peerDependencies": {
     "@lit-labs/ssr": "^4.1.0"

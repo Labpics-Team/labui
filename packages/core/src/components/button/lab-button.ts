@@ -49,6 +49,11 @@ export type LabButtonSize = 's' | 'm' | 'l';
 /** HTML type of the internal button in Shadow DOM. */
 export type LabButtonHtmlType = 'button' | 'submit' | 'reset';
 
+interface LabButtonInteractionTarget {
+  readonly current: HTMLButtonElement | null;
+  readonly subscribe: (listener: (target: HTMLButtonElement | null) => void) => () => void;
+}
+
 export class LabButton extends LabElement {
   static override properties = {
     type: { reflect: true },
@@ -81,6 +86,11 @@ export class LabButton extends LabElement {
   declare htmlType: LabButtonHtmlType;
   declare ariaLabel: string | null;
 
+  private nativeTarget: HTMLButtonElement | null = null;
+  private readonly targetListeners = new Set<(target: HTMLButtonElement | null) => void>();
+  /** Компоненты используют настоящий control без знания устройства Shadow DOM. */
+  readonly interactionTarget: LabButtonInteractionTarget;
+
   constructor() {
     super();
     this.type = 'accent';
@@ -91,6 +101,51 @@ export class LabButton extends LabElement {
     this.disabled = false;
     this.htmlType = 'button';
     this.ariaLabel = null;
+    const owner = this;
+    this.interactionTarget = Object.freeze({
+      get current(): HTMLButtonElement | null {
+        return owner.nativeTarget;
+      },
+      subscribe(listener: (target: HTMLButtonElement | null) => void): () => void {
+        owner.targetListeners.add(listener);
+        try {
+          listener(owner.nativeTarget);
+        } catch (error) {
+          owner.targetListeners.delete(listener);
+          throw error;
+        }
+        return () => owner.targetListeners.delete(listener);
+      },
+    });
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.requestUpdate();
+  }
+  override updated(): void {
+    if (this.isConnected) this.publishInteractionTarget(this.renderRoot.querySelector('button'));
+  }
+  override disconnectedCallback(): void {
+    try {
+      this.publishInteractionTarget(null);
+    } finally {
+      super.disconnectedCallback();
+    }
+  }
+  private publishInteractionTarget(target: HTMLButtonElement | null): void {
+    this.nativeTarget = target;
+    const failures: unknown[] = [];
+    for (const listener of [...this.targetListeners]) {
+      if (!this.targetListeners.has(listener)) continue;
+      try {
+        listener(target);
+      } catch (error) {
+        failures.push(error);
+      }
+    }
+    if (failures.length === 1) throw failures[0];
+    if (failures.length) throw new AggregateError(failures, 'LabButton interaction target');
   }
 
   static override styles = css`

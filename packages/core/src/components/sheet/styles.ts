@@ -1,3 +1,5 @@
+/** Общая геометрия и оформление Sheet для Lit и React. */
+export const sheetCss = String.raw`
 /* Геометрия Core Sheet; native DOM сохраняет те же semantic paints и материалы. */
 .lab-sheet-positioner {
   --_sheet-inset: var(--lab-space-sheet-inset, 1rem);
@@ -41,6 +43,7 @@
   position: absolute;
   inset: 0;
   transform: translateY(var(--_sheet-top));
+  height: max(0px, calc(100% - var(--_sheet-top)));
   min-width: 0;
   min-height: 0;
   border-radius: var(--lab-radius-sheet, 2rem) var(--lab-radius-sheet, 2rem) 0 0;
@@ -182,3 +185,4 @@
 .lab-sheet-gap {
   height: var(--_sheet-gap);
 }
+`;

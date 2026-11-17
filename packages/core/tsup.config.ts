@@ -32,6 +32,7 @@ export default libraryPreset({
     'src/proof/lab-proof.ts',
     'src/components/dialog/shared.ts',
     'src/components/sheet/positions.ts',
+    'src/components/sheet/measure.ts',
     'src/motion/sheet.ts',
     ...componentEntries,
   ],

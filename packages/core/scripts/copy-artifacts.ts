@@ -11,10 +11,11 @@
  * Mirrors the same step in @labpics/ui-tokens. tsup only bundles the TS entry;
  * the CSS surface is shipped verbatim.
  */
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { sheetCss } from '../src/components/sheet/styles.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '..', 'src');
@@ -39,6 +40,7 @@ function main(): void {
   // Re-export the shadow contract so consumers need only `@labpics/ui-core/shadow.css`.
   copyFileSync(shadowPkg, join(dist, 'shadow.css'));
   copyFileSync(tokensPkg, join(dist, 'tokens.css'));
+  writeFileSync(join(dist, 'sheet.css'), sheetCss);
 
   process.stdout.write(
     `ui-core: copied ${[...ownFiles, 'shadow.css', 'tokens.css'].join(', ')} to dist\n`,
