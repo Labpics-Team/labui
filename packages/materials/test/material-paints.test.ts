@@ -63,7 +63,7 @@ describe('encoded sRGB author paints', () => {
         for (let i = 0; i < 4096; i++) {
           const value = (i / 4096) * 255;
           const exact = materialPaintOver(paints, { r: value, g: value, b: value, a: 1 });
-          const offset = (i / 4096) * 256;
+          const offset = (i / 4096) * ((tables[0]?.length ?? 1) - 1);
           const index = Math.floor(offset);
           for (const [channel, key] of ['r', 'g', 'b'].entries()) {
             const row = tables[channel] ?? [];
@@ -96,8 +96,9 @@ describe('encoded sRGB author paints', () => {
         if (!compiled.affine) nonlinear.push(`${theme}/${tier}`);
         const tables = compiled.tables.map((table) => table.split(' ').map(Number));
         let maximum = 0;
-        for (let i = 0; i <= 256; i++) {
-          const input = (i / 256) * 255;
+        const intervals = (tables[0]?.length ?? 1) - 1;
+        for (let i = 0; i <= intervals; i++) {
+          const input = (i / intervals) * 255;
           const exact = materialPaintOver(paints, { r: input, g: input, b: input, a: 1 });
           for (const [channel, key] of (['r', 'g', 'b'] as const).entries()) {
             const actual =
