@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { blendChannel, materialPaintOver, materialPaintTables } from '../src/material-paints';
+import {
+  blendChannel,
+  compileMaterialPaint,
+  materialPaintOver,
+  materialPaintTables,
+} from '../src/material-paints';
 import { MATERIAL_TIERS, materialBlendMode } from '../src/profile';
 import { readContractMaterials } from './contract-values';
 
@@ -64,5 +69,39 @@ describe('encoded sRGB author paints', () => {
         expect(maximumError, `${theme}/${tier}`).toBeLessThan(0.15);
       }
     }
+  });
+
+  it('factors all ten authored paints into a normal first frame and a bounded residual', () => {
+    const { fills } = readContractMaterials();
+    const nonlinear: string[] = [];
+    for (const theme of ['light', 'dark'] as const)
+      for (const tier of MATERIAL_TIERS) {
+        const original = fills.get(`${theme}/${tier}`);
+        if (!original?.blend) throw new Error('Missing source paints');
+        const paints = {
+          normal: original.tint,
+          blend: original.blend,
+          blendMode: materialBlendMode(theme),
+        };
+        const compiled = compileMaterialPaint(paints);
+        if (!compiled.affine) nonlinear.push(`${theme}/${tier}`);
+        const tables = compiled.tables.map((table) => table.split(' ').map(Number));
+        let maximum = 0;
+        for (let i = 0; i <= 256; i++) {
+          const input = (i / 256) * 255;
+          const exact = materialPaintOver(paints, { r: input, g: input, b: input, a: 1 });
+          for (const [channel, key] of (['r', 'g', 'b'] as const).entries()) {
+            const actual =
+              (tables[channel]?.[i] ?? 0) * 255 * (1 - compiled.fill.a) +
+              compiled.fill[key] * compiled.fill.a;
+            expect(actual).toBeCloseTo(exact[key], 5);
+            const fallback = input * (1 - compiled.fill.a) + compiled.fill[key] * compiled.fill.a;
+            maximum = Math.max(maximum, Math.abs(fallback - exact[key]));
+          }
+        }
+        expect(maximum).toBeLessThanOrEqual(compiled.fallbackError + 1e-8);
+        expect(compiled.fallbackError).toBeLessThan(20);
+      }
+    expect(nonlinear).toEqual(['light/elevated', 'dark/subtle', 'dark/elevated']);
   });
 });

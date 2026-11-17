@@ -1,116 +1,172 @@
-/** Author paints inside the backdrop filter, shared by Acrylic and Glass.
- * Filtering the host would also filter its text and establish a different
- * Backdrop Root. A blending child instead loses the backdrop under isolation
- * or transforms. This transfer operates directly on the captured backdrop.
+/** Paint transfers operate on the captured backdrop, leaving content untouched.
+ * Identical recipes share one immutable SVG resource per document/shadow tree.
  */
 import { parseRgb } from '../luminance';
-import { materialPaintTables } from '../material-paints';
+import { type MaterialPaints, compileMaterialPaint, materialPaintTables } from '../material-paints';
 import { materialBlendMode } from '../profile';
-import { type EngineHandle, ensureHiddenDefs, removeFilter, trailingRaf } from './mount';
+import {
+  type EngineHandle,
+  ensureHiddenDefs,
+  removeFilter,
+  supportsBackdropFilterUrl,
+} from './mount';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 let uid = 0;
+interface PaintResource {
+  readonly filter: SVGFilterElement | null;
+  readonly fill: string;
+  readonly key: string;
+  readonly resources: Map<string, PaintResource>;
+  refs: number;
+}
+const trees = new WeakMap<Document | ShadowRoot, Map<string, PaintResource>>();
 
-export function attach(el: HTMLElement): EngineHandle {
-  const doc = el.ownerDocument;
-  const filter = doc.createElementNS(SVGNS, 'filter');
-  const id = `lab-material-paint-${++uid}`;
-  filter.setAttribute('id', id);
-  filter.setAttribute('filterUnits', 'userSpaceOnUse');
+function acquire(
+  el: HTMLElement,
+  key: string,
+  paints: MaterialPaints,
+  noiseUrl: string | undefined,
+  noiseSize: string,
+): PaintResource {
+  const root = el.getRootNode();
+  const tree = root.nodeType === 11 ? (root as ShadowRoot) : el.ownerDocument;
+  let resources = trees.get(tree);
+  if (!resources) {
+    resources = new Map();
+    trees.set(tree, resources);
+  }
+  const existing = resources.get(key);
+  if (existing) {
+    existing.refs++;
+    return existing;
+  }
+  if (!supportsBackdropFilterUrl()) {
+    const compiled = compileMaterialPaint(paints);
+    const c = compiled.fill.a > 0 ? compiled.fill : paints.normal;
+    const resource = {
+      filter: null,
+      fill: `rgb(${c.r} ${c.g} ${c.b} / ${c.a})`,
+      key,
+      resources,
+      refs: 1,
+    };
+    resources.set(key, resource);
+    return resource;
+  }
+  const filter = el.ownerDocument.createElementNS(SVGNS, 'filter');
+  filter.id = `lab-material-paint-${++uid}`;
+  // The region follows each consumer's box. Primitive dimensions (noise grain)
+  // remain local CSS pixels, so differently sized surfaces share the resource.
+  filter.setAttribute('filterUnits', 'objectBoundingBox');
+  filter.setAttribute('primitiveUnits', 'userSpaceOnUse');
   filter.setAttribute('color-interpolation-filters', 'sRGB');
-  filter.setAttribute('x', '0');
-  filter.setAttribute('y', '0');
-  const noise = doc.createElementNS(SVGNS, 'feImage');
-  noise.setAttribute('x', '0');
-  noise.setAttribute('y', '0');
-  noise.setAttribute('preserveAspectRatio', 'none');
-  noise.setAttribute('result', 'noise-cell');
-  const tile = doc.createElementNS(SVGNS, 'feTile');
-  tile.setAttribute('in', 'noise-cell');
-  tile.setAttribute('result', 'noise-tile');
-  const grain = doc.createElementNS(SVGNS, 'feBlend');
-  grain.setAttribute('in', 'noise-tile');
-  grain.setAttribute('in2', 'SourceGraphic');
-  grain.setAttribute('mode', 'normal');
-  grain.setAttribute('result', 'grain');
-  const transfer = doc.createElementNS(SVGNS, 'feComponentTransfer');
-  const channels = ['R', 'G', 'B'].map((channel) => {
-    const fn = doc.createElementNS(SVGNS, `feFunc${channel}`);
+  for (const [name, value] of Object.entries({ x: '0', y: '0', width: '1', height: '1' }))
+    filter.setAttribute(name, value);
+  const transfer = el.ownerDocument.createElementNS(SVGNS, 'feComponentTransfer');
+  if (noiseUrl) {
+    const noise = el.ownerDocument.createElementNS(SVGNS, 'feImage');
+    for (const [name, value] of Object.entries({
+      x: '0',
+      y: '0',
+      width: noiseSize,
+      height: noiseSize,
+      href: noiseUrl,
+      preserveAspectRatio: 'none',
+      result: 'noise-cell',
+    }))
+      noise.setAttribute(name, value);
+    const tile = el.ownerDocument.createElementNS(SVGNS, 'feTile');
+    tile.setAttribute('in', 'noise-cell');
+    tile.setAttribute('result', 'noise-tile');
+    const grain = el.ownerDocument.createElementNS(SVGNS, 'feBlend');
+    grain.setAttribute('in', 'noise-tile');
+    grain.setAttribute('in2', 'SourceGraphic');
+    grain.setAttribute('mode', 'normal');
+    grain.setAttribute('result', 'grain');
+    filter.append(noise, tile, grain);
+    transfer.setAttribute('in', 'grain');
+  }
+  const tables = materialPaintTables(paints);
+  for (const [index, channel] of ['R', 'G', 'B'].entries()) {
+    const fn = el.ownerDocument.createElementNS(SVGNS, `feFunc${channel}`);
     fn.setAttribute('type', 'table');
-    transfer.appendChild(fn);
-    return fn;
-  });
-  // CSS blur can carry coverage alpha at a viewport/filter edge. Author paints
-  // describe an opaque backdrop; surface clipping owns the outside coverage.
-  const alpha = doc.createElementNS(SVGNS, 'feFuncA');
+    fn.setAttribute('tableValues', tables[index] ?? '');
+    transfer.append(fn);
+  }
+  const alpha = el.ownerDocument.createElementNS(SVGNS, 'feFuncA');
   alpha.setAttribute('type', 'linear');
   alpha.setAttribute('slope', '0');
   alpha.setAttribute('intercept', '1');
-  transfer.appendChild(alpha);
-  filter.append(noise, tile, grain, transfer);
-  ensureHiddenDefs('lab-material-paint-defs', el).appendChild(filter);
+  transfer.append(alpha);
+  filter.append(transfer);
+  ensureHiddenDefs('lab-material-paint-defs', el).append(filter);
+  const resource = { filter, fill: 'transparent', key, resources, refs: 1 };
+  resources.set(key, resource);
+  return resource;
+}
 
+function release(resource: PaintResource | undefined): void {
+  if (!resource || --resource.refs) return;
+  resource.resources.delete(resource.key);
+  if (resource.filter) removeFilter(resource.filter);
+}
+
+export function attach(el: HTMLElement): EngineHandle {
+  let held: PaintResource | undefined;
   let signature = '';
-  const setRegion = (): void => {
-    for (const [name, value] of [
-      ['width', el.offsetWidth],
-      ['height', el.offsetHeight],
-    ] as const) {
-      const next = String(Math.max(1, value));
-      if (filter.getAttribute(name) !== next) filter.setAttribute(name, next);
-    }
+  let disposed = false;
+  const clear = (): void => {
+    release(held);
+    held = undefined;
+    signature = '';
+    el.style.removeProperty('--_material-paint-filter');
+    el.style.removeProperty('--_surface-paint');
+    el.style.removeProperty('--_noise');
   };
   const refresh = (): void => {
+    if (disposed) return;
     const cs = getComputedStyle(el);
     const normalValue = cs.getPropertyValue('--_tint').trim();
     const blendValue = cs.getPropertyValue('--_blend').trim();
     const theme = el.getAttribute('data-lab-material-theme') === 'dark' ? 'dark' : 'light';
     const acrylic = el.getAttribute('data-lab-material-mode') === 'acrylic';
-    const noiseValue = cs.getPropertyValue('--_acrylic-noise');
+    const noiseValue = acrylic ? cs.getPropertyValue('--_acrylic-noise') : '';
     const noiseSize = cs.getPropertyValue('--_acrylic-noise-size').trim();
-    const next = `${normalValue}|${blendValue}|${theme}|${acrylic}|${noiseValue}|${noiseSize}`;
+    const next = `${normalValue}|${blendValue}|${theme}|${noiseValue}|${noiseSize}`;
     if (next === signature) return;
     const normal = parseRgb(normalValue);
     const blend = parseRgb(blendValue);
     if (!normal || !blend) {
-      // Missing/invalid roles keep the CSS fallback. Never keep a stale theme.
-      el.style.removeProperty('--_material-paint-filter');
-      el.style.removeProperty('--_surface-paint');
-      el.style.removeProperty('--_noise');
-      signature = '';
+      clear();
       return;
     }
-    const tables = materialPaintTables({ normal, blend, blendMode: materialBlendMode(theme) });
     const noiseUrl = noiseValue.match(/url\(["']?([^"')]+)["']?\)/)?.[1];
-    if (acrylic && noiseUrl) {
-      noise.setAttribute('href', noiseUrl);
-      noise.setAttribute('width', noiseSize);
-      noise.setAttribute('height', noiseSize);
-      transfer.setAttribute('in', 'grain');
-    } else {
-      noise.removeAttribute('href');
-      transfer.setAttribute('in', 'SourceGraphic');
-    }
-    channels.forEach((channel, i) => channel.setAttribute('tableValues', tables[i] ?? ''));
-    el.style.setProperty('--_material-paint-filter', `url(#${id})`);
-    el.style.setProperty('--_surface-paint', 'transparent');
-    el.style.setProperty('--_noise', 'none');
+    const resource = acquire(
+      el,
+      next,
+      { normal, blend, blendMode: materialBlendMode(theme) },
+      noiseUrl,
+      noiseSize,
+    );
+    const previous = held;
+    held = resource;
     signature = next;
+    el.style.setProperty(
+      '--_material-paint-filter',
+      resource.filter ? `url(#${resource.filter.id})` : 'opacity(1)',
+    );
+    el.style.setProperty('--_surface-paint', resource.fill);
+    if (resource.filter) el.style.setProperty('--_noise', 'none');
+    release(previous);
   };
-  setRegion();
   refresh();
-  const raf = trailingRaf(setRegion);
-  const resize = new ResizeObserver(() => raf.schedule());
-  resize.observe(el);
   return {
     refresh,
     destroy(): void {
-      resize.disconnect();
-      raf.cancel();
-      removeFilter(filter);
-      el.style.removeProperty('--_material-paint-filter');
-      el.style.removeProperty('--_surface-paint');
-      el.style.removeProperty('--_noise');
+      if (disposed) return;
+      disposed = true;
+      clear();
     },
   };
 }

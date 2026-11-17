@@ -140,7 +140,7 @@ export function acrylicNoiseCssBlock(): string {
   return [
     '.lab-material {',
     `  --_acrylic-noise: ${acrylicNoiseDataUri()};`,
-    `  --_acrylic-noise-size: ${NOISE_SIZE * materialProfile.noise.size}px;`,
+    `  --_acrylic-noise-size: ${Number((NOISE_SIZE * materialProfile.noise.size).toFixed(6))}px;`,
     '}',
   ].join('\n');
 }

@@ -6,7 +6,7 @@
   --_surface-paint: var(--_solid);
   --_blur: 0px;
   --_material-lens-filter: opacity(1);
-  --_material-paint-filter: opacity(1);
+  --_material-paint-filter: var(--_first-paint-filter, opacity(1));
   --_live-filter: blur(var(--_blur)) var(--_material-lens-filter) var(--_material-paint-filter);
   --_material-filter: none;
   --_noise: none;

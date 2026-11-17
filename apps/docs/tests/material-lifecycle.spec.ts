@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
@@ -215,7 +216,8 @@ test('CSS without a runtime still degrades to opaque Solid', async ({ page, brow
   });
   const panel = page.locator('#unmanaged');
   await expect(panel).not.toHaveAttribute('data-lab-material-mode');
-  await expect(panel).toHaveCSS('background-color', 'rgba(245, 245, 245, 0.2)');
+  await expect(panel).not.toHaveCSS('background-color', 'rgb(245, 245, 245)');
+  await expect(panel).toHaveCSS('--_blur', '12px');
   await page.emulateMedia({ contrast: 'more' });
   await expect(panel).toHaveCSS('background-color', 'rgb(245, 245, 245)');
   await expect(panel).toHaveCSS('--_blur', '0px');
@@ -519,4 +521,135 @@ test('the first late slot assignment brings its composed material scope into obs
     .locator('#late-slot-parent')
     .evaluate((el) => el.setAttribute('data-material', 'glass'));
   await expect(surface).toHaveAttribute('data-lab-material-mode', 'glass');
+});
+
+test('identical paints share one filter across sizes and release it after their last consumer', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium');
+  const result = await page.evaluate(async () => {
+    const scope = document.createElement('div');
+    scope.dataset.material = 'acrylic';
+    scope.style.cssText =
+      '--lab-bg-material-soft-01:rgb(10 20 30/.6);--lab-bg-material-soft-02:rgb(70 80 90);';
+    for (let i = 0; i < 100; i++) {
+      const surface = document.createElement('div');
+      surface.className = 'lab-material lab-material--soft';
+      surface.style.width = `${100 + i}px`;
+      scope.append(surface);
+    }
+    document.body.append(scope);
+    const stop = window.materialFixture.mount(scope);
+    const elements = Array.from(scope.children) as HTMLElement[];
+    const refs = () => elements.map((el) => el.style.getPropertyValue('--_material-paint-filter'));
+    const before = refs();
+    const filterId = before[0]?.match(/#([^)]*)/)?.[1];
+    const filter = filterId ? document.getElementById(filterId) : null;
+    const bytes = filter?.outerHTML.length ?? 0;
+    elements[0]?.style.setProperty('--lab-bg-material-soft-01', 'rgb(20 30 40/.6)');
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+    const changed = refs();
+    stop();
+    stop();
+    scope.remove();
+    return { before, changed, bytes, remaining: filter?.isConnected };
+  });
+  expect(new Set(result.before).size).toBe(1);
+  expect(result.changed[0]).not.toBe(result.before[0]);
+  expect(result.changed.slice(1)).toEqual(result.before.slice(1));
+  expect(result.bytes).toBeLessThan(30_000);
+  expect(result.remaining).toBe(false);
+});
+
+test('the authored CSS paints survive runtime hydration over coloured content', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium');
+  await page.setViewportSize({ width: 800, height: 500 });
+  await page.addStyleTag({
+    content: readFileSync(new URL('../../../packages/colors/contract.css', import.meta.url), 'utf8'),
+  });
+  await page.evaluate(() => {
+    window.materialFixture.stop();
+    window.materialFixture.stopShadow();
+    const main = document.createElement('main');
+    main.id = 'first-frame';
+    main.style.cssText = 'position:fixed;inset:0;z-index:999';
+    for (const theme of ['light', 'dark']) {
+      const scene = document.createElement('section');
+      scene.dataset.theme = theme;
+      scene.dataset.material = 'acrylic';
+      scene.style.cssText =
+        'height:250px;display:flex;gap:8px;padding:16px;box-sizing:border-box;background:linear-gradient(105deg,#000,#0900ba,#d20025,#eab318,#118042,#09bcfe,#fff)';
+      for (const tier of ['subtle', 'soft', 'muted', 'base', 'elevated']) {
+        const surface = document.createElement('div');
+        surface.className = `lab-material lab-material--${tier}`;
+        surface.style.cssText =
+          'width:144px;height:218px;flex-shrink:0;margin:0;padding:0;border-radius:32px;transform:translateZ(0);--_noise:none;--_acrylic-noise:none';
+        scene.append(surface);
+      }
+      main.append(scene);
+    }
+    document.body.append(main);
+  });
+  const before = await page.screenshot();
+  await page.evaluate(() => {
+    const scope = document.querySelector('#first-frame');
+    if (!scope) throw new Error('Missing first-frame scene');
+    window.materialFixture.mount(scope);
+  });
+  const after = await page.screenshot();
+  const errors = await page.evaluate(
+    async ({ before, after }) => {
+      const pixels = async (base64: string) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${base64}`;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Missing canvas');
+        ctx.drawImage(image, 0, 0);
+        return ctx.getImageData(0, 0, image.width, image.height).data;
+      };
+      const [a, b] = await Promise.all([pixels(before), pixels(after)]);
+      return Array.from(document.querySelectorAll('#first-frame .lab-material')).map((el) => {
+        const rect = el.getBoundingClientRect();
+        let maximum = 0;
+        for (let y = Math.ceil(rect.top + 34); y < Math.floor(rect.bottom - 34); y++)
+          for (let x = Math.ceil(rect.left + 34); x < Math.floor(rect.right - 34); x++)
+            for (let channel = 0; channel < 3; channel++) {
+              const i = (y * 800 + x) * 4 + channel;
+              maximum = Math.max(maximum, Math.abs((a[i] ?? 0) - (b[i] ?? 0)));
+            }
+        return maximum;
+      });
+    },
+    { before: before.toString('base64'), after: after.toString('base64') },
+  );
+  expect(errors).toHaveLength(10);
+  // CSS normal alpha and SVG sRGB quantise at different composition stages.
+  for (const error of errors) expect(error).toBeLessThanOrEqual(2);
+});
+
+test('the non-SVG paint renderer follows custom roles instead of keeping baked defaults', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName === 'chromium');
+  const surface = page.locator('#surface');
+  await surface.evaluate((el) => {
+    el.setAttribute('data-material', 'acrylic');
+    el.style.setProperty('--_tint', 'rgb(0 0 0 / .5)');
+    el.style.setProperty('--_blend', 'rgb(0 0 0 / 0)');
+  });
+  await expect(surface).toHaveCSS('background-color', 'rgba(0, 0, 0, 0.5)');
+  await expect(page.locator('body > .lab-material-paint-defs')).toHaveCount(0);
+  await surface.evaluate((el) => el.style.setProperty('--_tint', 'rgb(255 255 255 / .25)'));
+  await expect(surface).toHaveCSS('background-color', 'rgba(255, 255, 255, 0.25)');
 });

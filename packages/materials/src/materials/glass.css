@@ -4,7 +4,7 @@
 [data-material="glass"] .lab-material:where(:not([data-lab-material-mode])),
 [data-material="glass"].lab-material:where(:not([data-lab-material-mode])),
 .lab-material[data-lab-material-mode="glass"] {
-  --_surface-paint: var(--_tint);
+  --_surface-paint: var(--_first-paint, var(--_tint));
   --_blur: var(--_glass-frost);
   --_rim: var(--_glass-rim);
   --_material-filter: var(--_live-filter);

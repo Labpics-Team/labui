@@ -8,7 +8,6 @@ import {
   isShadowRoot,
   materialMediaBlocked,
   mountEngine,
-  supportsBackdropFilterUrl,
   trailingRaf,
 } from './mount';
 import { attach as attachPaint } from './paint';
@@ -71,7 +70,7 @@ const BINDINGS: readonly EngineBinding[] = [
   },
   // Shared author paint transfer, applied after frost and optional refraction.
   {
-    gate: supportsBackdropFilterUrl,
+    gate: supportsBackdropBlur,
     selector: SURFACE,
     wants: (el) => inModeScope(el, 'acrylic') || inModeScope(el, 'glass'),
     blocked: materialMediaBlocked,
