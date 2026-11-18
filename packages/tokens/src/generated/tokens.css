@@ -92,6 +92,13 @@
   --lab-size-input-icon: 1rem;
   --lab-space-input-adornment-outer: 0.75rem;
   --lab-space-input-adornment-inner: 0.25rem;
+  --lab-size-textarea: 7rem;
+  --lab-font-size-textarea-label: 0.875rem;
+  --lab-line-height-textarea-label: 0.75rem;
+  --lab-space-textarea-top: 1rem;
+  --lab-space-textarea-bottom: 1.5rem;
+  --lab-space-textarea-start: 1.25rem;
+  --lab-space-textarea-end: 1rem;
   --lab-radius-card-surface: 1rem;
   --lab-space-card-padding: 1.5rem;
   --lab-space-card-gap: 1rem;

@@ -139,6 +139,7 @@ class SettingsLayoutTest {
             assertTrue(name.config[SemanticsActions.SetText].action!!.invoke(AnnotatedString("Новая лаборатория")))
             reveal(scene) { field("Описание") }
             reveal(scene) { field("Почта для уведомлений") }
+            snapshot(scene, File(output, "edit-320-320-200-email.png"))
             assertEquals("Лаборатория", store.data.first().workspace.name, "Editing must retain a draft until Save")
             val save = reveal(scene) { button("Сохранить") }
             snapshot(scene, File(output, "edit-320-320-200-save.png"))

@@ -88,6 +88,13 @@ export function buildComponentTokens(): ResolvedToken[] {
   dimension('size', 'input-icon', profile.input.adornment.iconSize);
   dimension('space', 'input-adornment-outer', profile.input.adornment.paddingOuter);
   dimension('space', 'input-adornment-inner', profile.input.adornment.paddingInner);
+  dimension('size', 'textarea', profile.textarea.height);
+  dimension('font-size', 'textarea-label', profile.textarea.labelFontSize);
+  dimension('line-height', 'textarea-label', profile.textarea.labelLineHeight);
+  dimension('space', 'textarea-top', profile.textarea.paddingTop);
+  dimension('space', 'textarea-bottom', profile.textarea.paddingBottom);
+  dimension('space', 'textarea-start', profile.textarea.paddingStart);
+  dimension('space', 'textarea-end', profile.textarea.paddingEnd);
   dimension('radius', 'card-surface', profile.card.radius);
   dimension('space', 'card-padding', profile.card.padding);
   dimension('space', 'card-gap', profile.card.gap);

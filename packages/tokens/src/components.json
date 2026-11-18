@@ -129,6 +129,17 @@
       "paddingInner": 4
     }
   },
+  "textarea": {
+    "sourceRef": { "key": "component-set/Input & Textarea/Textarea" },
+    "height": 112,
+    "rows": 3,
+    "labelFontSize": 14,
+    "labelLineHeight": 12,
+    "paddingTop": 16,
+    "paddingBottom": 24,
+    "paddingStart": 20,
+    "paddingEnd": 16
+  },
   "card": {
     "sourceRef": {
       "key": "component/Card/Card"

@@ -5,6 +5,7 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -44,10 +45,11 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.ceil
 
 /** State-based input keeps selection and IME composition through validation and theme changes. */
 @Composable
@@ -75,13 +77,18 @@ public fun LabInput(
             LabControlSize.Medium -> LabComponents.InputM
             LabControlSize.Large -> LabComponents.InputL
         }
-    val shape = RoundedCornerShape(metrics.radius.dp)
+    val shape = RoundedCornerShape((if (singleLine) metrics.radius else LabComponents.InputM.radius).dp)
     // The no-icon side slot keeps its width; center content adds the label inset.
-    val contentStart = metrics.paddingX + LabComponents.InputLabelPaddingX
+    val contentStart = if (singleLine) metrics.paddingX + LabComponents.InputLabelPaddingX
+        else LabComponents.TextareaPaddingStart
+    val contentEnd = if (singleLine) metrics.paddingX else LabComponents.TextareaPaddingEnd
+    val contentTop = if (singleLine) metrics.paddingY else LabComponents.TextareaPaddingTop
+    val contentBottom = if (singleLine) metrics.paddingY else LabComponents.TextareaPaddingBottom
+    val minimumHeight = if (singleLine) metrics.height else LabComponents.TextareaHeight
     val border =
         colors[
             when {
-                !enabled -> "border-base"
+                !enabled -> if (singleLine) "border-base" else "border-soft"
                 error != null -> "border-danger"
                 focused -> "border-focus"
                 hovered -> "border-strong"
@@ -93,7 +100,8 @@ public fun LabInput(
                 color =
                     colors[
                         when {
-                            !enabled -> "label-tertiary"
+                            !enabled -> if (singleLine) "label-tertiary" else "label-quaternary"
+                            !singleLine && (error != null || focused || state.text.isNotEmpty()) -> "label-primary"
                             error != null -> "label-danger"
                             focused -> "label-accent"
                             else -> "label-secondary"
@@ -103,10 +111,15 @@ public fun LabInput(
                 fontWeight = FontWeight(LabComponents.InputLabelFontWeight.toInt()),
                 letterSpacing = 0.sp,
             )
+    val labelStyle = if (singleLine) caption else caption.copy(
+        fontSize = LabComponents.TextareaLabelFontSize.sp,
+        lineHeight = LabComponents.TextareaLabelLineHeight.sp,
+    )
     val body =
         LabType.body()
             .copy(
-                color = colors[if (enabled) "label-primary" else "label-tertiary"],
+                color = colors[if (enabled) "label-primary"
+                    else if (singleLine) "label-tertiary" else "label-quaternary"],
                 fontSize = metrics.fontSize.sp,
                 lineHeight = metrics.lineHeight.sp,
                 fontWeight = FontWeight(metrics.fontWeight.toInt()),
@@ -118,14 +131,27 @@ public fun LabInput(
         modifier.padding(top = overhang),
         verticalArrangement = Arrangement.spacedBy(LabComponents.InputHelperGap.dp),
     ) {
-        Box {
+        BoxWithConstraints {
+            val labelLayout = measurer.measure(
+                label,
+                labelStyle,
+                constraints = Constraints(maxWidth = with(LocalDensity.current) {
+                    (constraints.maxWidth - contentStart.dp.roundToPx() - contentEnd.dp.roundToPx())
+                        .coerceAtLeast(0)
+                }),
+            )
+            // The first line keeps its authored notch. Additional lines reserve space
+            // inside the outline before the editor, without changing single-line geometry.
+            val extraLabelHeight = with(LocalDensity.current) {
+                (labelLayout.lastBaseline - labelLayout.firstBaseline).toDp()
+            }
             BasicTextField(
                 state = state,
                 enabled = enabled,
                 readOnly = readOnly,
                 lineLimits =
                     if (singleLine) TextFieldLineLimits.SingleLine
-                    else TextFieldLineLimits.MultiLine(),
+                    else TextFieldLineLimits.MultiLine(minHeightInLines = LabComponents.TextareaRows.toInt()),
                 keyboardOptions = keyboardOptions,
                 interactionSource = interactions,
                 textStyle = body,
@@ -144,24 +170,9 @@ public fun LabInput(
                         .drawWithCache {
                             val padding = contentStart.dp.toPx()
                             val labelPadding = LabComponents.InputLabelPaddingX.dp.toPx()
-                            val labelWidth =
-                                measurer
-                                    .measure(
-                                        label,
-                                        caption,
-                                        maxLines = 1,
-                                        constraints =
-                                            Constraints(
-                                                maxWidth =
-                                                    (this.size.width -
-                                                            padding -
-                                                            metrics.paddingX.dp.toPx())
-                                                        .toInt()
-                                                        .coerceAtLeast(0)
-                                            ),
-                                    )
-                                    .size
-                                    .width
+                            val labelWidth = ceil(labelLayout.getLineRight(0) - labelLayout.getLineLeft(0))
+                            val labelLeft = if (layoutDirection == LayoutDirection.Ltr) padding
+                                else this.size.width - padding - labelWidth
                             val outline = shape.createOutline(this.size, layoutDirection, this)
                             val stroke = LabComponents.InputStrokeWidth.dp.toPx()
                             onDrawWithContent {
@@ -169,9 +180,9 @@ public fun LabInput(
                                 // The notch reveals the actual material beneath the input; no
                                 // painted patch.
                                 clipRect(
-                                    left = padding - labelPadding,
+                                    left = labelLeft - labelPadding,
                                     top = -stroke,
-                                    right = padding + labelWidth + labelPadding,
+                                    right = labelLeft + labelWidth + labelPadding,
                                     bottom = stroke,
                                     clipOp = ClipOp.Difference,
                                 ) {
@@ -179,12 +190,12 @@ public fun LabInput(
                                 }
                             }
                         }
-                        .defaultMinSize(minHeight = metrics.height.dp)
+                        .defaultMinSize(minHeight = minimumHeight.dp + extraLabelHeight)
                         .padding(
                             start = contentStart.dp,
-                            end = metrics.paddingX.dp,
-                            top = metrics.paddingY.dp,
-                            bottom = metrics.paddingY.dp,
+                            end = contentEnd.dp,
+                            top = contentTop.dp + extraLabelHeight,
+                            bottom = contentBottom.dp,
                         )
                         .semantics {
                             contentDescription = label
@@ -193,13 +204,14 @@ public fun LabInput(
                 decorator = { innerTextField ->
                     Box(
                         Modifier.defaultMinSize(minHeight = metrics.contentHeight.dp),
-                        contentAlignment = Alignment.CenterStart,
+                        contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart,
                     ) {
                         if (state.text.isEmpty() && placeholder != null)
                             BasicText(
                                 placeholder,
                                 Modifier.clearAndSetSemantics {},
-                                style = body.copy(color = colors["label-tertiary"]),
+                                style = body.copy(color = colors[
+                                    if (!enabled && !singleLine) "label-quaternary" else "label-tertiary"]),
                             )
                         innerTextField()
                     }
@@ -208,11 +220,9 @@ public fun LabInput(
             BasicText(
                 label,
                 Modifier.offset(y = -overhang)
-                    .padding(start = contentStart.dp, end = metrics.paddingX.dp)
+                    .padding(start = contentStart.dp, end = contentEnd.dp)
                     .clearAndSetSemantics {},
-                style = caption,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                style = labelStyle,
             )
         }
         val explanation = error ?: helper
@@ -226,7 +236,11 @@ public fun LabInput(
                     ),
                 style =
                     caption.copy(
-                        color = colors[if (error != null) "label-danger" else "label-secondary"]
+                        color = colors[when {
+                            !enabled && !singleLine -> "label-quaternary"
+                            error != null -> "label-danger"
+                            else -> "label-secondary"
+                        }]
                     ),
             )
     }

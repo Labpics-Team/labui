@@ -48,6 +48,14 @@ internal object LabComponents {
     const val InputAdornmentIconSize = 16f
     const val InputAdornmentPaddingOuter = 12f
     const val InputAdornmentPaddingInner = 4f
+    const val TextareaHeight = 112f
+    const val TextareaRows = 3f
+    const val TextareaLabelFontSize = 14f
+    const val TextareaLabelLineHeight = 12f
+    const val TextareaPaddingTop = 16f
+    const val TextareaPaddingBottom = 24f
+    const val TextareaPaddingStart = 20f
+    const val TextareaPaddingEnd = 16f
     const val CardRadius = 16f
     const val CardPadding = 24f
     const val CardGap = 16f
