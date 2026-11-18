@@ -1,6 +1,6 @@
 {
-  "revision": "1c4b7cf0e4589df7499218a81d989ba7b7606f1c",
-  "sourceDigest": "sha256:9782f2009ab61c19218936888188a8cbf6204bfb7ccbbfd0253e98d323dc4196",
+  "revision": "dd920219cf1f208624ce18d54b2486f770232707",
+  "sourceDigest": "sha256:4c8fb0f421306124331926b2f3091017353055075478615136b81a6ee40d9b96",
   "symbols": [
     {
       "name": "LabAccordion",
@@ -9,6 +9,10 @@
     {
       "name": "LabAccordionText",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabAccordion.kt"
+    },
+    {
+      "name": "LabAvatar",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabAvatar.kt"
     },
     {
       "name": "LabBadge",
