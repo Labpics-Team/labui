@@ -59,8 +59,8 @@ AppData/Roaming, Application Support или XDG_CONFIG_HOME. Это хранен
 **Пакет ещё не опубликован. NATIVE-01 не завершён.** До выпуска остаются:
 
 - Завершить независимое визуальное сравнение материалов на всех платформах.
-- Заменить явные Colors CI-артефакты публичной поставкой и проверить чистых
-  потребителей всех платформ.
+- Проверить чистых потребителей всех платформ с опубликованным Colors SDK;
+  временные Colors CI-артефакты уже заменены публичной поставкой.
 - Довести композицию первого опыта; проверить IME, масштаб 100/125/200%,
   VoiceOver/TalkBack и работу всех материалов.
 - Пройти независимое review и выпуск после проверок реального потребителя.
@@ -277,8 +277,9 @@ XCTest ищет live announcements по label: UIKit экспортирует и
 одна версия содержит точный source commit для Android, desktop и Apple.
 Оба Gradle-проекта используют общий каталог зависимостей и публичный Maven;
 токен GitHub и временные CI-архивы не нужны. `:ui-colors:desktopTest` запускает
-сам native solver. При обновлении выпуска меняются этот descriptor и SHA256
-Swift-архива в нём; Maven URL и Apple release tag следуют из той же версии.
+сам native solver. При обновлении выпуска в descriptor закрепляются версия,
+точный commit Maven-хранилища и SHA256 Swift-архива. Maven URL использует commit
+вместо изменяемой ветки; Apple release tag следует из версии.
 Проверка публичных SDK-архивов, manifest и Maven-байтов зафиксирована
 в [квитанции выпуска Colors](https://github.com/Labpics-Team/lab-colors/pull/878#issuecomment-6980707104).
 Android-приложение включает core library desugaring и `desugar_jdk_libs:2.1.5`,
