@@ -10,7 +10,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # У каждой попытки PR своя группа, включая повтор старого запуска.
+  group: ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-run-{0}-{1}', github.run_id, github.run_attempt) || github.ref }}
   cancel-in-progress: true
 
 env:
@@ -71,6 +72,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Verify PR cancellation and the required CI result
+        run: node --test scripts/ci/pr-concurrency.test.mjs
 
       - name: Verify accepted advisories stay on their reviewed paths
         run: node scripts/ci/accepted-advisories-contract.mjs
