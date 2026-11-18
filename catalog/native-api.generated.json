@@ -1,6 +1,6 @@
 {
-  "revision": "3c3a35eff2bdf00e2bb34d7bfc885b6b2a3aadc2",
-  "sourceDigest": "sha256:5c2f0743e880fe291e092c8625465768bdca33c16db2b495282e09453747c651",
+  "revision": "c7f596068b397954a9c7533f9b841a7e52c51b1e",
+  "sourceDigest": "sha256:ca88c98d0ed3168b61f820999127c9c43cfcbfc01b0408e6cee6e85891716c18",
   "symbols": [
     {
       "name": "LabBadge",
@@ -57,6 +57,10 @@
     {
       "name": "LabVeils",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt"
+    },
+    {
+      "name": "LabPagination",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabPagination.kt"
     },
     {
       "name": "LabProgress",
