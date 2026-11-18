@@ -73,7 +73,7 @@ Solid, Glass и Acrylic — общая ось оформления поверх�
 [Все руководства](docs/README.md) ·
 [Карта пакетов](docs/reference/packages.md) ·
 [Устройство системы](docs/explanation/architecture.md) ·
-[Участие в проекте](CONTRIBUTING.md) ·
+[Участие в проекте](CONTRIBUTING.md) · [Добавить и запустить тест](CONTRIBUTING.md#проверить-изменение) ·
 [Сообщить об уязвимости](SECURITY.md).
 
 Нативные SDK входят в замысел Lab UI. Их реализация и квалификация ведутся
