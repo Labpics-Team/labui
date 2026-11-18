@@ -300,6 +300,7 @@ export default defineConfig({
         tabs: resolve(__dirname, 'src/tabs.html'),
         breadcrumb: resolve(__dirname, 'src/breadcrumb.html'),
         pagination: resolve(__dirname, 'src/pagination.html'),
+        'pagination-focus': resolve(__dirname, 'src/_fixtures/pagination-focus.html'),
         // Compound control: Lit `<lab-radio-group>` (all parts in one shadow
         // scope) + native-React `<RadioGroup>`/`<Radio>` side by side, sharing
         // native radio behavior and deterministic keyboard navigation.

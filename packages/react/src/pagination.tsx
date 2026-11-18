@@ -15,11 +15,13 @@ import {
 import { mountMaterialRuntime } from '@labpics/ui-materials';
 import * as paginationMachine from '@zag-js/pagination';
 import {
+  Component,
   Fragment,
   type HTMLAttributes,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
+  type RefObject,
   useEffect,
   useId,
   useRef,
@@ -54,6 +56,35 @@ export interface PaginationProps
   onPageChange?: (page: number) => void;
 }
 
+interface NavigationProps extends HTMLAttributes<HTMLElement> {
+  rootRef: RefObject<HTMLElement>;
+  selectedPage: number;
+  followPageFocus: boolean;
+}
+
+/** Read focus in React's pre-mutation phase, before a page window removes it. */
+class PaginationNavigation extends Component<NavigationProps, object, boolean> {
+  override getSnapshotBeforeUpdate(previous: NavigationProps): boolean {
+    const { rootRef, selectedPage, followPageFocus } = this.props;
+    const nav = rootRef.current;
+    return !!(
+      followPageFocus &&
+      previous.selectedPage !== selectedPage &&
+      nav?.contains(nav.ownerDocument.activeElement)
+    );
+  }
+  override componentDidUpdate(_previous: NavigationProps, _state: object, focused: boolean): void {
+    if (focused)
+      this.props.rootRef.current
+        ?.querySelector<HTMLElement>(`[data-page='${this.props.selectedPage}']`)
+        ?.focus();
+  }
+  override render(): ReactNode {
+    const { rootRef, selectedPage: _page, followPageFocus: _follow, ...attributes } = this.props;
+    return <nav {...attributes} ref={rootRef} />;
+  }
+}
+
 export function Pagination({
   count,
   pageSize = 10,
@@ -76,16 +107,9 @@ export function Pagination({
   const [internal, setInternal] = useState(() => paginationPage(defaultPage, total));
   const selected = paginationPage(page ?? internal, total);
   const root = useRef<HTMLElement>(null);
-  const restoreFocus = useRef(false);
   useEffect(() => {
     if (page === undefined) setInternal((value) => paginationPage(value, total));
   }, [page, total]);
-  useEffect(() => {
-    if (restoreFocus.current) {
-      root.current?.querySelector<HTMLElement>(`[data-page='${selected}']`)?.focus();
-      restoreFocus.current = false;
-    }
-  });
   useEffect(() => {
     if (variant === 'compact' && ambient && root.current) return mountMaterialRuntime(root.current);
   }, [variant, ambient]);
@@ -140,9 +164,7 @@ export function Pagination({
     );
     if (next === undefined) return;
     event.preventDefault();
-    restoreFocus.current = true;
     api.setPage(next);
-    root.current?.querySelector<HTMLElement>(`[data-page='${selected}']`)?.focus();
   };
   const control = (value: number, kind: 'page' | 'prev' | 'next', receding = false) => {
     const current = kind === 'page' && value === selected;
@@ -169,7 +191,7 @@ export function Pagination({
       ) : compact ? (
         <span className="lab-pagination-dot" aria-hidden="true">
           {ratio !== undefined && (
-            <span className="lab-pagination-progress" style={{ transform: `scaleX(${ratio})` }} />
+            <span className="lab-pagination-progress" style={{ inlineSize: `${ratio * 100}%` }} />
           )}
         </span>
       ) : (
@@ -190,9 +212,11 @@ export function Pagination({
     );
   };
   return (
-    <nav
+    <PaginationNavigation
       {...rest}
-      ref={root}
+      rootRef={root}
+      selectedPage={selected}
+      followPageFocus={compact && !href && !disabled}
       data-lab-pagination=""
       data-variant={compact ? 'compact' : 'numbered'}
       data-ambient={compact && ambient ? '' : undefined}
@@ -233,6 +257,6 @@ export function Pagination({
         ),
       )}
       {!compact && control(selected + 1, 'next')}
-    </nav>
+    </PaginationNavigation>
   );
 }

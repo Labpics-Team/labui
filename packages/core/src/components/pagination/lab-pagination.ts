@@ -74,6 +74,8 @@ export class LabPagination extends LabElement {
   private declare internalPage: number | undefined;
   private readonly machineCtl: ZagController<Schema, paginationMachine.Api>;
   private disposeMaterial?: () => void;
+  private renderedPage?: number;
+  private preservePageFocus = false;
 
   constructor() {
     super();
@@ -135,6 +137,15 @@ export class LabPagination extends LabElement {
       (this.internalPage === undefined || changed.has('count') || changed.has('pageSize'))
     )
       this.internalPage = this.selectedPage;
+    // Capture focus before the old page window can remove its active button.
+    this.preservePageFocus =
+      !isServer &&
+      this.variant === 'compact' &&
+      !this.href &&
+      !this.disabled &&
+      this.selectedPage !== this.renderedPage &&
+      this.renderRoot.querySelector('nav:focus-within') !== null;
+    this.renderedPage = this.selectedPage;
   }
   static override styles = [
     css`:host { display: block; min-inline-size: 0; }`,
@@ -142,6 +153,10 @@ export class LabPagination extends LabElement {
     unsafeCSS(paginationCss),
   ];
   override updated(): void {
+    if (this.preservePageFocus) {
+      this.preservePageFocus = false;
+      this.renderRoot.querySelector<HTMLElement>(`[data-page='${this.selectedPage}']`)?.focus();
+    }
     const nav = this.renderRoot.querySelector<HTMLElement>('nav');
     if (this.variant === 'compact' && this.ambient && nav)
       this.disposeMaterial ??= mountMaterialRuntime(nav);
@@ -171,7 +186,7 @@ export class LabPagination extends LabElement {
       return;
     this.api.setPage(page);
   }
-  private async keyPage(event: KeyboardEvent): Promise<void> {
+  private keyPage(event: KeyboardEvent): void {
     if (
       this.variant !== 'compact' ||
       this.href ||
@@ -190,9 +205,6 @@ export class LabPagination extends LabElement {
     if (page === undefined) return;
     event.preventDefault();
     this.api.setPage(page);
-    await Promise.resolve();
-    await this.updateComplete;
-    this.renderRoot.querySelector<HTMLElement>(`[data-page='${this.selectedPage}']`)?.focus();
   }
   private control(page: number, kind: 'page' | 'prev' | 'next', receding = false): TemplateResult {
     const current = kind === 'page' && page === this.selectedPage;

@@ -3,6 +3,7 @@ package pics.lab.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -28,6 +29,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -84,11 +86,13 @@ public fun LabPagination(
     val colors = LocalLabTheme.current.colors
     val compactColor = colors[if (ambient) LabComponents.PaginationCompactAmbientColorRole else LabComponents.PaginationCompactColorRole]
     val selectedFocus = remember { FocusRequester() }
-    var restoreFocus by remember { mutableStateOf(false) }
-    LaunchedEffect(selectedPage, restoreFocus) {
-        if (restoreFocus && compact && total > 0) { selectedFocus.requestFocus(); restoreFocus = false }
+    var focusWithin by remember { mutableStateOf(false) }
+    val hadFocusBeforePageChange = focusWithin
+    LaunchedEffect(selectedPage) {
+        if (hadFocusBeforePageChange && compact && total > 0) selectedFocus.requestFocus()
     }
-    val root = modifier.semantics { isTraversalGroup = true; contentDescription = label }
+    val root = modifier.onFocusChanged { focusWithin = it.hasFocus }.focusGroup()
+        .semantics { isTraversalGroup = true; contentDescription = label }
         .onPreviewKeyEvent { event ->
             if (!compact || disabled || total == 0 || event.type != KeyEventType.KeyDown) false else {
                 val next = when (event.key) {
@@ -99,7 +103,6 @@ public fun LabPagination(
                     else -> null
                 }
                 if (next == null) false else {
-                    restoreFocus = true
                     val destination = next.coerceIn(1L, total.toLong()).toInt()
                     if (destination != selectedPage) onPageChange(destination)
                     true
@@ -111,6 +114,7 @@ public fun LabPagination(
             verticalArrangement = Arrangement.spacedBy((LabComponents.PaginationGap * scale).dp),
             modifier = if (compact) Modifier.padding(horizontal = ((LabComponents.PaginationCompactPadding - LabComponents.PaginationCompactGap / 2) * scale).dp) else Modifier) {
             if (!compact) PaginationButton(previousLabel, false, disabled || selectedPage <= 1, scale,
+                chevron = true,
                 onClick = { onPageChange(selectedPage - 1) }) { color -> PaginationChevron(color, scale, rtl) }
             pages.forEachIndexed { index, value ->
                 key(if (value == 0) "gap-$index" else "page-$value") {
@@ -150,6 +154,7 @@ public fun LabPagination(
                 }
             }
             if (!compact) PaginationButton(nextLabel, false, disabled || selectedPage >= total, scale,
+                chevron = true,
                 onClick = { onPageChange(selectedPage + 1) }) { color -> PaginationChevron(color, scale, !rtl) }
         }
     }
@@ -182,6 +187,7 @@ internal fun paginationPages(page: Int, total: Int, siblings: Int, compact: Bool
 @Composable
 private fun PaginationButton(label: String, current: Boolean, disabled: Boolean, scale: Float,
     compact: Boolean = false, contentWidth: Float = 0f, modifier: Modifier = Modifier,
+    chevron: Boolean = false,
     onClick: () -> Unit, content: @Composable (Color) -> Unit) {
     val colors = LocalLabTheme.current.colors
     val interactions = remember { MutableInteractionSource() }
@@ -190,7 +196,11 @@ private fun PaginationButton(label: String, current: Boolean, disabled: Boolean,
     val radius = if (compact) LabComponents.PaginationCompactRadius else LabComponents.PaginationRadius
     val fill = if (compact) Color.Transparent else if (current) colors[LabComponents.PaginationRolesActive]
         else if (hovered && !disabled) colors[LabComponents.PaginationRolesHover] else Color.Transparent
-    val text = colors[if (disabled) LabComponents.PaginationRolesDisabled else LabComponents.PaginationRolesLabel]
+    val text = colors[when {
+        disabled -> LabComponents.PaginationRolesDisabled
+        chevron && !hovered -> LabComponents.PaginationRolesChevron
+        else -> LabComponents.PaginationRolesLabel
+    }]
     Box(modifier.defaultMinSize(minWidth = if (compact) ((contentWidth + LabComponents.PaginationCompactGap) * scale).dp else (LabComponents.PaginationControl * scale).dp,
         minHeight = ((if (compact) LabComponents.PaginationCompactHeight else LabComponents.PaginationControl) * scale).dp)
         .background(fill, RoundedCornerShape((radius * scale).dp))
@@ -211,12 +221,11 @@ private fun PaginationButton(label: String, current: Boolean, disabled: Boolean,
 
 @Composable
 private fun PaginationChevron(color: Color, scale: Float, flip: Boolean) {
-    val colors = LocalLabTheme.current.colors
     Canvas(Modifier.size((LabComponents.PaginationIcon * scale).dp).clearAndSetSemantics {}) {
         withTransform({
             if (flip) { translate(size.width, 0f); scale(-1f, 1f, Offset.Zero) }
             scale(size.width / LabComponents.PaginationGlyphsChevronViewBox, size.height / LabComponents.PaginationGlyphsChevronViewBox, Offset.Zero)
             translate(LabComponents.PaginationGlyphsChevronX, LabComponents.PaginationGlyphsChevronY)
-        }) { drawPath(LabComponents.PaginationGlyphsChevronPath, if (color == colors[LabComponents.PaginationRolesLabel]) colors[LabComponents.PaginationRolesChevron] else color) }
+        }) { drawPath(LabComponents.PaginationGlyphsChevronPath, color) }
     }
 }

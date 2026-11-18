@@ -36,7 +36,11 @@ no timers and makes no automatic page requests.
 Numbered controls and compact links use native Tab and activation semantics.
 Compact buttons have one Tab stop and support Left/Right, Home and End;
 direction follows RTL. Rejected requests keep the consumer's selected page and
-focus. Ellipses are decorative, not undisclosed actions. `disabled` removes
+focus. When a controlled page is accepted later, a focused Compact control
+follows the accepted page. If the user has already left navigation, neither
+that acceptance nor a progress update moves focus back. Lit, React and Compose
+check focus at the committed page change, without retaining a pending focus
+request. Ellipses are decorative, not undisclosed actions. `disabled` removes
 navigation destinations and prevents requests. The name and previous/next/page
 labels are localizable; the page label supports `{page}`.
 
@@ -47,6 +51,9 @@ from the same profile. Web range behavior uses the existing
 uses its never-started service, so there is no second web range algorithm.
 Reflected inputs retain the same controlled state through generated
 Vue/Solid/Svelte/Astro SSR and Lit hydration.
+React's small navigation wrapper uses
+[`getSnapshotBeforeUpdate`](https://react.dev/reference/react/Component#getsnapshotbeforeupdate)
+to read actual focus immediately before page-window DOM replacement.
 
 Source: [Lab UI v2.1](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1),
 Pagination / Page-button / Chevron-button / Compact Pagination.

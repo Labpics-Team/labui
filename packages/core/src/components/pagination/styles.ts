@@ -60,8 +60,7 @@ export const paginationCss = `
 .lab-pagination-control[aria-current][data-progress] .lab-pagination-dot { inline-size: ${rem(p.compact.track)}; background: transparent; }
 .lab-pagination-control[data-progress] .lab-pagination-dot::before, .lab-pagination-progress { content: ''; display: block; position: absolute; inset: 0; border-radius: inherit; background: currentColor; }
 .lab-pagination-control[data-progress] .lab-pagination-dot::before { opacity: var(--_pg-opacity); }
-.lab-pagination-progress { transform: scaleX(var(--_pg-progress, 0)); transform-origin: left; }
-.lab-pagination-control:dir(rtl) .lab-pagination-progress { transform-origin: right; }
+.lab-pagination-progress { inset-inline-start: 0; inset-inline-end: auto; inline-size: calc(var(--_pg-progress, 0) * 100%); }
 [data-lab-pagination][data-disabled] .lab-pagination-dot { opacity: var(--_pg-opacity); }
 ${stackCss}
 ${forcedColorsCss}

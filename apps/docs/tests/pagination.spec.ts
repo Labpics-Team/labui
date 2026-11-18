@@ -162,3 +162,83 @@ test('ambient material fills the compact capsule in both renderers regardless of
     }
   }
 });
+
+test('compact delayed acceptance follows the page only while focus stays inside', async ({
+  page,
+}) => {
+  await page.clock.install();
+  for (const prefix of ['lit', 'react']) {
+    await page.goto('/_fixtures/pagination-focus.html');
+    const host = page.getByTestId(`${prefix}-focus`);
+    const outside = page.getByTestId(`${prefix}-outside`);
+    await host.getByLabel('Page 3', { exact: true }).focus();
+    await page.keyboard.press('End');
+    await expect(host.locator('[aria-current]')).toHaveAttribute('data-page', '3');
+    await page.clock.runFor(100);
+    await expect(host.locator('[aria-current]')).toHaveAttribute('data-page', '20');
+    await expect(host.locator('[aria-current]')).toBeFocused();
+    await page.keyboard.press('ArrowLeft');
+    await page.clock.runFor(100);
+    await expect(host.locator('[aria-current]')).toHaveAttribute('data-page', '19');
+    await expect(host.locator('[aria-current]')).toBeFocused();
+    await page.keyboard.press('Home');
+    await page.keyboard.press('Tab');
+    await expect(outside).toBeFocused();
+    await page.clock.runFor(100);
+    await expect(host.locator('[aria-current]')).toHaveAttribute('data-page', '1');
+    await expect(outside).toBeFocused();
+  }
+});
+
+test('compact refusal and unrelated progress updates preserve the user focus destination', async ({
+  page,
+}) => {
+  for (const prefix of ['lit', 'react']) {
+    await page.goto('/_fixtures/pagination-focus.html');
+    const host = page.getByTestId(`${prefix}-focus`);
+    const outside = page.getByTestId(`${prefix}-outside`);
+    await page.getByTestId(`${prefix}-acceptance`).selectOption('refuse');
+    await host.getByLabel('Page 3', { exact: true }).focus();
+    await page.keyboard.press('End');
+    await expect(host.locator('[aria-current]')).toHaveAttribute('data-page', '3');
+    await expect(host.locator('[aria-current]')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(outside).toBeFocused();
+    await page.keyboard.press('Space');
+    await expect(outside).toBeFocused();
+    await expect(host.locator('[aria-current]')).toHaveAttribute('data-page', '3');
+  }
+});
+
+test('time progress changes capsule width without scaling its round ends in either direction', async ({
+  page,
+}) => {
+  for (const prefix of ['lit', 'react']) {
+    const host = page.getByTestId(`${prefix}-compact`);
+    for (const direction of ['ltr', 'rtl']) {
+      await host.evaluate(
+        (element, direction) => element.setAttribute('dir', direction),
+        direction,
+      );
+      const geometry = await host.locator('.lab-pagination-progress').evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const track = element.parentElement?.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return {
+          width: rect.width,
+          height: rect.height,
+          layoutWidth: (element as HTMLElement).offsetWidth,
+          transform: style.transform,
+          start: rect.x - (track?.x ?? 0),
+        };
+      });
+      expect(geometry).toEqual({
+        width: 12,
+        height: 8,
+        layoutWidth: 12,
+        transform: 'none',
+        start: direction === 'rtl' ? 8 : 0,
+      });
+    }
+  }
+});

@@ -1,0 +1,9 @@
+<!doctype html>
+<html class="lab-scope" lang="en" data-theme="light">
+<head><meta charset="utf-8"/><title>Pagination focus fixture</title><link rel="stylesheet" href="../button-demo.css"/></head>
+<body>
+<section><label>HTML acceptance <select data-testid="lit-acceptance"><option value="delayed">Delayed</option><option value="refuse">Refuse</option></select></label>
+<lab-pagination data-testid="lit-focus" page="3" count="20" page-size="1" variant="compact" progress="0.6"></lab-pagination>
+<button data-testid="lit-outside" type="button">Update progress</button></section>
+<section id="react-root"></section><script type="module" src="./pagination-focus.tsx"></script>
+</body></html>

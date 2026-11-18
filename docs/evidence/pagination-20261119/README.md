@@ -31,12 +31,18 @@ renderers after the final material fix, with Geist loaded and no page errors.
 `pagination.spec.ts` exercises both renderers in Chromium and WebKit: actual
 records, native destinations, passive ellipses, controlled refusal, stable
 page-node identity, empty/invalid/shrinking datasets, keyboard activation,
-compact window navigation, RTL and narrow 200% layout. All 12 browser tests
+compact window navigation, RTL and narrow 200% layout. All 18 browser tests
 passed. The Ambient regression also measures the material surface against its
 capsule at 100% and 200%; the shared material stylesheet must not override its
 absolute position when React imports it after the component stylesheet.
+The focus fixture advances a controlled acceptance by 100 ms with the browser
+clock. It verifies accepted window replacement, continued arrow navigation,
+refusal, leaving with Tab before acceptance and unrelated progress updates.
+Temporal progress changes the fill's width, keeping its 8 px height and round
+ends untransformed in both LTR and RTL. The initial three review regressions
+failed before their respective fixes; final Chromium and WebKit checks passed.
 
-Compose `PaginationRenderTest` passed all four tests and renders the same profile in both appearances,
+Compose `PaginationRenderTest` passed all six tests and renders the same profile in both appearances,
 LTR/RTL and 100/200% system font scales. It verifies accepted/rejected requests
 and displayed records, disabled empty bounds and bounded allocation through
 Int.MAX_VALUE. Direct keyboard events also verify one Compact Tab stop, RTL,
@@ -44,6 +50,10 @@ controlled refusal and overflow-safe movement at both page bounds. Before the
 fix, the forward arrow at Int.MAX_VALUE requested page 1; the regression now
 keeps the final page. `PaginationConsumerTest` compiles and changes the visible records
 using the published local Maven artifact, with no source substitution.
+An additional native focus regression accepts the request after an already
+settled frame, preserving focus only when it remains inside Compact. Pointer
+events verify both chevrons' default, hover and disabled pigment in both
+appearances. `chevron-*.png` shows the native 3× default and hover controls.
 
 Commands:
 
@@ -55,6 +65,6 @@ node apps/docs/tests/pagination-packed.mjs
 ./gradlew :desktopTest --tests pics.lab.ui.PaginationRenderTest
 ```
 
-The Maven consumer was run with uiVersion `0.1.0-pagination-20261119.2` and a
+The Maven consumer was run with uiVersion `0.1.0-pagination-20261119.3` and a
 local published repository. Its existing Icons dependency used the local
 qualified artifact `0.4.0-semantic.6`; neither coordinate is a public release.

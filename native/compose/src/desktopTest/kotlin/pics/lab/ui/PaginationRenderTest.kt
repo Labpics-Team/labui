@@ -15,9 +15,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.SemanticsActions
@@ -28,6 +32,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import java.io.File
+import java.io.ByteArrayInputStream
+import javax.imageio.ImageIO
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -177,5 +183,96 @@ class PaginationRenderTest {
                     "Tab must leave Compact instead of visiting inactive dots")
             } finally { scene.close() }
         }
+    }
+
+    @Test fun chevronsUseTheAuthoredHoverRoleAndKeepDisabledColor() {
+        for (appearance in LabAppearance.entries) {
+            val ready = AtomicBoolean(false)
+            val theme = LabThemeState(initialLabColors(LabPreferences(appearance = appearance)))
+            var disabled by mutableStateOf(false)
+            val scene = ImageComposeScene(2000, 300, Density(3f, 1f)) {
+                val font = labFontFamily(); val resolver = LocalFontFamilyResolver.current
+                LaunchedEffect(font) { resolver.preload(font); ready.set(true) }
+                LabTheme(theme, font) {
+                    Box(Modifier.fillMaxSize().background(theme.colors["bg-grouped-primary"])) {
+                        LabPagination(3, {}, 200, disabled = disabled)
+                    }
+                }
+            }
+            fun control(label: String) = nodes(scene).single { it.config.getOrNull(SemanticsProperties.ContentDescription)?.contains(label) == true }
+            fun assertGlyph(label: String, role: String, hover: Boolean) {
+                val image = ImageIO.read(ByteArrayInputStream(settle(scene, ready)))
+                val center = control(label).boundsInRoot.center
+                val background = if (hover && !disabled) theme.colors[LabComponents.PaginationRolesHover].compositeOver(theme.colors["bg-grouped-primary"])
+                    else theme.colors["bg-grouped-primary"]
+                val expected = theme.colors[role].compositeOver(background).toArgb()
+                val pixels = (-24..23).sumOf { y -> (-24..23).count { x ->
+                    val actual = image.getRGB(center.x.toInt() + x, center.y.toInt() + y)
+                    // Skia's 8-bit alpha compositing can round a channel by one level.
+                    listOf(0, 8, 16, 24).all { shift -> kotlin.math.abs((actual ushr shift and 255) - (expected ushr shift and 255)) <= 1 }
+                } }
+                assertTrue(pixels > 0, "$appearance $label must paint $role (hover=$hover, disabled=$disabled)")
+                if (label == "Previous page") {
+                    val rect = control(label).boundsInRoot
+                    val output = File("build/pagination-render").apply { mkdirs() }
+                    ImageIO.write(image.getSubimage(rect.left.toInt(), rect.top.toInt(), rect.width.toInt(), rect.height.toInt()),
+                        "png", File(output, "chevron-${appearance.name.lowercase()}-${if (hover) "hover" else "default"}.png"))
+                }
+            }
+            try {
+                settle(scene, ready)
+                for (label in listOf("Previous page", "Next page")) {
+                    assertGlyph(label, LabComponents.PaginationRolesChevron, false)
+                    scene.sendPointerEvent(PointerEventType.Move, control(label).boundsInRoot.center)
+                    assertGlyph(label, LabComponents.PaginationRolesLabel, true)
+                    scene.sendPointerEvent(PointerEventType.Move, Offset(1999f, 299f))
+                    assertGlyph(label, LabComponents.PaginationRolesChevron, false)
+                }
+                disabled = true; settle(scene, ready)
+                scene.sendPointerEvent(PointerEventType.Move, control("Next page").boundsInRoot.center)
+                assertGlyph("Next page", LabComponents.PaginationRolesDisabled, true)
+            } finally { scene.close() }
+        }
+    }
+
+    @OptIn(androidx.compose.ui.InternalComposeUiApi::class)
+    @Test fun delayedCompactAcceptancePreservesFocusOnlyWhileTheUserRemainsInside() {
+        val ready = AtomicBoolean(false)
+        val theme = LabThemeState(initialLabColors(LabPreferences()))
+        var page by mutableStateOf(3)
+        var requested = 3
+        var progress by mutableStateOf(.6f)
+        val scene = ImageComposeScene(360, 160) {
+            val font = labFontFamily(); val resolver = LocalFontFamilyResolver.current
+            LaunchedEffect(font) { resolver.preload(font); ready.set(true) }
+            LabTheme(theme, font) { Column {
+                LabPagination(page, { requested = it }, 20, pageSize = 1,
+                    variant = LabPaginationVariant.Compact, progress = progress)
+                LabButton("Outside", { progress += .1f })
+            } }
+        }
+        fun current() = nodes(scene).single { it.config.getOrNull(SemanticsProperties.Selected) == true }
+        fun outside() = nodes(scene).single { it.config.getOrNull(SemanticsProperties.Text)?.any { text -> text.text == "Outside" } == true }
+        fun press(key: Key) {
+            scene.sendKeyEvent(KeyEvent(key, KeyEventType.KeyDown))
+            scene.sendKeyEvent(KeyEvent(key, KeyEventType.KeyUp))
+            settle(scene, ready)
+        }
+        try {
+            settle(scene, ready)
+            current().config[SemanticsActions.RequestFocus].action!!.invoke(); settle(scene, ready)
+            press(Key.MoveEnd); assertEquals(20, requested); assertEquals(3, page)
+            page = requested; settle(scene, ready)
+            assertTrue(current().config.getOrNull(SemanticsProperties.Focused) == true)
+            press(Key.DirectionLeft); assertEquals(19, requested)
+            page = requested; settle(scene, ready)
+            assertTrue(current().config.getOrNull(SemanticsProperties.Focused) == true)
+            press(Key.MoveHome); assertEquals(1, requested)
+            press(Key.Tab); assertTrue(outside().config.getOrNull(SemanticsProperties.Focused) == true)
+            page = requested; settle(scene, ready)
+            assertTrue(outside().config.getOrNull(SemanticsProperties.Focused) == true)
+            progress += .1f; settle(scene, ready)
+            assertTrue(outside().config.getOrNull(SemanticsProperties.Focused) == true)
+        } finally { scene.close() }
     }
 }
