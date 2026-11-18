@@ -273,16 +273,23 @@ XCTest ищет live announcements по label: UIKit экспортирует и
 «Нативная лаборатория 東京». Это проверка поведения, а не скорости устройства.
 Пример использует опубликованный `pics.lab:icons-compose` через `iconsVersion`;
 до выпуска `iconsSource` явно подключает принятый native-каталог исходников.
-До публичного выпуска адаптер принимает `colorsRepository`/`colorsVersion`
-или отдельные `colorsDesktopRepository`/`colorsDesktopVersion` и Android-аналоги.
-Эти настройки должны ссылаться на настоящую Maven-поставку; фиктивной версии
-по умолчанию нет. `:ui-colors:desktopTest` запускает сам native solver.
+Публичный выпуск Colors закреплён в [`colors-release.json`](colors-release.json):
+одна версия содержит точный source commit для Android, desktop и Apple.
+Оба Gradle-проекта используют общий каталог зависимостей и публичный Maven;
+токен GitHub и временные CI-архивы не нужны. `:ui-colors:desktopTest` запускает
+сам native solver. При обновлении выпуска меняются этот descriptor и SHA256
+Swift-архива в нём; Maven URL и Apple release tag следуют из той же версии.
+Проверка публичных SDK-архивов, manifest и Maven-байтов зафиксирована
+в [квитанции выпуска Colors](https://github.com/Labpics-Team/lab-colors/pull/878#issuecomment-6980707104).
 Android-приложение включает core library desugaring и `desugar_jdk_libs:2.1.5`,
 как требует поставка Colors AAR; готовая конфигурация находится в `consumer/androidApp`.
 
 Для iOS установите XcodeGen, затем выполните
-`python3 native/compose/consumer/iosApp/prepare.py --colors-archive /path/to/LabColors.swiftpm.zip`
-и откройте созданный проект. Xcode вызывает `embedAndSignAppleFrameworkForXcode`;
+`python3 native/compose/consumer/iosApp/prepare.py`
+и откройте созданный проект. Команда скачивает публичный SwiftPM-архив и проверяет
+его SHA256 до распаковки. `--colors-archive` позволяет использовать уже скачанный
+архив того же выпуска; проверка SHA256 остаётся обязательной.
+Xcode вызывает `embedAndSignAppleFrameworkForXcode`;
 framework, шрифты и Program-ресурсы доставляются штатным Compose-путём.
 `Info.plist` включает `CADisableMinimumFrameDurationOnPhone=true` для iPhone Pro;
 проверка Compose не отключается. В XCTest editable semantics имеют тип `TextView`.

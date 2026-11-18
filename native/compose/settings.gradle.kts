@@ -1,10 +1,9 @@
 pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+extra["colorsReleaseFile"] = file("colors-release.json")
+apply(from = "gradle/colors-release.settings.gradle.kts")
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        for (property in listOf("colorsRepository", "colorsDesktopRepository", "colorsAndroidRepository")) {
-            providers.gradleProperty(property).orNull?.let { repository -> maven { url = uri(repository) } }
-        }
         maven { url = uri(providers.gradleProperty("motionRepository").orElse("https://raw.githubusercontent.com/Labpics-Team/lab-motion/maven-compose-v0.1.0/").get()) }
         google(); mavenCentral()
     }

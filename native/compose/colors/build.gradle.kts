@@ -26,18 +26,14 @@ kotlin {
             kotlin.srcDir("src/jvmSharedMain/kotlin")
             dependencies {
                 api(project(":"))
-                implementation(providers.gradleProperty("colorsDesktopVersion")
-                    .orElse(providers.gradleProperty("colorsVersion"))
-                    .map { "pics.lab:colors-desktop:$it" })
+                implementation(nativeColors.desktop)
             }
         }
         val androidMain by getting {
             kotlin.srcDir("src/jvmSharedMain/kotlin")
             dependencies {
                 api(project(":"))
-                implementation(providers.gradleProperty("colorsAndroidVersion")
-                    .orElse(providers.gradleProperty("colorsVersion"))
-                    .map { "pics.lab:colors-android:$it" })
+                implementation(nativeColors.android)
             }
         }
         val desktopTest by getting {

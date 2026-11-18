@@ -13,12 +13,9 @@ on:
 
 permissions:
   contents: read
-  actions: read
 
-# Explicit development provenance. Release qualification replaces this CI archive with public pins.
+# Icons still uses the accepted development source; Colors resolves its public release.
 env:
-  COLORS_SOURCE: 0496d209eaf71e784e96e284569ad4ddc73cedd8
-  COLORS_RUN: '44029026139'
   ICONS_SOURCE: 2282d3f6f4f0628878b273c346bf77b3e7393f95
   ORG_GRADLE_PROJECT_uiSource: ${{ github.workspace }}/native/compose
   ORG_GRADLE_PROJECT_iconsSource: ${{ github.workspace }}/.dependencies/icons/native/compose
@@ -48,17 +45,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Download accepted desktop Colors
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          repository: Labpics-Team/lab-colors
-          run-id: ${{ env.COLORS_RUN }}
-          name: desktop-sdk-${{ env.COLORS_SOURCE }}
-          github-token: ${{ github.token }}
-          path: .dependencies/colors-artifact
-      - name: Prepare desktop Colors
-        shell: bash
-        run: python native/compose/scripts/prepare-colors-ci.py desktop .dependencies/colors-artifact
       - name: Prepare Linux fonts and the native accessibility bridge
         if: runner.os == 'Linux'
         run: |
@@ -142,16 +128,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Download accepted Android Colors
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          repository: Labpics-Team/lab-colors
-          run-id: ${{ env.COLORS_RUN }}
-          name: android-sdk-${{ env.COLORS_SOURCE }}
-          github-token: ${{ github.token }}
-          path: .dependencies/colors-artifact
-      - name: Prepare Android Colors
-        run: python3 native/compose/scripts/prepare-colors-ci.py android .dependencies/colors-artifact
       - name: Build the consumer APK
         run: |
           bash native/compose/gradlew -p native/compose/consumer :androidApp:assembleDebug :androidApp:assembleDebugAndroidTest \
@@ -211,21 +187,11 @@ jobs:
           bash native/compose/gradlew -p native/compose/consumer linkDebugFrameworkIosSimulatorArm64 linkReleaseFrameworkIosArm64 \
             -PuiSource="$GITHUB_WORKSPACE/native/compose" \
             --console=plain
-      - name: Download accepted Apple Colors
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          repository: Labpics-Team/lab-colors
-          run-id: ${{ env.COLORS_RUN }}
-          name: apple-sdk-${{ env.COLORS_SOURCE }}
-          github-token: ${{ github.token }}
-          path: .dependencies/colors-artifact
-      - name: Prepare the real iOS application
-        run: |
-          python3 native/compose/scripts/prepare-colors-ci.py apple .dependencies/colors-artifact
-          brew install xcodegen
+      - name: Install XcodeGen
+        run: brew install xcodegen
       - name: Build and exercise the iOS application
         run: |
-          python3 native/compose/consumer/iosApp/prepare.py --colors-archive "$COLORS_SWIFT_ARCHIVE"
+          python3 native/compose/consumer/iosApp/prepare.py
           simulator=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; print(next(d["udid"] for ds in json.load(sys.stdin)["devices"].values() for d in ds if d["name"].startswith("iPhone")))')
           xcodebuild test -project native/compose/consumer/iosApp/LabUIExample.xcodeproj \
             -scheme LabUIExample -destination "id=$simulator" \
