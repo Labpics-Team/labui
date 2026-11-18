@@ -10,7 +10,7 @@ import '@labpics/ui-core/badge';
 import type { LabBadge } from '@labpics/ui-core/badge';
 
 /** SSR-пропы <lab-badge> (атрибуты/свойства), взяты из класса ядра (LabBadge). */
-export type BadgeSsrProps = Partial<Pick<LabBadge, 'color' | 'type' | 'disabled'>>;
+export type BadgeSsrProps = Partial<Pick<LabBadge, 'color' | 'type' | 'disabled'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-badge> — предрендеренные строки контента. */
 export type BadgeSsrSlots = { default?: string; dot?: string; icon?: string; iconEnd?: string };
 
@@ -27,5 +27,7 @@ export function renderBadge(
       color=${ifDefined(props.color)}
       type=${ifDefined(props.type)}
       ?disabled=${Boolean(props.disabled)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     >${slots.dot ? html`<span slot="dot">${unsafeHTML(slots.dot)}</span>` : ''}${slots.icon ? html`<span slot="icon">${unsafeHTML(slots.icon)}</span>` : ''}${slots.iconEnd ? html`<span slot="icon-end">${unsafeHTML(slots.iconEnd)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-badge>`);
 }

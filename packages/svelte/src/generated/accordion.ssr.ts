@@ -10,7 +10,7 @@ import '@labpics/ui-core/accordion';
 import type { LabAccordion } from '@labpics/ui-core/accordion';
 
 /** SSR-пропы <lab-accordion> (атрибуты/свойства), взяты из класса ядра (LabAccordion). */
-export type AccordionSsrProps = Partial<Pick<LabAccordion, 'orientation' | 'size' | 'multiple' | 'collapsible' | 'disabled' | 'value' | 'defaultValue' | 'items'>>;
+export type AccordionSsrProps = Partial<Pick<LabAccordion, 'orientation' | 'size' | 'multiple' | 'collapsible' | 'disabled' | 'value' | 'defaultValue' | 'items'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-accordion> — предрендеренные строки контента. */
 export type AccordionSsrSlots = { default?: string; dynamic?: Readonly<Record<string, string>> };
 
@@ -32,5 +32,7 @@ export function renderAccordion(
       .value=${props.value === undefined ? noChange : props.value}
       .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
       .items=${props.items === undefined ? noChange : props.items}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     >${Object.entries(slots.dynamic ?? {}).map(([name, content]) => html`<span slot=${name}>${unsafeHTML(content)}</span>`)}${unsafeHTML(slots.default ?? '')}</lab-accordion>`);
 }

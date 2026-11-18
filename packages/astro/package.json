@@ -10,14 +10,24 @@
   "types": "./dist/ssr.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/ssr.d.ts",
-      "import": "./dist/ssr.js",
-      "require": "./dist/ssr.cjs"
+      "import": {
+        "types": "./dist/ssr.d.ts",
+        "default": "./dist/ssr.js"
+      },
+      "require": {
+        "types": "./dist/ssr.d.cts",
+        "default": "./dist/ssr.cjs"
+      }
     },
     "./ssr": {
-      "types": "./dist/ssr.d.ts",
-      "import": "./dist/ssr.js",
-      "require": "./dist/ssr.cjs"
+      "import": {
+        "types": "./dist/ssr.d.ts",
+        "default": "./dist/ssr.js"
+      },
+      "require": {
+        "types": "./dist/ssr.d.cts",
+        "default": "./dist/ssr.cjs"
+      }
     },
     "./*.astro": "./src/astro/*.astro",
     "./package.json": "./package.json"

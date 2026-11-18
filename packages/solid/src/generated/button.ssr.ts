@@ -10,7 +10,7 @@ import '@labpics/ui-core/button';
 import type { LabButton } from '@labpics/ui-core/button';
 
 /** SSR-пропы <lab-button> (атрибуты/свойства), взяты из класса ядра (LabButton). */
-export type ButtonSsrProps = Partial<Pick<LabButton, 'type' | 'kind' | 'size' | 'icon' | 'loading' | 'disabled' | 'htmlType'>>;
+export type ButtonSsrProps = Partial<Pick<LabButton, 'type' | 'kind' | 'size' | 'icon' | 'loading' | 'disabled' | 'htmlType'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-button> — предрендеренные строки контента. */
 export type ButtonSsrSlots = { default?: string; description?: string; icon?: string; iconEnd?: string };
 
@@ -31,5 +31,7 @@ export function renderButton(
       ?loading=${Boolean(props.loading)}
       ?disabled=${Boolean(props.disabled)}
       html-type=${ifDefined(props.htmlType)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     >${slots.description ? html`<span slot="description">${unsafeHTML(slots.description)}</span>` : ''}${slots.icon ? html`<span slot="icon">${unsafeHTML(slots.icon)}</span>` : ''}${slots.iconEnd ? html`<span slot="icon-end">${unsafeHTML(slots.iconEnd)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-button>`);
 }

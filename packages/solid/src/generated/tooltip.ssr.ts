@@ -10,7 +10,7 @@ import '@labpics/ui-core/tooltip';
 import type { LabTooltip } from '@labpics/ui-core/tooltip';
 
 /** SSR-пропы <lab-tooltip> (атрибуты/свойства), взяты из класса ядра (LabTooltip). */
-export type TooltipSsrProps = Partial<Pick<LabTooltip, 'placement' | 'size' | 'content' | 'openDelay' | 'closeDelay' | 'disabled' | 'arrow'>>;
+export type TooltipSsrProps = Partial<Pick<LabTooltip, 'placement' | 'size' | 'content' | 'openDelay' | 'closeDelay' | 'disabled' | 'arrow'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-tooltip> — предрендеренные строки контента. */
 export type TooltipSsrSlots = { default?: string; content?: string };
 
@@ -31,5 +31,7 @@ export function renderTooltip(
       close-delay=${ifDefined(props.closeDelay)}
       ?disabled=${Boolean(props.disabled)}
       ?arrow=${Boolean(props.arrow)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     >${slots.content ? html`<span slot="content">${unsafeHTML(slots.content)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-tooltip>`);
 }

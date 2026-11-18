@@ -1,14 +1,16 @@
+import type { LabChip } from '@labpics/ui-core/chip';
 /**
  * Клиентский маунт-смоук (happy-dom, задаётся vitest.config): обёртка монтирует реальный
  * <lab-*>, пробрасывает пропы атрибутами/свойствами, слоты и кастом-события. 3
  * репрезентативных компонента: button (слоты + булевы), input (свойство value),
  * checkbox (кастом-событие).
  */
-import { createComponent } from 'solid-js';
+import { createComponent, createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Button } from '../src/generated/button.js';
 import { Checkbox } from '../src/generated/checkbox.js';
+import { Chip } from '../src/generated/chip.js';
 import { Input } from '../src/generated/input.js';
 
 const disposers: Array<() => void> = [];
@@ -26,6 +28,84 @@ afterEach(() => {
 });
 
 describe('Solid mount (проброс на <lab-*>)', () => {
+  it('withdrawing defaulted Chip attributes restores its defaults and preserves explicit empty values', async () => {
+    const [size, setSize] = createSignal<LabChip['size'] | undefined>('s');
+    const [mode, setMode] = createSignal<LabChip['mode'] | undefined>('action');
+    const [value, setValue] = createSignal<string | undefined>('');
+    const host = mount(() =>
+      createComponent(Chip, {
+        defaultSelected: true,
+        get size() {
+          return size();
+        },
+        get mode() {
+          return mode();
+        },
+        get value() {
+          return value();
+        },
+        children: 'Filter',
+      }),
+    );
+    const chip = host.querySelector('lab-chip') as LabChip;
+    await chip.updateComplete;
+    expect([chip.size, chip.mode, chip.value]).toEqual(['s', 'action', '']);
+    setSize(undefined);
+    setMode(undefined);
+    await chip.updateComplete;
+    expect([chip.size, chip.mode, chip.value, chip.selected]).toEqual(['m', 'filter', '', true]);
+    expect(chip.shadowRoot?.querySelector('button')?.getAttribute('aria-pressed')).toBe('true');
+    setValue(undefined);
+    await chip.updateComplete;
+    expect(chip.value).toBe('on');
+  });
+  it('reactive updates retain omitted defaults and selection; withdrawn inputs are removed once', async () => {
+    const [loading, setLoading] = createSignal(false);
+    const [name, setName] = createSignal<string | undefined>('filter');
+    const [active, setActive] = createSignal<boolean | undefined>(true);
+    const changed = vi.fn();
+    const host = mount(() =>
+      createComponent(Chip, {
+        defaultSelected: true,
+        get loading() {
+          return loading();
+        },
+        get name() {
+          return name();
+        },
+        get active() {
+          return active();
+        },
+        onSelectedChange: changed,
+        children: 'Solid filter',
+      }),
+    );
+    const chip = host.querySelector('lab-chip') as LabChip;
+    await chip.updateComplete;
+    expect([chip.mode, chip.size, chip.value, chip.selected]).toEqual(['filter', 'm', 'on', true]);
+    setLoading(true);
+    await chip.updateComplete;
+    expect([chip.mode, chip.size, chip.value, chip.selected]).toEqual(['filter', 'm', 'on', true]);
+    setLoading(false);
+    await chip.updateComplete;
+    chip.click();
+    await chip.updateComplete;
+    expect(chip.selected).toBe(false);
+    expect(changed).toHaveBeenCalledTimes(1);
+    setName(undefined);
+    setActive(undefined);
+    await chip.updateComplete;
+    expect(chip.hasAttribute('name')).toBe(false);
+    expect(chip.active).toBe(false);
+    chip.name = 'element state';
+    chip.active = true;
+    await chip.updateComplete;
+    setLoading(true);
+    await chip.updateComplete;
+    expect(chip.name).toBe('element state');
+    expect(chip.active).toBe(true);
+    expect(chip.selected).toBe(false);
+  });
   it('button: строковые оси → атрибуты, false-булев снят, слот в light DOM', () => {
     const host = mount(() =>
       createComponent(Button, {

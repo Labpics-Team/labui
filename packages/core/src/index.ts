@@ -183,3 +183,5 @@ export type {
 export { tagsInputTranslations } from './components/tags-input/lab-tags-input.js';
 
 export const PACKAGE_NAME = '@labpics/ui-core';
+
+export type { LabChipMode, LabChipSize } from './components/chip/contract.js';

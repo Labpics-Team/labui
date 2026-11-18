@@ -10,7 +10,7 @@ import '@labpics/ui-core/radio-group';
 import type { LabRadioGroup } from '@labpics/ui-core/radio-group';
 
 /** SSR-пропы <lab-radio-group> (атрибуты/свойства), взяты из класса ядра (LabRadioGroup). */
-export type RadioGroupSsrProps = Partial<Pick<LabRadioGroup, 'type' | 'size' | 'variant' | 'orientation' | 'value' | 'defaultValue' | 'controlled' | 'disabled' | 'required' | 'name' | 'label' | 'items'>>;
+export type RadioGroupSsrProps = Partial<Pick<LabRadioGroup, 'type' | 'size' | 'variant' | 'orientation' | 'value' | 'defaultValue' | 'controlled' | 'disabled' | 'required' | 'name' | 'label' | 'items'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-radio-group> — предрендеренные строки контента. */
 export type RadioGroupSsrSlots = { default?: string; dynamic?: Readonly<Record<string, string>> };
 
@@ -36,5 +36,7 @@ export function renderRadioGroup(
       name=${ifDefined(props.name)}
       label=${ifDefined(props.label)}
       .items=${props.items === undefined ? noChange : props.items}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     >${Object.entries(slots.dynamic ?? {}).map(([name, content]) => html`<span slot=${name}>${unsafeHTML(content)}</span>`)}${unsafeHTML(slots.default ?? '')}</lab-radio-group>`);
 }

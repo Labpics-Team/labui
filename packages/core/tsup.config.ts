@@ -31,8 +31,10 @@ const componentEntries = discoverComponents().map(({ entry }) => entry);
 export default libraryPreset({
   entry: [
     'src/index.ts',
+    'src/adapter-runtime.ts',
     'src/components/badge/contract.ts',
     'src/components/kbd/contract.ts',
+    'src/components/chip/contract.ts',
     'src/ssr/index.ts',
     'src/proof/lab-proof.ts',
     'src/components/dialog/shared.ts',

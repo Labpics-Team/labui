@@ -36,7 +36,18 @@ function ssrFile(c: ComponentMeta): string {
   const pickKeys = propNames.map((n) => `'${n}'`).join(' | ');
   const propsType =
     propNames.length > 0 ? `Partial<Pick<${c.className}, ${pickKeys}>>` : 'Record<never, never>';
-  const bindings = c.props.map((p) => bindingLine(p.name, p.attr, p.kind)).join('\n');
+  // Client adapters forward native host attributes. Server rendering must retain
+  // the accessible name and form association before custom-element hydration.
+  const hostAttributes = ['aria-label', 'form'].filter(
+    (attribute) => !c.props.some((prop) => prop.attr === attribute),
+  );
+  const hostPropsType = hostAttributes.length
+    ? ` & { ${hostAttributes.map((attribute) => `'${attribute}'?: string`).join('; ')} }`
+    : '';
+  const bindings = [
+    ...c.props.map((p) => bindingLine(p.name, p.attr, p.kind)),
+    ...hostAttributes.map((attribute) => `      ${attribute}=\${ifDefined(props['${attribute}'])}`),
+  ].join('\n');
 
   const slotKeys = [
     ...(c.slots.default || c.slots.dynamic ? ['default'] : []),
@@ -66,7 +77,7 @@ function ssrFile(c: ComponentMeta): string {
 
   // Условные импорты из единой SSR-поверхности ядра (адаптер зависит только от core,
   // не от lit напрямую). Базовый tsconfig включает noUnusedLocals — берём лишь нужное.
-  const usesIfDefined = c.props.some((p) => p.kind === 'string');
+  const usesIfDefined = hostAttributes.length > 0 || c.props.some((p) => p.kind === 'string');
   const usesNoChange = c.props.some((p) => p.kind === 'prop');
   const usesUnsafeHtml = hasSlots;
   const coreImports = [
@@ -83,7 +94,7 @@ import '@labpics/ui-core/${c.subpath}';
 import type { ${c.className} } from '@labpics/ui-core/${c.subpath}';
 
 /** SSR-пропы <${c.tag}> (атрибуты/свойства), взяты из класса ядра (${c.className}). */
-export type ${c.pascal}SsrProps = ${propsType};
+export type ${c.pascal}SsrProps = ${propsType}${hostPropsType};
 /** SSR-слоты <${c.tag}> — предрендеренные строки контента. */
 export type ${c.pascal}SsrSlots = ${slotsType};
 

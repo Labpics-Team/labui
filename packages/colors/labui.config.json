@@ -179,6 +179,14 @@
         "light": [53, 53, 60],
         "dark": [196, 197, 205]
       }
+    },
+    "skeleton-neutral": {
+      "light": [120, 120, 128],
+      "dark": [120, 120, 128],
+      "increased": {
+        "light": [114, 114, 122],
+        "dark": [114, 114, 122]
+      }
     }
   },
   "roles": {
@@ -878,6 +886,11 @@
       "fx-control-inner": {
         "anchor": "ink",
         "opacity": 0.12
+      },
+      "fx-skeleton-base": {
+        "anchor": "skeleton-neutral",
+        "opacity": 0.08,
+        "increasedOpacity": 0.12
       }
     },
     "dark": {
@@ -1070,6 +1083,11 @@
       "fx-control-inner": {
         "anchor": "ink",
         "opacity": 0.2
+      },
+      "fx-skeleton-base": {
+        "anchor": "skeleton-neutral",
+        "opacity": 0.12,
+        "increasedOpacity": 0.16
       }
     }
   },

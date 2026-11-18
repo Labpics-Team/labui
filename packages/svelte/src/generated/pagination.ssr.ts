@@ -10,7 +10,7 @@ import '@labpics/ui-core/pagination';
 import type { LabPagination } from '@labpics/ui-core/pagination';
 
 /** SSR-пропы <lab-pagination> (атрибуты/свойства), взяты из класса ядра (LabPagination). */
-export type PaginationSsrProps = Partial<Pick<LabPagination, 'size' | 'count' | 'pageSize' | 'siblingCount' | 'page' | 'defaultPage'>>;
+export type PaginationSsrProps = Partial<Pick<LabPagination, 'size' | 'count' | 'pageSize' | 'siblingCount' | 'page' | 'defaultPage'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-pagination> — предрендеренные строки контента. */
 export type PaginationSsrSlots = Record<never, never>;
 
@@ -29,5 +29,7 @@ export function renderPagination(
       sibling-count=${ifDefined(props.siblingCount)}
       page=${ifDefined(props.page)}
       default-page=${ifDefined(props.defaultPage)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-pagination>`);
 }

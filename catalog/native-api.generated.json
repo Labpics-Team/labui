@@ -1,6 +1,6 @@
 {
-  "revision": "d43622cfe5454e09891ae229c6f7be0fbc277228",
-  "sourceDigest": "sha256:6856c0b2473dc2b328db87e6a467926671acf17166b422837a67c45b93ee7c2f",
+  "revision": "465c3ea5c4fd7ce1e0ed9148a26658c5e878d89d",
+  "sourceDigest": "sha256:6d06856019de44dba44d38420428da4483a449c685bb079aa6c4dcd212fef1f8",
   "symbols": [
     {
       "name": "LabBadge",
@@ -13,6 +13,10 @@
     {
       "name": "LabCheckbox",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabCheckbox.kt"
+    },
+    {
+      "name": "LabChip",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChip.kt"
     },
     {
       "name": "LabChoicebox",

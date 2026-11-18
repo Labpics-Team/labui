@@ -22,10 +22,11 @@ export function themeProfile(theme = 'light', contrast = 'normal', source = conf
       roles[name] = value;
       continue;
     }
-    const labelContrast = name.startsWith('label-') ? contrast : 'normal';
+    const labelContrast =
+      name.startsWith('label-') || value.increasedOpacity !== undefined ? contrast : 'normal';
     roles[name] = [
       ...anchorColor(source, value.anchor, theme, labelContrast),
-      labelContrast === 'more' ? 1 : value.opacity,
+      labelContrast === 'more' ? (value.increasedOpacity ?? 1) : value.opacity,
     ];
   }
   const resolve = (name, seen = new Set()) => {

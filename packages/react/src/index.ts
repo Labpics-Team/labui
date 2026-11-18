@@ -141,3 +141,5 @@ export const PACKAGE_NAME = '@labpics/ui-react';
 
 export { Sheet, type SheetProps, type LabSheetPosition } from './sheet.js';
 export { Snackbar, type SnackbarProps } from './snackbar.js';
+
+export { Chip, type ChipProps } from './chip.js';

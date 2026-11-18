@@ -404,6 +404,86 @@
       }
     },
     {
+      "tag": "lab-chip",
+      "subpath": "chip",
+      "pascal": "Chip",
+      "className": "LabChip",
+      "props": [
+        {
+          "name": "mode",
+          "attr": "mode",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "sharp",
+          "attr": "sharp",
+          "kind": "boolean"
+        },
+        {
+          "name": "active",
+          "attr": "active",
+          "kind": "boolean"
+        },
+        {
+          "name": "selected",
+          "attr": "selected",
+          "kind": "boolean"
+        },
+        {
+          "name": "defaultSelected",
+          "attr": "default-selected",
+          "kind": "boolean"
+        },
+        {
+          "name": "controlled",
+          "attr": "controlled",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "loading",
+          "attr": "loading",
+          "kind": "boolean"
+        },
+        {
+          "name": "showLeading",
+          "attr": "show-leading",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "action",
+        "remove",
+        "selected-change"
+      ],
+      "slots": {
+        "default": true,
+        "named": [
+          "leading"
+        ],
+        "dynamic": false
+      }
+    },
+    {
       "tag": "lab-choicebox",
       "subpath": "choicebox",
       "pascal": "Choicebox",

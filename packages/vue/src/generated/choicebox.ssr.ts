@@ -10,7 +10,7 @@ import '@labpics/ui-core/choicebox';
 import type { LabChoicebox } from '@labpics/ui-core/choicebox';
 
 /** SSR-пропы <lab-choicebox> (атрибуты/свойства), взяты из класса ядра (LabChoicebox). */
-export type ChoiceboxSsrProps = Partial<Pick<LabChoicebox, 'layout' | 'multiple' | 'value' | 'defaultValue' | 'controlled' | 'disabled' | 'required' | 'name' | 'label' | 'items'>>;
+export type ChoiceboxSsrProps = Partial<Pick<LabChoicebox, 'layout' | 'multiple' | 'value' | 'defaultValue' | 'controlled' | 'disabled' | 'required' | 'name' | 'label' | 'items'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-choicebox> — предрендеренные строки контента. */
 export type ChoiceboxSsrSlots = { default?: string; dynamic?: Readonly<Record<string, string>> };
 
@@ -34,5 +34,7 @@ export function renderChoicebox(
       name=${ifDefined(props.name)}
       label=${ifDefined(props.label)}
       .items=${props.items === undefined ? noChange : props.items}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     >${Object.entries(slots.dynamic ?? {}).map(([name, content]) => html`<span slot=${name}>${unsafeHTML(content)}</span>`)}${unsafeHTML(slots.default ?? '')}</lab-choicebox>`);
 }

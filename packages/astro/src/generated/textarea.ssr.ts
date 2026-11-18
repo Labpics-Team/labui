@@ -10,7 +10,7 @@ import '@labpics/ui-core/textarea';
 import type { LabTextarea } from '@labpics/ui-core/textarea';
 
 /** SSR-пропы <lab-textarea> (атрибуты/свойства), взяты из класса ядра (LabTextarea). */
-export type TextareaSsrProps = Partial<Pick<LabTextarea, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'placeholder' | 'rows' | 'autoResize' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name' | 'autocomplete' | 'maxLength' | 'minLength'>>;
+export type TextareaSsrProps = Partial<Pick<LabTextarea, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'placeholder' | 'rows' | 'autoResize' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name' | 'autocomplete' | 'maxLength' | 'minLength'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-textarea> — предрендеренные строки контента. */
 export type TextareaSsrSlots = Record<never, never>;
 
@@ -41,5 +41,7 @@ export function renderTextarea(
       autocomplete=${ifDefined(props.autocomplete)}
       maxlength=${ifDefined(props.maxLength)}
       minlength=${ifDefined(props.minLength)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-textarea>`);
 }
