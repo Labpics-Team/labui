@@ -26,7 +26,7 @@ import { existsSync, globSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import ts from 'typescript';
 import { classify } from './consumed-contract.js';
-import { stripComments } from './css-source.js';
+import { cssImports, stripComments } from './css-source.js';
 export { stripComments } from './css-source.js';
 import { repoRoot } from './no-literal-colour-fallback.js';
 
@@ -57,31 +57,29 @@ const MIGRATED_COMPONENTS = [
 ] as const;
 
 /** Collect local component styles, including shared field styles and CSS imports. */
-function componentFiles(name: string): string[] {
+export function componentFiles(name: string, sourceRoot = repoRoot): string[] {
   const seen = new Set<string>();
   const visit = (file: string): void => {
     if (seen.has(file)) return;
     seen.add(file);
-    const source = readFileSync(resolve(repoRoot, file), 'utf8');
+    const source = readFileSync(resolve(sourceRoot, file), 'utf8');
     const imports = file.endsWith('.css')
-      ? [...stripComments(source, false).matchAll(/@import\s*['"]([^'"]+)['"]/g)].map(
-          (match) => match[1] as string,
-        )
+      ? cssImports(source)
       : ts.preProcessFile(source, true).importedFiles.map((imported) => imported.fileName);
     for (const imported of imports.filter((path) => path.startsWith('.'))) {
-      const base = resolve(repoRoot, dirname(file), imported);
+      const base = resolve(sourceRoot, dirname(file), imported);
       const target = [base.replace(/\.js$/, '.ts'), base.replace(/\.js$/, '.tsx'), base].find(
         (path) => existsSync(path),
       );
       if (!target) throw new Error(`${file}: unresolved local import ${imported}`);
-      const rel = relative(repoRoot, target).replaceAll('\\', '/');
+      const rel = relative(sourceRoot, target).replaceAll('\\', '/');
       if (rel.startsWith('packages/core/src/components/') || rel.startsWith('packages/react/src/'))
         visit(rel);
     }
   };
   visit(`packages/core/src/components/${name}/lab-${name}.ts`);
   const react = `packages/react/src/${name}.tsx`;
-  if (existsSync(resolve(repoRoot, react))) visit(react);
+  if (existsSync(resolve(sourceRoot, react))) visit(react);
   return [...seen].sort();
 }
 

@@ -43,7 +43,10 @@
     "@labpics/colors": "1.0.3"
   },
   "devDependencies": {
+    "@types/css-tree": "3.2.0",
     "@types/node": "22.10.5",
+    "css-tree": "3.2.1",
+    "postcss": "8.5.28",
     "typescript": "5.7.3",
     "vitest": "3.2.6"
   }

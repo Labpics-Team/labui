@@ -28,7 +28,7 @@
  */
 import { globSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { cssBlocks } from './css-source.js';
+import { type CssDeclaration, cssDeclarations } from './css-source.js';
 import { repoRoot } from './no-literal-colour-fallback.js';
 import {
   canonicalTokens,
@@ -164,38 +164,68 @@ export function scanZIndexSource(
   const text = stripComments(isTs ? normalizeLit(source) : source, isTs);
   const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
 
-  const blocks = cssBlocks(text);
-  const isolatedSelectors = blocks
-    // An unconditional isolation declaration establishes a local coordinate
-    // system. Conditional isolation cannot prove the default painting order.
-    .filter(
-      (block) =>
-        !block.parent &&
-        /(?:^|;)\s*isolation\s*:\s*isolate\s*(?:;|$)/.test(text.slice(block.start, block.end)),
-    )
-    .flatMap((block) => block.header.split(',').map((selector) => selector.trim()));
+  const declarations = cssDeclarations(text, isTs);
+  const isolations = declarations.filter((declaration) =>
+    ['isolation', 'all'].includes(declaration.property),
+  );
+  const isolates = (declaration: CssDeclaration): boolean =>
+    declaration.property === 'isolation' && declaration.value.toLowerCase() === 'isolate';
+  const sameSelector = (a: readonly string[], b: readonly string[]): boolean =>
+    a.length === b.length && a.every((atom, i) => atom === b[i]);
+  const priority = (a: CssDeclaration, b: CssDeclaration): number =>
+    Number(a.important) - Number(b.important) || a.start - b.start;
   const isLocal = (index: number): boolean => {
-    const block = blocks.find(
-      (item) =>
-        index >= item.start && index < item.end && !text.slice(item.start, item.end).includes('{'),
+    const target = declarations.find(
+      (declaration) =>
+        declaration.property === 'z-index' && index >= declaration.start && index < declaration.end,
     );
-    return (
-      block?.header
-        .split(',')
-        .every((selector) =>
-          isolatedSelectors.some(
-            (root) =>
-              selector.trim().startsWith(root) &&
-              /^(?:\s*>\s*|\s+)(?![+~\s])/.test(selector.trim().slice(root.length)),
-          ),
-        ) ?? false
+    if (!target || target.selectors.length === 0) return false;
+    const guaranteed = (declaration: CssDeclaration): boolean =>
+      declaration.conditions.every((condition) =>
+        target.conditions.some((active) => active.key === condition.key),
+      );
+    return target.selectors.every((selector) =>
+      isolations.some(
+        (isolation) =>
+          isolation.document === target.document &&
+          isolation.selectors.some((root) => {
+            if (
+              !root.every((atom, i) => atom === selector[i]) ||
+              ![' ', '>'].includes(selector[root.length] ?? '')
+            )
+              return false;
+            const matching = isolations.filter(
+              (declaration) =>
+                declaration.document === target.document &&
+                declaration.selectors.some((other) => sameSelector(root, other)),
+            );
+            // Same-selector cascade: !important wins before source order. A reset in
+            // a condition not guaranteed here can still invalidate the proof.
+            const winner = matching.filter(guaranteed).sort(priority).at(-1);
+            if (!winner || !isolates(winner)) return false;
+            return !isolations.some((declaration) => {
+              if (declaration.document !== target.document || isolates(declaration)) return false;
+              const same = declaration.selectors.every((other) => sameSelector(root, other));
+              const layered = [...declaration.conditions, ...winner.conditions].some((condition) =>
+                condition.key.startsWith('@layer '),
+              );
+              if (!same || layered) {
+                // Without a DOM/specificity/layer model another selector may match
+                // the same ancestor. Refuse the exception instead of guessing.
+                return Number(declaration.important) >= Number(winner.important) || layered;
+              }
+              return !guaranteed(declaration) && priority(declaration, winner) > 0;
+            });
+          }),
+      ),
     );
   };
 
   for (const m of text.matchAll(ZINDEX_DECL)) {
     // Only integer layers of proven descendants are local. Root placement and
     // arithmetic over global --lab-z-* levels still obey the global scale.
-    if (/^-?\d+$/.test((m[1] as string).trim()) && isLocal(m.index ?? 0)) continue;
+    if (/^-?\d+(?:\s*!important)?$/i.test((m[1] as string).trim()) && isLocal(m.index ?? 0))
+      continue;
     analyzeZValue((m[1] as string).trim(), relPath, lineAt(m.index ?? 0), zLevels, out);
   }
   // camelCase существует только в JS/TS-объекте стилей; в CSS такой формы нет.
