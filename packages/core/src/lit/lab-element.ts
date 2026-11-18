@@ -17,6 +17,7 @@ import type { MachineSchema } from '@zag-js/core';
  */
 import { type CSSResultGroup, type CSSResultOrNative, LitElement, css } from 'lit';
 import type { MachineModule, MachineProps } from '../behaviors/types.js';
+import { LAB_ELEMENT_BRAND, SSR_INPUTS_ATTRIBUTE, parseSsrInputs } from './ssr-inputs.js';
 import { ZagController } from './zag-controller.js';
 
 /** Process-wide counter backing {@link LabElement.uid} — stable per instance. */
@@ -38,6 +39,31 @@ const cornerShapeStyles = css`
 `;
 
 export class LabElement extends LitElement {
+  static readonly [LAB_ELEMENT_BRAND] = true;
+  private restoredServerInputs = false;
+
+  static override get observedAttributes(): string[] {
+    // biome-ignore lint/complexity/noThisInStatic: preserve each subclass's declared attribute list
+    return [...super.observedAttributes, SSR_INPUTS_ATTRIBUTE];
+  }
+
+  override attributeChangedCallback(name: string, old: string | null, value: string | null): void {
+    if (name !== SSR_INPUTS_ATTRIBUTE) {
+      super.attributeChangedCallback(name, old, value);
+      return;
+    }
+    if (this.restoredServerInputs || value === null || this.hasUpdated) return;
+    this.restoredServerInputs = true;
+    const properties = (this.constructor as typeof LabElement).elementProperties;
+    // Attribute reactions run after construction and before connectedCallback.
+    // Component-specific dirty-input recovery and controllers see these inputs
+    // in the same order as ordinary HTML attributes.
+    for (const [property, input] of Object.entries(parseSsrInputs(value))) {
+      const options = properties.get(property);
+      if (options && !options.state) Reflect.set(this, property, input);
+    }
+  }
+
   /** Форма угла — всем наследникам, поверх их собственных styles. */
   protected static override finalizeStyles(styles?: CSSResultGroup): Array<CSSResultOrNative> {
     // biome-ignore lint/complexity/noThisInStatic: super в статик-переопределении — точный механизм цепочки Lit (имя класса сломало бы промежуточных наследников)

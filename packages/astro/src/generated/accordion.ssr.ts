@@ -26,9 +26,9 @@ export function renderAccordion(
   return renderToString(html`<lab-accordion
       orientation=${ifDefined(props.orientation)}
       size=${ifDefined(props.size)}
-      ?multiple=${Boolean(props.multiple)}
-      ?collapsible=${Boolean(props.collapsible)}
-      ?disabled=${Boolean(props.disabled)}
+      .multiple=${props.multiple === undefined ? noChange : props.multiple}
+      .collapsible=${props.collapsible === undefined ? noChange : props.collapsible}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
       .value=${props.value === undefined ? noChange : props.value}
       .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
       .items=${props.items === undefined ? noChange : props.items}

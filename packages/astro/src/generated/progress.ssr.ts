@@ -29,7 +29,7 @@ export function renderProgress(
       min=${ifDefined(props.min)}
       max=${ifDefined(props.max)}
       label=${ifDefined(props.label)}
-      ?show-value-text=${Boolean(props.showValueText)}
+      .showValueText=${props.showValueText === undefined ? noChange : props.showValueText}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}
     ></lab-progress>`);

@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/card';
 import type { LabCard } from '@labpics/ui-core/card';
 
@@ -26,7 +26,7 @@ export function renderCard(
   return renderToString(html`<lab-card
       variant=${ifDefined(props.variant)}
       padding=${ifDefined(props.padding)}
-      ?interactive=${Boolean(props.interactive)}
+      .interactive=${props.interactive === undefined ? noChange : props.interactive}
       image=${ifDefined(props.image)}
       image-alt=${ifDefined(props.imageAlt)}
       heading=${ifDefined(props.heading)}

@@ -70,6 +70,29 @@ try {
     ['install', '--ignore-scripts', '--config.auto-install-peers=false', '--prefer-offline'],
     consumer,
   );
+  await writeFile(
+    join(consumer, 'interop.mjs'),
+    `
+    import assert from 'node:assert/strict';
+    import { createRequire } from 'node:module';
+    const require = createRequire(import.meta.url);
+    let renderTooltip;
+    if (process.argv[2] === 'cjs-first') {
+      require('@labpics/ui-core/ssr');
+      require('@labpics/ui-core/tooltip');
+      ({renderTooltip} = await import('@labpics/ui-vue/ssr'));
+    } else {
+      await import('@labpics/ui-core/ssr');
+      await import('@labpics/ui-core/tooltip');
+      ({renderTooltip} = require('@labpics/ui-vue/ssr'));
+    }
+    const output = renderTooltip({arrow:false});
+    assert.ok(output.includes('data-lab-inputs="{&quot;arrow&quot;:false}"'));
+    assert.ok(!output.includes('part="arrow"'));
+  `,
+  );
+  for (const order of ['cjs-first', 'esm-first'])
+    execFileSync(process.execPath, ['interop.mjs', order], { cwd: consumer, stdio: 'pipe' });
   const value = '\nFirst </textarea><script>window.injected=true</script> & second\n日本語';
   const props = {
     label: 'Описание',
@@ -81,6 +104,8 @@ try {
     required: true,
     minLength: 3,
     autoResize: true,
+    disabled: false,
+    readonly: false,
   };
   const linebreaks = ['\r\nFirst\r\nSecond', '\rFirst\rSecond', '\nFirst\nSecond'];
   await writeFile(join(consumer, 'props.json'), JSON.stringify(props));
@@ -104,10 +129,13 @@ try {
     const parts = [];
     const linebreakParts = [];
     for (const name of ['vue', 'solid', 'svelte', 'astro']) {
-      const { renderTextarea, renderInput } = await import('@labpics/ui-' + name + '/ssr');
+      const { renderTextarea, renderInput, renderTooltip } = await import('@labpics/ui-' + name + '/ssr');
       parts.push('<form data-renderer="' + name + '">' + renderTextarea(props) + renderInput({ ...props, name: 'title', value: 'Title' }) + '</form>');
+      parts.push('<section data-boolean="' + name + '">' + renderTooltip({ arrow: false, content: 'Explicit false' }) + renderTooltip({ content: 'Constructor default' }) + '</section>');
       linebreaks.forEach((value, i) => linebreakParts.push('<div data-renderer="' + name + '" data-linebreak="' + i + '">' + renderTextarea({ label: 'Lines', value }) + '</div>'));
     }
+    const { html, renderToString } = await import('@labpics/ui-core/ssr');
+    parts.push('<form data-renderer="core">' + renderToString(html\`<lab-textarea .value=\${props.value} .label=\${props.label} .helper=\${props.helper} .error=\${props.error} .minLength=\${3} .invalid=\${true} .required=\${true} .name=\${'notes'}></lab-textarea>\`) + '</form>');
     parts.push('<form data-renderer="react"><div id="react-root">' + reactRender(createElement(Textarea, { ...props, value: undefined, defaultValue: props.value })) + '</div></form>');
     linebreaks.forEach((value, i) => linebreakParts.push('<div data-renderer="react" data-linebreak="' + i + '">' + reactRender(createElement(Textarea, { label: 'Lines', defaultValue: value }), { identifierPrefix: 'lines' + i }) + '</div>'));
     await writeFile('index.html', '<!doctype html><html class="lab-scope" data-theme="light"><head><meta charset="utf-8"><link rel="stylesheet" href="/client.css"></head><body>' + parts.join('') + '<script type="module" src="/client.js"></script></body></html>');
@@ -128,8 +156,9 @@ try {
     window.hydrateTextarea = async () => {
       await import('@labpics/ui-core/input');
       await import('@labpics/ui-core/textarea');
+      await import('@labpics/ui-core/tooltip');
       const { Textarea } = await import('@labpics/ui-react/textarea');
-      await Promise.all([...document.querySelectorAll('lab-input,lab-textarea')].map(el => el.updateComplete));
+      await Promise.all([...document.querySelectorAll('lab-input,lab-textarea,lab-tooltip')].map(el => el.updateComplete));
       hydrateRoot(document.getElementById('react-root'), createElement(Textarea, { ...props, value: undefined, defaultValue: props.value }));
       window.hydrated = true;
     };
@@ -183,10 +212,15 @@ try {
     try {
       const beforeScripts = await browser.newPage({ javaScriptEnabled: false });
       await beforeScripts.goto(url);
-      for (const renderer of ['vue', 'solid', 'svelte', 'astro', 'react']) {
+      for (const renderer of ['vue', 'solid', 'svelte', 'astro', 'react', 'core']) {
         await expect(
           beforeScripts.locator(`[data-renderer="${renderer}"]`).locator('textarea'),
         ).toHaveValue(value);
+      }
+      for (const name of ['vue', 'solid', 'svelte', 'astro']) {
+        const tips = beforeScripts.locator(`[data-boolean="${name}"] lab-tooltip`);
+        await expect(tips.nth(0).locator('[part="arrow"]')).toHaveCount(0);
+        await expect(tips.nth(1).locator('[part="arrow"]')).toHaveCount(1);
       }
       await beforeScripts.goto(`${url}/linebreaks.html`);
       for (const renderer of ['vue', 'solid', 'svelte', 'astro', 'react']) {
@@ -212,7 +246,7 @@ try {
         false,
       );
       await page.evaluate(() => document.fonts.ready);
-      for (const renderer of ['vue', 'solid', 'svelte', 'astro', 'react']) {
+      for (const renderer of ['vue', 'solid', 'svelte', 'astro', 'react', 'core']) {
         await page
           .locator(`[data-renderer="${renderer}"]`)
           .locator('input,textarea')
@@ -233,7 +267,7 @@ try {
       assert.equal(await page.evaluate(() => window.injected), undefined);
       await page.evaluate(() => window.hydrateTextarea());
       await page.waitForFunction(() => window.hydrated);
-      for (const renderer of ['vue', 'solid', 'svelte', 'astro', 'react']) {
+      for (const renderer of ['vue', 'solid', 'svelte', 'astro', 'react', 'core']) {
         const form = page.locator(`[data-renderer="${renderer}"]`);
         const control = form.locator('textarea');
         await expect(control).toHaveValue('Edited before hydration\n日本語');
@@ -263,7 +297,7 @@ try {
         );
         assert.deepEqual(
           relationships,
-          Array.from({ length: renderer === 'react' ? 1 : 2 }, () => ({
+          Array.from({ length: renderer === 'react' || renderer === 'core' ? 1 : 2 }, () => ({
             stableId: true,
             labelled: true,
             missing: [],
@@ -276,6 +310,15 @@ try {
           .toBe('Edited\n日本語');
         await form.evaluate((form) => form.reset());
         await expect(control).toHaveValue(value);
+      }
+      for (const name of ['vue', 'solid', 'svelte', 'astro']) {
+        const tips = page.locator(`[data-boolean="${name}"] lab-tooltip`);
+        assert.deepEqual(await tips.evaluateAll((elements) => elements.map((el) => el.arrow)), [
+          false,
+          true,
+        ]);
+        await expect(tips.nth(0).locator('[part="arrow"]')).toHaveCount(0);
+        await expect(tips.nth(1).locator('[part="arrow"]')).toHaveCount(1);
       }
       assert.deepEqual(errors, []);
       records.push({
@@ -290,6 +333,9 @@ try {
         inputAndTextareaAriaTargets: true,
         sameNodeAfterHydration: true,
         preHydrationEditPreserved: true,
+        propertyBoundDraftPreserved: true,
+        falseOverridesTrueDefault: true,
+        mixedModuleRegistry: true,
         selectionPreserved: true,
         formEditAndReset: true,
         errors,

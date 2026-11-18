@@ -1,16 +1,16 @@
-import { LitElementRenderer } from '@lit-labs/ssr';
 import { type ThunkedRenderResult, collectResultSync } from '@lit-labs/ssr/lib/render-result.js';
 import type { RenderInfo } from '@lit-labs/ssr/lib/render-value.js';
 import { normalizeTextareaValue } from '../components/textarea/runtime.js';
+import { LabElementRenderer } from './lab-element-renderer.js';
 
 /**
  * Lit SSR 4.1 does not serialize textarea.value (lit/lit#4915). Keep the client
  * template and its hydration markers stable; supply only the native initial text.
  * Dynamic static-html templates would cache user values and replace the control.
  */
-export class TextareaElementRenderer extends LitElementRenderer {
+export class TextareaElementRenderer extends LabElementRenderer {
   static override matchesClass(ctor: typeof HTMLElement, tagName?: string): boolean {
-    return tagName === 'lab-textarea' && LitElementRenderer.matchesClass(ctor);
+    return tagName === 'lab-textarea' && LabElementRenderer.matchesClass(ctor);
   }
 
   override renderShadow(renderInfo: RenderInfo): ThunkedRenderResult | undefined {

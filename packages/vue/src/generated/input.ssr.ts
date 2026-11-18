@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/input';
 import type { LabInput } from '@labpics/ui-core/input';
 
@@ -27,17 +27,17 @@ export function renderInput(
       type=${ifDefined(props.type)}
       size=${ifDefined(props.size)}
       label=${ifDefined(props.label)}
-      ?label-hidden=${Boolean(props.labelHidden)}
+      .labelHidden=${props.labelHidden === undefined ? noChange : props.labelHidden}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
       value=${ifDefined(props.value)}
       placeholder=${ifDefined(props.placeholder)}
       input-type=${ifDefined(props.inputType)}
       autocomplete=${ifDefined(props.autocomplete)}
-      ?readonly=${Boolean(props.readonly)}
-      ?disabled=${Boolean(props.disabled)}
-      ?required=${Boolean(props.required)}
-      ?invalid=${Boolean(props.invalid)}
+      .readonly=${props.readonly === undefined ? noChange : props.readonly}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
+      .required=${props.required === undefined ? noChange : props.required}
+      .invalid=${props.invalid === undefined ? noChange : props.invalid}
       name=${ifDefined(props.name)}
       maxlength=${ifDefined(props.maxLength)}
       minlength=${ifDefined(props.minLength)}

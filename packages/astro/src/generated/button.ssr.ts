@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/button';
 import type { LabButton } from '@labpics/ui-core/button';
 
@@ -27,9 +27,9 @@ export function renderButton(
       type=${ifDefined(props.type)}
       kind=${ifDefined(props.kind)}
       size=${ifDefined(props.size)}
-      ?icon=${Boolean(props.icon)}
-      ?loading=${Boolean(props.loading)}
-      ?disabled=${Boolean(props.disabled)}
+      .icon=${props.icon === undefined ? noChange : props.icon}
+      .loading=${props.loading === undefined ? noChange : props.loading}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
       html-type=${ifDefined(props.htmlType)}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}

@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/checkbox';
 import type { LabCheckbox } from '@labpics/ui-core/checkbox';
 
@@ -27,13 +27,13 @@ export function renderCheckbox(
       type=${ifDefined(props.type)}
       size=${ifDefined(props.size)}
       variant=${ifDefined(props.variant)}
-      ?checked=${Boolean(props.checked)}
-      ?indeterminate=${Boolean(props.indeterminate)}
-      ?default-checked=${Boolean(props.defaultChecked)}
-      ?default-indeterminate=${Boolean(props.defaultIndeterminate)}
-      ?controlled=${Boolean(props.controlled)}
-      ?disabled=${Boolean(props.disabled)}
-      ?required=${Boolean(props.required)}
+      .checked=${props.checked === undefined ? noChange : props.checked}
+      .indeterminate=${props.indeterminate === undefined ? noChange : props.indeterminate}
+      .defaultChecked=${props.defaultChecked === undefined ? noChange : props.defaultChecked}
+      .defaultIndeterminate=${props.defaultIndeterminate === undefined ? noChange : props.defaultIndeterminate}
+      .controlled=${props.controlled === undefined ? noChange : props.controlled}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
+      .required=${props.required === undefined ? noChange : props.required}
       name=${ifDefined(props.name)}
       value=${ifDefined(props.value)}
       aria-label=${ifDefined(props['aria-label'])}

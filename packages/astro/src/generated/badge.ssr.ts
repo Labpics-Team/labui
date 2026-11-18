@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/badge';
 import type { LabBadge } from '@labpics/ui-core/badge';
 
@@ -26,7 +26,7 @@ export function renderBadge(
   return renderToString(html`<lab-badge
       color=${ifDefined(props.color)}
       type=${ifDefined(props.type)}
-      ?disabled=${Boolean(props.disabled)}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}
     >${slots.dot ? html`<span slot="dot">${unsafeHTML(slots.dot)}</span>` : ''}${slots.icon ? html`<span slot="icon">${unsafeHTML(slots.icon)}</span>` : ''}${slots.iconEnd ? html`<span slot="icon-end">${unsafeHTML(slots.iconEnd)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-badge>`);

@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/snackbar';
 import type { LabSnackbar } from '@labpics/ui-core/snackbar';
 
@@ -23,7 +23,7 @@ export function renderSnackbar(
   props: SnackbarSsrProps = {},
 ): string {
   return renderToString(html`<lab-snackbar
-      ?open=${Boolean(props.open)}
+      .open=${props.open === undefined ? noChange : props.open}
       message=${ifDefined(props.message)}
       duration=${ifDefined(props.duration)}
       action-label=${ifDefined(props.actionLabel)}

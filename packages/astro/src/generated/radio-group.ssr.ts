@@ -30,9 +30,9 @@ export function renderRadioGroup(
       orientation=${ifDefined(props.orientation)}
       value=${ifDefined(props.value)}
       default-value=${ifDefined(props.defaultValue)}
-      ?controlled=${Boolean(props.controlled)}
-      ?disabled=${Boolean(props.disabled)}
-      ?required=${Boolean(props.required)}
+      .controlled=${props.controlled === undefined ? noChange : props.controlled}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
+      .required=${props.required === undefined ? noChange : props.required}
       name=${ifDefined(props.name)}
       label=${ifDefined(props.label)}
       .items=${props.items === undefined ? noChange : props.items}

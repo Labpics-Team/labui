@@ -12,6 +12,7 @@ import { Button } from '../src/generated/button.js';
 import { Checkbox } from '../src/generated/checkbox.js';
 import { Chip } from '../src/generated/chip.js';
 import { Input } from '../src/generated/input.js';
+import { Tooltip } from '../src/generated/tooltip.js';
 
 const disposers: Array<() => void> = [];
 
@@ -106,7 +107,7 @@ describe('Solid mount (проброс на <lab-*>)', () => {
     expect(chip.active).toBe(true);
     expect(chip.selected).toBe(false);
   });
-  it('button: строковые оси → атрибуты, false-булев снят, слот в light DOM', () => {
+  it('button: строковые оси → атрибуты, false-булев снят, слот в light DOM', async () => {
     const host = mount(() =>
       createComponent(Button, {
         type: 'accent',
@@ -117,12 +118,42 @@ describe('Solid mount (проброс на <lab-*>)', () => {
       }),
     );
     const el = host.querySelector('lab-button');
+    await el?.updateComplete;
     expect(el).toBeTruthy();
     expect(el?.getAttribute('type')).toBe('accent');
     expect(el?.getAttribute('size')).toBe('l');
     expect(el?.hasAttribute('disabled')).toBe(false);
     expect(el?.hasAttribute('loading')).toBe(true);
     expect(el?.textContent).toContain('Сохранить');
+  });
+
+  it('explicit false overrides a true default and subsequent boolean updates reach the render', async () => {
+    const [arrow, setArrow] = createSignal(false);
+    const host = mount(() =>
+      createComponent(Tooltip, {
+        get arrow() {
+          return arrow();
+        },
+        content: 'Help',
+        children: 'Trigger',
+      }),
+    );
+    const el = host.querySelector('lab-tooltip');
+    await el?.updateComplete;
+    expect(el?.arrow).toBe(false);
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).toBeNull();
+    setArrow(true);
+    await el?.updateComplete;
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).not.toBeNull();
+    setArrow(false);
+    await el?.updateComplete;
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).toBeNull();
+    const omitted = mount(() =>
+      createComponent(Tooltip, { content: 'Default', children: 'Trigger' }),
+    );
+    const defaultEl = omitted.querySelector('lab-tooltip');
+    await defaultEl?.updateComplete;
+    expect(defaultEl?.arrow).toBe(true);
   });
 
   it('button: html-type маппится на атрибут html-type (camelCase проп)', () => {

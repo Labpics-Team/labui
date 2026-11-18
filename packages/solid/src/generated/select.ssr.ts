@@ -25,8 +25,8 @@ export function renderSelect(
   return renderToString(html`<lab-select
       size=${ifDefined(props.size)}
       placement=${ifDefined(props.placement)}
-      ?multiple=${Boolean(props.multiple)}
-      ?disabled=${Boolean(props.disabled)}
+      .multiple=${props.multiple === undefined ? noChange : props.multiple}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
       name=${ifDefined(props.name)}
       placeholder=${ifDefined(props.placeholder)}
       label=${ifDefined(props.label)}

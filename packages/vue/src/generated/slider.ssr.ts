@@ -26,7 +26,7 @@ export function renderSlider(
       size=${ifDefined(props.size)}
       orientation=${ifDefined(props.orientation)}
       label=${ifDefined(props.label)}
-      ?label-hidden=${Boolean(props.labelHidden)}
+      .labelHidden=${props.labelHidden === undefined ? noChange : props.labelHidden}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
       .value=${props.value === undefined ? noChange : props.value}
@@ -35,10 +35,10 @@ export function renderSlider(
       max=${ifDefined(props.max)}
       step=${ifDefined(props.step)}
       .marks=${props.marks === undefined ? noChange : props.marks}
-      ?show-value=${Boolean(props.showValue)}
-      ?readonly=${Boolean(props.readonly)}
-      ?disabled=${Boolean(props.disabled)}
-      ?invalid=${Boolean(props.invalid)}
+      .showValue=${props.showValue === undefined ? noChange : props.showValue}
+      .readonly=${props.readonly === undefined ? noChange : props.readonly}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
+      .invalid=${props.invalid === undefined ? noChange : props.invalid}
       name=${ifDefined(props.name)}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}

@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/dialog';
 import type { LabDialog } from '@labpics/ui-core/dialog';
 
@@ -26,7 +26,7 @@ export function renderDialog(
   return renderToString(html`<lab-dialog
       size=${ifDefined(props.size)}
       modal=${ifDefined(props.modal)}
-      ?closable=${Boolean(props.closable)}
+      .closable=${props.closable === undefined ? noChange : props.closable}
       heading=${ifDefined(props.heading)}
       description=${ifDefined(props.description)}
       aria-label=${ifDefined(props['aria-label'])}

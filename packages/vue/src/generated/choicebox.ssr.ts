@@ -25,12 +25,12 @@ export function renderChoicebox(
 ): string {
   return renderToString(html`<lab-choicebox
       layout=${ifDefined(props.layout)}
-      ?multiple=${Boolean(props.multiple)}
+      .multiple=${props.multiple === undefined ? noChange : props.multiple}
       .value=${props.value === undefined ? noChange : props.value}
       .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
-      ?controlled=${Boolean(props.controlled)}
-      ?disabled=${Boolean(props.disabled)}
-      ?required=${Boolean(props.required)}
+      .controlled=${props.controlled === undefined ? noChange : props.controlled}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
+      .required=${props.required === undefined ? noChange : props.required}
       name=${ifDefined(props.name)}
       label=${ifDefined(props.label)}
       .items=${props.items === undefined ? noChange : props.items}

@@ -26,15 +26,15 @@ export function renderCombobox(
       type=${ifDefined(props.type)}
       size=${ifDefined(props.size)}
       placement=${ifDefined(props.placement)}
-      ?multiple=${Boolean(props.multiple)}
-      ?disabled=${Boolean(props.disabled)}
-      ?readonly=${Boolean(props.readonly)}
-      ?required=${Boolean(props.required)}
-      ?invalid=${Boolean(props.invalid)}
+      .multiple=${props.multiple === undefined ? noChange : props.multiple}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
+      .readonly=${props.readonly === undefined ? noChange : props.readonly}
+      .required=${props.required === undefined ? noChange : props.required}
+      .invalid=${props.invalid === undefined ? noChange : props.invalid}
       name=${ifDefined(props.name)}
       placeholder=${ifDefined(props.placeholder)}
       label=${ifDefined(props.label)}
-      ?label-hidden=${Boolean(props.labelHidden)}
+      .labelHidden=${props.labelHidden === undefined ? noChange : props.labelHidden}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
       .value=${props.value === undefined ? noChange : props.value}

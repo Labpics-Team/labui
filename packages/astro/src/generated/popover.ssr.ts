@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/popover';
 import type { LabPopover } from '@labpics/ui-core/popover';
 
@@ -26,9 +26,9 @@ export function renderPopover(
   return renderToString(html`<lab-popover
       placement=${ifDefined(props.placement)}
       size=${ifDefined(props.size)}
-      ?modal=${Boolean(props.modal)}
-      ?closable=${Boolean(props.closable)}
-      ?arrow=${Boolean(props.arrow)}
+      .modal=${props.modal === undefined ? noChange : props.modal}
+      .closable=${props.closable === undefined ? noChange : props.closable}
+      .arrow=${props.arrow === undefined ? noChange : props.arrow}
       heading=${ifDefined(props.heading)}
       description=${ifDefined(props.description)}
       aria-label=${ifDefined(props['aria-label'])}

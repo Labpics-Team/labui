@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/chip';
 import type { LabChip } from '@labpics/ui-core/chip';
 
@@ -26,14 +26,14 @@ export function renderChip(
   return renderToString(html`<lab-chip
       mode=${ifDefined(props.mode)}
       size=${ifDefined(props.size)}
-      ?sharp=${Boolean(props.sharp)}
-      ?active=${Boolean(props.active)}
-      ?selected=${Boolean(props.selected)}
-      ?default-selected=${Boolean(props.defaultSelected)}
-      ?controlled=${Boolean(props.controlled)}
-      ?disabled=${Boolean(props.disabled)}
-      ?loading=${Boolean(props.loading)}
-      ?show-leading=${Boolean(props.showLeading)}
+      .sharp=${props.sharp === undefined ? noChange : props.sharp}
+      .active=${props.active === undefined ? noChange : props.active}
+      .selected=${props.selected === undefined ? noChange : props.selected}
+      .defaultSelected=${props.defaultSelected === undefined ? noChange : props.defaultSelected}
+      .controlled=${props.controlled === undefined ? noChange : props.controlled}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
+      .loading=${props.loading === undefined ? noChange : props.loading}
+      .showLeading=${props.showLeading === undefined ? noChange : props.showLeading}
       name=${ifDefined(props.name)}
       value=${ifDefined(props.value)}
       aria-label=${ifDefined(props['aria-label'])}

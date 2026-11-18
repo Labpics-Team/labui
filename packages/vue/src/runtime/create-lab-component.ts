@@ -12,9 +12,8 @@
  *   - 'string'  → ключ `^attr`: Vue форсирует АТРИБУТ (иначе для upgraded-элемента
  *     сработало бы `key in el` и значение ушло бы свойством — незаметный дрейф
  *     между SSR и клиентом). Атрибут SSR-безопасен и до upgrade.
- *   - 'boolean' → `^attr` со значением `value || undefined`: голый `false` дал бы
- *     `attr="false"`, а Lit-конвертер читает присутствие атрибута как true;
- *     `undefined` убирает атрибут на любом пути.
+ *   - 'boolean' → `.name`: явное false должно переопределять и default=true.
+ *     Присутствие HTML-атрибута этого не выражает; отражение выполняет Lit.
  *   - 'prop'    → ключ `.name`: Vue форсирует JS-СВОЙСТВО. Единственный корректный
  *     путь для массивов/объектов (items, value-списки): атрибут из массива стал бы
  *     "[object Object]".
@@ -89,10 +88,8 @@ export function createLabComponent<Props, Events extends string>(
         const bindings: Record<string, unknown> = { ...attrs };
         for (const s of spec.specs) {
           const value = props[s.name];
-          if (s.kind === 'prop') {
+          if (s.kind === 'prop' || s.kind === 'boolean') {
             if (value !== undefined) bindings[`.${s.name}`] = value;
-          } else if (s.kind === 'boolean') {
-            bindings[`^${s.attr}`] = value || undefined;
           } else {
             bindings[`^${s.attr}`] = value;
           }

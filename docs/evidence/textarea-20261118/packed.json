@@ -2,7 +2,7 @@
   "archives": [
     {
       "name": "@labpics/ui-tokens",
-      "sha256": "6fcd2c3a352283ff8b232cab31b0e57dcae8ee60d49637ff31d78a7439caa0ba"
+      "sha256": "205ed2fc80b478d3569cc60456c24b03b43b16660cbd63c30c3e153dd7eee196"
     },
     {
       "name": "@labpics/ui-shadow",
@@ -22,27 +22,27 @@
     },
     {
       "name": "@labpics/ui-core",
-      "sha256": "235e851f123744aa74a7c8d06ea10b9ccb02550dc85337853b1d93d3401cab9f"
+      "sha256": "c563bfdedf021cc70c861c9ee86cc8373ff18c6893c906a0fbcfd7bd816784da"
     },
     {
       "name": "@labpics/ui-react",
-      "sha256": "dbe7444655edf0cd9cb3d0c6b26a375b60e2b85b790dddbb9904b76c170ce8e6"
+      "sha256": "4007d5effd81de1d2e076d42a972230a163ed667a5f1439a93061b0e469ff109"
     },
     {
       "name": "@labpics/ui-vue",
-      "sha256": "2c63b96d767e1c7f83185f97a75cdae4277cc0b70bd02d64fe8baede5dbac817"
+      "sha256": "bfd7a429f2065d62b4a072e68c13992ef3690d67565b321fa202d791bc06dd12"
     },
     {
       "name": "@labpics/ui-solid",
-      "sha256": "1c1511aae7e85bf8f1f0e7ae79a8567bb9244b2f5332314cd829c276fb8cedee"
+      "sha256": "ff0fd15e659a23f3501c91bc62fcaf83aa109bc4c87d6840591bcd0f7df5ccc6"
     },
     {
       "name": "@labpics/ui-svelte",
-      "sha256": "bf27306206ac1c9985075650f3e50ae082b7a709d5b30306f735af9b23479ed2"
+      "sha256": "4d1b595436096a62ac414bee720f5949ea5a379a45f4cab30cfb26a4cc968925"
     },
     {
       "name": "@labpics/ui-astro",
-      "sha256": "35b1d0678fea44f4b3fcd0bd556e234121a8b66c86b2441e66a561c8b7f8fe2f"
+      "sha256": "9e06829e7febb804f92ed5f70690e852849ddb722005e992dc0c4fad8e01e149"
     }
   ],
   "records": [
@@ -58,6 +58,9 @@
       "inputAndTextareaAriaTargets": true,
       "sameNodeAfterHydration": true,
       "preHydrationEditPreserved": true,
+      "propertyBoundDraftPreserved": true,
+      "falseOverridesTrueDefault": true,
+      "mixedModuleRegistry": true,
       "selectionPreserved": true,
       "formEditAndReset": true,
       "errors": []
@@ -74,6 +77,9 @@
       "inputAndTextareaAriaTargets": true,
       "sameNodeAfterHydration": true,
       "preHydrationEditPreserved": true,
+      "propertyBoundDraftPreserved": true,
+      "falseOverridesTrueDefault": true,
+      "mixedModuleRegistry": true,
       "selectionPreserved": true,
       "formEditAndReset": true,
       "errors": []

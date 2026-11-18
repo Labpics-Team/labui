@@ -24,10 +24,10 @@ export function renderSheet(
   slots: SheetSsrSlots = {},
 ): string {
   return renderToString(html`<lab-sheet
-      ?open=${Boolean(props.open)}
+      .open=${props.open === undefined ? noChange : props.open}
       position=${ifDefined(props.position)}
       .modal=${props.modal === undefined ? noChange : props.modal}
-      ?closable=${Boolean(props.closable)}
+      .closable=${props.closable === undefined ? noChange : props.closable}
       heading=${ifDefined(props.heading)}
       description=${ifDefined(props.description)}
       aria-label=${ifDefined(props['aria-label'])}

@@ -33,7 +33,8 @@ export function forwardDeclared(
     if (spec.kind === 'prop') {
       if (value !== undefined) (element as unknown as Record<string, unknown>)[spec.name] = value;
     } else if (spec.kind === 'boolean') {
-      element.toggleAttribute(spec.attr, Boolean(value));
+      if (value === undefined) element.removeAttribute(spec.attr);
+      else Reflect.set(element, spec.name, value);
     } else if (value === undefined || value === null) {
       element.removeAttribute(spec.attr);
     } else {

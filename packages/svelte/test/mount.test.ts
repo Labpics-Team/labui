@@ -76,18 +76,41 @@ describe('Svelte mount (проброс на <lab-*>)', () => {
     expect(chip.active).toBe(true);
     expect(chip.selected).toBe(false);
   });
-  it('button: строковые оси → атрибуты, false-булев снят, слот в light DOM', () => {
+  it('button: строковые оси → атрибуты, false-булев снят, слот в light DOM', async () => {
     host = document.createElement('div');
     document.body.appendChild(host);
     instance = mount(Harness, { target: host, props: {} });
     flushSync();
     const el = host.querySelector('lab-button');
+    await el?.updateComplete;
     expect(el).toBeTruthy();
     expect(el?.getAttribute('type')).toBe('accent');
     expect(el?.getAttribute('size')).toBe('l');
     expect(el?.hasAttribute('disabled')).toBe(false);
     expect(el?.hasAttribute('loading')).toBe(true);
     expect(el?.textContent).toContain('Сохранить');
+  });
+
+  it('explicit false overrides a true default and subsequent boolean updates reach the render', async () => {
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    const component = mount(Harness, { target: host, props: {} });
+    instance = component;
+    flushSync();
+    const [el, defaultEl] = host.querySelectorAll('lab-tooltip');
+    await el?.updateComplete;
+    await defaultEl?.updateComplete;
+    expect(el?.arrow).toBe(false);
+    expect(defaultEl?.arrow).toBe(true);
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).toBeNull();
+    component.setArrow(true);
+    flushSync();
+    await el?.updateComplete;
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).not.toBeNull();
+    component.setArrow(false);
+    flushSync();
+    await el?.updateComplete;
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).toBeNull();
   });
 
   it('input: label/value доходят как атрибуты', () => {

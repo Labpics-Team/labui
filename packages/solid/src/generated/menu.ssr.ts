@@ -25,7 +25,7 @@ export function renderMenu(
   return renderToString(html`<lab-menu
       size=${ifDefined(props.size)}
       placement=${ifDefined(props.placement)}
-      ?disabled=${Boolean(props.disabled)}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
       label=${ifDefined(props.label)}
       .items=${props.items === undefined ? noChange : props.items}
       aria-label=${ifDefined(props['aria-label'])}

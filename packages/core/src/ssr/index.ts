@@ -24,6 +24,7 @@ import { collectResultSync } from '@lit-labs/ssr/lib/render-result.js';
 import { type TemplateResult, html, noChange } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { LabElementRenderer } from './lab-element-renderer.js';
 import { TextareaElementRenderer } from './textarea-renderer.js';
 
 // The upstream install-global entry awaits its optional CSS import hook. Static
@@ -45,7 +46,9 @@ installWindowOnGlobal(typeof customElements === 'undefined' ? {} : { customEleme
  */
 export function renderToString(template: TemplateResult): string {
   return collectResultSync(
-    render(template, { elementRenderers: [TextareaElementRenderer, LitElementRenderer] }),
+    render(template, {
+      elementRenderers: [TextareaElementRenderer, LabElementRenderer, LitElementRenderer],
+    }),
   );
 }
 
