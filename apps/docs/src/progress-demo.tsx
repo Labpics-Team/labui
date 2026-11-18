@@ -3,8 +3,8 @@
  *
  * Mounts the native-React <Progress> with the SAME specimens as the Lit
  * `<lab-progress>` markup in progress.html, so the Playwright suite can read both
- * renderers' computed styles (visual parity, ADR-0001) and assert each one's machine
- * output (role="progressbar", aria-value*, indeterminate honesty).
+ * renderers' computed styles and observable range semantics
+ * (role="progressbar", aria-value*, unknown progress).
  *
  * It registers the Lit element (side-effect import) and wires the theme switcher, so
  * the page carries both renderers under one [data-theme]. The indeterminate specimen

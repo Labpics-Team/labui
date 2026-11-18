@@ -21,8 +21,12 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist"],
-  "sideEffects": ["**/*.css"],
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
@@ -41,7 +45,6 @@
     "@zag-js/pagination": "1.41.2",
     "@zag-js/pin-input": "1.41.2",
     "@zag-js/popover": "1.41.2",
-    "@zag-js/progress": "1.41.2",
     "@zag-js/react": "1.41.2",
     "@zag-js/select": "1.41.2",
     "@zag-js/slider": "1.41.2",

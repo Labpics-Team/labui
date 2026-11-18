@@ -13,21 +13,27 @@
   interface Props {
     size?: LabLoader['size'];
     label?: LabLoader['label'];
+    value?: LabLoader['value'];
+    min?: LabLoader['min'];
+    max?: LabLoader['max'];
     children?: Snippet;
     [key: string]: unknown;
   }
 
-  let { size, label, children, ...rest }: Props = $props();
+  let { size, label, value, min, max, children, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
     { name: 'label', attr: 'label', kind: 'string' },
+    { name: 'value', attr: 'value', kind: 'prop' },
+    { name: 'min', attr: 'min', kind: 'string' },
+    { name: 'max', attr: 'max', kind: 'string' },
   ];
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
-    forwardDeclared(el, specs, { size, label });
+    forwardDeclared(el, specs, { size, label, value, min, max });
   });
   $effect(() => forwardEvents(el, {  }));
 </script>

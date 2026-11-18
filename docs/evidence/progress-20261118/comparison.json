@@ -1,0 +1,187 @@
+{
+  "lit-loader-medium-75": {
+    "dimensions": [
+      72,
+      72
+    ],
+    "meanAbsoluteRgbError": 1.833204732510288,
+    "sourceInteriorSamples": [
+      {
+        "point": [
+          36,
+          24
+        ],
+        "source": [
+          113,
+          113,
+          119
+        ],
+        "browser": [
+          113,
+          113,
+          118
+        ]
+      },
+      {
+        "point": [
+          48,
+          36
+        ],
+        "source": [
+          83,
+          83,
+          88
+        ],
+        "browser": [
+          81,
+          81,
+          85
+        ]
+      },
+      {
+        "point": [
+          36,
+          48
+        ],
+        "source": [
+          53,
+          53,
+          56
+        ],
+        "browser": [
+          49,
+          49,
+          52
+        ]
+      },
+      {
+        "point": [
+          24,
+          36
+        ],
+        "source": [
+          17,
+          17,
+          19
+        ],
+        "browser": [
+          17,
+          17,
+          19
+        ]
+      }
+    ]
+  },
+  "lit-circular-medium-25": {
+    "dimensions": [
+      288,
+      288
+    ],
+    "meanAbsoluteRgbError": 0.4485677083333333,
+    "glyphPixelBounds": [
+      97,
+      127,
+      192,
+      163
+    ]
+  },
+  "react-loader-medium-75": {
+    "dimensions": [
+      72,
+      72
+    ],
+    "meanAbsoluteRgbError": 1.833204732510288,
+    "sourceInteriorSamples": [
+      {
+        "point": [
+          36,
+          24
+        ],
+        "source": [
+          113,
+          113,
+          119
+        ],
+        "browser": [
+          113,
+          113,
+          118
+        ]
+      },
+      {
+        "point": [
+          48,
+          36
+        ],
+        "source": [
+          83,
+          83,
+          88
+        ],
+        "browser": [
+          81,
+          81,
+          85
+        ]
+      },
+      {
+        "point": [
+          36,
+          48
+        ],
+        "source": [
+          53,
+          53,
+          56
+        ],
+        "browser": [
+          49,
+          49,
+          52
+        ]
+      },
+      {
+        "point": [
+          24,
+          36
+        ],
+        "source": [
+          17,
+          17,
+          19
+        ],
+        "browser": [
+          17,
+          17,
+          19
+        ]
+      }
+    ]
+  },
+  "react-circular-medium-25": {
+    "dimensions": [
+      288,
+      288
+    ],
+    "meanAbsoluteRgbError": 0.4485677083333333,
+    "glyphPixelBounds": [
+      97,
+      127,
+      192,
+      163
+    ]
+  },
+  "webkit-circular-medium-25": {
+    "dimensions": [
+      288,
+      288
+    ],
+    "meanAbsoluteRgbError": 1.4385368441358024,
+    "glyphPixelBounds": [
+      97,
+      127,
+      191,
+      161
+    ]
+  }
+}

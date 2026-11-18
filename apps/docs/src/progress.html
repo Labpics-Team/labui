@@ -13,13 +13,9 @@
         <code>&lt;Progress&gt;</code> (React)
       </h1>
       <p>
-        Two renderers, one <code>@zag-js/progress</code> machine through the same seam.
-        The machine owns the value→percent maths, <code>role="progressbar"</code> with
-        <code>aria-valuemin</code> / <code>aria-valuemax</code> / <code>aria-valuenow</code>,
-        and the determinate-vs-indeterminate state. Both modes are real: an
-        indeterminate bar honestly drops <code>aria-valuenow</code> rather than faking a
-        percent. This page mounts both so the Playwright suite can assert machine
-        output and visual parity on each.
+        Linear and circular progress share the authored geometry, range calculation
+        and Lab Motion transitions. A measured value shows its position within the
+        supplied range. Unknown progress has no percentage announcement.
       </p>
 
       <div class="row">
@@ -42,7 +38,7 @@
           <lab-progress data-testid="lit-complete" value="100" label="Done"></lab-progress>
           <lab-progress data-testid="lit-indeterminate" label="Working"></lab-progress>
           <!-- NON-DEFAULT RANGE: min=10, max=50, value=30 ⇒ 50% of the range. Proves
-               the machine's percent maths is (value-min)/(max-min), not an assumed
+               percent maths is (value-min)/(max-min), not an assumed
                0..100. aria-valuemin/now/max carry the real range; value-text shows 50%. -->
           <lab-progress
             data-testid="lit-ranged"

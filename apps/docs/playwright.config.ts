@@ -15,6 +15,7 @@ const SMOKE_SPECS = [
   'input.spec.ts',
   'checkbox.spec.ts',
   'selection.spec.ts',
+  'progress-author.spec.ts',
   'pin-input.spec.ts',
 ];
 

@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { badgeCss } from '../src/components/badge/styles.js';
 import { cardCss } from '../src/components/card/styles.js';
 import { inputCss } from '../src/components/input/styles.js';
+import { progressCss } from '../src/components/progress/styles.js';
 import { selectionCss } from '../src/components/selection/styles.js';
 import { sheetCss } from '../src/components/sheet/styles.js';
 import { snackbarCss } from '../src/components/snackbar/styles.js';
@@ -53,6 +54,7 @@ function main(): void {
   writeFileSync(join(dist, 'switch.css'), switchCss);
   writeFileSync(join(dist, 'selection-controls.css'), selectionCss);
   writeFileSync(join(dist, 'badge.css'), badgeCss);
+  writeFileSync(join(dist, 'progress.css'), progressCss);
 
   process.stdout.write(
     `ui-core: copied ${[...ownFiles, 'shadow.css', 'tokens.css'].join(', ')} to dist\n`,

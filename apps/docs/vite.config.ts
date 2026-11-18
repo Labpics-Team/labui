@@ -126,11 +126,51 @@ function selectionSsrPlugin(): Plugin {
   };
 }
 
+function progressSsrPlugin(): Plugin {
+  return {
+    name: 'labui-progress-ssr',
+    transformIndexHtml: {
+      order: 'pre',
+      async handler(html, ctx) {
+        if (!ctx.path.endsWith('/progress-author.html')) return html;
+        const { renderProgress, renderLoader } = await import('@labpics/ui-vue/ssr');
+        const { renderToString } = await import('@labpics/ui-core/ssr');
+        const { html: staticHtml, unsafeStatic } = await import('lit/static-html.js');
+        return html
+          .replace(/<lab-(progress|loader)\b[^>]*>[\s\S]*?<\/lab-\1>/g, (markup) =>
+            renderToString(staticHtml`${unsafeStatic(markup)}`),
+          )
+          .replace(
+            '<!-- @@PROGRESS_SSR@@ -->',
+            renderProgress({
+              value: 30,
+              min: 10,
+              max: 50,
+              variant: 'circular',
+              label: 'Серверный прогресс',
+              showValueText: true,
+            }),
+          )
+          .replace(
+            '<!-- @@LOADER_SSR@@ -->',
+            renderLoader({ value: 75, label: 'Серверная загрузка' }),
+          );
+      },
+    },
+  };
+}
+
 export default defineConfig({
   root: 'src',
   // wasm-bindgen resolves its binary beside the original module, not a Vite prebundle.
   optimizeDeps: { exclude: ['@labpics/colors'] },
-  plugins: [ssrProofPlugin(), colorsSsrPlugin(), cardSsrPlugin(), selectionSsrPlugin()],
+  plugins: [
+    ssrProofPlugin(),
+    colorsSsrPlugin(),
+    cardSsrPlugin(),
+    selectionSsrPlugin(),
+    progressSsrPlugin(),
+  ],
   // The Button parity page mounts a native-React island (button-demo.tsx). Vite's
   // built-in esbuild handles the automatic JSX transform — no plugin-react /
   // Fast-Refresh needed for these static build+preview fixtures.
@@ -158,6 +198,7 @@ export default defineConfig({
         'fixture-colors-scope': resolve(__dirname, 'src/_fixtures/colors-scope.html'),
         'fixture-card-content': resolve(__dirname, 'src/_fixtures/card-content.html'),
         'fixture-selection': resolve(__dirname, 'src/_fixtures/selection.html'),
+        'fixture-progress-author': resolve(__dirname, 'src/_fixtures/progress-author.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
         // config; ?component=<slug> selects which one).
         components: resolve(__dirname, 'src/components.html'),

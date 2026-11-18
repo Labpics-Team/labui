@@ -12,6 +12,7 @@
   /** Пропы <lab-progress> — типы взяты прямо из класса ядра (LabProgress). */
   interface Props {
     size?: LabProgress['size'];
+    variant?: LabProgress['variant'];
     value?: LabProgress['value'];
     min?: LabProgress['min'];
     max?: LabProgress['max'];
@@ -21,10 +22,11 @@
     [key: string]: unknown;
   }
 
-  let { size, value, min, max, label, showValueText, children, ...rest }: Props = $props();
+  let { size, variant, value, min, max, label, showValueText, children, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
+    { name: 'variant', attr: 'variant', kind: 'string' },
     { name: 'value', attr: 'value', kind: 'prop' },
     { name: 'min', attr: 'min', kind: 'string' },
     { name: 'max', attr: 'max', kind: 'string' },
@@ -35,7 +37,7 @@
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
-    forwardDeclared(el, specs, { size, value, min, max, label, showValueText });
+    forwardDeclared(el, specs, { size, variant, value, min, max, label, showValueText });
   });
   $effect(() => forwardEvents(el, {  }));
 </script>

@@ -1,6 +1,6 @@
 {
-  "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7",
-  "sourceDigest": "sha256:0fbf89450a01c7dc7f59ed35ee7d738b7f2364b2ad206fe21fa48789aebf53d2",
+  "revision": "c8d675bb10e8554853ad234008a06a53633af49b",
+  "sourceDigest": "sha256:ed35a9dfc779a83ca6722c26e06b5312190365cb6c659831e7d428ddb9a2d0f5",
   "symbols": [
     {
       "name": "LabBadge",
@@ -27,6 +27,10 @@
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabInput.kt"
     },
     {
+      "name": "LabLoader",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabLoader.kt"
+    },
+    {
       "name": "LabMaterials",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt"
     },
@@ -37,6 +41,10 @@
     {
       "name": "LabVeils",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt"
+    },
+    {
+      "name": "LabProgress",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabProgress.kt"
     },
     {
       "name": "LabRadioGroup",
