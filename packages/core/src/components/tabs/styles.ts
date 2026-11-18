@@ -22,10 +22,26 @@ const sizes = Object.entries(p.sizes)
   )
   .join('\n');
 
+const stackCss = `
+[data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger { isolation: isolate; }
+[data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger > .lab-tabs-active { z-index: -1; }
+`;
+
+const forcedColorsCss = `
+@media (forced-colors: active) {
+  [data-lab-tabs] > .lab-tabs-list { background: Canvas; }
+  [data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger { color: ButtonText; }
+  [data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger:disabled { color: GrayText; }
+  [data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger[data-selected] { color: Highlight; outline: 1px solid Highlight; outline-offset: -1px; }
+  [data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger:focus-visible { outline: 2px solid Highlight; }
+}
+`;
+
 /** Authored geometry and roles are shared by the light-DOM and shadow renderers. */
 export const tabsCss = `
 [data-lab-tabs] {
-  display: flex; flex-direction: column; gap: 1rem; min-inline-size: 0;
+  --_tabs-list-radius: ${rem(p.list.radius)};
+  display: flex; flex-direction: column; gap: var(--lab-space-4, 1rem); min-inline-size: 0;
   color: ${role(p.roles.label)};
 }
 ${sizes}
@@ -36,13 +52,13 @@ ${sizes}
 }
 [data-lab-tabs][data-variant="tinted"] > .lab-tabs-list {
   padding: ${rem(p.list.padding)}; margin: 0;
-  border-radius: ${rem(p.list.radius)}; background: ${role(p.roles.track)}; corner-shape: round;
+  border-radius: var(--_tabs-list-radius); background: ${role(p.roles.track)}; corner-shape: round;
 }
 [data-lab-tabs][data-variant="tinted"][data-orientation="horizontal"][data-count="4"] > .lab-tabs-list {
   padding: ${rem(p.list.fourHorizontalPadding)};
 }
 [data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger {
-  appearance: none; box-sizing: border-box; position: relative; isolation: isolate;
+  appearance: none; box-sizing: border-box; position: relative;
   display: inline-flex; flex: 1 0 0; min-inline-size: max-content; min-block-size: var(--_tabs-height); align-items: center; justify-content: center;
   gap: var(--_tabs-gap); padding: var(--_tabs-padding); margin: 0; border: 0;
   border-radius: var(--_tabs-radius); corner-shape: round;
@@ -57,7 +73,7 @@ ${sizes}
 [data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger[data-selected] { color: ${role(p.roles.label)}; }
 [data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger:disabled { color: ${role(p.roles.disabledLabel)}; cursor: not-allowed; }
 .lab-tabs-trigger > .lab-tabs-active {
-  position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit; corner-shape: round;
+  position: absolute; inset: 0; pointer-events: none; border-radius: inherit; corner-shape: round;
 }
 [data-lab-tabs][data-variant="tinted"] > .lab-tabs-list > .lab-tabs-trigger[data-selected] > .lab-tabs-active {
   background: ${role(p.roles.activeFill)}; box-shadow: ${activeShadow};
@@ -113,11 +129,6 @@ ${sizes}
 [data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger:focus-visible,
 [data-lab-tabs] > .lab-tabs-panel:focus-visible { outline: ${rem(p.focus.width)} solid var(--lab-border-focus); outline-offset: ${rem(p.focus.offset)}; }
 [data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger:focus-visible { outline-offset: -${rem(p.focus.width)}; }
-@media (forced-colors: active) {
-  [data-lab-tabs] > .lab-tabs-list { background: Canvas; }
-  [data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger { color: ButtonText; }
-  [data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger:disabled { color: GrayText; }
-  [data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger[data-selected] { color: Highlight; outline: 1px solid Highlight; outline-offset: -1px; }
-  [data-lab-tabs] > .lab-tabs-list > .lab-tabs-trigger:focus-visible { outline: 2px solid Highlight; }
-}
+${stackCss}
+${forcedColorsCss}
 `;
