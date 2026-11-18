@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/kbd';
 import type { LabKbd } from '@labpics/ui-core/kbd';
 
@@ -25,6 +25,6 @@ export function renderKbd(
 ): string {
   return renderToString(html`<lab-kbd
       size=${ifDefined(props.size)}
-      .keys=${props.keys}
+      .keys=${props.keys === undefined ? noChange : props.keys}
     >${unsafeHTML(slots.default ?? '')}</lab-kbd>`);
 }
