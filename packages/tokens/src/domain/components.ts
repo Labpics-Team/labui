@@ -91,14 +91,30 @@ export function buildComponentTokens(): ResolvedToken[] {
   dimension('radius', 'card-surface', profile.card.radius);
   dimension('space', 'card-padding', profile.card.padding);
   dimension('space', 'card-gap', profile.card.gap);
+  for (const [role, text] of Object.entries(profile.sheet.typography)) {
+    const name = `sheet-${role}`;
+    dimension('font-size', name, text.fontSize);
+    dimension('line-height', name, text.lineHeight);
+    scalar('font-weight', name, text.fontWeight);
+    scalar(
+      'letter-spacing',
+      name,
+      text.letterSpacing / text.fontSize,
+      `${num(text.letterSpacing / text.fontSize, 6)}em`,
+    );
+  }
   dimension('radius', 'sheet-top', profile.sheet.topRadius);
   dimension('space', 'sheet-x', profile.sheet.paddingX);
   dimension('space', 'sheet-bottom', profile.sheet.paddingBottom);
   dimension('space', 'sheet-content-gap', profile.sheet.contentGap);
+  dimension('space', 'sheet-header-gap', profile.sheet.headerGap);
   dimension('size', 'sheet-drag-area', profile.sheet.drag.areaHeight);
   dimension('size', 'sheet-drag-width', profile.sheet.drag.width);
   dimension('size', 'sheet-drag-height', profile.sheet.drag.height);
   dimension('radius', 'sheet-drag', profile.sheet.drag.radius);
   dimension('space', 'sheet-drag-top', profile.sheet.drag.top);
+  dimension('space', 'sheet-drag-center-offset', profile.sheet.drag.centerOffset);
+  for (const [position, height] of Object.entries(profile.sheet.bodyHeights))
+    dimension('size', `sheet-body-${position}`, height);
   return result;
 }

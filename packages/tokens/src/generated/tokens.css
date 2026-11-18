@@ -95,15 +95,28 @@
   --lab-radius-card-surface: 1rem;
   --lab-space-card-padding: 1.5rem;
   --lab-space-card-gap: 1rem;
+  --lab-font-size-sheet-title: 1.25rem;
+  --lab-line-height-sheet-title: 1.25rem;
+  --lab-font-weight-sheet-title: 600;
+  --lab-letter-spacing-sheet-title: -0.0165em;
+  --lab-font-size-sheet-description: 1rem;
+  --lab-line-height-sheet-description: 1.5rem;
+  --lab-font-weight-sheet-description: 400;
+  --lab-letter-spacing-sheet-description: -0.015625em;
   --lab-radius-sheet-top: 2rem;
   --lab-space-sheet-x: 1rem;
   --lab-space-sheet-bottom: 1rem;
   --lab-space-sheet-content-gap: 1.5rem;
+  --lab-space-sheet-header-gap: 0.5rem;
   --lab-size-sheet-drag-area: 1.5rem;
   --lab-size-sheet-drag-width: 2.25rem;
   --lab-size-sheet-drag-height: 0.25rem;
   --lab-radius-sheet-drag: 0.25rem;
   --lab-space-sheet-drag-top: 0.875rem;
+  --lab-space-sheet-drag-center-offset: 0.0313rem;
+  --lab-size-sheet-body-full: 48.5rem;
+  --lab-size-sheet-body-two-thirds: 33.75rem;
+  --lab-size-sheet-body-one-third: 16.875rem;
 
   /* Spacing — linear rem multiplier (root font-size scales all) */
   --lab-space-0: 0rem;

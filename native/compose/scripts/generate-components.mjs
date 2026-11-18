@@ -10,7 +10,11 @@ const root =
 const profile = JSON.parse(
   await readFile(new URL('packages/tokens/src/components.json', root), 'utf8'),
 );
-const upper = (name) => name[0].toUpperCase() + name.slice(1);
+const upper = (name) =>
+  name
+    .split('-')
+    .map((part) => part[0].toUpperCase() + part.slice(1))
+    .join('');
 const kotlinString = (value) => JSON.stringify(value).replaceAll('$', '\\$');
 const lines = [
   '// Generated from packages/tokens/src/components.json. Do not edit.',

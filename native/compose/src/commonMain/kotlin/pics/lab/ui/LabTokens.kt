@@ -53,7 +53,9 @@ internal object LabTokens {
     const val SpaceSheetX: Float = 16f
     const val SpaceSheetBottom: Float = 16f
     const val SpaceSheetContentGap: Float = 24f
+    const val SpaceSheetHeaderGap: Float = 8f
     const val SpaceSheetDragTop: Float = 14f
+    const val SpaceSheetDragCenterOffset: Float = 0.5f
     const val SizeControlS: Float = 12f
     const val SizeControlM: Float = 16f
     const val SizeControlL: Float = 20f
@@ -108,6 +110,9 @@ internal object LabTokens {
     const val SizeSheetDragArea: Float = 24f
     const val SizeSheetDragWidth: Float = 36f
     const val SizeSheetDragHeight: Float = 4f
+    const val SizeSheetBodyFull: Float = 776f
+    const val SizeSheetBodyTwoThirds: Float = 540f
+    const val SizeSheetBodyOneThird: Float = 270f
     const val Radius0: Float = 0f
     const val RadiusXxs: Float = 2f
     const val RadiusXs: Float = 4f
@@ -162,6 +167,8 @@ internal object LabTokens {
     const val FontSizeInputM: Float = 16f
     const val FontSizeInputL: Float = 16f
     const val FontSizeInputLabel: Float = 12f
+    const val FontSizeSheetTitle: Float = 20f
+    const val FontSizeSheetDescription: Float = 16f
     const val LineHeightXxs: Float = 1f
     const val LineHeightXs: Float = 1.0006f
     const val LineHeightMd: Float = 1.5f
@@ -179,6 +186,8 @@ internal object LabTokens {
     const val LineHeightInputM: Float = 1.5f
     const val LineHeightInputL: Float = 1.5f
     const val LineHeightInputLabel: Float = 1f
+    const val LineHeightSheetTitle: Float = 20f
+    const val LineHeightSheetDescription: Float = 24f
     const val FontWeightRegular: Float = 400f
     const val FontWeightMedium: Float = 500f
     const val FontWeightSemibold: Float = 600f
@@ -191,6 +200,8 @@ internal object LabTokens {
     const val FontWeightInputM: Float = 400f
     const val FontWeightInputL: Float = 400f
     const val FontWeightInputLabel: Float = 500f
+    const val FontWeightSheetTitle: Float = 600f
+    const val FontWeightSheetDescription: Float = 400f
     const val LetterSpacingXxs: Float = 0.0064f
     const val LetterSpacingXs: Float = -0.0009f
     const val LetterSpacingMd: Float = -0.0083f
@@ -210,6 +221,8 @@ internal object LabTokens {
     const val LetterSpacingInputS: Float = 0f
     const val LetterSpacingInputM: Float = -0.0156f
     const val LetterSpacingInputL: Float = -0.0156f
+    const val LetterSpacingSheetTitle: Float = -0.0165f
+    const val LetterSpacingSheetDescription: Float = -0.0156f
     const val MeasureNarrow: Float = 45f
     const val MeasureBase: Float = 66f
     const val MeasureWide: Float = 75f

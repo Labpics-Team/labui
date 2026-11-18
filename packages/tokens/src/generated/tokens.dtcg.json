@@ -612,6 +612,18 @@
         }
       }
     },
+    "sheet-header-gap": {
+      "$type": "dimension",
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.5rem"
+        }
+      }
+    },
     "sheet-drag-top": {
       "$type": "dimension",
       "$value": {
@@ -621,6 +633,18 @@
       "$extensions": {
         "com.labpics.ui-tokens": {
           "css": "0.875rem"
+        }
+      }
+    },
+    "sheet-drag-center-offset": {
+      "$type": "dimension",
+      "$value": {
+        "value": 0.5,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.0313rem"
         }
       }
     }
@@ -1273,6 +1297,42 @@
           "css": "0.25rem"
         }
       }
+    },
+    "sheet-body-full": {
+      "$type": "dimension",
+      "$value": {
+        "value": 776,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "48.5rem"
+        }
+      }
+    },
+    "sheet-body-two-thirds": {
+      "$type": "dimension",
+      "$value": {
+        "value": 540,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "33.75rem"
+        }
+      }
+    },
+    "sheet-body-one-third": {
+      "$type": "dimension",
+      "$value": {
+        "value": 270,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "16.875rem"
+        }
+      }
     }
   },
   "radius": {
@@ -1894,6 +1954,30 @@
           "css": "0.75rem"
         }
       }
+    },
+    "sheet-title": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.25rem"
+        }
+      }
+    },
+    "sheet-description": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
     }
   },
   "line-height": {
@@ -1964,6 +2048,30 @@
     "input-label": {
       "$type": "number",
       "$value": 1
+    },
+    "sheet-title": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.25rem"
+        }
+      }
+    },
+    "sheet-description": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
     }
   },
   "font-weight": {
@@ -2014,6 +2122,14 @@
     "input-label": {
       "$type": "number",
       "$value": 500
+    },
+    "sheet-title": {
+      "$type": "number",
+      "$value": 600
+    },
+    "sheet-description": {
+      "$type": "number",
+      "$value": 400
     }
   },
   "letter-spacing": {
@@ -2090,6 +2206,14 @@
       "$value": -0.0156
     },
     "input-l": {
+      "$type": "number",
+      "$value": -0.0156
+    },
+    "sheet-title": {
+      "$type": "number",
+      "$value": -0.0165
+    },
+    "sheet-description": {
       "$type": "number",
       "$value": -0.0156
     }
