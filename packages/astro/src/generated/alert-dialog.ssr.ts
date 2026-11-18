@@ -10,7 +10,7 @@ import '@labpics/ui-core/alert-dialog';
 import type { LabAlertDialog } from '@labpics/ui-core/alert-dialog';
 
 /** SSR-пропы <lab-alert-dialog> (атрибуты/свойства), взяты из класса ядра (LabAlertDialog). */
-export type AlertDialogSsrProps = Partial<Pick<LabAlertDialog, 'size' | 'modal' | 'closable' | 'heading' | 'description'>>;
+export type AlertDialogSsrProps = Partial<Pick<LabAlertDialog, 'size' | 'modal' | 'closable' | 'heading' | 'description'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-alert-dialog> — предрендеренные строки контента. */
 export type AlertDialogSsrSlots = { default?: string; content?: string };
 
@@ -29,5 +29,7 @@ export function renderAlertDialog(
       ?closable=${Boolean(props.closable)}
       heading=${ifDefined(props.heading)}
       description=${ifDefined(props.description)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     >${slots.content ? html`<span slot="content">${unsafeHTML(slots.content)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-alert-dialog>`);
 }

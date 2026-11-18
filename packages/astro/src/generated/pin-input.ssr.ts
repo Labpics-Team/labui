@@ -10,7 +10,7 @@ import '@labpics/ui-core/pin-input';
 import type { LabPinInput } from '@labpics/ui-core/pin-input';
 
 /** SSR-пропы <lab-pin-input> (атрибуты/свойства), взяты из класса ядра (LabPinInput). */
-export type PinInputSsrProps = Partial<Pick<LabPinInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'count' | 'valueType' | 'mask' | 'otp' | 'placeholder' | 'value' | 'defaultValue' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>>;
+export type PinInputSsrProps = Partial<Pick<LabPinInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'count' | 'valueType' | 'mask' | 'otp' | 'placeholder' | 'value' | 'defaultValue' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-pin-input> — предрендеренные строки контента. */
 export type PinInputSsrSlots = Record<never, never>;
 
@@ -41,5 +41,7 @@ export function renderPinInput(
       ?required=${Boolean(props.required)}
       ?invalid=${Boolean(props.invalid)}
       name=${ifDefined(props.name)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-pin-input>`);
 }

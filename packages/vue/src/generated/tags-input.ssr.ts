@@ -10,7 +10,7 @@ import '@labpics/ui-core/tags-input';
 import type { LabTagsInput } from '@labpics/ui-core/tags-input';
 
 /** SSR-пропы <lab-tags-input> (атрибуты/свойства), взяты из класса ядра (LabTagsInput). */
-export type TagsInputSsrProps = Partial<Pick<LabTagsInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'placeholder' | 'max' | 'delimiter' | 'editable' | 'addOnPaste' | 'allowDuplicates' | 'value' | 'defaultValue' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>>;
+export type TagsInputSsrProps = Partial<Pick<LabTagsInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'placeholder' | 'max' | 'delimiter' | 'editable' | 'addOnPaste' | 'allowDuplicates' | 'value' | 'defaultValue' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-tags-input> — предрендеренные строки контента. */
 export type TagsInputSsrSlots = Record<never, never>;
 
@@ -42,5 +42,7 @@ export function renderTagsInput(
       ?required=${Boolean(props.required)}
       ?invalid=${Boolean(props.invalid)}
       name=${ifDefined(props.name)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-tags-input>`);
 }

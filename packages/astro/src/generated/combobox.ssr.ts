@@ -10,7 +10,7 @@ import '@labpics/ui-core/combobox';
 import type { LabCombobox } from '@labpics/ui-core/combobox';
 
 /** SSR-пропы <lab-combobox> (атрибуты/свойства), взяты из класса ядра (LabCombobox). */
-export type ComboboxSsrProps = Partial<Pick<LabCombobox, 'type' | 'size' | 'placement' | 'multiple' | 'disabled' | 'readonly' | 'required' | 'invalid' | 'name' | 'placeholder' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'items'>>;
+export type ComboboxSsrProps = Partial<Pick<LabCombobox, 'type' | 'size' | 'placement' | 'multiple' | 'disabled' | 'readonly' | 'required' | 'invalid' | 'name' | 'placeholder' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'items'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-combobox> — предрендеренные строки контента. */
 export type ComboboxSsrSlots = Record<never, never>;
 
@@ -40,5 +40,7 @@ export function renderCombobox(
       .value=${props.value === undefined ? noChange : props.value}
       .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
       .items=${props.items === undefined ? noChange : props.items}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-combobox>`);
 }

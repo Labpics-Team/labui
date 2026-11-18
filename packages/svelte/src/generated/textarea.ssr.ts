@@ -10,7 +10,7 @@ import '@labpics/ui-core/textarea';
 import type { LabTextarea } from '@labpics/ui-core/textarea';
 
 /** SSR-пропы <lab-textarea> (атрибуты/свойства), взяты из класса ядра (LabTextarea). */
-export type TextareaSsrProps = Partial<Pick<LabTextarea, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'placeholder' | 'rows' | 'autoResize' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>>;
+export type TextareaSsrProps = Partial<Pick<LabTextarea, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'placeholder' | 'rows' | 'autoResize' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-textarea> — предрендеренные строки контента. */
 export type TextareaSsrSlots = Record<never, never>;
 
@@ -38,5 +38,7 @@ export function renderTextarea(
       ?required=${Boolean(props.required)}
       ?invalid=${Boolean(props.invalid)}
       name=${ifDefined(props.name)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-textarea>`);
 }

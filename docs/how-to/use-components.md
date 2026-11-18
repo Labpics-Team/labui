@@ -110,6 +110,22 @@ import '@labpics/ui-core/card.css';
 
 Это требуется для любой серверной Card, включая вариант без изображения:
 таблица задаёт отступы, типографику и геометрию уже в первом кадре.
+
+Для серверного React Chip также импортируйте статический CSS на уровне страницы
+или layout. Сборщик должен включить его в стили, загружаемые вместе с HTML:
+
+```tsx
+import '@labpics/ui-core/chip.css';
+import { Chip } from '@labpics/ui-react/chip';
+
+export function DesignFilter() {
+  return <Chip defaultSelected>Дизайн</Chip>;
+}
+```
+
+Клиентский модуль Chip добавляет стили после запуска JavaScript. Явный CSS import
+сохраняет геометрию и оформление серверного HTML уже до hydration.
+
 Для интерактивного обработчика
 используйте `onClick` и обычную границу client-компонента своего фреймворка.
 React Button рисует нативный `<button>`, поэтому `htmlType="submit"`

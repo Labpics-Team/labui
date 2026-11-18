@@ -1,0 +1,16 @@
+<!doctype html>
+<html class="lab-scope" lang="ru" data-theme="light" data-material="ambient">
+<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Chip verification</title>
+<link rel="stylesheet" href="../primitives-demo.css" />
+<style>main{max-width:1400px}.chip-matrix{display:grid;grid-template-columns:repeat(7,180px);gap:24px;padding:16px}.chip-matrix>div{display:flex;align-items:center;min-height:48px}form,.line{display:flex;gap:24px;align-items:center;padding:16px}#narrow{width:190px}.react-group{display:contents}</style>
+</head><body><main>
+<div id="ssr-lit"><lab-chip default-selected active show-leading><span slot="leading">●</span>SSR filter</lab-chip></div>
+<div id="ssr-react"><!-- @@REACT_CHIP@@ --></div>
+<div id="ssr-adapter"><!-- @@ADAPTER_CHIP@@ --></div><form id="adapter-form"></form>
+<h1>Chip</h1><div id="lit-matrix" class="chip-matrix"></div><div id="react-matrix" class="chip-matrix"></div>
+<form id="lit-form"><lab-chip name="filter" value="design" default-selected>Дизайн</lab-chip><lab-chip name="rejected" controlled selected>Согласованный</lab-chip><button type="reset">Сбросить</button></form>
+<div id="react-scenarios"></div>
+<div class="line"><lab-chip id="lit-leading" show-leading><span slot="leading">●</span>С автором</lab-chip><lab-chip id="lit-action" mode="action">Применить</lab-chip><lab-chip id="lit-remove" mode="remove" aria-label="Удалить Дизайн">Дизайн</lab-chip><lab-chip id="lit-disabled" disabled>Недоступен</lab-chip></div>
+<div id="narrow" dir="rtl"><lab-chip selected>ПодробныйОченьДлинныйФильтр с продолжением</lab-chip></div>
+<div id="forced-lit" class="chip-matrix"></div><div id="forced-react" class="chip-matrix"></div>
+</main><script type="module" src="./chip.tsx"></script></body></html>

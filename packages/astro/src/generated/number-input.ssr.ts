@@ -10,7 +10,7 @@ import '@labpics/ui-core/number-input';
 import type { LabNumberInput } from '@labpics/ui-core/number-input';
 
 /** SSR-пропы <lab-number-input> (атрибуты/свойства), взяты из класса ядра (LabNumberInput). */
-export type NumberInputSsrProps = Partial<Pick<LabNumberInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'placeholder' | 'min' | 'max' | 'step' | 'scrubber' | 'allowMouseWheel' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>>;
+export type NumberInputSsrProps = Partial<Pick<LabNumberInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'placeholder' | 'min' | 'max' | 'step' | 'scrubber' | 'allowMouseWheel' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-number-input> — предрендеренные строки контента. */
 export type NumberInputSsrSlots = Record<never, never>;
 
@@ -42,5 +42,7 @@ export function renderNumberInput(
       ?required=${Boolean(props.required)}
       ?invalid=${Boolean(props.invalid)}
       name=${ifDefined(props.name)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-number-input>`);
 }

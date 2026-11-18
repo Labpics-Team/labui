@@ -10,7 +10,7 @@ import '@labpics/ui-core/sheet';
 import type { LabSheet } from '@labpics/ui-core/sheet';
 
 /** SSR-пропы <lab-sheet> (атрибуты/свойства), взяты из класса ядра (LabSheet). */
-export type SheetSsrProps = Partial<Pick<LabSheet, 'open' | 'position' | 'modal' | 'closable' | 'heading' | 'description'>>;
+export type SheetSsrProps = Partial<Pick<LabSheet, 'open' | 'position' | 'modal' | 'closable' | 'heading' | 'description'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-sheet> — предрендеренные строки контента. */
 export type SheetSsrSlots = { default?: string; content?: string; trigger?: string };
 
@@ -30,5 +30,7 @@ export function renderSheet(
       ?closable=${Boolean(props.closable)}
       heading=${ifDefined(props.heading)}
       description=${ifDefined(props.description)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     >${slots.content ? html`<span slot="content">${unsafeHTML(slots.content)}</span>` : ''}${slots.trigger ? html`<span slot="trigger">${unsafeHTML(slots.trigger)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-sheet>`);
 }

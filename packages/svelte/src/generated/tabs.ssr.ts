@@ -10,7 +10,7 @@ import '@labpics/ui-core/tabs';
 import type { LabTabs } from '@labpics/ui-core/tabs';
 
 /** SSR-пропы <lab-tabs> (атрибуты/свойства), взяты из класса ядра (LabTabs). */
-export type TabsSsrProps = Partial<Pick<LabTabs, 'orientation' | 'size' | 'activationMode' | 'value' | 'defaultValue' | 'items'>>;
+export type TabsSsrProps = Partial<Pick<LabTabs, 'orientation' | 'size' | 'activationMode' | 'value' | 'defaultValue' | 'items'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-tabs> — предрендеренные строки контента. */
 export type TabsSsrSlots = { default?: string; dynamic?: Readonly<Record<string, string>> };
 
@@ -30,5 +30,7 @@ export function renderTabs(
       value=${ifDefined(props.value)}
       default-value=${ifDefined(props.defaultValue)}
       .items=${props.items === undefined ? noChange : props.items}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     >${Object.entries(slots.dynamic ?? {}).map(([name, content]) => html`<span slot=${name}>${unsafeHTML(content)}</span>`)}${unsafeHTML(slots.default ?? '')}</lab-tabs>`);
 }

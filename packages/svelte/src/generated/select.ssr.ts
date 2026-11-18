@@ -10,7 +10,7 @@ import '@labpics/ui-core/select';
 import type { LabSelect } from '@labpics/ui-core/select';
 
 /** SSR-пропы <lab-select> (атрибуты/свойства), взяты из класса ядра (LabSelect). */
-export type SelectSsrProps = Partial<Pick<LabSelect, 'size' | 'placement' | 'multiple' | 'disabled' | 'name' | 'placeholder' | 'label' | 'value' | 'defaultValue' | 'items'>>;
+export type SelectSsrProps = Partial<Pick<LabSelect, 'size' | 'placement' | 'multiple' | 'disabled' | 'name' | 'placeholder' | 'label' | 'value' | 'defaultValue' | 'items'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-select> — предрендеренные строки контента. */
 export type SelectSsrSlots = Record<never, never>;
 
@@ -33,5 +33,7 @@ export function renderSelect(
       .value=${props.value === undefined ? noChange : props.value}
       .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
       .items=${props.items === undefined ? noChange : props.items}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-select>`);
 }

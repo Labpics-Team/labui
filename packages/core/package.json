@@ -9,25 +9,52 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./adapter-runtime": {
+      "import": { "types": "./dist/adapter-runtime.d.ts", "default": "./dist/adapter-runtime.js" },
+      "require": {
+        "types": "./dist/adapter-runtime.d.cts",
+        "default": "./dist/adapter-runtime.cjs"
+      }
+    },
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./ssr": {
-      "types": "./dist/ssr/index.d.ts",
-      "import": "./dist/ssr/index.js",
-      "require": "./dist/ssr/index.cjs"
+      "import": {
+        "types": "./dist/ssr/index.d.ts",
+        "default": "./dist/ssr/index.js"
+      },
+      "require": {
+        "types": "./dist/ssr/index.d.cts",
+        "default": "./dist/ssr/index.cjs"
+      }
     },
     "./proof": {
-      "types": "./dist/proof/lab-proof.d.ts",
-      "import": "./dist/proof/lab-proof.js",
-      "require": "./dist/proof/lab-proof.cjs"
+      "import": {
+        "types": "./dist/proof/lab-proof.d.ts",
+        "default": "./dist/proof/lab-proof.js"
+      },
+      "require": {
+        "types": "./dist/proof/lab-proof.d.cts",
+        "default": "./dist/proof/lab-proof.cjs"
+      }
     },
     "./*": {
-      "types": "./dist/components/*/index.d.ts",
-      "import": "./dist/components/*/index.js",
-      "require": "./dist/components/*/index.cjs"
+      "import": {
+        "types": "./dist/components/*/index.d.ts",
+        "default": "./dist/components/*/index.js"
+      },
+      "require": {
+        "types": "./dist/components/*/index.d.cts",
+        "default": "./dist/components/*/index.cjs"
+      }
     },
     "./theme.css": "./dist/theme.css",
     "./selection.css": "./dist/selection.css",
@@ -39,65 +66,131 @@
     "./card.css": "./dist/card.css",
     "./switch.css": "./dist/switch.css",
     "./switch/runtime": {
-      "types": "./dist/components/switch/runtime.d.ts",
-      "import": "./dist/components/switch/runtime.js",
-      "require": "./dist/components/switch/runtime.cjs"
+      "import": {
+        "types": "./dist/components/switch/runtime.d.ts",
+        "default": "./dist/components/switch/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/switch/runtime.d.cts",
+        "default": "./dist/components/switch/runtime.cjs"
+      }
     },
     "./package.json": "./package.json",
     "./dialog/shared": {
-      "types": "./dist/components/dialog/shared.d.ts",
-      "import": "./dist/components/dialog/shared.js",
-      "require": "./dist/components/dialog/shared.cjs"
+      "import": {
+        "types": "./dist/components/dialog/shared.d.ts",
+        "default": "./dist/components/dialog/shared.js"
+      },
+      "require": {
+        "types": "./dist/components/dialog/shared.d.cts",
+        "default": "./dist/components/dialog/shared.cjs"
+      }
     },
     "./sheet/positions": {
-      "types": "./dist/components/sheet/positions.d.ts",
-      "import": "./dist/components/sheet/positions.js",
-      "require": "./dist/components/sheet/positions.cjs"
+      "import": {
+        "types": "./dist/components/sheet/positions.d.ts",
+        "default": "./dist/components/sheet/positions.js"
+      },
+      "require": {
+        "types": "./dist/components/sheet/positions.d.cts",
+        "default": "./dist/components/sheet/positions.cjs"
+      }
     },
     "./motion/sheet": {
-      "types": "./dist/motion/sheet.d.ts",
-      "import": "./dist/motion/sheet.js",
-      "require": "./dist/motion/sheet.cjs"
+      "import": {
+        "types": "./dist/motion/sheet.d.ts",
+        "default": "./dist/motion/sheet.js"
+      },
+      "require": {
+        "types": "./dist/motion/sheet.d.cts",
+        "default": "./dist/motion/sheet.cjs"
+      }
     },
     "./snackbar/runtime": {
-      "types": "./dist/components/snackbar/runtime.d.ts",
-      "import": "./dist/components/snackbar/runtime.js",
-      "require": "./dist/components/snackbar/runtime.cjs"
+      "import": {
+        "types": "./dist/components/snackbar/runtime.d.ts",
+        "default": "./dist/components/snackbar/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/snackbar/runtime.d.cts",
+        "default": "./dist/components/snackbar/runtime.cjs"
+      }
     },
     "./card/runtime": {
-      "types": "./dist/components/card/runtime.d.ts",
-      "import": "./dist/components/card/runtime.js",
-      "require": "./dist/components/card/runtime.cjs"
+      "import": {
+        "types": "./dist/components/card/runtime.d.ts",
+        "default": "./dist/components/card/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/card/runtime.d.cts",
+        "default": "./dist/components/card/runtime.cjs"
+      }
     },
     "./sheet/measure": {
-      "types": "./dist/components/sheet/measure.d.ts",
-      "import": "./dist/components/sheet/measure.js",
-      "require": "./dist/components/sheet/measure.cjs"
+      "import": {
+        "types": "./dist/components/sheet/measure.d.ts",
+        "default": "./dist/components/sheet/measure.js"
+      },
+      "require": {
+        "types": "./dist/components/sheet/measure.d.cts",
+        "default": "./dist/components/sheet/measure.cjs"
+      }
     },
     "./badge.css": "./dist/badge.css",
     "./badge/contract": {
-      "types": "./dist/components/badge/contract.d.ts",
-      "import": "./dist/components/badge/contract.js",
-      "require": "./dist/components/badge/contract.cjs"
+      "import": {
+        "types": "./dist/components/badge/contract.d.ts",
+        "default": "./dist/components/badge/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/badge/contract.d.cts",
+        "default": "./dist/components/badge/contract.cjs"
+      }
     },
     "./selection/runtime": {
-      "types": "./dist/components/selection/runtime.d.ts",
-      "import": "./dist/components/selection/runtime.js",
-      "require": "./dist/components/selection/runtime.cjs"
+      "import": {
+        "types": "./dist/components/selection/runtime.d.ts",
+        "default": "./dist/components/selection/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/selection/runtime.d.cts",
+        "default": "./dist/components/selection/runtime.cjs"
+      }
     },
     "./selection-controls.css": "./dist/selection-controls.css",
     "./kbd.css": "./dist/kbd.css",
     "./kbd/contract": {
-      "types": "./dist/components/kbd/contract.d.ts",
-      "import": "./dist/components/kbd/contract.js",
-      "require": "./dist/components/kbd/contract.cjs"
+      "import": {
+        "types": "./dist/components/kbd/contract.d.ts",
+        "default": "./dist/components/kbd/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/kbd/contract.d.cts",
+        "default": "./dist/components/kbd/contract.cjs"
+      }
     },
     "./progress/runtime": {
-      "types": "./dist/components/progress/runtime.d.ts",
-      "import": "./dist/components/progress/runtime.js",
-      "require": "./dist/components/progress/runtime.cjs"
+      "import": {
+        "types": "./dist/components/progress/runtime.d.ts",
+        "default": "./dist/components/progress/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/progress/runtime.d.cts",
+        "default": "./dist/components/progress/runtime.cjs"
+      }
     },
-    "./progress.css": "./dist/progress.css"
+    "./progress.css": "./dist/progress.css",
+    "./chip.css": "./dist/chip.css",
+    "./chip/contract": {
+      "import": {
+        "types": "./dist/components/chip/contract.d.ts",
+        "default": "./dist/components/chip/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/chip/contract.d.cts",
+        "default": "./dist/components/chip/contract.cjs"
+      }
+    }
   },
   "files": ["dist"],
   "sideEffects": [
@@ -119,7 +212,8 @@
     "./dist/badge.css",
     "./dist/selection-controls.css",
     "./dist/kbd.css",
-    "./dist/progress.css"
+    "./dist/progress.css",
+    "./dist/chip.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

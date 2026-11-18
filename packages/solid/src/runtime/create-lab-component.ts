@@ -1,3 +1,4 @@
+import { type LabPropSpec, forwardDeclared } from '@labpics/ui-core/adapter-runtime';
 /**
  * Фабрика тонких Solid-обёрток над Lit web-components (ADR-0001, A-prime).
  *
@@ -19,16 +20,7 @@ import {
   splitProps,
 } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
-
-/** Способ проброса одного пропа — зеркалит PropKind манифеста. */
-export type LabPropKind = 'boolean' | 'prop' | 'string';
-
-/** Спека проброса одного пропа. */
-export interface LabPropSpec {
-  readonly name: string;
-  readonly attr: string;
-  readonly kind: LabPropKind;
-}
+export type { LabPropKind, LabPropSpec } from '@labpics/ui-core/adapter-runtime';
 
 /** Описание компонента для фабрики. */
 export interface LabComponentSpec {
@@ -64,20 +56,6 @@ function handlerName(event: string): string {
     .join('')}`;
 }
 
-/** Применяет один проп на элемент по его виду. */
-function applyProp(el: HTMLElement, spec: LabPropSpec, value: unknown): void {
-  if (spec.kind === 'prop') {
-    // Массив/объект/контролируемое значение — только JS-свойством.
-    if (value !== undefined) (el as unknown as Record<string, unknown>)[spec.name] = value;
-  } else if (spec.kind === 'boolean') {
-    el.toggleAttribute(spec.attr, Boolean(value));
-  } else if (value === undefined || value === null) {
-    el.removeAttribute(spec.attr);
-  } else {
-    el.setAttribute(spec.attr, String(value));
-  }
-}
-
 /**
  * Создаёт Solid-компонент, монтирующий кастом-элемент `tag` и пробрасывающий на него
  * объявленные пропы (реактивно), нативные атрибуты (spread) и кастом-события.
@@ -100,7 +78,7 @@ export function createLabComponent<Props, Events extends string>(
     createEffect(() => {
       const node = el();
       if (!node) return;
-      for (const s of spec.specs) applyProp(node, s, all[s.name]);
+      forwardDeclared(node, spec.specs, all);
     });
     // Проброс кастом-событий: вешаем только заданные обработчики, снимаем при смене.
     createEffect(() => {

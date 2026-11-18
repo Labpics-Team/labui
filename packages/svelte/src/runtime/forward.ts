@@ -10,40 +10,11 @@
  */
 
 /** Способ проброса одного пропа — зеркалит PropKind манифеста. */
-export type LabPropKind = 'boolean' | 'prop' | 'string';
-
-/** Спека проброса одного пропа. */
-export interface LabPropSpec {
-  readonly name: string;
-  readonly attr: string;
-  readonly kind: LabPropKind;
-}
-
-/**
- * Форвардит объявленные пропы на элемент по их видам:
- *   - 'prop'    → JS-свойство (массивы/объекты/контролируемые значения);
- *   - 'boolean' → атрибут-флаг (present/absent), голый false не даёт attr="false";
- *   - 'string'  → строковый атрибут (nullish снимает атрибут → дефолт элемента).
- */
-export function forwardDeclared(
-  el: HTMLElement | undefined,
-  specs: readonly LabPropSpec[],
-  values: Record<string, unknown>,
-): void {
-  if (!el) return;
-  for (const spec of specs) {
-    const value = values[spec.name];
-    if (spec.kind === 'prop') {
-      if (value !== undefined) (el as unknown as Record<string, unknown>)[spec.name] = value;
-    } else if (spec.kind === 'boolean') {
-      el.toggleAttribute(spec.attr, Boolean(value));
-    } else if (value === undefined || value === null) {
-      el.removeAttribute(spec.attr);
-    } else {
-      el.setAttribute(spec.attr, String(value));
-    }
-  }
-}
+export {
+  forwardDeclared,
+  type LabPropKind,
+  type LabPropSpec,
+} from '@labpics/ui-core/adapter-runtime';
 
 /**
  * Вешает кастом-события на элемент; возвращает cleanup (используется как возврат

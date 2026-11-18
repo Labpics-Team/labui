@@ -10,7 +10,7 @@ import '@labpics/ui-core/checkbox';
 import type { LabCheckbox } from '@labpics/ui-core/checkbox';
 
 /** SSR-пропы <lab-checkbox> (атрибуты/свойства), взяты из класса ядра (LabCheckbox). */
-export type CheckboxSsrProps = Partial<Pick<LabCheckbox, 'type' | 'size' | 'variant' | 'checked' | 'indeterminate' | 'defaultChecked' | 'defaultIndeterminate' | 'controlled' | 'disabled' | 'required' | 'name' | 'value'>>;
+export type CheckboxSsrProps = Partial<Pick<LabCheckbox, 'type' | 'size' | 'variant' | 'checked' | 'indeterminate' | 'defaultChecked' | 'defaultIndeterminate' | 'controlled' | 'disabled' | 'required' | 'name' | 'value'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-checkbox> — предрендеренные строки контента. */
 export type CheckboxSsrSlots = { default?: string; description?: string; icon?: string; labelStart?: string };
 
@@ -36,5 +36,7 @@ export function renderCheckbox(
       ?required=${Boolean(props.required)}
       name=${ifDefined(props.name)}
       value=${ifDefined(props.value)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     >${slots.description ? html`<span slot="description">${unsafeHTML(slots.description)}</span>` : ''}${slots.icon ? html`<span slot="icon">${unsafeHTML(slots.icon)}</span>` : ''}${slots.labelStart ? html`<span slot="label-start">${unsafeHTML(slots.labelStart)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-checkbox>`);
 }
