@@ -3,7 +3,11 @@
     "source": {
       "fileKey": "LuaiBd4anRi4DMZayKAnY2",
       "version": "2422536133022859436",
-      "sizes": { "s": "6227:8249", "m": "6227:8347", "l": "6227:8445" }
+      "sizes": {
+        "s": "6227:8249",
+        "m": "6227:8347",
+        "l": "6227:8445"
+      }
     },
     "fontWeight": 500,
     "labelPaddingX": 8,
@@ -53,10 +57,314 @@
     "loader": {
       "periodMs": 800,
       "size": 24,
-      "segment": { "x": 11, "y": 2, "width": 2, "height": 7, "radius": 1 },
+      "segment": {
+        "x": 11,
+        "y": 2,
+        "width": 2,
+        "height": 7,
+        "radius": 1
+      },
       "count": 8
     },
-    "fill": { "highlight": 0.2, "hoverHighlight": 0.32, "pressedShade": 0.12 },
-    "innerShadow": { "x": 0, "y": -1, "blur": 1 }
+    "fill": {
+      "highlight": 0.2,
+      "hoverHighlight": 0.32,
+      "pressedShade": 0.12
+    },
+    "innerShadow": {
+      "x": 0,
+      "y": -1,
+      "blur": 1
+    }
+  },
+  "input": {
+    "source": {
+      "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+      "version": "2422536133022859436",
+      "sizes": {
+        "s": "6034:3459",
+        "m": "6050:1672",
+        "l": "6050:1712"
+      }
+    },
+    "sizes": {
+      "s": {
+        "height": 36,
+        "radius": 16,
+        "paddingX": 16,
+        "paddingY": 8,
+        "contentHeight": 20,
+        "fontSize": 14,
+        "lineHeight": 12,
+        "fontWeight": 500,
+        "letterSpacing": 0
+      },
+      "m": {
+        "height": 48,
+        "radius": 12,
+        "paddingX": 16,
+        "paddingY": 12,
+        "contentHeight": 24,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25
+      },
+      "l": {
+        "height": 56,
+        "radius": 12,
+        "paddingX": 16,
+        "paddingY": 16,
+        "contentHeight": 24,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25
+      }
+    },
+    "label": {
+      "fontSize": 12,
+      "lineHeight": 12,
+      "fontWeight": 500,
+      "paddingX": 4,
+      "overhang": 8
+    },
+    "helper": {
+      "gap": 8,
+      "paddingX": 4
+    },
+    "strokeWidth": 1,
+    "adornment": {
+      "width": 32,
+      "iconSize": 16,
+      "paddingOuter": 12,
+      "paddingInner": 4
+    }
+  },
+  "card": {
+    "source": {
+      "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+      "version": "2422536133022859436",
+      "node": "6225:42443"
+    },
+    "radius": 16,
+    "padding": 24,
+    "gap": 16,
+    "cornerSmoothing": 0.6,
+    "strokeWidth": 1,
+    "mediaHeight": 200,
+    "captionGap": 8,
+    "textGap": 2,
+    "titleGap": 4,
+    "text": {
+      "title": {
+        "fontSize": 20,
+        "lineHeight": 20,
+        "fontWeight": 500,
+        "letterSpacing": -0.33
+      },
+      "description": {
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25
+      },
+      "caption": {
+        "fontSize": 14,
+        "lineHeight": 12,
+        "fontWeight": 500,
+        "letterSpacing": 0
+      }
+    }
+  },
+  "sheet": {
+    "source": {
+      "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+      "version": "2422536133022859436",
+      "node": "7533:4698",
+      "title": "7719:54845",
+      "description": "7719:54846"
+    },
+    "topRadius": 32,
+    "paddingX": 16,
+    "paddingBottom": 16,
+    "contentGap": 24,
+    "headerGap": 8,
+    "typography": {
+      "title": { "fontSize": 20, "lineHeight": 20, "fontWeight": 600, "letterSpacing": -0.33 },
+      "description": { "fontSize": 16, "lineHeight": 24, "fontWeight": 400, "letterSpacing": -0.25 }
+    },
+    "bodyHeights": { "full": 776, "two-thirds": 540, "one-third": 270 },
+    "drag": {
+      "areaHeight": 24,
+      "width": 36,
+      "height": 4,
+      "radius": 4,
+      "top": 14,
+      "centerOffset": 0.5
+    }
+  },
+  "snackbar": {
+    "source": {
+      "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+      "node": "6109:6735",
+      "timer": "6109:6708",
+      "readAt": "2026-11-17"
+    },
+    "radius": 9999,
+    "paddingStart": 12,
+    "paddingEnd": 8,
+    "paddingY": 8,
+    "actionGap": 24,
+    "labelGap": 12,
+    "fontSize": 16,
+    "lineHeight": 24,
+    "fontWeight": 500,
+    "strokeWidth": 1,
+    "material": "elevated",
+    "durationMs": 5000,
+    "timer": {
+      "size": 32,
+      "strokeWidth": 3,
+      "warningSeconds": 2,
+      "sweeps": [360, 270, 225, 135, 75]
+    }
+  },
+  "switch": {
+    "source": {
+      "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+      "page": "4083:407",
+      "componentSet": "4111:884",
+      "authoredVariants": 108,
+      "activePairs": [["neutral", false], ["accent", true], ["danger", false]],
+      "disabledPairs": "all types and both values",
+      "inspected": "2026-11-17"
+    },
+    "sizes": {
+      "s": {
+        "trackWidth": 28,
+        "trackHeight": 16,
+        "controlHeight": 24,
+        "labelGap": 8,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "letterSpacing": -0.25,
+        "fontWeight": 400
+      },
+      "m": {
+        "trackWidth": 36,
+        "trackHeight": 20,
+        "controlHeight": 24,
+        "labelGap": 8,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "letterSpacing": -0.25,
+        "fontWeight": 400
+      },
+      "l": {
+        "trackWidth": 44,
+        "trackHeight": 24,
+        "controlHeight": 24,
+        "labelGap": 12,
+        "fontSize": 20,
+        "lineHeight": 20,
+        "letterSpacing": -0.33,
+        "fontWeight": 500
+      }
+    },
+    "thumb": {
+      "padding": 2,
+      "hoverPadding": 1,
+      "pressedPadding": 4,
+      "fillRole": "bg-static-light",
+      "disabledFillRole": "control-bg",
+      "shadow": "xs",
+      "hoverShadow": "s",
+      "disabledShadow": null,
+      "neutralIconHoverShadow": "xs",
+      "coloredPressedShadow": [
+        {
+          "x": 0,
+          "y": 0,
+          "blur": 1,
+          "spread": 0,
+          "colorRole": "bg-static-dark",
+          "opacity": 0.12
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "blur": 1,
+          "spread": 0,
+          "colorRole": "bg-static-dark",
+          "opacity": 0.04
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "blur": 2,
+          "spread": 0,
+          "colorRole": "bg-static-dark",
+          "opacity": 0.02
+        },
+        {
+          "x": 0,
+          "y": 6,
+          "blur": 2,
+          "spread": 0,
+          "colorRole": "bg-static-dark",
+          "opacity": 0.01
+        }
+      ],
+      "coloredPressedShadowMinimumTrackHeight": 20
+    },
+    "track": {
+      "neutralRole": "fill-secondary",
+      "neutralHoverRole": "fill-primary",
+      "accentRole": "fill-accent",
+      "dangerRole": "fill-danger",
+      "disabledRole": "fill-tertiary"
+    },
+    "labelRole": "label-primary",
+    "coloredFill": {
+      "highlight": 0.2,
+      "hoverHighlight": 0.32,
+      "pressedShade": 0.12,
+      "gradientDirection": "top-to-bottom",
+      "gradientTailOpacity": {
+        "default": 0,
+        "hover": 0.0001,
+        "pressed": 0.0001
+      }
+    },
+    "innerShadow": {
+      "x": 0,
+      "y": -1,
+      "pressedY": 1,
+      "blur": 1,
+      "colorRole": "fx-control-inner"
+    },
+    "focus": {
+      "width": 2,
+      "offset": 2,
+      "neutralRole": "label-primary",
+      "accentRole": "border-focus",
+      "dangerRole": "label-danger"
+    },
+    "cutout": {
+      "viewBox": 8,
+      "diameterRatio": 0.5,
+      "on": {
+        "sourceNode": "4083:5166",
+        "windingRule": "EVENODD",
+        "data": "M 7.635610517625218 0.09004448477756646 C 7.983656103329632 0.2757832909707034 8.10328593643757 0.6877623968927002 7.902811901013137 1.0102255870284567 L 3.799476721347746 7.610456581436975 C 3.4971543396331435 8.09674358769225 2.755387473545853 8.135316874720674 2.396231818043499 7.683424404152019 L 0.14168859926511418 4.84674109766281 C -0.09647133042804071 4.54708645671381 -0.027348674390513195 4.125292176841569 0.2960784184531714 3.9046376557352764 C 0.6195054679489442 3.6839828133348624 1.0747617100265714 3.7480247640656943 1.3129216397197263 4.047679405014694 L 3.0091021078268905 6.181826769133788 L 6.64242871067445 0.33760590255856143 C 6.842902746098884 0.015142692341922448 7.287565625487393 -0.09569428125380533 7.635610517625218 0.09004448477756646 Z"
+      },
+      "off": {
+        "sourceNode": "6020:537",
+        "windingRule": "NONZERO",
+        "data": "M 6.9128887406063635 0.1495871834623516 C 7.174744708699412 -0.06398525199944971 7.560755252477094 -0.048922332108651434 7.804838861833421 0.19516127724767568 C 8.048922471189748 0.4392448866040028 8.063985391080546 0.8252554502504135 7.8504129556187445 1.0871114183434614 L 7.804838861833421 1.1378939799899654 L 4.942785772115067 3.999946910758495 L 7.804838861833421 6.862000000476849 L 7.8504129556187445 6.912782562123353 C 8.063985391080546 7.174638530216401 8.048922471189748 7.560649073994084 7.804838861833421 7.804732683350411 C 7.560755252477094 8.04881629270674 7.174744708699412 8.063879212597536 6.9128887406063635 7.850306777135735 L 6.862106178959859 7.804732683350411 L 4.000053089241505 4.9426795936320564 L 1.1379998405733256 7.804732683350411 C 0.8776435839466081 8.065088939977128 0.45562345406393767 8.065088939977128 0.19526719743722018 7.804732683350411 C -0.06508905918949734 7.5443764267236935 -0.06508905918949734 7.122356257103567 0.19526719743722018 6.862000000476849 L 3.057320406367943 3.999946910758495 L 0.19526719743722018 1.1378939799899654 L 0.14969310365189606 1.0871114183434614 C -0.06387933180990524 0.8252554502504135 -0.04881641191910693 0.4392448866040028 0.19526719743722018 0.19516127724767568 C 0.4393508067935473 -0.048922332108651434 0.8253613108337736 -0.06398525199944971 1.0872172789268215 0.1495871834623516 L 1.1379998405733256 0.19516127724767568 L 4.000053089241505 3.0572142278849332 L 6.862106178959859 0.19516127724767568 L 6.9128887406063635 0.1495871834623516 Z"
+      },
+      "hideOnColoredPressed": true
+    }
   }
 }

@@ -11,7 +11,7 @@ export function buildComponentTokens(): ResolvedToken[] {
   const scalar = (kind: ScaleKind, name: string, value: number, cssValue = num(value)) => {
     result.push({ kind, name, numeric: value, cssValue, dtcgType: 'number' });
   };
-  for (const [component, definition] of Object.entries(profile)) {
+  for (const [component, definition] of Object.entries({ button: profile.button })) {
     scalar('font-weight', component, definition.fontWeight);
     dimension('space', `${component}-label-x`, definition.labelPaddingX);
     dimension('space', `${component}-label-gap`, definition.labelGap);
@@ -58,5 +58,63 @@ export function buildComponentTokens(): ResolvedToken[] {
       dimension('space', `${component}-inner-${key}`, value);
     }
   }
+  for (const [size, metrics] of Object.entries(profile.input.sizes)) {
+    const name = `input-${size}`;
+    dimension('size', name, metrics.height);
+    dimension('size', `${name}-content`, metrics.contentHeight);
+    dimension('radius', name, metrics.radius);
+    dimension('space', `${name}-x`, metrics.paddingX);
+    dimension('space', `${name}-y`, metrics.paddingY);
+    dimension('font-size', name, metrics.fontSize);
+    scalar('font-weight', name, metrics.fontWeight);
+    scalar('line-height', name, metrics.lineHeight / metrics.fontSize);
+    scalar(
+      'letter-spacing',
+      name,
+      metrics.letterSpacing / metrics.fontSize,
+      `${num(metrics.letterSpacing / metrics.fontSize, 6)}em`,
+    );
+  }
+  const label = profile.input.label;
+  dimension('font-size', 'input-label', label.fontSize);
+  scalar('font-weight', 'input-label', label.fontWeight);
+  scalar('line-height', 'input-label', label.lineHeight / label.fontSize);
+  dimension('space', 'input-label-x', label.paddingX);
+  dimension('space', 'input-label-overhang', label.overhang);
+  dimension('space', 'input-helper-gap', profile.input.helper.gap);
+  dimension('space', 'input-helper-x', profile.input.helper.paddingX);
+  dimension('stroke', 'input', profile.input.strokeWidth);
+  dimension('size', 'input-adornment', profile.input.adornment.width);
+  dimension('size', 'input-icon', profile.input.adornment.iconSize);
+  dimension('space', 'input-adornment-outer', profile.input.adornment.paddingOuter);
+  dimension('space', 'input-adornment-inner', profile.input.adornment.paddingInner);
+  dimension('radius', 'card-surface', profile.card.radius);
+  dimension('space', 'card-padding', profile.card.padding);
+  dimension('space', 'card-gap', profile.card.gap);
+  for (const [role, text] of Object.entries(profile.sheet.typography)) {
+    const name = `sheet-${role}`;
+    dimension('font-size', name, text.fontSize);
+    dimension('line-height', name, text.lineHeight);
+    scalar('font-weight', name, text.fontWeight);
+    scalar(
+      'letter-spacing',
+      name,
+      text.letterSpacing / text.fontSize,
+      `${num(text.letterSpacing / text.fontSize, 6)}em`,
+    );
+  }
+  dimension('radius', 'sheet-top', profile.sheet.topRadius);
+  dimension('space', 'sheet-x', profile.sheet.paddingX);
+  dimension('space', 'sheet-bottom', profile.sheet.paddingBottom);
+  dimension('space', 'sheet-content-gap', profile.sheet.contentGap);
+  dimension('space', 'sheet-header-gap', profile.sheet.headerGap);
+  dimension('size', 'sheet-drag-area', profile.sheet.drag.areaHeight);
+  dimension('size', 'sheet-drag-width', profile.sheet.drag.width);
+  dimension('size', 'sheet-drag-height', profile.sheet.drag.height);
+  dimension('radius', 'sheet-drag', profile.sheet.drag.radius);
+  dimension('space', 'sheet-drag-top', profile.sheet.drag.top);
+  dimension('space', 'sheet-drag-center-offset', profile.sheet.drag.centerOffset);
+  for (const [position, height] of Object.entries(profile.sheet.bodyHeights))
+    dimension('size', `sheet-body-${position}`, height);
   return result;
 }

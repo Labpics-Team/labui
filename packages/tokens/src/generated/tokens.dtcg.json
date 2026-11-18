@@ -407,6 +407,246 @@
           "css": "0.0625rem"
         }
       }
+    },
+    "input-s-x": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "input-s-y": {
+      "$type": "dimension",
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.5rem"
+        }
+      }
+    },
+    "input-m-x": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "input-m-y": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.75rem"
+        }
+      }
+    },
+    "input-l-x": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "input-l-y": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "input-label-x": {
+      "$type": "dimension",
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.25rem"
+        }
+      }
+    },
+    "input-label-overhang": {
+      "$type": "dimension",
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.5rem"
+        }
+      }
+    },
+    "input-helper-gap": {
+      "$type": "dimension",
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.5rem"
+        }
+      }
+    },
+    "input-helper-x": {
+      "$type": "dimension",
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.25rem"
+        }
+      }
+    },
+    "input-adornment-outer": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.75rem"
+        }
+      }
+    },
+    "input-adornment-inner": {
+      "$type": "dimension",
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.25rem"
+        }
+      }
+    },
+    "card-padding": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
+    },
+    "card-gap": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "sheet-x": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "sheet-bottom": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "sheet-content-gap": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
+    },
+    "sheet-header-gap": {
+      "$type": "dimension",
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.5rem"
+        }
+      }
+    },
+    "sheet-drag-top": {
+      "$type": "dimension",
+      "$value": {
+        "value": 14,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.875rem"
+        }
+      }
+    },
+    "sheet-drag-center-offset": {
+      "$type": "dimension",
+      "$value": {
+        "value": 0.5,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.0313rem"
+        }
+      }
     }
   },
   "size": {
@@ -925,6 +1165,174 @@
           "css": "1.5rem"
         }
       }
+    },
+    "input-s": {
+      "$type": "dimension",
+      "$value": {
+        "value": 36,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2.25rem"
+        }
+      }
+    },
+    "input-s-content": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.25rem"
+        }
+      }
+    },
+    "input-m": {
+      "$type": "dimension",
+      "$value": {
+        "value": 48,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "3rem"
+        }
+      }
+    },
+    "input-m-content": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
+    },
+    "input-l": {
+      "$type": "dimension",
+      "$value": {
+        "value": 56,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "3.5rem"
+        }
+      }
+    },
+    "input-l-content": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
+    },
+    "input-adornment": {
+      "$type": "dimension",
+      "$value": {
+        "value": 32,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2rem"
+        }
+      }
+    },
+    "input-icon": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "sheet-drag-area": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
+    },
+    "sheet-drag-width": {
+      "$type": "dimension",
+      "$value": {
+        "value": 36,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2.25rem"
+        }
+      }
+    },
+    "sheet-drag-height": {
+      "$type": "dimension",
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.25rem"
+        }
+      }
+    },
+    "sheet-body-full": {
+      "$type": "dimension",
+      "$value": {
+        "value": 776,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "48.5rem"
+        }
+      }
+    },
+    "sheet-body-two-thirds": {
+      "$type": "dimension",
+      "$value": {
+        "value": 540,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "33.75rem"
+        }
+      }
+    },
+    "sheet-body-one-third": {
+      "$type": "dimension",
+      "$value": {
+        "value": 270,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "16.875rem"
+        }
+      }
     }
   },
   "radius": {
@@ -1119,6 +1527,78 @@
       "$extensions": {
         "com.labpics.ui-tokens": {
           "css": "1rem"
+        }
+      }
+    },
+    "input-s": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "input-m": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.75rem"
+        }
+      }
+    },
+    "input-l": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.75rem"
+        }
+      }
+    },
+    "card-surface": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "sheet-top": {
+      "$type": "dimension",
+      "$value": {
+        "value": 32,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2rem"
+        }
+      }
+    },
+    "sheet-drag": {
+      "$type": "dimension",
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.25rem"
         }
       }
     }
@@ -1426,6 +1906,78 @@
           "css": "1rem"
         }
       }
+    },
+    "input-s": {
+      "$type": "dimension",
+      "$value": {
+        "value": 14,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.875rem"
+        }
+      }
+    },
+    "input-m": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "input-l": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "input-label": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.75rem"
+        }
+      }
+    },
+    "sheet-title": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.25rem"
+        }
+      }
+    },
+    "sheet-description": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
     }
   },
   "line-height": {
@@ -1480,6 +2032,46 @@
     "button-l": {
       "$type": "number",
       "$value": 1.5
+    },
+    "input-s": {
+      "$type": "number",
+      "$value": 0.8571
+    },
+    "input-m": {
+      "$type": "number",
+      "$value": 1.5
+    },
+    "input-l": {
+      "$type": "number",
+      "$value": 1.5
+    },
+    "input-label": {
+      "$type": "number",
+      "$value": 1
+    },
+    "sheet-title": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.25rem"
+        }
+      }
+    },
+    "sheet-description": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
     }
   },
   "font-weight": {
@@ -1512,6 +2104,30 @@
       "$value": 400
     },
     "button-l-description": {
+      "$type": "number",
+      "$value": 400
+    },
+    "input-s": {
+      "$type": "number",
+      "$value": 500
+    },
+    "input-m": {
+      "$type": "number",
+      "$value": 400
+    },
+    "input-l": {
+      "$type": "number",
+      "$value": 400
+    },
+    "input-label": {
+      "$type": "number",
+      "$value": 500
+    },
+    "sheet-title": {
+      "$type": "number",
+      "$value": 600
+    },
+    "sheet-description": {
       "$type": "number",
       "$value": 400
     }
@@ -1580,6 +2196,26 @@
     "button-l": {
       "$type": "number",
       "$value": 0
+    },
+    "input-s": {
+      "$type": "number",
+      "$value": 0
+    },
+    "input-m": {
+      "$type": "number",
+      "$value": -0.0156
+    },
+    "input-l": {
+      "$type": "number",
+      "$value": -0.0156
+    },
+    "sheet-title": {
+      "$type": "number",
+      "$value": -0.0165
+    },
+    "sheet-description": {
+      "$type": "number",
+      "$value": -0.0156
     }
   },
   "measure": {
@@ -1663,6 +2299,18 @@
       "$extensions": {
         "com.labpics.ui-tokens": {
           "css": "0.125rem"
+        }
+      }
+    },
+    "input": {
+      "$type": "dimension",
+      "$value": {
+        "value": 1,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.0625rem"
         }
       }
     }
