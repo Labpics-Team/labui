@@ -79,12 +79,13 @@ private fun KbdKey(text: String, metrics: LabKbdMetrics, first: Boolean) {
             }
             val edge = Path.combine(PathOperation.Difference, extended, original)
             val gradient = Brush.verticalGradient(listOf(fill, end), endY = size.height)
+            val rim = Stroke(stroke)
             onDrawWithContent {
                 drawPath(edge, bottomBorder)
                 drawRoundRect(gradient, cornerRadius = CornerRadius(radius))
                 drawRoundRect(border, topLeft = Offset(inset, inset),
                     size = Size(size.width - stroke, size.height - stroke),
-                    cornerRadius = CornerRadius(radius - inset), style = Stroke(stroke))
+                    cornerRadius = CornerRadius(radius - inset), style = rim)
                 drawContent()
             }
         }

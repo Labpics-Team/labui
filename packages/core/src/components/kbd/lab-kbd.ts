@@ -26,7 +26,7 @@ export class LabKbd extends LabElement {
   ];
 
   override render(): TemplateResult {
-    return this.keys.length
+    return Array.isArray(this.keys) && this.keys.length
       ? html`<kbd part="chord" data-lab-kbd data-size=${kbdSize(this.size)}>${this.keys.map(
           (key) => html`<kbd class="lab-kbd-key" part="key">${key}</kbd>`,
         )}</kbd>`

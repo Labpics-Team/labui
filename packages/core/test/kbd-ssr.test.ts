@@ -24,4 +24,10 @@ describe('Kbd first server frame', () => {
     expect(output.match(/<kbd[ >]/g)).toHaveLength(1);
     expect(output).toContain('<slot>');
   });
+
+  it('preserves the single key if a JSON attribute is empty or malformed', () => {
+    const output = renderToString(html`<lab-kbd keys="">Esc</lab-kbd>`);
+    expect(output.match(/<kbd[ >]/g)).toHaveLength(1);
+    expect(output).toContain('<slot>');
+  });
 });
