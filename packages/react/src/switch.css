@@ -22,6 +22,8 @@
   --_lab-sw-tracking: var(--lab-letter-spacing-md, -0.0083em);
 
   display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   align-items: center;
   vertical-align: middle;
   gap: var(--_lab-sw-gap);

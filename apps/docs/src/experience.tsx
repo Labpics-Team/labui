@@ -133,7 +133,7 @@ function Workspace() {
       </header>
       <main className="workspace-main">
         <div className="workspace-intro">
-          <h1>Пространство</h1>
+          <h1>Настройки</h1>
         </div>
         <Card
           className="workspace-card"
@@ -144,7 +144,7 @@ function Workspace() {
                 {settings.name.slice(0, 1).toLocaleUpperCase()}
               </span>
               <div>
-                <h2>{settings.name}</h2>
+                <h2 className="workspace-card-title">{settings.name}</h2>
               </div>
             </div>
           }
@@ -213,7 +213,11 @@ function Workspace() {
             </div>
           </dl>
         </Card>
-        <Card className="workspace-card" padding="l" header={<h2>Оформление</h2>}>
+        <Card
+          className="workspace-card"
+          padding="l"
+          header={<h2 className="workspace-card-title">Оформление</h2>}
+        >
           <div className="workspace-preferences">
             <div className="workspace-option">
               <Switch checked={dark} disabled={!themeReady} onCheckedChange={setDark}>

@@ -128,6 +128,7 @@ export class LabSwitch extends LabElement {
       --_font: ${litVar('--lab-font-size-md', '1rem')};
 
       display: inline-flex;
+      max-width: 100%;
       vertical-align: middle;
     }
 
@@ -149,6 +150,8 @@ export class LabSwitch extends LabElement {
     /* Root is the Zag label element: the whole control is one click/label target. */
     .root {
       display: inline-flex;
+      flex-wrap: wrap;
+      max-width: 100%;
       align-items: center;
       gap: var(--_gap);
       font: inherit;

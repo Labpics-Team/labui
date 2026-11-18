@@ -69,7 +69,7 @@ export const sheetCss = String.raw`
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  padding: 0 var(--_sheet-inset) var(--_sheet-bottom);
+  padding: 0 min(var(--_sheet-inset), 5%) var(--_sheet-bottom);
   border-radius: inherit;
   /* biome-ignore lint/correctness/noUnknownProperty: CSS Borders 4; поверхность наследует контур Core Sheet. */
   corner-shape: inherit;

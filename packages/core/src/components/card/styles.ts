@@ -54,7 +54,7 @@ lab-card:has(> [slot="media"]) { --_card-slotted-top-radius: 0px; }
   display: flex;
   flex-direction: column;
   gap: var(--lab-space-card-gap);
-  padding: var(--_card-padding);
+  padding: var(--_card-padding) min(var(--_card-padding), 10%);
   border-radius: inherit;
   flex: 1;
 }

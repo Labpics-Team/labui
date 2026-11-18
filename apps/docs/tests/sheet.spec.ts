@@ -7,6 +7,26 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/_fixtures/sheet.html');
 });
 
+test('оба renderer сохраняют авторскую роль заголовка Sheet при системном масштабе', async ({
+  page,
+}) => {
+  for (const route of ['/_fixtures/sheet.html', '/experience.html']) {
+    await page.goto(route);
+    await page.getByRole('button', { name: 'Изменить настройки', exact: true }).click();
+    const heading = page.locator('.lab-sheet-heading');
+    await expect(heading).toBeVisible();
+    for (const scale of [1, 2]) {
+      await page.locator('html').evaluate((el, value) => {
+        el.style.fontSize = `${16 * value}px`;
+      }, scale);
+      await expect(heading).toHaveCSS('font-size', `${20 * scale}px`);
+      await expect(heading).toHaveCSS('line-height', `${20 * scale}px`);
+      await expect(heading).toHaveCSS('font-weight', '600');
+      await expect(heading).toHaveCSS('letter-spacing', `${-0.33 * scale}px`);
+    }
+  }
+});
+
 test('Lit Sheet сохраняет slots, тему, ввод и focus после закрытия', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));

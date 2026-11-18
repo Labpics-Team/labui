@@ -47,7 +47,7 @@ input {
   letter-spacing: 0;
 }
 .workspace-main {
-  width: min(100% - 2.5rem, 38rem);
+  width: min(100% - min(2.5rem, 10vw), 38rem);
   margin: clamp(1.5rem, 6vh, 5rem) auto 0;
 }
 .workspace-intro {
@@ -61,7 +61,7 @@ input {
 }
 .workspace-intro h1 {
   margin: .75rem 0 .625rem;
-  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-size: clamp(1.5rem, 5vw, 2.75rem);
   line-height: 1.1;
   font-weight: 600;
   letter-spacing: -.045em;
@@ -74,16 +74,21 @@ input {
 .workspace-card {
   margin-top: 1.25rem;
 }
-.workspace-card h2 {
+.workspace-card-title {
   font-size: 1.125rem;
   font-weight: 600;
   letter-spacing: -.02em;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 .workspace-card-heading {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   align-items: center;
+}
+.workspace-card-heading > div {
+  min-width: 0;
 }
 .workspace-card-heading p {
   font-size: .8125rem;
@@ -123,6 +128,7 @@ input {
 .workspace-preferences,
 .workspace-form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
 }
 .workspace-option p {
@@ -132,6 +138,7 @@ input {
 }
 .workspace-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: .75rem;
   justify-content: flex-end;
   padding-top: .5rem;
@@ -166,12 +173,6 @@ input {
 .workspace .lab-sheet-content {
   width: min(100%, 40rem);
   margin-inline: auto;
-}
-.workspace .lab-sheet-panel-heading {
-  gap: .5rem;
-}
-.workspace .lab-sheet-description {
-  font-size: .875rem;
 }
 .workspace .lab-sheet-body {
   padding-bottom: env(safe-area-inset-bottom);

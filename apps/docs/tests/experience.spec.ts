@@ -88,3 +88,44 @@ test('Snackbar отменяет последнее сохранение и со�
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Labpics', exact: true })).toBeVisible();
 });
+
+for (const width of [320, 390]) {
+  test(`масштаб 200% при ${width}px сохраняет подписи и весь путь сохранения`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/experience.html');
+    await page.evaluate(async () => {
+      document.documentElement.style.fontSize = '32px';
+      await document.fonts.ready;
+    });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    const trigger = page.getByRole('button', { name: 'Изменить настройки' });
+    await trigger.click();
+    const dialog = page.getByRole('dialog', { name: 'Настройки пространства' });
+    await dialog.getByRole('button', { name: 'Изменить высоту панели' }).press('Home');
+    const name = dialog.getByRole('textbox', { name: 'Название пространства' });
+    await name.scrollIntoViewIfNeeded();
+    const label = dialog.locator('.lab-field-label');
+    expect(await label.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(
+      true,
+    );
+    expect(await label.evaluate((element) => getComputedStyle(element).textOverflow)).not.toBe(
+      'ellipsis',
+    );
+    const heading = dialog.getByRole('heading');
+    expect(
+      await heading.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+    ).toBe(true);
+    await name.fill('Новая лаборатория');
+    const notifications = dialog.getByRole('checkbox', { name: 'Уведомления команды' });
+    await notifications.focus();
+    await notifications.press('Space');
+    await expect(notifications).not.toBeChecked();
+    await dialog.getByRole('button', { name: 'Сохранить', exact: true }).click();
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Новая лаборатория' })).toBeVisible();
+    await expect(page.getByText('Выключены', { exact: true })).toBeVisible();
+  });
+}

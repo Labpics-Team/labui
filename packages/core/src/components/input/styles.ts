@@ -54,7 +54,8 @@ export const inputCss = String.raw`
 [data-lab-input] .lab-input-frame {
   position: relative;
   isolation: isolate;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   min-width: 0;
   min-height: var(--_input-height);
@@ -63,9 +64,12 @@ export const inputCss = String.raw`
   background: transparent;
 }
 [data-lab-input] .lab-input-frame > .lab-field-label {
-  position: absolute;
+  position: relative;
+  grid-column: 1 / -1;
+  grid-row: 1;
   inset-block-start: calc(-1 * var(--lab-space-input-label-overhang));
-  inset-inline-start: var(--_input-start);
+  margin-inline-start: var(--_input-start);
+  margin-block-end: calc(-1 * var(--lab-font-size-input-label) * var(--lab-line-height-input-label));
   max-width: calc(100% - var(--_input-start) - var(--_input-radius));
   padding-inline: var(--lab-space-input-label-x);
   color: var(--_input-label);
@@ -73,12 +77,13 @@ export const inputCss = String.raw`
   font-weight: var(--lab-font-weight-input-label);
   line-height: var(--lab-line-height-input-label);
   letter-spacing: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
   z-index: 1;
 }
 [data-lab-input] .lab-field-control {
+  grid-column: 2;
+  grid-row: 2;
   box-sizing: border-box;
   flex: 1;
   min-width: 0;
@@ -167,6 +172,7 @@ export const inputCss = String.raw`
 [data-lab-input][data-disabled] { opacity: .5; }
 [data-lab-input][data-disabled] .lab-field-control { cursor: not-allowed; }
 [data-lab-input] .lab-input-adornment {
+  grid-row: 2;
   box-sizing: border-box;
   display: flex;
   flex: none;
@@ -176,9 +182,11 @@ export const inputCss = String.raw`
   color: var(--_input-label);
 }
 [data-lab-input] .lab-input-leading {
+  grid-column: 1;
   padding-inline: var(--lab-space-input-adornment-outer) var(--lab-space-input-adornment-inner);
 }
 [data-lab-input] .lab-input-trailing {
+  grid-column: 3;
   padding-inline: var(--lab-space-input-adornment-inner) var(--lab-space-input-adornment-outer);
 }
 [data-lab-input]:not([data-leading]) .lab-input-leading,
