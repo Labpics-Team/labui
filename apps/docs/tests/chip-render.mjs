@@ -118,6 +118,42 @@ try {
     document.documentElement.style.fontSize = '32px';
   });
   await page.locator('#narrow').screenshot({ path: resolve(output, 'web-rtl-200.png') });
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '16px';
+    const main = document.createElement('main');
+    main.style.cssText = 'background:Canvas;color:CanvasText;padding:20px;width:max-content';
+    for (const renderer of ['lit', 'react']) {
+      const heading = document.createElement('h2');
+      heading.textContent = `${renderer}: unselected / selected`;
+      const matrix = document.querySelector(`#forced-${renderer}`);
+      if (!matrix) throw new Error('Missing forced-color examples');
+      matrix.style.width = 'max-content';
+      for (const [index, state] of [
+        'Default',
+        'Hover',
+        'Pressed',
+        'Focus',
+        'Active',
+        'Disabled',
+        'Loading',
+      ].entries()) {
+        const label = document.createElement('span');
+        label.textContent = state;
+        label.style.cssText = `grid-column:${index + 1};grid-row:1;font-size:13px`;
+        matrix.append(label);
+      }
+      for (const [index, cell] of [...matrix.querySelectorAll(':scope > div')].entries()) {
+        cell.style.gridRow = String(Math.floor(index / 7) + 2);
+        cell.style.gridColumn = String((index % 7) + 1);
+      }
+      main.append(heading, matrix);
+    }
+    document.body.replaceChildren(main);
+  });
+  for (const colorScheme of ['light', 'dark']) {
+    await page.emulateMedia({ forcedColors: 'active', colorScheme });
+    await page.locator('main').screenshot({ path: resolve(output, `forced-${colorScheme}.png`) });
+  }
 } finally {
   await browser.close();
 }

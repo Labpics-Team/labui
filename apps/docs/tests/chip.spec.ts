@@ -98,7 +98,131 @@ test('one semantic target; actions dispatch once; disabled and cancelable select
   );
   expect(await page.locator('#lit-remove button').getAttribute('aria-pressed')).toBeNull();
   expect(await page.locator('button button').count()).toBe(0);
+  const clicks = await page.locator('#lit-action').evaluate((host) => {
+    let count = 0;
+    const listener = () => count++;
+    host.addEventListener('click', listener);
+    (host as HTMLElement).click();
+    host.removeEventListener('click', listener);
+    return count;
+  });
+  expect(clicks).toBe(1);
 });
+
+for (const colorScheme of ['light', 'dark'] as const) {
+  test(`forced colors ${colorScheme}: readable system paint and distinct states`, async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName !== 'chromium', 'Chromium emulates Windows forced-color palettes.');
+    await page.emulateMedia({ forcedColors: 'active', colorScheme });
+    await expect(page.locator('#forced-react button')).toHaveCount(14);
+    const palette = await page.evaluate(() => {
+      const probe = document.createElement('span');
+      probe.style.forcedColorAdjust = 'none';
+      document.body.append(probe);
+      const read = (name: string) => {
+        probe.style.color = name;
+        return getComputedStyle(probe).color;
+      };
+      const result = {
+        face: read('ButtonFace'),
+        text: read('ButtonText'),
+        selected: read('Highlight'),
+        selectedText: read('HighlightText'),
+        disabled: read('GrayText'),
+      };
+      probe.remove();
+      return result;
+    });
+    for (const renderer of ['lit', 'react']) {
+      const matrix = page.locator(`#forced-${renderer}`);
+      for (const selected of [false, true])
+        for (const state of [
+          'default',
+          'hover',
+          'pressed',
+          'focus',
+          'active',
+          'disabled',
+          'loading',
+        ]) {
+          const button = matrix.locator(
+            `[data-state="${state}"][data-selected="${selected}"] button`,
+          );
+          const paint = await button.evaluate((node) => {
+            const css = getComputedStyle(node);
+            const label = node.querySelector('.lab-chip-label');
+            return {
+              fill: css.backgroundColor,
+              text: css.color,
+              outline: css.outlineStyle,
+              height: node.getBoundingClientRect().height,
+              decoration: label && getComputedStyle(label).textDecorationLine,
+            };
+          });
+          expect(paint.fill).toBe(
+            selected && state !== 'disabled' ? palette.selected : palette.face,
+          );
+          expect(paint.text).toBe(
+            state === 'disabled'
+              ? palette.disabled
+              : selected
+                ? palette.selectedText
+                : palette.text,
+          );
+          expect(paint.outline).toBe(state === 'focus' ? 'solid' : 'none');
+          expect(paint.height).toBe(40);
+          expect(paint.decoration).toBe(
+            ['hover', 'pressed'].includes(state) ? 'underline' : 'none',
+          );
+          if (state === 'loading') {
+            await expect(button).toHaveAttribute('aria-busy', 'true');
+            expect(
+              await button
+                .locator('.lab-chip-content')
+                .evaluate((node) => getComputedStyle(node).backgroundColor),
+            ).toBe(paint.text);
+          }
+        }
+      // Computed foreground/background were already correct in the regression:
+      // the UA backplate covered the actual glyphs. Inspect rendered pixels too.
+      for (const state of ['default', 'hover', 'disabled'])
+        for (const part of ['label', 'leading']) {
+          const button = matrix.locator(`[data-state="${state}"][data-selected="true"] button`);
+          const node = button.locator(`.lab-chip-${part}`);
+          const foreground = await node.evaluate((el) => getComputedStyle(el).color);
+          const png = (await node.screenshot()).toString('base64');
+          const fraction = await page.evaluate(
+            async ({ png, foreground }) => {
+              const img = new Image();
+              img.src = `data:image/png;base64,${png}`;
+              await img.decode();
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              if (!ctx) throw new Error('Missing pixel reader');
+              ctx.drawImage(img, 0, 0);
+              const pixels = ctx.getImageData(0, 0, img.width, img.height).data;
+              const rgb = foreground.match(/\d+/g)?.slice(0, 3).map(Number);
+              if (!rgb) throw new Error('Missing foreground');
+              let ink = 0;
+              for (let i = 0; i < pixels.length; i += 4)
+                if (
+                  rgb.every((channel, index) => Math.abs((pixels[i + index] ?? 0) - channel) < 12)
+                )
+                  ink++;
+              return ink / (img.width * img.height);
+            },
+            { png, foreground },
+          );
+          expect(fraction).toBeGreaterThan(0.03);
+          expect(fraction).toBeLessThan(0.8);
+        }
+    }
+  });
+}
 
 test('all 56 author combinations have source geometry and matching web renderers', async ({
   page,

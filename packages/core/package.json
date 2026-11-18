@@ -9,6 +9,13 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./adapter-runtime": {
+      "import": { "types": "./dist/adapter-runtime.d.ts", "default": "./dist/adapter-runtime.js" },
+      "require": {
+        "types": "./dist/adapter-runtime.d.cts",
+        "default": "./dist/adapter-runtime.cjs"
+      }
+    },
     ".": {
       "import": {
         "types": "./dist/index.d.ts",

@@ -2,7 +2,8 @@
 
 Проверено 18 ноября 2026. Геометрия, роли, baseline, skeleton и контур крестика
 берутся из `packages/tokens/src/components.json#chip`; `LabComponents.kt` сгенерирован
-из этого профиля. Авторский источник: [Chip в Lab UI v2.1](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/?node-id=6220-4785).
+из этого профиля. Авторский источник: Chips / Chip в
+[Lab UI v2.1 Community](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1).
 Figma не открывалась и не изменялась. Использованы сохранённые полные деревья
 56 вариантов и 12 оригинальных SVG из read-only чтения.
 

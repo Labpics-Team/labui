@@ -1,7 +1,8 @@
 # Chip: авторский профиль и проверка результата
 
-Проверено 18 ноября 2026. [Авторский Chip в Lab UI v2.1](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/?node-id=6220-4785)
-перенесён в Lit, React, generated Vue/Solid/Svelte/Astro и Compose. Геометрия,
+Проверено 18 ноября 2026. Авторский источник: Chips / Chip в
+[Lab UI v2.1 Community](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1).
+Chip перенесён в Lit, React, generated Vue/Solid/Svelte/Astro и Compose. Геометрия,
 paint roles, baseline и точные контуры находятся в одном профиле
 `packages/tokens/src/components.json#chip`; web CSS и native constants следуют ему.
 
@@ -55,6 +56,28 @@ Light/Dark alpha .08/.12, increased contrast .12/.16. Skeleton статичен.
 Общий SSR generator передаёт `aria-label` и `form` до JavaScript; уже объявленные
 атрибуты не добавляются повторно.
 
+В forced colors используются полные системные пары ButtonFace/ButtonText и
+Highlight/HighlightText, GrayText для disabled. Локальный `forced-color-adjust:none`
+сохраняет эти пары и предотвращает подложку UA, которая закрывала текст и leading.
+Обычные brand/hover переменные не переопределяют системную палитру. Hover/pressed
+подчёркивают подпись; focus получает явный outline, обычное состояние его не имеет.
+`forced-before-light/dark.png` сохраняют исходный дефект, `forced-light/dark.png`
+показывают все состояния Lit/React после исправления. Проверяются реальные пиксели
+label/leading, поскольку одни computed colors не обнаруживали непрозрачную подложку.
+Основание: [CSS Color Adjustment](https://www.w3.org/TR/css-color-adjust-1/#forced-colors-mode).
+
+Solid/Svelte используют общий `core/adapter-runtime`: несвязанный reactive update
+не удаляет отсутствующие props и не повторяет неизменившиеся входные значения.
+Проверены defaultSelected → loading → снятие loading → click, а также однократное
+снятие ранее переданных name/active. `packed-runtime.json` сохраняет наблюдения
+реального браузерного consumer из переустановленных архивов: высота остаётся 40,
+pending сохраняет ширину, после click меняется выбор, defaults и внутреннее
+состояние не теряются. Программный `host.click()` теперь даёт один bubbling click.
+
+Точный React-пример из how-to с `import '@labpics/ui-core/chip.css'` собран из
+установленного архива и проверен без JavaScript: height 40, radius 12 и выбранная
+поверхность доступны до hydration (`packed-react-ssr.png`).
+
 Контур standalone Icons close отличается от Chip: проверенный master Icons
 имеет оптические границы примерно 7…17 в box 24, Chip Medium — 5.7…18.3.
 Профиль сохраняет точный авторский контур. Это сравнение исходных masters,
@@ -69,10 +92,12 @@ Sharp Small без/с выбором, Sharp Medium без/с выбором. `we
 
 Проверки:
 
-- Chromium + WebKit: 14/14. Space/Enter, controlled отказ, FormData/reset и отмена
+- Chromium + WebKit: 16 прошли; две проверки forced colors пропущены в WebKit,
+  системные палитры проверены Chromium. Space/Enter, controlled отказ, FormData/reset и отмена
   reset; pending name/focus/width; одно действие, disabled; 56 сочетаний и равенство
   Lit/React; baseline; RTL/200%/reduced motion; одинаковая SSR/hydrated geometry;
   доступное имя generated SSR до JS и внешняя форма после hydration.
+- Solid: 10/10; Svelte: 9/9, включая реальные reactive mount и withdrawal props.
 - Colors: 255/255. Общие роли, generated CSS/native contract, отсутствие inline
   paint literals, непредусмотренных размеров, motion и неименованных z-index.
 - Typecheck всех workspace packages и docs прошёл; Biome и source verification чисты.

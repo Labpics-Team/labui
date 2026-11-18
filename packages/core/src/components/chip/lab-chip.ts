@@ -58,11 +58,9 @@ export class LabChip extends LabElement {
     this.value = 'on';
     this.disabledByForm = false;
     if (typeof ElementInternals !== 'undefined') this.internals = this.attachInternals();
-    this.addEventListener('click', (event) => {
-      if (event.composedPath()[0] === this && !event.defaultPrevented) {
-        this.renderRoot.querySelector<HTMLButtonElement>('button')?.click();
-      }
-    });
+  }
+  override click(): void {
+    this.renderRoot.querySelector<HTMLButtonElement>('button')?.click();
   }
   static override styles = [
     unsafeCSS(chipCss),

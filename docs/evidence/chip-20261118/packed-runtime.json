@@ -1,0 +1,135 @@
+{
+  "before": [
+    {
+      "mode": "filter",
+      "size": "m",
+      "value": "on",
+      "selected": true,
+      "loading": false,
+      "name": "filter",
+      "active": true,
+      "height": 40,
+      "width": 124.890625
+    },
+    {
+      "mode": "filter",
+      "size": "m",
+      "value": "on",
+      "selected": true,
+      "loading": false,
+      "name": "filter",
+      "active": true,
+      "height": 40,
+      "width": 131.09375
+    }
+  ],
+  "pending": [
+    {
+      "mode": "filter",
+      "size": "m",
+      "value": "on",
+      "selected": true,
+      "loading": true,
+      "name": "filter",
+      "active": true,
+      "height": 40,
+      "width": 124.890625
+    },
+    {
+      "mode": "filter",
+      "size": "m",
+      "value": "on",
+      "selected": true,
+      "loading": true,
+      "name": "filter",
+      "active": true,
+      "height": 40,
+      "width": 131.09375
+    }
+  ],
+  "clicked": [
+    {
+      "mode": "filter",
+      "size": "m",
+      "value": "on",
+      "selected": false,
+      "loading": false,
+      "name": "filter",
+      "active": true,
+      "height": 40,
+      "width": 92.890625
+    },
+    {
+      "mode": "filter",
+      "size": "m",
+      "value": "on",
+      "selected": false,
+      "loading": false,
+      "name": "filter",
+      "active": true,
+      "height": 40,
+      "width": 99.09375
+    }
+  ],
+  "removed": [
+    {
+      "mode": "filter",
+      "size": "m",
+      "value": "on",
+      "selected": false,
+      "loading": false,
+      "name": null,
+      "active": false,
+      "height": 40,
+      "width": 92.890625
+    },
+    {
+      "mode": "filter",
+      "size": "m",
+      "value": "on",
+      "selected": false,
+      "loading": false,
+      "name": null,
+      "active": false,
+      "height": 40,
+      "width": 99.09375
+    }
+  ],
+  "retained": [
+    {
+      "mode": "filter",
+      "size": "m",
+      "value": "on",
+      "selected": false,
+      "loading": true,
+      "name": "element state",
+      "active": true,
+      "height": 40,
+      "width": 92.890625
+    },
+    {
+      "mode": "filter",
+      "size": "m",
+      "value": "on",
+      "selected": false,
+      "loading": true,
+      "name": "element state",
+      "active": true,
+      "height": 40,
+      "width": 99.09375
+    }
+  ],
+  "ssr": {
+    "geometry": {
+      "x": 8,
+      "y": 8,
+      "width": 112.171875,
+      "height": 40
+    },
+    "paint": {
+      "background": "rgba(120, 120, 128, 0.12)",
+      "radius": "12px"
+    }
+  },
+  "errors": []
+}

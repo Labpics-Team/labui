@@ -27,11 +27,21 @@ const stackCss = `
 
 const forcedColorsCss = `
 @media (forced-colors: active) {
-  [data-lab-chip] { border: 1px solid ButtonText; }
-  [data-lab-chip][data-selected] { --_chip-fill: Highlight; --_chip-label: HighlightText; --_chip-close-color: HighlightText; }
-  [data-lab-chip]:disabled { --_chip-label: GrayText; --_chip-close-color: GrayText; }
-  [data-lab-chip]:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
-  [data-lab-chip][data-loading] .lab-chip-content { background: GrayText; }
+  /* Keep the user's system palette as a complete foreground/background pair.
+   * UA text backplates otherwise cover HighlightText with ButtonFace. Direct
+   * paint properties also isolate this palette from authored state variables. */
+  [data-lab-chip] { forced-color-adjust: none; background: ButtonFace; color: ButtonText; outline: none; }
+  [data-lab-chip]::before { border-color: ButtonText; }
+  [data-lab-chip] .lab-chip-close { background: currentColor; }
+  [data-lab-chip] .lab-chip-glow { display: none; }
+  [data-lab-chip][data-selected] { background: Highlight; color: HighlightText; }
+  [data-lab-chip][data-selected]::before { border-color: Highlight; }
+  [data-lab-chip]:is(:hover, [data-hovered], :active, [data-pressed]):not(:disabled):not([data-loading]) .lab-chip-label { text-decoration: underline; }
+  [data-lab-chip]:is(:focus-visible, [data-focused]) { outline: 2px solid Highlight; outline-offset: 2px; }
+  [data-lab-chip]:disabled { background: ButtonFace; color: GrayText; }
+  [data-lab-chip]:disabled::before { border-color: GrayText; }
+  [data-lab-chip]:disabled .lab-chip-leading { opacity: 1; }
+  [data-lab-chip][data-loading] .lab-chip-content { background: currentColor; }
 }
 `;
 

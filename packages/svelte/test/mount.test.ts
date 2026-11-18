@@ -1,3 +1,4 @@
+import type { LabChip } from '@labpics/ui-core/chip';
 /**
  * Клиентский маунт-смоук (happy-dom): обёртки монтируют реальные <lab-*>, пробрасывают
  * пропы атрибутами/свойствами, слот-контент и кастом-события. Фикстура Harness.svelte
@@ -6,6 +7,7 @@
  */
 import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import ChipHarness from './fixtures/ChipHarness.svelte';
 import Harness from './fixtures/Harness.svelte';
 
 let host: HTMLElement;
@@ -18,6 +20,42 @@ afterEach(() => {
 });
 
 describe('Svelte mount (проброс на <lab-*>)', () => {
+  it('reactive updates retain omitted defaults and selection; withdrawn inputs are removed once', async () => {
+    host = document.createElement('div');
+    document.body.append(host);
+    const changed = vi.fn();
+    const component = mount(ChipHarness, { target: host, props: { onSelectedChange: changed } });
+    instance = component;
+    flushSync();
+    const chip = host.querySelector('lab-chip') as LabChip;
+    await chip.updateComplete;
+    expect([chip.mode, chip.size, chip.value, chip.selected]).toEqual(['filter', 'm', 'on', true]);
+    component.setPending(true);
+    flushSync();
+    await chip.updateComplete;
+    expect([chip.mode, chip.size, chip.value, chip.selected]).toEqual(['filter', 'm', 'on', true]);
+    component.setPending(false);
+    flushSync();
+    await chip.updateComplete;
+    chip.click();
+    await chip.updateComplete;
+    expect(chip.selected).toBe(false);
+    expect(changed).toHaveBeenCalledTimes(1);
+    component.withdraw();
+    flushSync();
+    await chip.updateComplete;
+    expect(chip.hasAttribute('name')).toBe(false);
+    expect(chip.active).toBe(false);
+    chip.name = 'element state';
+    chip.active = true;
+    await chip.updateComplete;
+    component.setPending(true);
+    flushSync();
+    await chip.updateComplete;
+    expect(chip.name).toBe('element state');
+    expect(chip.active).toBe(true);
+    expect(chip.selected).toBe(false);
+  });
   it('button: строковые оси → атрибуты, false-булев снят, слот в light DOM', () => {
     host = document.createElement('div');
     document.body.appendChild(host);

@@ -109,3 +109,50 @@ if (ssr)
       SSR filter
     </Chip>,
   );
+
+const forced = [false, true].flatMap((selected) => states.map((state) => ({ selected, state })));
+for (const variant of forced) {
+  const cell = document.createElement('div');
+  cell.dataset.state = variant.state;
+  cell.dataset.selected = String(variant.selected);
+  const chip = document.createElement('lab-chip');
+  Object.assign(chip, {
+    selected: variant.selected,
+    showLeading: true,
+    active: variant.state === 'active',
+    disabled: variant.state === 'disabled',
+    loading: variant.state === 'loading',
+  });
+  const leading = document.createElement('span');
+  leading.slot = 'leading';
+  leading.textContent = '●';
+  chip.append(leading, 'Chip label');
+  cell.append(chip);
+  document.querySelector('#forced-lit')?.append(cell);
+  void chip.updateComplete.then(() =>
+    pose(chip.shadowRoot?.querySelector('button') ?? null, variant.state),
+  );
+}
+const forcedReact = document.querySelector('#forced-react');
+if (forcedReact)
+  createRoot(forcedReact).render(
+    forced.map((v) => (
+      <div
+        key={`${v.selected}-${v.state}`}
+        data-state={v.state}
+        data-selected={String(v.selected)}
+        ref={(node) => pose(node?.querySelector('button') ?? null, v.state)}
+      >
+        <Chip
+          selected={v.selected}
+          showLeading
+          leading={<span>●</span>}
+          active={v.state === 'active'}
+          disabled={v.state === 'disabled'}
+          loading={v.state === 'loading'}
+        >
+          Chip label
+        </Chip>
+      </div>
+    )),
+  );
