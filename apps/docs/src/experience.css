@@ -54,6 +54,7 @@ input {
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: -.035em;
+  overflow-wrap: anywhere;
 }
 .workspace-card + .workspace-card {
   margin-top: 1.5rem;
@@ -94,7 +95,7 @@ input {
   min-height: 2rem;
 }
 .workspace-option p {
-  margin: .125rem 3rem 0 0;
+  margin: .125rem 0 0;
   color: var(--lab-label-secondary);
   font-size: .8125rem;
 }
@@ -148,7 +149,7 @@ input {
 @media (max-width: 28rem) {
   .workspace-topbar,
   .workspace-main {
-    width: calc(100% - 2rem);
+    width: calc(100% - min(2rem, 10vw));
   }
   .workspace-caption {
     display: none;

@@ -2,7 +2,7 @@
   "archives": [
     {
       "name": "@labpics/ui-tokens",
-      "sha256": "085815c8a3956605db59823cd89b118b6264550565a221bc2f9d6e3f5f29a492"
+      "sha256": "6fcd2c3a352283ff8b232cab31b0e57dcae8ee60d49637ff31d78a7439caa0ba"
     },
     {
       "name": "@labpics/ui-shadow",
@@ -18,31 +18,31 @@
     },
     {
       "name": "@labui/colors",
-      "sha256": "24f2e25bb90ca478855929263f5440cb444156a8a4d78495389acfb2c1530082"
+      "sha256": "2dfc01336750f554b4a4e46155bb10caaf3c804df98ec237008961fee268decb"
     },
     {
       "name": "@labpics/ui-core",
-      "sha256": "eab433f5ef3c99e945c3c13bf4d4ff0fee44a2b00850604854090f20f4a62a96"
+      "sha256": "235e851f123744aa74a7c8d06ea10b9ccb02550dc85337853b1d93d3401cab9f"
     },
     {
       "name": "@labpics/ui-react",
-      "sha256": "9c7e9a5727ef9ca09d2a1ad7e8980f47b5d83414eb524747a0819f83f976089f"
+      "sha256": "dbe7444655edf0cd9cb3d0c6b26a375b60e2b85b790dddbb9904b76c170ce8e6"
     },
     {
       "name": "@labpics/ui-vue",
-      "sha256": "7fea54c9283e91c48dc63fd3af8ba9e253bd1b637cb91db58a60845398a49098"
+      "sha256": "2c63b96d767e1c7f83185f97a75cdae4277cc0b70bd02d64fe8baede5dbac817"
     },
     {
       "name": "@labpics/ui-solid",
-      "sha256": "810d77a4055c47f85512f4df7ba8f70c219a86174465896e0a118413d027df86"
+      "sha256": "1c1511aae7e85bf8f1f0e7ae79a8567bb9244b2f5332314cd829c276fb8cedee"
     },
     {
       "name": "@labpics/ui-svelte",
-      "sha256": "d0f2131b0e5147237b50d69e9578d5b9323f4d9c178509563ffb6e931a0e283d"
+      "sha256": "bf27306206ac1c9985075650f3e50ae082b7a709d5b30306f735af9b23479ed2"
     },
     {
       "name": "@labpics/ui-astro",
-      "sha256": "6371106692d325ff245919117075fc0af60ef7771a0bf2dee9812ebebc7a8d6e"
+      "sha256": "35b1d0678fea44f4b3fcd0bd556e234121a8b66c86b2441e66a561c8b7f8fe2f"
     }
   ],
   "records": [

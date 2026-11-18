@@ -327,7 +327,7 @@ function Workspace() {
             <p className="workspace-loading">Загружаем настройки…</p>
           )}
         </Card>
-        <Card className="workspace-card" padding="l" heading="Оформление">
+        <Card className="workspace-card" padding="l" heading="Внешний вид">
           <div className="workspace-preferences">
             <div className="workspace-option">
               <Switch

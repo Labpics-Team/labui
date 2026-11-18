@@ -1,0 +1,40 @@
+{
+  "browser": "140.0.7339.186",
+  "scenes": [
+    {
+      "name": "desktop",
+      "width": 1280,
+      "height": 900,
+      "scale": 100
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "scale": 100
+    },
+    {
+      "name": "mobile-125",
+      "width": 390,
+      "height": 844,
+      "scale": 125
+    },
+    {
+      "name": "mobile-200",
+      "width": 390,
+      "height": 844,
+      "scale": 200
+    },
+    {
+      "name": "small-200",
+      "width": 320,
+      "height": 844,
+      "scale": 200
+    }
+  ],
+  "themes": [
+    "light",
+    "dark"
+  ],
+  "pageErrors": []
+}
