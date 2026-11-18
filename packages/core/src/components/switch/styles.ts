@@ -73,7 +73,7 @@ export const switchCss = `
   min-inline-size: 0;
   vertical-align: middle;
   color: ${role(p.labelRole)};
-  font-family: var(--lab-font-family, inherit);
+  font-family: var(--lab-font-family);
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
@@ -136,7 +136,7 @@ ${p.cutout.hideOnColoredPressed ? '[data-lab-switch][data-pressed]:not([data-app
   flex: none;
   inline-size: var(--_switch-width);
   block-size: var(--_switch-height);
-  border-radius: 9999px;
+  border-radius: var(--lab-radius-pill);
   corner-shape: round;
   background-color: var(--_switch-track);
   background-image: var(--_switch-gradient);
@@ -147,13 +147,13 @@ ${p.cutout.hideOnColoredPressed ? '[data-lab-switch][data-pressed]:not([data-app
   outline-offset: ${rem(p.focus.offset)};
 }
 [data-lab-switch] .lab-switch-thumb {
-  --_switch-inset-length: calc(var(--_switch-inset, var(--_switch-padding)) * 0.0625rem);
+  --_switch-inset-length: calc(var(--_switch-inset, var(--_switch-padding)) * ${rem(1)});
   position: absolute;
   inset-block-start: var(--_switch-inset-length);
   inset-inline-start: calc(var(--_switch-inset-length) + (var(--_switch-width) - var(--_switch-height)) * var(--_switch-progress, var(--_switch-position)));
   inline-size: calc(var(--_switch-height) - 2 * var(--_switch-inset-length));
   block-size: calc(var(--_switch-height) - 2 * var(--_switch-inset-length));
-  border-radius: 50%;
+  border-radius: var(--lab-radius-circle);
   corner-shape: round;
   box-shadow: var(--_switch-shadow);
 }

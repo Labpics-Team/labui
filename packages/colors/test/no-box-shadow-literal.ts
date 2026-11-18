@@ -138,7 +138,7 @@ export function shadowTargetFiles(): string[] {
     'packages/**/*.css',
     'packages/**/*.ts',
     'packages/**/*.tsx',
-    'apps/docs/**/*.css',
+    'apps/docs/src/**/*.css',
   ];
   const seen = new Set<string>();
   for (const pattern of patterns) {

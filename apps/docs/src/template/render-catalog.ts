@@ -46,6 +46,9 @@ export function renderSourceCoverage(entry: RegistryEntry): HTMLElement {
             el('th', { scope: 'row' }, [
               el('span', { class: 'source-page' }, [source.page]),
               source.name,
+              el('span', { class: 'source-page' }, [
+                source.type === 'component-set' ? 'Набор вариантов' : 'Компонент',
+              ]),
             ]),
             el('td', {}, [role[source.role]]),
             el('td', {}, [source.web?.scope ?? 'Не сопоставлено']),

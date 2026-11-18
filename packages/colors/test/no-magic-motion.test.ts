@@ -30,7 +30,8 @@ describe('no magic motion in component styles (motion contract)', () => {
 
   it('the surface covers both stacks and skips tests', () => {
     const surface = motionSurfaceFiles();
-    expect(surface).toContain('packages/react/src/switch.css');
+    expect(surface).toContain('packages/react/src/combobox.css');
+    expect(surface).toContain('packages/core/src/components/switch/styles.ts');
     expect(surface).toContain('packages/core/src/components/switch/lab-switch.ts');
     expect(surface.some((f) => f.endsWith('.test.ts'))).toBe(false);
   });
