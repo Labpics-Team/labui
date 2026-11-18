@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -260,6 +261,63 @@ class ProgressRenderTest {
                     }
                 }
             } }
+        } finally { scene.close() }
+    }
+
+    @Test fun waitingLoaderStaysCenteredUnderRectangularConstraints() {
+        fun pixels(width: Int): IntArray {
+            val lifecycle = owner()
+            val scene = ImageComposeScene(width, 24) {
+                CompositionLocalProvider(LocalLifecycleOwner provides lifecycle) { LabTheme(theme()) {
+                    Box(Modifier.fillMaxSize().background(Color.White)) { LabLoader(modifier = Modifier.width(width.dp)) }
+                } }
+            }
+            try {
+                settle(scene)
+                return scene.render().use { image -> org.jetbrains.skia.Bitmap.makeFromImage(image).use { bitmap ->
+                    IntArray(width * 24) { bitmap.getColor(it % width, it / width) }
+                } }
+            } finally { scene.close() }
+        }
+        val square = pixels(24)
+        val rectangle = pixels(48)
+        for (y in 0 until 24) for (x in 0 until 48) {
+            val expected = if (x in 12 until 36) square[y * 24 + x - 12] else Color.White.toArgb()
+            val actual = rectangle[y * 48 + x]
+            for (shift in listOf(0, 8, 16, 24)) assertTrue(
+                kotlin.math.abs(((expected shr shift) and 255) - ((actual shr shift) and 255)) <= 2,
+                "Centered authored viewBox at ($x,$y), channel $shift")
+        }
+    }
+
+    @Test fun measuredMotionStopsWhenUnknownOrInactive() {
+        val lifecycle = owner()
+        var value by mutableStateOf<Float?>(0f)
+        var observed: LabProgressMotion? = null
+        val scene = ImageComposeScene(120, 120) {
+            CompositionLocalProvider(LocalLifecycleOwner provides lifecycle) { LabTheme(theme(reduced = false)) {
+                observed = rememberLabProgressMotion(labProgressState(value, 0f, 100f), 1200)
+                LabProgress(value)
+            } }
+        }
+        try {
+            frame(scene, 0); frame(scene, 16); frame(scene, 32)
+            value = 100f
+            frame(scene, 48); frame(scene, 64); frame(scene, 80)
+            val fraction = checkNotNull(observed).fraction
+            assertTrue(fraction.value > 0f && fraction.value < 1f)
+            value = null
+            frame(scene, 96); frame(scene, 112)
+            val cancelled = fraction.value
+            (8L..30L).forEach { frame(scene, it * 16) }
+            assertEquals(cancelled, fraction.value, "Unknown state cancels the measured tween")
+            lifecycle.lifecycle.currentState = Lifecycle.State.STARTED
+            value = 75f
+            frame(scene, 496); frame(scene, 512)
+            assertEquals(0.75f, fraction.value, "Inactive state applies its real value without frames")
+            value = 25f
+            frame(scene, 528); frame(scene, 544)
+            assertEquals(0.25f, fraction.value)
         } finally { scene.close() }
     }
 }

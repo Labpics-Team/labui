@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.dp
 import kotlin.math.floor
 
@@ -45,6 +46,8 @@ public fun LabLoader(
     Box(modifier.size(metrics.diameter.dp).labProgressSemantics(state, label).drawWithCache {
         val unit = this.size.minDimension / LabComponents.LoaderViewBox
         val center = Offset(this.size.width / 2, this.size.height / 2)
+        val viewBoxCenter = Offset(this.size.minDimension / 2, this.size.minDimension / 2)
+        val viewBoxOrigin = center - viewBoxCenter
         val segmentOrigin = Offset(LabComponents.LoaderSegmentX * unit, LabComponents.LoaderSegmentY * unit)
         val segmentSize = Size(LabComponents.LoaderSegmentWidth * unit, LabComponents.LoaderSegmentHeight * unit)
         val corner = CornerRadius(LabComponents.LoaderSegmentRadius * unit)
@@ -66,9 +69,11 @@ public fun LabLoader(
         onDrawBehind {
             if (state.value == null) {
                 val turn = if (motion.running) spokePose * step else 0f
-                rotate(turn) {
-                    for (index in spokeColors.indices) rotate(index * step) {
-                        drawRoundRect(spokeColors[index], segmentOrigin, segmentSize, corner)
+                translate(viewBoxOrigin.x, viewBoxOrigin.y) {
+                    rotate(turn, pivot = viewBoxCenter) {
+                        for (index in spokeColors.indices) rotate(index * step, pivot = viewBoxCenter) {
+                            drawRoundRect(spokeColors[index], segmentOrigin, segmentSize, corner)
+                        }
                     }
                 }
             } else {
