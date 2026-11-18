@@ -44,5 +44,5 @@ PNG повторно отрисованы с единым Geist 1.400 из ав�
 [сравнение четырёх семейств](../fonts-20261117/README.md) объясняет выбор версии.
 Семь CPU-проверок с этими файлами шрифта прошли.
 
-Источники: [Figma](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/Lab-UI?node-id=6109-6735),
+Источники: [Figma](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1),
 [Compose Lifecycle](https://kotlinlang.org/docs/multiplatform/compose-lifecycle.html).

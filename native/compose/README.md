@@ -160,7 +160,7 @@ Desktop-пример использует SingleProcessDataStore; паралле
 проверяет число строк сообщения, последний сектор — реальные пиксели слева/справа.
 PNG сохраняются в `build/snackbar-render`. Платформенные
 сценарии проходят save → Undo → save → restart через системную доступность.
-Источники: [Figma](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/Lab-UI?node-id=6109-6735),
+Источники: [Figma](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1),
 [Compose Lifecycle](https://kotlinlang.org/docs/multiplatform/compose-lifecycle.html).
 
 ## Разработка
@@ -339,7 +339,7 @@ Card в сценарии настроек использует Elevated из mas
 
 ## Источники
 
-- [Lab UI — исходная Figma](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/Lab-UI)
+- [Lab UI — исходная Figma](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1)
 - [Haze 2.1](https://chrisbanes.me/posts/haze-2.1.0/)
 - [Haze Glass и radius/sigma](https://github.com/chrisbanes/haze/blob/2.1.0/haze-glass/src/commonMain/kotlin/dev/chrisbanes/haze/glass/SemanticBlurKernel.kt)
 - [Skiko 0.150.2: выбор backend и fallback](https://github.com/JetBrains/skiko/blob/v0.150.2/skiko/src/jvmMain/kotlin/org/jetbrains/skiko/SkikoProperties.kt)

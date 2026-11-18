@@ -1,7 +1,7 @@
 # Switch: авторский профиль и native-проверка
 
-Исходник прочитан 17 ноября 2026 из [Lab UI, Switch](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/Lab-UI?node-id=4111-884),
-fileKey `LuaiBd4anRi4DMZayKAnY2`, page `4083:407`. Figma оставалась read-only.
+Исходник прочитан 17 ноября 2026 из [Lab UI, Switch](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1),
+page `4083:407`. Figma оставалась read-only.
 `figma-source.generated.json` содержит 108 полных узлов и 63 переменных из чтения;
 `figma-source.png` — авторский экспорт. Рабочая спецификация живёт в общем
 `packages/tokens/src/components.json#switch`, а Kotlin генерируется из неё.
@@ -51,7 +51,7 @@ PNG и границы создаются в `consumer/build/settings-layout/`; �
 pointer-нажатие видимой кнопки. Новая запись появляется в DataStore, Sheet закрывается.
 Кадры `edit-320-320-200-heading.png` и `edit-320-320-200-save.png` показывают верх
 и достижимое действие. Все четыре кадра обновлены после сверки собственной роли
-заголовка Sheet с [Figma `7719:54845`](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/Lab-UI?node-id=7719-54845):
+заголовка Sheet с [Figma `7719:54845`](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1):
 Geist 20/20/600, tracking −0,33 px из общего `sheet.typography.title`.
 Общая ступень 27,8784 px была ошибочной для этого компонента. При 200% заголовок
 «Оформление» теперь помещается в строку, а «Настройки пространства» переносится
