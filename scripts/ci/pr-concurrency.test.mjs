@@ -10,43 +10,62 @@ const workflow = load(
 );
 const workers = ['quality', 'e2e', 'security'];
 
-test('PR checks can queue before the previous CI result finishes', () => {
-  const event = (event_name, run_id, ref, number = 0) => ({
+test('PR checks stay independent when an older attempt joins after the current one', () => {
+  const event = (event_name, run_id, run_attempt, ref, number = 0) => ({
     workflow: workflow.name,
     event_name,
     run_id,
+    run_attempt,
     ref,
     event: { pull_request: { number } },
   });
-  const pr = (run, number = 8) => event('pull_request', run, `refs/pull/${number}/merge`, number);
+  const pr = (run, attempt = 1) => event('pull_request', run, attempt, 'refs/pull/8/merge', 8);
   const render = (value, github) =>
     String(value)
       .replace(/\$\{\{(.*?)\}\}/g, (_, expression) =>
         runInNewContext(
           expression,
-          { github, format: (text, arg) => text.replace('{0}', arg) },
+          {
+            github,
+            format: (pattern, ...args) =>
+              pattern.replace(/\{(\d+)\}/g, (_, place) => args[Number(place)]),
+          },
           { timeout: 100 },
         ),
       )
       .toLowerCase();
-  const root = workflow.concurrency;
-  assert.notEqual(render(root.group, pr(1)), render(root.group, pr(2)));
-  for (const [name, ref] of [
-    ['push', 'refs/heads/main'],
-    ['merge_group', 'refs/heads/gh-readonly-queue/main/pr-8'],
+  const consumer = load(
+    readFileSync(new URL('../../.github/workflows/icons-consumer.yml', import.meta.url), 'utf8'),
+  );
+  const scopes = [workflow, consumer];
+  const policies = scopes
+    .flatMap((scope) => [scope, ...Object.values(scope.jobs)])
+    .map((owner) => owner.concurrency)
+    .filter(Boolean);
+  for (const order of [
+    [pr(1), pr(2), pr(1, 2)],
+    [pr(2), pr(1, 2), pr(1)],
   ]) {
-    assert.equal(render(root.group, event(name, 1, ref)), render(root.group, event(name, 2, ref)));
-    assert.equal(render(root['cancel-in-progress'], event(name, 1, ref)), 'true');
+    const busy = new Set();
+    for (const run of order) {
+      for (const key of new Set(policies.map((policy) => render(policy.group, run)))) {
+        assert(!busy.has(key), key);
+        busy.add(key);
+      }
+    }
   }
-  const keys = workers.map((name) => {
-    const policy = workflow.jobs[name].concurrency;
-    const first = render(policy.group, pr(1));
-    assert.equal(render(policy.group, pr(2)), first);
-    assert.notEqual(render(policy.group, pr(3, 9)), first);
-    assert.equal(render(policy['cancel-in-progress'], pr(2)), 'true');
-    return first;
-  });
-  assert.equal(new Set(keys).size, workers.length);
+  for (const { concurrency } of scopes) {
+    for (const [name, ref] of [
+      ['push', 'refs/heads/main'],
+      ['merge_group', 'refs/heads/gh-readonly-queue/main/pr-8'],
+    ]) {
+      assert.equal(
+        render(concurrency.group, event(name, 1, 1, ref)),
+        render(concurrency.group, event(name, 2, 1, ref)),
+      );
+      assert.equal(render(concurrency['cancel-in-progress'], event(name, 1, 1, ref)), 'true');
+    }
+  }
 });
 
 test('CI reports every required result when a PR check is cancelled', () => {

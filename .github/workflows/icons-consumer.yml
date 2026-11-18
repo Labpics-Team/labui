@@ -22,7 +22,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: icons-consumer-${{ github.ref }}
+  group: icons-consumer-${{ github.event_name == 'pull_request' && format('pr-run-{0}-{1}', github.run_id, github.run_attempt) || github.ref }}
   cancel-in-progress: true
 
 jobs:

@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 concurrency:
-  # PR ставит проверки в очередь, пока завершается итог предыдущей ревизии.
-  group: ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-run-{0}', github.run_id) || github.ref }}
+  # У каждой попытки PR своя группа, включая повтор старого запуска.
+  group: ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-run-{0}-{1}', github.run_id, github.run_attempt) || github.ref }}
   cancel-in-progress: true
 
 env:
@@ -21,9 +21,6 @@ jobs:
   security:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    concurrency:
-      group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}-security
-      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -53,9 +50,6 @@ jobs:
           source .github/scripts/secret-scan-contract.sh
 
   quality:
-    concurrency:
-      group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}-quality
-      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     name: lint · typecheck · build
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -107,9 +101,6 @@ jobs:
         run: pnpm test
 
   e2e:
-    concurrency:
-      group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}-e2e
-      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     name: playwright smoke (critical path)
     runs-on: ubuntu-latest
     container:
