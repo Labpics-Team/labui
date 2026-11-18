@@ -1,83 +1,213 @@
+import { readFileSync } from 'node:fs';
 import { type Page, expect, test } from '@playwright/test';
 
-/**
- * Kbd suite — a presentational primitive, verified on BOTH renderers.
- *
- *   1. Delivered HTML carries the Lit element; the React island mounts client-side.
- *   2. Semantics — both renderers use a real <kbd> element (keyboard-input meaning).
- *   3. Visual parity — matching sizes resolve the SAME computed surface/rim/text.
- *   4. Tokens + theme — re-pointing a role and flipping [data-theme] re-skin both.
- */
-
-const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
-const fg = (el: HTMLElement) => getComputedStyle(el).color;
-const border = (el: HTMLElement) => getComputedStyle(el).borderTopColor;
-
-/** The painted cap for a Lit host is the inner <kbd> in its shadow root. */
-function litKbd(page: Page, testid: string) {
-  return page.getByTestId(testid).locator('kbd');
-}
-function reactKbd(page: Page, testid: string) {
-  // React renders the <kbd> directly with the data-testid on it.
-  return page.getByTestId(testid);
-}
+const cap = (page: Page, renderer: string, size: string, count: number) =>
+  page.getByTestId(`${renderer}-${size}-${count}`).locator('.lab-kbd-key');
+const paint = (el: Element) => {
+  const s = getComputedStyle(el);
+  const rim = getComputedStyle(el, '::before');
+  const edge = getComputedStyle(el, '::after');
+  return {
+    family: s.fontFamily,
+    weight: s.fontWeight,
+    fontSize: s.fontSize,
+    lineHeight: s.lineHeight,
+    gradient: s.backgroundImage,
+    color: s.color,
+    radius: s.borderRadius,
+    shadow: s.boxShadow,
+    border: rim.borderTopColor,
+    stroke: rim.borderTopWidth,
+    edge: edge.backgroundColor,
+    depth: edge.bottom,
+  };
+};
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/kbd.html');
+  await expect(page.getByTestId('react-s-1')).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
 });
 
-test('delivered HTML carries the Lit element (React island mounts on the client)', async ({
+test('single slots, nested chords and legacy size keep keyboard-input semantics', async ({
+  page,
   request,
 }) => {
-  const body = await (await request.get('/kbd.html')).text();
-  expect(body).toMatch(/<lab-kbd/i);
-  expect(body).toContain('id="react-root"');
-});
-
-test('semantics: both renderers use a real <kbd> element', async ({ page }) => {
-  await expect(reactKbd(page, 'react-m')).toBeVisible();
-  // React node IS a <kbd>.
-  expect(await reactKbd(page, 'react-m').evaluate((el) => el.tagName.toLowerCase())).toBe('kbd');
-  // Lit host contains a <kbd> in its shadow root.
-  await expect(litKbd(page, 'lit-m')).toHaveCount(1);
-});
-
-test('visual parity: Lit and React resolve the same cap colours per size', async ({ page }) => {
-  await expect(reactKbd(page, 'react-m')).toBeVisible();
-
-  for (const size of ['s', 'm', 'l'] as const) {
-    const lit = litKbd(page, `lit-${size}`);
-    const react = reactKbd(page, `react-${size}`);
-
-    expect(await react.evaluate(bg), `${size}: surface parity`).toBe(await lit.evaluate(bg));
-    expect(await react.evaluate(fg), `${size}: text parity`).toBe(await lit.evaluate(fg));
-    expect(await react.evaluate(border), `${size}: rim parity`).toBe(await lit.evaluate(border));
+  expect(await (await request.get('/kbd.html')).text()).toContain('<lab-kbd');
+  for (const renderer of ['lit', 'react']) {
+    const single = page.getByTestId(`${renderer}-slot`);
+    const singleKey = renderer === 'lit' ? single.locator('kbd') : single;
+    expect(await singleKey.evaluate((el) => el.tagName)).toBe('KBD');
+    await expect(single).toHaveText('Esc');
+    for (const size of ['s', 'l'])
+      for (const count of [1, 2, 3, 4]) {
+        const keys = cap(page, renderer, size, count);
+        await expect(keys).toHaveCount(count);
+        for (const key of await keys.all()) {
+          expect(
+            await key.evaluate((el) => el.tagName === 'KBD' && el.parentElement?.tagName === 'KBD'),
+          ).toBe(true);
+        }
+      }
+    const alias = page.getByTestId(`${renderer}-alias`);
+    const key = renderer === 'lit' ? alias.locator('kbd') : alias;
+    await expect(key).toHaveAttribute('data-size', 'l');
+    expect(await key.evaluate((el) => (el as HTMLElement).tabIndex)).toBe(-1);
   }
 });
 
-test('tokens: re-pointing --lab-fill-primary re-skins BOTH renderers', async ({ page }) => {
-  const lit = litKbd(page, 'lit-m');
-  const react = reactKbd(page, 'react-m');
-  await expect(react).toBeVisible();
-
-  await page.evaluate(() => {
-    document.documentElement.style.setProperty('--lab-fill-primary', 'rgb(1, 2, 3)');
-  });
-
-  await expect.poll(() => lit.evaluate(bg)).toBe('rgb(1, 2, 3)');
-  await expect.poll(() => react.evaluate(bg)).toBe('rgb(1, 2, 3)');
+test('all eight author variants use Geist Medium and matching Lit React geometry', async ({
+  page,
+}) => {
+  for (const size of ['s', 'l'])
+    for (const count of [1, 2, 3, 4]) {
+      const lit = cap(page, 'lit', size, count);
+      const react = cap(page, 'react', size, count);
+      const height = size === 's' ? 16 : 24;
+      const width = height * count + 2 * (count - 1);
+      for (const renderer of ['lit', 'react']) {
+        const box = await page.getByTestId(`${renderer}-${size}-${count}`).boundingBox();
+        expect(box?.width).toBe(width);
+        expect(box?.height).toBe(height);
+      }
+      for (let i = 0; i < count; i++) {
+        const actual = await react.nth(i).evaluate(paint);
+        expect(actual).toEqual(await lit.nth(i).evaluate(paint));
+        expect(actual.family).toContain('Geist');
+        expect(actual.family).not.toContain('Mono');
+        expect(actual.weight).toBe('500');
+        expect(actual.fontSize).toBe(size === 's' ? '12px' : '16px');
+        expect(actual.lineHeight).toBe(size === 's' ? '12px' : '24px');
+        expect(actual.radius).toBe(size === 's' ? '4px' : '6px');
+        expect(actual.depth).toBe(size === 's' ? '-1px' : '-2px');
+        expect(actual.stroke).toBe('1px');
+        expect(actual.shadow).toBe('none');
+      }
+      if (count > 1)
+        expect((await react.nth(0).evaluate(paint)).gradient).not.toBe(
+          (await react.nth(1).evaluate(paint)).gradient,
+        );
+    }
 });
 
-test('theme: flipping [data-theme] re-skins both renderers with zero edits', async ({ page }) => {
-  const lit = litKbd(page, 'lit-m');
-  const react = reactKbd(page, 'react-m');
-  await expect(react).toBeVisible();
+test('semantic paint roles affect both renderers and follow the theme', async ({ page }) => {
+  const lit = cap(page, 'lit', 'l', 4).first();
+  const react = cap(page, 'react', 'l', 4).first();
+  const before = await lit.evaluate(paint);
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+  await expect.poll(() => lit.evaluate((el) => getComputedStyle(el).color)).not.toBe(before.color);
+  expect(await lit.evaluate(paint)).toEqual(await react.evaluate(paint));
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--lab-fill-tertiary', 'rgb(1, 2, 3)');
+    document.documentElement.style.setProperty('--lab-label-secondary', 'rgb(4, 5, 6)');
+  });
+  for (const el of [lit, react]) {
+    expect((await el.evaluate(paint)).gradient).toContain('rgb(1, 2, 3)');
+    expect((await el.evaluate(paint)).color).toBe('rgb(4, 5, 6)');
+  }
+});
 
-  const litDark = await lit.evaluate(fg);
-  const reactDark = await react.evaluate(fg);
+test('long names and text scaling grow without clipping', async ({ page }) => {
+  for (const scale of [1, 1.25, 2]) {
+    await page.evaluate((scale) => {
+      document.documentElement.style.fontSize = `${16 * scale}px`;
+    }, scale);
+    for (const renderer of ['lit', 'react']) {
+      const keys = page.getByTestId(`${renderer}-long`).locator('.lab-kbd-key');
+      for (const key of await keys.all()) {
+        const bounds = await key.evaluate((el) => {
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          const text = range.getBoundingClientRect();
+          const cap = el.getBoundingClientRect();
+          return {
+            width: cap.width,
+            height: cap.height,
+            textWidth: text.width,
+            textHeight: text.height,
+          };
+        });
+        expect(bounds.width).toBeGreaterThanOrEqual(bounds.textWidth + 8 * scale - 0.1);
+        expect(bounds.height).toBe(24 * scale);
+        expect(bounds.textHeight).toBeLessThanOrEqual(bounds.height);
+      }
+    }
+  }
+});
 
-  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+for (const theme of ['light', 'dark'])
+  test(`eight variants render identically in ${theme}`, async ({ page }, testInfo) => {
+    await page.evaluate(
+      (theme) => document.documentElement.setAttribute('data-theme', theme),
+      theme,
+    );
+    // Use the same physical origin: natural section positions have fractional
+    // heading advances, which would compare two different text raster phases.
+    const capture = async (renderer: string) => {
+      const matrix = page.getByTestId(`${renderer}-renderer`);
+      await matrix.evaluate((el) => {
+        for (const other of document.querySelectorAll<HTMLElement>('.kbd-matrix'))
+          other.style.visibility = 'hidden';
+        (el as HTMLElement).style.cssText =
+          'position:fixed;top:0;left:0;width:1000px;visibility:visible;background:var(--lab-bg-primary)';
+      });
+      return matrix.screenshot();
+    };
+    const lit = await capture('lit');
+    const react = await capture('react');
+    await testInfo.attach(`kbd-${theme}`, { body: lit, contentType: 'image/png' });
+    expect(lit.equals(react), 'Lit and React must paint the same pixels').toBe(true);
+  });
 
-  await expect.poll(() => lit.evaluate(fg)).not.toBe(litDark);
-  await expect.poll(() => react.evaluate(fg)).not.toBe(reactDark);
+test('the cap surface and outside bottom edge follow the Figma SVG', async ({ page }, testInfo) => {
+  const source = readFileSync(
+    new URL('../../../native/compose/evidence/kbd-20261118/figma-small-key.svg', import.meta.url),
+    'utf8',
+  ).replace(/<path[^>]+fill="#3C3C43"[^>]*\/>/, '');
+  await page.evaluate(() => {
+    const properties = {
+      'fill-tertiary': 'rgba(120,120,128,.12)',
+      'fill-none': 'rgba(120,120,128,0)',
+      'border-base': 'rgba(120,120,128,.16)',
+      'border-soft': 'rgba(120,120,128,.08)',
+    };
+    for (const [role, paint] of Object.entries(properties))
+      document.documentElement.style.setProperty(`--lab-${role}`, paint);
+    const capture = document.createElement('div');
+    capture.id = 'source-comparison';
+    capture.style.cssText =
+      'position:fixed;top:0;left:0;width:48px;height:51px;background:white;line-height:0';
+    const kbd = document.createElement('lab-kbd');
+    kbd.style.cssText = 'transform:scale(3);transform-origin:top left';
+    capture.append(kbd);
+    document.body.replaceChildren(capture);
+  });
+  const actual = await page.locator('#source-comparison').screenshot();
+  const error = await page.evaluate(
+    async ({ source, png }) => {
+      const pixels = async (src: string) => {
+        const image = new Image();
+        image.src = src;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = 48;
+        canvas.height = 51;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas 2D is required for source comparison');
+        context.fillStyle = 'white';
+        context.fillRect(0, 0, 48, 51);
+        context.drawImage(image, 0, 0, 48, 51);
+        return context.getImageData(0, 0, 48, 51).data;
+      };
+      const expected = await pixels(`data:image/svg+xml,${encodeURIComponent(source)}`);
+      const actual = await pixels(`data:image/png;base64,${png}`);
+      let difference = 0;
+      for (let i = 0; i < actual.length; i++)
+        if (i % 4 !== 3) difference += Math.abs((actual[i] ?? 0) - (expected[i] ?? 0));
+      return difference / (48 * 51 * 3);
+    },
+    { source, png: actual.toString('base64') },
+  );
+  await testInfo.attach('kbd-source-surface', { body: actual, contentType: 'image/png' });
+  expect(error, 'Mean channel difference from the authored surface at 3x').toBeLessThan(1.25);
 });

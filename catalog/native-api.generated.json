@@ -1,6 +1,6 @@
 {
-  "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7",
-  "sourceDigest": "sha256:0fbf89450a01c7dc7f59ed35ee7d738b7f2364b2ad206fe21fa48789aebf53d2",
+  "revision": "4ca5017a13ba4c56fad85bd7d6e965071dba2a0b",
+  "sourceDigest": "sha256:b9fcc4e823e3ef4be81d28fcfe0ebbec9d4c2e65520e504395226f8977eecb3d",
   "symbols": [
     {
       "name": "LabBadge",
@@ -25,6 +25,14 @@
     {
       "name": "LabInput",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabInput.kt"
+    },
+    {
+      "name": "LabKbd",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabKbd.kt"
+    },
+    {
+      "name": "LabKbd",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabKbd.kt"
     },
     {
       "name": "LabMaterials",

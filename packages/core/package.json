@@ -85,7 +85,13 @@
       "import": "./dist/components/selection/runtime.js",
       "require": "./dist/components/selection/runtime.cjs"
     },
-    "./selection-controls.css": "./dist/selection-controls.css"
+    "./selection-controls.css": "./dist/selection-controls.css",
+    "./kbd.css": "./dist/kbd.css",
+    "./kbd/contract": {
+      "types": "./dist/components/kbd/contract.d.ts",
+      "import": "./dist/components/kbd/contract.js",
+      "require": "./dist/components/kbd/contract.cjs"
+    }
   },
   "files": ["dist"],
   "sideEffects": [
@@ -105,7 +111,8 @@
     "./dist/chunk-*.js",
     "./dist/chunk-*.cjs",
     "./dist/badge.css",
-    "./dist/selection-controls.css"
+    "./dist/selection-controls.css",
+    "./dist/kbd.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

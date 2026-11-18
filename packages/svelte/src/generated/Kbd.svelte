@@ -12,20 +12,22 @@
   /** Пропы <lab-kbd> — типы взяты прямо из класса ядра (LabKbd). */
   interface Props {
     size?: LabKbd['size'];
+    keys?: LabKbd['keys'];
     children?: Snippet;
     [key: string]: unknown;
   }
 
-  let { size, children, ...rest }: Props = $props();
+  let { size, keys, children, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
+    { name: 'keys', attr: 'keys', kind: 'prop' },
   ];
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
-    forwardDeclared(el, specs, { size });
+    forwardDeclared(el, specs, { size, keys });
   });
   $effect(() => forwardEvents(el, {  }));
 </script>

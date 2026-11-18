@@ -10,7 +10,7 @@ import '@labpics/ui-core/kbd';
 import type { LabKbd } from '@labpics/ui-core/kbd';
 
 /** SSR-пропы <lab-kbd> (атрибуты/свойства), взяты из класса ядра (LabKbd). */
-export type KbdSsrProps = Partial<Pick<LabKbd, 'size'>>;
+export type KbdSsrProps = Partial<Pick<LabKbd, 'size' | 'keys'>>;
 /** SSR-слоты <lab-kbd> — предрендеренные строки контента. */
 export type KbdSsrSlots = { default?: string };
 
@@ -25,5 +25,6 @@ export function renderKbd(
 ): string {
   return renderToString(html`<lab-kbd
       size=${ifDefined(props.size)}
+      .keys=${props.keys}
     >${unsafeHTML(slots.default ?? '')}</lab-kbd>`);
 }

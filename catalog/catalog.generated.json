@@ -58,7 +58,7 @@
         "native": {
           "symbol": "LabButton",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabButton.kt",
-          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
+          "revision": "4ca5017a13ba4c56fad85bd7d6e965071dba2a0b"
         }
       },
       "sources": [
@@ -121,7 +121,7 @@
         "native": {
           "symbol": "LabInput",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabInput.kt",
-          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
+          "revision": "4ca5017a13ba4c56fad85bd7d6e965071dba2a0b"
         }
       },
       "sources": [
@@ -236,7 +236,7 @@
         "native": {
           "symbol": "LabCheckbox",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabCheckbox.kt",
-          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
+          "revision": "4ca5017a13ba4c56fad85bd7d6e965071dba2a0b"
         }
       },
       "sources": [
@@ -278,7 +278,7 @@
         "native": {
           "symbol": "LabRadioGroup",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabRadioGroup.kt",
-          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
+          "revision": "4ca5017a13ba4c56fad85bd7d6e965071dba2a0b"
         }
       },
       "sources": [
@@ -320,7 +320,7 @@
         "native": {
           "symbol": "LabSwitch",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSwitch.kt",
-          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
+          "revision": "4ca5017a13ba4c56fad85bd7d6e965071dba2a0b"
         }
       },
       "sources": [
@@ -573,7 +573,7 @@
         "native": {
           "symbol": "LabChoicebox",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChoicebox.kt",
-          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
+          "revision": "4ca5017a13ba4c56fad85bd7d6e965071dba2a0b"
         }
       },
       "sources": [
@@ -1023,7 +1023,7 @@
         "native": {
           "symbol": "LabSnackbar",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSnackbar.kt",
-          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
+          "revision": "4ca5017a13ba4c56fad85bd7d6e965071dba2a0b"
         }
       },
       "sources": [
@@ -1185,7 +1185,7 @@
         "native": {
           "symbol": "LabBadge",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabBadge.kt",
-          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
+          "revision": "4ca5017a13ba4c56fad85bd7d6e965071dba2a0b"
         }
       },
       "sources": [
@@ -1258,13 +1258,21 @@
         "subpath": "kbd",
         "reactExport": "Kbd"
       },
+      "profile": "kbd",
+      "native": {
+        "symbol": "LabKbd"
+      },
       "documentation": "kbd.doc.ts",
       "capabilities": {
         "web": {
           "tag": "lab-kbd",
           "reactExport": "Kbd"
         },
-        "native": null
+        "native": {
+          "symbol": "LabKbd",
+          "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabKbd.kt",
+          "revision": "4ca5017a13ba4c56fad85bd7d6e965071dba2a0b"
+        }
       },
       "sources": [
         {
@@ -1274,7 +1282,10 @@
           "family": "kbd",
           "role": "root",
           "web": {
-            "scope": "Публичный API семейства; все авторские варианты ещё не сверены."
+            "scope": "Два размера и 1–4 клавиши исходной Figma; общий шрифт, градиент, внутренняя рамка и нижняя грань."
+          },
+          "native": {
+            "scope": "Compose Kbd с тем же профилем двух размеров, группой клавиш и масштабируемым текстом."
           }
         }
       ]
@@ -1634,7 +1645,7 @@
         "native": {
           "symbol": "LabCard",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSurface.kt",
-          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
+          "revision": "4ca5017a13ba4c56fad85bd7d6e965071dba2a0b"
         }
       },
       "sources": [
@@ -1676,7 +1687,7 @@
         "native": {
           "symbol": "LabSheetHost",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSheet.kt",
-          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
+          "revision": "4ca5017a13ba4c56fad85bd7d6e965071dba2a0b"
         }
       },
       "sources": [
@@ -1762,7 +1773,7 @@
         "native": {
           "symbol": "LabMaterials",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt",
-          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
+          "revision": "4ca5017a13ba4c56fad85bd7d6e965071dba2a0b"
         }
       },
       "sources": [
