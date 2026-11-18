@@ -441,7 +441,7 @@
     "badge-fill-danger": "@border-danger-strong",
     "badge-label-on-danger": "@label-static-light-primary",
     "badge-fill-warning": "@border-warning-strong",
-    "badge-label-on-warning": "@label-static-light-primary",
+    "badge-label-on-warning": "@label-static-dark-primary",
     "badge-fill-success": "@border-success-strong",
     "badge-label-on-success": "@label-static-light-primary",
     "badge-fill-info": "@border-info-strong",

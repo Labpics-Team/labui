@@ -1,5 +1,5 @@
-import { switchProfile as p } from '@labpics/ui-tokens';
 import { shadowProfile } from '@labpics/ui-shadow';
+import { switchProfile as p } from '@labpics/ui-tokens';
 
 const rem = (px: number): string => `${px / 16}rem`;
 const role = (name: string): string => `var(--lab-${name})`;
@@ -39,6 +39,15 @@ const pressedShadow = p.thumb.coloredPressedShadow
       `${rem(s.x)} ${rem(s.y)} ${rem(s.blur)} ${rem(s.spread)} ${alpha(s.colorRole, s.opacity)}`,
   )
   .join(', ');
+
+const forcedColorsCss = `
+@media (forced-colors: active) {
+  [data-lab-switch] .lab-switch-control { outline: 1px solid ButtonText; }
+  [data-lab-switch][data-checked] .lab-switch-control { background: Highlight; }
+  [data-lab-switch] .lab-switch-thumb::before { background: ButtonText; }
+  [data-lab-switch][data-checked] .lab-switch-thumb::before { background: HighlightText; }
+}
+`;
 
 /** The Figma profile paints both renderers. The thumb mask exposes the actual track. */
 export const switchCss = `
@@ -190,10 +199,5 @@ ${p.cutout.hideOnColoredPressed ? '[data-lab-switch][data-pressed]:not([data-app
   overflow: hidden;
   white-space: nowrap;
 }
-@media (forced-colors: active) {
-  [data-lab-switch] .lab-switch-control { outline: 1px solid ButtonText; }
-  [data-lab-switch][data-checked] .lab-switch-control { background: Highlight; }
-  [data-lab-switch] .lab-switch-thumb::before { background: ButtonText; }
-  [data-lab-switch][data-checked] .lab-switch-thumb::before { background: HighlightText; }
-}
+${forcedColorsCss}
 `;

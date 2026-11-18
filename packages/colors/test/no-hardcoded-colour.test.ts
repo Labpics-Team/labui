@@ -49,6 +49,17 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
     expect(scanSource('p.css', 'background: rgba(0, 0, 0, 0.5);')).toHaveLength(1);
   });
 
+  it('separates Switch mask coverage from visible paints', () => {
+    const path = 'packages/core/src/components/switch/styles.ts';
+    const mask = 'const svg = `<svg><rect fill="white"/><path fill="black"/></svg>`;';
+    expect(scanSource(path, mask)).toEqual([]);
+    expect(scanSource('component.ts', mask)).toHaveLength(2);
+    expect(scanSource(path, mask.replace('black', 'red'))).toMatchObject([{ token: 'red' }]);
+    expect(scanSource(path, `${mask}\nconst css = '.x { color: white }';`)).toMatchObject([
+      { token: 'white' },
+    ]);
+  });
+
   it('distinguishes numeric colour serialization and property access from hardcoded paints', () => {
     expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / ${c.a})`;')).toEqual([]);
     expect(
@@ -71,6 +82,9 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
     expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / ${.5})`;')).toHaveLength(1);
     expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} 0 / ${c.a})`;')).toHaveLength(1);
     expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / .5)`;')).toHaveLength(1);
+    expect(scanSource('p.ts', 'const fill = `rgb(${0} ${0} ${0})`;')).toHaveLength(1);
+    expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / ${.5})`;')).toHaveLength(1);
+    expect(scanSource('p.ts', 'const fill = `rgb(${0xff} ${c.g} ${c.b})`;')).toHaveLength(1);
     expect(scanSource('p.ts', 'const fill = { r: black.r / alpha, g: white[key] };')).toEqual([]);
   });
 

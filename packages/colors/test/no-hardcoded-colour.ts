@@ -115,6 +115,13 @@ function blankLicensedSpans(text: string, relPath: string): string {
       .replace(/rimPath\.setAttribute\('stroke', 'white'\);/g, blank)
       .replace(/drawing\.setAttribute\('fill', 'black'\);/g, blank);
   }
+  if (relPath === 'packages/core/src/components/switch/styles.ts') {
+    // The thumb's data-URL is a luminance mask: these are coverage values,
+    // not its visible paint. Role-coloured CSS remains subject to the scan.
+    licensed = licensed.replace(/const svg = `<svg\b[\s\S]*?<\/svg>`/g, (svg) =>
+      svg.replace(/\bfill="(?:white|black)"/g, blank),
+    );
+  }
   return licensed;
 }
 
