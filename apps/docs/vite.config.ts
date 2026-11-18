@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { type Plugin, defineConfig } from 'vite';
 
@@ -14,6 +15,55 @@ import { type Plugin, defineConfig } from 'vite';
  * FOUC, before any client JS runs. The placeholder `<!-- @@SSR_PROOF@@ -->` is
  * replaced; other pages are untouched.
  */
+function chipSsrPlugin(): Plugin {
+  return {
+    name: 'labui-chip-ssr',
+    transformIndexHtml: {
+      order: 'pre',
+      async handler(markup, ctx) {
+        if (!ctx.path.endsWith('/chip.html')) return markup;
+        const { renderToString } = await import('@labpics/ui-core/ssr');
+        await import('@labpics/ui-core/chip');
+        const { html: staticHtml, unsafeStatic } = await import('lit/static-html.js');
+        let output = markup.replace(/<lab-chip\b[^>]*>[\s\S]*?<\/lab-chip>/g, (source) =>
+          renderToString(staticHtml`${unsafeStatic(source)}`),
+        );
+        const { createElement } = await import('react');
+        const { renderToString: renderReact } = await import('react-dom/server');
+        const { Chip } = await import('@labpics/ui-react/chip');
+        output = output.replace(
+          '<!-- @@REACT_CHIP@@ -->',
+          renderReact(
+            createElement(Chip, {
+              defaultSelected: true,
+              active: true,
+              showLeading: true,
+              leading: createElement('span', null, '●'),
+              children: 'SSR filter',
+            }),
+          ),
+        );
+        const { renderChip } = await import('@labpics/ui-vue/ssr');
+        output = output.replace(
+          '<!-- @@ADAPTER_CHIP@@ -->',
+          renderChip(
+            { mode: 'remove', 'aria-label': 'Удалить Дизайн', form: 'adapter-form' },
+            { default: 'Дизайн' },
+          ) +
+            renderChip(
+              { name: 'filter', value: 'design', defaultSelected: true, form: 'adapter-form' },
+              { default: 'Дизайн' },
+            ),
+        );
+        return output.replace(
+          '</head>',
+          `<style>${readFileSync(resolve(__dirname, '../../packages/core/dist/chip.css'), 'utf8')}</style></head>`,
+        );
+      },
+    },
+  };
+}
+
 function ssrProofPlugin(): Plugin {
   const PLACEHOLDER = '<!-- @@SSR_PROOF@@ -->';
   return {
@@ -165,6 +215,7 @@ export default defineConfig({
   // wasm-bindgen resolves its binary beside the original module, not a Vite prebundle.
   optimizeDeps: { exclude: ['@labpics/colors'] },
   plugins: [
+    chipSsrPlugin(),
     ssrProofPlugin(),
     colorsSsrPlugin(),
     cardSsrPlugin(),
@@ -210,6 +261,7 @@ export default defineConfig({
         // and its native-React twin side by side under one [data-theme].
         badge: resolve(__dirname, 'src/badge.html'),
         kbd: resolve(__dirname, 'src/kbd.html'),
+        chip: resolve(__dirname, 'src/_fixtures/chip.html'),
         loader: resolve(__dirname, 'src/loader.html'),
         avatar: resolve(__dirname, 'src/avatar.html'),
         // Machine-driven form controls: Lit element + native-React twin side by

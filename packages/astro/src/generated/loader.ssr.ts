@@ -10,7 +10,7 @@ import '@labpics/ui-core/loader';
 import type { LabLoader } from '@labpics/ui-core/loader';
 
 /** SSR-пропы <lab-loader> (атрибуты/свойства), взяты из класса ядра (LabLoader). */
-export type LoaderSsrProps = Partial<Pick<LabLoader, 'size' | 'label' | 'value' | 'min' | 'max'>>;
+export type LoaderSsrProps = Partial<Pick<LabLoader, 'size' | 'label' | 'value' | 'min' | 'max'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-loader> — предрендеренные строки контента. */
 export type LoaderSsrSlots = Record<never, never>;
 
@@ -28,5 +28,7 @@ export function renderLoader(
       .value=${props.value === undefined ? noChange : props.value}
       min=${ifDefined(props.min)}
       max=${ifDefined(props.max)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-loader>`);
 }

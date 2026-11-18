@@ -10,7 +10,7 @@ import '@labpics/ui-core/popover';
 import type { LabPopover } from '@labpics/ui-core/popover';
 
 /** SSR-пропы <lab-popover> (атрибуты/свойства), взяты из класса ядра (LabPopover). */
-export type PopoverSsrProps = Partial<Pick<LabPopover, 'placement' | 'size' | 'modal' | 'closable' | 'arrow' | 'heading' | 'description'>>;
+export type PopoverSsrProps = Partial<Pick<LabPopover, 'placement' | 'size' | 'modal' | 'closable' | 'arrow' | 'heading' | 'description'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-popover> — предрендеренные строки контента. */
 export type PopoverSsrSlots = { default?: string; content?: string };
 
@@ -31,5 +31,7 @@ export function renderPopover(
       ?arrow=${Boolean(props.arrow)}
       heading=${ifDefined(props.heading)}
       description=${ifDefined(props.description)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     >${slots.content ? html`<span slot="content">${unsafeHTML(slots.content)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-popover>`);
 }

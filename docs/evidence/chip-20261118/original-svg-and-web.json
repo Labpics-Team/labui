@@ -1,0 +1,78 @@
+{
+  "source": "Original SVG_STRING Figma exports, locally rasterized by Chromium; not Figma PNG",
+  "scale": "1 CSS px per author px, DPR 2",
+  "samples": [
+    {
+      "name": "rounded-medium-active-selected",
+      "label": "Chip label",
+      "width": 132.25,
+      "height": 40
+    },
+    {
+      "name": "rounded-medium-active-unselected",
+      "label": "Chip label",
+      "width": 100.25,
+      "height": 40
+    },
+    {
+      "name": "rounded-medium-default-selected",
+      "label": "Chip label",
+      "width": 132.25,
+      "height": 40
+    },
+    {
+      "name": "rounded-medium-default-unselected",
+      "label": "Chip label",
+      "width": 100.25,
+      "height": 40
+    },
+    {
+      "name": "rounded-medium-focus-selected",
+      "label": "Chip label",
+      "width": 132.25,
+      "height": 40
+    },
+    {
+      "name": "rounded-medium-focus-unselected",
+      "label": "Chip label",
+      "width": 100.25,
+      "height": 40
+    },
+    {
+      "name": "rounded-medium-loading-selected",
+      "label": "Chip 1",
+      "width": 100.984375,
+      "height": 40
+    },
+    {
+      "name": "rounded-medium-loading-unselected",
+      "label": "Chip 1",
+      "width": 68.984375,
+      "height": 40
+    },
+    {
+      "name": "rounded-medium-pressed-selected",
+      "label": "Chip label",
+      "width": 132.25,
+      "height": 40
+    },
+    {
+      "name": "rounded-medium-pressed-unselected",
+      "label": "Chip label",
+      "width": 100.25,
+      "height": 40
+    },
+    {
+      "name": "sharp-small-default-selected",
+      "label": "Chip label",
+      "width": 98.71875,
+      "height": 28
+    },
+    {
+      "name": "sharp-small-default-unselected",
+      "label": "Chip label",
+      "width": 82.71875,
+      "height": 28
+    }
+  ]
+}

@@ -10,7 +10,7 @@ import '@labpics/ui-core/menu';
 import type { LabMenu } from '@labpics/ui-core/menu';
 
 /** SSR-пропы <lab-menu> (атрибуты/свойства), взяты из класса ядра (LabMenu). */
-export type MenuSsrProps = Partial<Pick<LabMenu, 'size' | 'placement' | 'disabled' | 'label' | 'items'>>;
+export type MenuSsrProps = Partial<Pick<LabMenu, 'size' | 'placement' | 'disabled' | 'label' | 'items'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-menu> — предрендеренные строки контента. */
 export type MenuSsrSlots = Record<never, never>;
 
@@ -28,5 +28,7 @@ export function renderMenu(
       ?disabled=${Boolean(props.disabled)}
       label=${ifDefined(props.label)}
       .items=${props.items === undefined ? noChange : props.items}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-menu>`);
 }

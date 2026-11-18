@@ -13,6 +13,7 @@ export { renderBreadcrumb, type BreadcrumbSsrProps, type BreadcrumbSsrSlots } fr
 export { renderButton, type ButtonSsrProps, type ButtonSsrSlots } from './button.ssr.js';
 export { renderCard, type CardSsrProps, type CardSsrSlots } from './card.ssr.js';
 export { renderCheckbox, type CheckboxSsrProps, type CheckboxSsrSlots } from './checkbox.ssr.js';
+export { renderChip, type ChipSsrProps, type ChipSsrSlots } from './chip.ssr.js';
 export { renderChoicebox, type ChoiceboxSsrProps, type ChoiceboxSsrSlots } from './choicebox.ssr.js';
 export { renderCombobox, type ComboboxSsrProps, type ComboboxSsrSlots } from './combobox.ssr.js';
 export { renderDialog, type DialogSsrProps, type DialogSsrSlots } from './dialog.ssr.js';

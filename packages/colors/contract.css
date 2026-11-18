@@ -164,6 +164,7 @@
   --lab-fill-neutral: rgb(232 232 236);
   --lab-label-on-neutral: rgb(16 16 18);
   --lab-fx-control-inner: rgb(16 16 18 / 0.12);
+  --lab-fx-skeleton-base: rgb(120 120 128 / 0.08);
   --lab-badge-base-primary: rgb(16 16 18);
   --lab-badge-base-inverted: rgb(255 255 255);
   --lab-badge-base-secondary: rgb(60 60 67 / 0.72);
@@ -455,6 +456,7 @@
   --lab-fill-neutral: rgb(35 35 39);
   --lab-label-on-neutral: rgb(246 248 250);
   --lab-fx-control-inner: rgb(16 16 18 / 0.2);
+  --lab-fx-skeleton-base: rgb(120 120 128 / 0.12);
   --lab-badge-base-primary: rgb(246 248 250);
   --lab-badge-base-inverted: rgb(16 16 18);
   --lab-badge-base-secondary: rgb(176 176 185 / 0.72);
@@ -747,6 +749,7 @@
   --lab-fill-neutral: rgb(35 35 39);
   --lab-label-on-neutral: rgb(246 248 250);
   --lab-fx-control-inner: rgb(16 16 18 / 0.2);
+  --lab-fx-skeleton-base: rgb(120 120 128 / 0.12);
   --lab-badge-base-primary: rgb(246 248 250);
   --lab-badge-base-inverted: rgb(16 16 18);
   --lab-badge-base-secondary: rgb(176 176 185 / 0.72);
@@ -1036,6 +1039,7 @@
   --lab-fill-neutral: rgb(232 232 236);
   --lab-label-on-neutral: rgb(16 16 18);
   --lab-fx-control-inner: rgb(16 16 18 / 0.12);
+  --lab-fx-skeleton-base: rgb(114 114 122 / 0.12);
   --lab-badge-base-primary: rgb(0 0 0);
   --lab-badge-base-inverted: rgb(255 255 255);
   --lab-badge-base-secondary: rgb(53 53 60);
@@ -1327,6 +1331,7 @@
   --lab-fill-neutral: rgb(35 35 39);
   --lab-label-on-neutral: rgb(246 248 250);
   --lab-fx-control-inner: rgb(16 16 18 / 0.2);
+  --lab-fx-skeleton-base: rgb(114 114 122 / 0.16);
   --lab-badge-base-primary: rgb(255 255 255);
   --lab-badge-base-inverted: rgb(0 0 0);
   --lab-badge-base-secondary: rgb(196 197 205);
@@ -1619,6 +1624,7 @@
   --lab-fill-neutral: rgb(35 35 39);
   --lab-label-on-neutral: rgb(246 248 250);
   --lab-fx-control-inner: rgb(16 16 18 / 0.2);
+  --lab-fx-skeleton-base: rgb(114 114 122 / 0.16);
   --lab-badge-base-primary: rgb(255 255 255);
   --lab-badge-base-inverted: rgb(0 0 0);
   --lab-badge-base-secondary: rgb(196 197 205);

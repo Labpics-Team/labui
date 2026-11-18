@@ -51,3 +51,5 @@ export { badgeProfile } from './badge.js';
 export { selectionProfile } from './selection.js';
 export { kbdProfile } from './kbd.js';
 export { loaderProfile, progressProfile } from './progress.js';
+
+export { chipProfile } from './chip.js';

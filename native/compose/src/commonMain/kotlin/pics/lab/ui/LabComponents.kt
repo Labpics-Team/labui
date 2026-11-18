@@ -8,6 +8,7 @@ internal data class LabSelectionMetrics(val controlSize: Float, val controlHeigh
 internal data class LabKbdMetrics(val height: Float, val radius: Float, val paddingX: Float, val paddingY: Float, val fontSize: Float, val lineHeight: Float, val bottomStrokeWidth: Float)
 internal data class LabLoaderMetrics(val diameter: Float)
 internal data class LabProgressMetrics(val thickness: Float, val circularDiameter: Float, val circularStroke: Float)
+internal data class LabChipMetrics(val height: Float, val radius: Float, val paddingX: Float, val paddingY: Float, val gap: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float, val leadingSize: Float, val closeSize: Float, val baseline: Float)
 
 public enum class LabBadgeColor(internal val role: String) { Neutral("neutral"), Gray("gray"), Blue("blue"), Red("red"), Orange("orange"), Green("green"), Yellow("yellow"), Teal("teal"), Mint("mint"), Indigo("indigo"), Purple("purple"), Pink("pink"), StaticDark("static-dark"), StaticLight("static-light"), Brand("brand") }
 
@@ -272,4 +273,84 @@ internal object LabComponents {
     const val ProgressCircularLabelRole = "label-primary"
     const val ProgressUnknownPeriodMs = 1200f
     const val ProgressUnknownFraction = 0.25f
+    val ChipS = LabChipMetrics(28f, 9999f, 8f, 8f, 4f, 14f, 12f, 500f, 0f, 12f, 12f, 11f)
+    val ChipM = LabChipMetrics(40f, 12f, 12f, 8f, 8f, 16f, 24f, 500f, 0f, 16f, 24f, 18f)
+    const val ChipSharpRadius = 4f
+    const val ChipStrokeWidth = 1f
+    const val ChipRolesLabel = "label-primary"
+    const val ChipRolesClose = "label-secondary"
+    const val ChipRolesBorder = "border-base"
+    const val ChipRolesSelected = "fill-tertiary"
+    const val ChipRolesHover = "fill-quaternary"
+    const val ChipRolesDisabledSelected = "fill-quaternary"
+    const val ChipRolesDisabledLabel = "label-quaternary"
+    const val ChipRolesActiveFill = "fill-accent"
+    const val ChipRolesActiveTint = "fill-brand-primary"
+    const val ChipRolesActiveLabel = "label-brand-primary"
+    const val ChipRolesActiveSelectedLabel = "label-static-light-primary"
+    const val ChipRolesSkeleton = "fx-skeleton-base"
+    const val ChipRolesGlow = "fx-glow-inverted"
+    const val ChipRolesFocus = "fx-focus-ring-neutral"
+    const val ChipRolesHighlight = "bg-static-light"
+    const val ChipActiveTintOpacity = 0.12f
+    const val ChipActiveHighlightOpacity = 0.2f
+    const val ChipDisabledLeadingOpacity = 0.24f
+    const val ChipSkeletonRadius = 4f
+    const val ChipSkeletonAuthoredMediumCloseSize = 16f
+    const val ChipSkeletonRoundedSmallRadius = 9999f
+    const val ChipGlowDiameter = 96f
+    const val ChipGlowBlur = 36f
+    const val ChipGlowOpacity = 0.2f
+    const val ChipGlowCenterOffset = 32.5f
+    const val ChipGlowSelectedCenterOffset = 45.5f
+    const val ChipFocusWidth = 2f
+    const val ChipFocusOffset = 2f
+    const val ChipCloseSViewBox = 12f
+    const val ChipCloseSX = 2.7001953125f
+    const val ChipCloseSY = 2.7001953125f
+    // Shared contour: transform the canvas, never mutate this path.
+    val ChipCloseSPath by lazy { androidx.compose.ui.graphics.Path().apply {
+        moveTo(5.575625896453857f, 0.17573624849319458f)
+        cubicTo(5.809925898909569f, -0.058563753962516785f, 6.189975872635841f, -0.058528751134872437f, 6.424275875091553f, 0.17573624849319458f)
+        cubicTo(6.6585258692502975f, 0.4100562483072281f, 6.658575877547264f, 0.7900763750076294f, 6.424275875091553f, 1.0243663787841797f)
+        lineTo(4.14837646484375f, 3.299776077270508f)
+        lineTo(6.424275875091553f, 5.575625896453857f)
+        cubicTo(6.6585258692502975f, 5.809975892305374f, 6.658575877547264f, 6.189975872635841f, 6.424275875091553f, 6.424275875091553f)
+        cubicTo(6.189975872635841f, 6.658575877547264f, 5.809975892305374f, 6.6585258692502975f, 5.575625896453857f, 6.424275875091553f)
+        lineTo(3.299776077270508f, 4.14837646484375f)
+        lineTo(1.0243663787841797f, 6.424275875091553f)
+        cubicTo(0.7900763750076294f, 6.658575877547264f, 0.4100562483072281f, 6.6585258692502975f, 0.17573624849319458f, 6.424275875091553f)
+        cubicTo(-0.058528751134872437f, 6.189975872635841f, -0.058563753962516785f, 5.809925898909569f, 0.17573624849319458f, 5.575625896453857f)
+        lineTo(2.4511260986328125f, 3.299776077270508f)
+        lineTo(0.17573624849319458f, 1.0243663787841797f)
+        cubicTo(-0.058578744530677795f, 0.7900513857603073f, -0.058578744530677795f, 0.41005124151706696f, 0.17573624849319458f, 0.17573624849319458f)
+        cubicTo(0.41005124151706696f, -0.058578744530677795f, 0.7900513857603073f, -0.058578744530677795f, 1.0243663787841797f, 0.17573624849319458f)
+        lineTo(3.299776077270508f, 2.4511260986328125f)
+        lineTo(5.575625896453857f, 0.17573624849319458f)
+        close()
+    } }
+    const val ChipCloseMViewBox = 24f
+    const val ChipCloseMX = 5.7001953125f
+    const val ChipCloseMY = 5.7001953125f
+    // Shared contour: transform the canvas, never mutate this path.
+    val ChipCloseMPath by lazy { androidx.compose.ui.graphics.Path().apply {
+        moveTo(11.064403533935547f, 0.26360249519348145f)
+        cubicTo(11.4159035384655f, -0.08744749426841736f, 11.985503435134888f, -0.0876375138759613f, 12.336803436279297f, 0.26360249519348145f)
+        cubicTo(12.688003450632095f, 0.6151024997234344f, 12.688203424215317f, 1.1856723725795746f, 12.336803436279297f, 1.5370423793792725f)
+        lineTo(7.573203086853027f, 6.2997026443481445f)
+        lineTo(12.336803436279297f, 11.064403533935547f)
+        cubicTo(12.688003450632095f, 11.4159035384655f, 12.688203424215317f, 11.985503435134888f, 12.336803436279297f, 12.336803436279297f)
+        cubicTo(11.985503435134888f, 12.688203424215317f, 11.4159035384655f, 12.688003450632095f, 11.064403533935547f, 12.336803436279297f)
+        lineTo(6.2997026443481445f, 7.573203086853027f)
+        lineTo(1.5370423793792725f, 12.336803436279297f)
+        cubicTo(1.1856723725795746f, 12.688203424215317f, 0.6151024997234344f, 12.688003450632095f, 0.26360249519348145f, 12.336803436279297f)
+        cubicTo(-0.0876375138759613f, 11.985503435134888f, -0.08744749426841736f, 11.4159035384655f, 0.26360249519348145f, 11.064403533935547f)
+        lineTo(5.0273027420043945f, 6.2997026443481445f)
+        lineTo(0.26360249519348145f, 1.5370423793792725f)
+        cubicTo(-0.08786749839782715f, 1.1855623722076416f, -0.08786749839782715f, 0.61507248878479f, 0.26360249519348145f, 0.26360249519348145f)
+        cubicTo(0.61507248878479f, -0.08786749839782715f, 1.1855623722076416f, -0.08786749839782715f, 1.5370423793792725f, 0.26360249519348145f)
+        lineTo(6.2997026443481445f, 5.0273027420043945f)
+        lineTo(11.064403533935547f, 0.26360249519348145f)
+        close()
+    } }
 }

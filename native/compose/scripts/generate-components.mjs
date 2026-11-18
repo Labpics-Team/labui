@@ -16,6 +16,39 @@ const upper = (name) =>
     .map((part) => part[0].toUpperCase() + part.slice(1))
     .join('');
 const kotlinString = (value) => JSON.stringify(value).replaceAll('$', '\\$');
+// The authored Chip contours use explicit absolute commands. Reject unsupported
+// input at generation time instead of parsing or silently losing it at mount.
+function chipPath(prefix, data) {
+  const commands = { M: ['moveTo', 2], L: ['lineTo', 2], C: ['cubicTo', 6], Z: ['close', 0] };
+  const tokens = [];
+  let end = 0;
+  for (const match of data.matchAll(/[A-Za-z]|[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/g)) {
+    if (!/^[\s,]*$/.test(data.slice(end, match.index)))
+      throw new Error(`${prefix}: invalid path token at ${end}`);
+    tokens.push(match[0]);
+    end = match.index + match[0].length;
+  }
+  if (!/^[\s,]*$/.test(data.slice(end)) || tokens[0] !== 'M' || tokens.at(-1) !== 'Z')
+    throw new Error(`${prefix}: expected a closed absolute path`);
+  const body = [];
+  for (let index = 0; index < tokens.length; ) {
+    const command = tokens[index++];
+    const operation = commands[command];
+    if (!operation) throw new Error(`${prefix}: unsupported path command ${command}`);
+    const [method, count] = operation;
+    const values = tokens.slice(index, index + count).map(Number);
+    if (values.length !== count || values.some((value) => !Number.isFinite(Math.fround(value))))
+      throw new Error(`${prefix}: invalid operands for ${command}`);
+    body.push(`        ${method}(${values.map((value) => `${value}f`).join(', ')})`);
+    index += count;
+  }
+  return [
+    '    // Shared contour: transform the canvas, never mutate this path.',
+    `    val ${prefix}Path by lazy { androidx.compose.ui.graphics.Path().apply {`,
+    ...body,
+    '    } }',
+  ];
+}
 const lines = [
   '// Generated from packages/tokens/src/components.json. Do not edit.',
   'package pics.lab.ui',
@@ -50,7 +83,9 @@ function emitConstants(prefix, definition) {
       name === 'aliases'
     )
       continue;
-    if (typeof value === 'number') lines.push(`    const val ${prefix}${upper(name)} = ${value}f`);
+    if (name === 'data' && prefix.startsWith('ChipClose')) lines.push(...chipPath(prefix, value));
+    else if (typeof value === 'number')
+      lines.push(`    const val ${prefix}${upper(name)} = ${value}f`);
     else if (name === 'material' && typeof value === 'string')
       lines.push(`    val ${prefix}${upper(name)} get() = LabMaterials.${value}`);
     else if (/shadow$/i.test(name) && typeof value === 'string')

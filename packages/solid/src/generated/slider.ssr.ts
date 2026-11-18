@@ -10,7 +10,7 @@ import '@labpics/ui-core/slider';
 import type { LabSlider } from '@labpics/ui-core/slider';
 
 /** SSR-пропы <lab-slider> (атрибуты/свойства), взяты из класса ядра (LabSlider). */
-export type SliderSsrProps = Partial<Pick<LabSlider, 'size' | 'orientation' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'min' | 'max' | 'step' | 'marks' | 'showValue' | 'readonly' | 'disabled' | 'invalid' | 'name'>>;
+export type SliderSsrProps = Partial<Pick<LabSlider, 'size' | 'orientation' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'min' | 'max' | 'step' | 'marks' | 'showValue' | 'readonly' | 'disabled' | 'invalid' | 'name'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-slider> — предрендеренные строки контента. */
 export type SliderSsrSlots = Record<never, never>;
 
@@ -40,5 +40,7 @@ export function renderSlider(
       ?disabled=${Boolean(props.disabled)}
       ?invalid=${Boolean(props.invalid)}
       name=${ifDefined(props.name)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-slider>`);
 }
