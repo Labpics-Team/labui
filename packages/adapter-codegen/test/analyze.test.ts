@@ -81,7 +81,7 @@ describe('анализатор ядра → манифест', () => {
     expect(byTag('lab-tabs').slots.dynamic).toBe(true);
     expect(byTag('lab-accordion').slots.dynamic).toBe(true);
     expect(byTag('lab-card').slots.named).toEqual(['footer', 'header', 'media']);
-    expect(byTag('lab-switch').slots.named).toEqual(['icon-off', 'icon-on']);
+    expect(byTag('lab-switch').slots.named).toEqual(['icon-off', 'icon-on', 'label-start']);
   });
 
   it('pascal/subpath выведены из тега', () => {

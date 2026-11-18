@@ -77,9 +77,8 @@ export type {
 } from './components/avatar/lab-avatar.js';
 export type { LabCardPadding, LabCardVariant } from './components/card/lab-card.js';
 
-// Machine-driven form controls — the first PRODUCTION consumers of the Behaviors
-// seam (they own checked/indeterminate state, so they MUST run a Zag machine,
-// unlike Button which honestly opted out). Type-only: no Lit runtime pulled in.
+// Form control axes. Switch uses native HTML; Checkbox retains its Zag behavior.
+// Type-only: no Lit runtime is pulled into the React renderer.
 export type { LabSwitchSize, LabSwitchType } from './components/switch/lab-switch.js';
 export type {
   LabCheckboxChecked,

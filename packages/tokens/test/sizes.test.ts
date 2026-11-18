@@ -33,17 +33,16 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
     'control-h-s': 32,
     'control-h-m': 40,
     'control-h-l': 48,
-    // Switch (аудит 2026-07-09, DECLARED): трек Ш/В и бегунок, 4px-сетка
-    // по ширине трека, thumb = track-h − 2×3px зазор.
-    'switch-track-s': 36,
-    'switch-track-m': 44,
-    'switch-track-l': 52,
-    'switch-track-h-s': 20,
-    'switch-track-h-m': 24,
-    'switch-track-h-l': 28,
-    'switch-thumb-s': 14,
-    'switch-thumb-m': 18,
-    'switch-thumb-l': 22,
+    // Switch: Figma 4111:884 (2026-11-17), thumb = track height − 2×2 px.
+    'switch-track-s': 28,
+    'switch-track-m': 36,
+    'switch-track-l': 44,
+    'switch-track-h-s': 16,
+    'switch-track-h-m': 20,
+    'switch-track-h-l': 24,
+    'switch-thumb-s': 12,
+    'switch-thumb-m': 16,
+    'switch-thumb-l': 20,
     // Loader: толщина штриха спиннера (DECLARED).
     'loader-stroke-s': 2,
     'loader-stroke-m': 3,

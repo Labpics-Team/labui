@@ -773,6 +773,18 @@
     "switch-track-s": {
       "$type": "dimension",
       "$value": {
+        "value": 28,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.75rem"
+        }
+      }
+    },
+    "switch-track-m": {
+      "$type": "dimension",
+      "$value": {
         "value": 36,
         "unit": "px"
       },
@@ -782,7 +794,7 @@
         }
       }
     },
-    "switch-track-m": {
+    "switch-track-l": {
       "$type": "dimension",
       "$value": {
         "value": 44,
@@ -794,19 +806,19 @@
         }
       }
     },
-    "switch-track-l": {
+    "switch-track-h-s": {
       "$type": "dimension",
       "$value": {
-        "value": 52,
+        "value": 16,
         "unit": "px"
       },
       "$extensions": {
         "com.labpics.ui-tokens": {
-          "css": "3.25rem"
+          "css": "1rem"
         }
       }
     },
-    "switch-track-h-s": {
+    "switch-track-h-m": {
       "$type": "dimension",
       "$value": {
         "value": 20,
@@ -818,7 +830,7 @@
         }
       }
     },
-    "switch-track-h-m": {
+    "switch-track-h-l": {
       "$type": "dimension",
       "$value": {
         "value": 24,
@@ -830,51 +842,39 @@
         }
       }
     },
-    "switch-track-h-l": {
-      "$type": "dimension",
-      "$value": {
-        "value": 28,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "1.75rem"
-        }
-      }
-    },
     "switch-thumb-s": {
       "$type": "dimension",
       "$value": {
-        "value": 14,
+        "value": 12,
         "unit": "px"
       },
       "$extensions": {
         "com.labpics.ui-tokens": {
-          "css": "0.875rem"
+          "css": "0.75rem"
         }
       }
     },
     "switch-thumb-m": {
       "$type": "dimension",
       "$value": {
-        "value": 18,
+        "value": 16,
         "unit": "px"
       },
       "$extensions": {
         "com.labpics.ui-tokens": {
-          "css": "1.125rem"
+          "css": "1rem"
         }
       }
     },
     "switch-thumb-l": {
       "$type": "dimension",
       "$value": {
-        "value": 22,
+        "value": 20,
         "unit": "px"
       },
       "$extensions": {
         "com.labpics.ui-tokens": {
-          "css": "1.375rem"
+          "css": "1.25rem"
         }
       }
     },

@@ -10,9 +10,9 @@ import '@labpics/ui-core/switch';
 import type { LabSwitch } from '@labpics/ui-core/switch';
 
 /** SSR-пропы <lab-switch> (атрибуты/свойства), взяты из класса ядра (LabSwitch). */
-export type SwitchSsrProps = Partial<Pick<LabSwitch, 'type' | 'size' | 'checked' | 'defaultChecked' | 'disabled' | 'name'>>;
+export type SwitchSsrProps = Partial<Pick<LabSwitch, 'type' | 'size' | 'checked' | 'defaultChecked' | 'controlled' | 'disabled' | 'required' | 'icon' | 'name' | 'value'>>;
 /** SSR-слоты <lab-switch> — предрендеренные строки контента. */
-export type SwitchSsrSlots = { default?: string; iconOff?: string; iconOn?: string };
+export type SwitchSsrSlots = { default?: string; iconOff?: string; iconOn?: string; labelStart?: string };
 
 /**
  * Рендерит <lab-switch> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
@@ -28,7 +28,11 @@ export function renderSwitch(
       size=${ifDefined(props.size)}
       ?checked=${Boolean(props.checked)}
       ?default-checked=${Boolean(props.defaultChecked)}
+      ?controlled=${Boolean(props.controlled)}
       ?disabled=${Boolean(props.disabled)}
+      ?required=${Boolean(props.required)}
+      ?icon=${Boolean(props.icon)}
       name=${ifDefined(props.name)}
-    >${slots.iconOff ? html`<span slot="icon-off">${unsafeHTML(slots.iconOff)}</span>` : ''}${slots.iconOn ? html`<span slot="icon-on">${unsafeHTML(slots.iconOn)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-switch>`);
+      value=${ifDefined(props.value)}
+    >${slots.iconOff ? html`<span slot="icon-off">${unsafeHTML(slots.iconOff)}</span>` : ''}${slots.iconOn ? html`<span slot="icon-on">${unsafeHTML(slots.iconOn)}</span>` : ''}${slots.labelStart ? html`<span slot="label-start">${unsafeHTML(slots.labelStart)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-switch>`);
 }

@@ -10,7 +10,7 @@ import type { LabSwitch } from '@labpics/ui-core/switch';
 import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-switch>, взятые прямо из класса ядра (LabSwitch). */
-export type SwitchProps = Pick<LabSwitch, 'type' | 'size' | 'checked' | 'defaultChecked' | 'disabled' | 'name'>;
+export type SwitchProps = Pick<LabSwitch, 'type' | 'size' | 'checked' | 'defaultChecked' | 'controlled' | 'disabled' | 'required' | 'icon' | 'name' | 'value'>;
 
 /** <Switch> — тонкая Solid-обёртка над <lab-switch>. */
 export const Switch: LabSolidComponent<SwitchProps, 'checked-change'> = createLabComponent<
@@ -22,8 +22,12 @@ export const Switch: LabSolidComponent<SwitchProps, 'checked-change'> = createLa
     { name: 'size', attr: 'size', kind: 'string' },
     { name: 'checked', attr: 'checked', kind: 'boolean' },
     { name: 'defaultChecked', attr: 'default-checked', kind: 'boolean' },
+    { name: 'controlled', attr: 'controlled', kind: 'boolean' },
     { name: 'disabled', attr: 'disabled', kind: 'boolean' },
+    { name: 'required', attr: 'required', kind: 'boolean' },
+    { name: 'icon', attr: 'icon', kind: 'boolean' },
     { name: 'name', attr: 'name', kind: 'string' },
+    { name: 'value', attr: 'value', kind: 'string' },
   ],
   events: ['checked-change'],
 });

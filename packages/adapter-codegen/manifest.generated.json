@@ -1432,13 +1432,33 @@
           "kind": "boolean"
         },
         {
+          "name": "controlled",
+          "attr": "controlled",
+          "kind": "boolean"
+        },
+        {
           "name": "disabled",
           "attr": "disabled",
           "kind": "boolean"
         },
         {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "icon",
+          "attr": "icon",
+          "kind": "boolean"
+        },
+        {
           "name": "name",
           "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
           "kind": "string"
         }
       ],
@@ -1449,7 +1469,8 @@
         "default": true,
         "named": [
           "icon-off",
-          "icon-on"
+          "icon-on",
+          "label-start"
         ],
         "dynamic": false
       }

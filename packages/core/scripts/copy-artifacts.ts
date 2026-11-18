@@ -15,6 +15,7 @@ import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { switchCss } from '../src/components/switch/styles.js';
 import { cardCss } from '../src/components/card/styles.js';
 import { inputCss } from '../src/components/input/styles.js';
 import { sheetCss } from '../src/components/sheet/styles.js';
@@ -47,6 +48,7 @@ function main(): void {
   writeFileSync(join(dist, 'input.css'), inputCss);
   writeFileSync(join(dist, 'snackbar.css'), snackbarCss);
   writeFileSync(join(dist, 'card.css'), cardCss);
+  writeFileSync(join(dist, 'switch.css'), switchCss);
 
   process.stdout.write(
     `ui-core: copied ${[...ownFiles, 'shadow.css', 'tokens.css'].join(', ')} to dist\n`,
