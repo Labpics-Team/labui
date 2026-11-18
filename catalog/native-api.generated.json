@@ -1,6 +1,6 @@
 {
-  "revision": "c7f596068b397954a9c7533f9b841a7e52c51b1e",
-  "sourceDigest": "sha256:ca88c98d0ed3168b61f820999127c9c43cfcbfc01b0408e6cee6e85891716c18",
+  "revision": "482a806057b232b229419359347b18466e76f849",
+  "sourceDigest": "sha256:b84d839c6cec162caadec088bc4f8daf91fa24832fc63128ada5323d4a277603",
   "symbols": [
     {
       "name": "LabBadge",
