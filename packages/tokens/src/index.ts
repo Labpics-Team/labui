@@ -1,11 +1,11 @@
 /**
- * @labpics/ui-tokens — LabUI dimension, typography and z-index tokens.
+ * @labpics/ui-tokens вЂ” LabUI dimension, typography and z-index tokens.
  *
  * One typed config (`./config`) is the single source of truth. A pure generator
  * (`./generate`) turns it into three artifacts with no divergence:
- *   - `tokens.css`        — `:root { --lab-* }` custom properties (the contract);
- *   - `tokens.dtcg.json`  — canonical W3C DTCG export;
- *   - generated TS tokens — typed `var(--lab-*)` references (re-exported below).
+ *   - `tokens.css`        вЂ” `:root { --lab-* }` custom properties (the contract);
+ *   - `tokens.dtcg.json`  вЂ” canonical W3C DTCG export;
+ *   - generated TS tokens вЂ” typed `var(--lab-*)` references (re-exported below).
  *
  * Tokens follow the three-language split: primitives -> semantic aliases ->
  * components consume semantics only. Every scale defines an explicit zero token,
@@ -50,3 +50,4 @@ export const PACKAGE_NAME = '@labpics/ui-tokens';
 export { badgeProfile } from './badge.js';
 export { selectionProfile } from './selection.js';
 export { kbdProfile } from './kbd.js';
+export { loaderProfile, progressProfile } from './progress.js';

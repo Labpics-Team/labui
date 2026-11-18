@@ -1,0 +1,24 @@
+[
+  {
+    "name": "loader-medium-75-3x",
+    "size": [
+      72,
+      72
+    ],
+    "meanAbsoluteChannelError": 1.4814814814814814,
+    "changedPixels": 1157,
+    "totalPixels": 5184,
+    "pixelsOver16": 143
+  },
+  {
+    "name": "circular-medium-25-3x",
+    "size": [
+      288,
+      288
+    ],
+    "meanAbsoluteChannelError": 1.2402946566358024,
+    "changedPixels": 2943,
+    "totalPixels": 82944,
+    "pixelsOver16": 1324
+  }
+]

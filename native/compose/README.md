@@ -6,7 +6,7 @@ Geist поставляется с пакетом; размеры использ�
 
 ## Текущее состояние
 
-Реализованы Button, Badge, state-based Input, Switch, Card, Sheet и Snackbar,
+Реализованы Button, Badge, state-based Input, Switch, Card, Sheet, Snackbar, Loader и Progress,
 генераторы общих токенов, геометрии компонентов и материалов, граница Colors
 Program и сценарий настроек. Button, Input, Switch, Card и Sheet читают общий профиль
 Figma. Input сохраняет подпись в разрыве рамки, Sheet поддерживает перетаскивание.
@@ -67,6 +67,46 @@ AppData/Roaming, Application Support или XDG_CONFIG_HOME. Это хранен
 
 Эта запись описывает исполняемый остаток работы и не заменяет принятый
 [план r1](https://github.com/Labpics-Team/agents-config/blob/main/plans/labui/r1.md).
+
+## Loader и Progress
+
+`LabLoader` и `LabProgress` получают геометрию и цветовые роли из общего
+`packages/tokens/src/components.json`. Loader M — 24 dp, L — 48 dp; S 16 dp
+расширяет исходный набор. Измеряемый medium Loader содержит внешнее кольцо
+и внутренний сектор с угловым градиентом, large — кольцо с круглым концом.
+Неизвестное значение показывает восемь авторских сегментов.
+
+```kotlin
+LabLoader(label = "Подключение")
+LabLoader(value = 75f, size = LabControlSize.Large)
+LabProgress(value = 25f, label = "Отправка файла", showValueText = true)
+LabProgress(value = 25f, variant = LabProgressVariant.Circular, showValueText = true)
+```
+
+У обоих компонентов `value: Float? = null`, `min = 0f`, `max = 100f`.
+Конечное значение ограничивается диапазоном; `null`, NaN, бесконечности и
+неверный диапазон означают неизвестный прогресс. `showValueText` управляет
+только видимым процентом и не придумывает значение при неизвестной длительности.
+`label` у Progress виден над индикатором; у Loader это имя для доступности.
+Один native semantic node сообщает актуальные границы и измеренное значение,
+а неизвестное состояние использует `ProgressBarRangeInfo.Indeterminate`.
+
+Авторский Linear M имеет толщину 4 dp, Circular M — 96 dp со штрихом 4 dp
+и Geist 16/24/500. S/L расширяют линейную толщину до 2/8 dp и диаметр до
+64/128 dp. Полоса заполняется от логического начала в LTR/RTL; окружность —
+сверху по часовой стрелке. Круг с текстом растёт при системном увеличении шрифта,
+сохраняя весь процент. Цвет трека уже включает альфу семантической роли.
+
+Общий Lab Motion интерполирует измеряемую долю и вращает неизвестную позу.
+Reduced motion и неактивный lifecycle останавливают ожидание; неизвестная
+линейная полоса остаётся по центру. Рисование читает анимируемые значения
+без перестройки композиции, кисти и контуры кэшируются, Loader обновляет
+видимую позу только при смене одного из восьми шагов.
+
+`ProgressStateTest` и `ProgressRenderTest` проверяют диапазоны, семантику,
+промежуточные кадры, остановку движения, RTL, обе темы и масштаб текста 200%.
+Источник, CPU PNG и сравнение находятся в
+[evidence/progress-20261118](evidence/progress-20261118/README.md).
 
 ## Switch
 

@@ -646,5 +646,91 @@
         "bottomStrokeWidth": 2
       }
     }
+  },
+  "loader": {
+    "sourceRef": {
+      "key": "component-set/Loader/Loader"
+    },
+    "colorRole": "label-primary",
+    "sizes": {
+      "s": {
+        "diameter": 16
+      },
+      "m": {
+        "diameter": 24
+      },
+      "l": {
+        "diameter": 48
+      }
+    },
+    "viewBox": 24,
+    "periodMs": 800,
+    "segment": {
+      "x": 11,
+      "y": 2,
+      "width": 2,
+      "height": 7,
+      "radius": 1
+    },
+    "spokeOpacity": [0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1, 0.02],
+    "determinate": {
+      "medium": {
+        "ringRadius": 9,
+        "stroke": 2,
+        "sectorRadius": 6,
+        "secondaryRole": "label-secondary",
+        "gradient": {
+          "fromDegrees": 0,
+          "primaryStop": 0.75,
+          "secondaryStop": 1
+        }
+      },
+      "large": {
+        "ringRadius": 9,
+        "stroke": 2,
+        "trackRole": "label-quaternary",
+        "cap": "round"
+      }
+    }
+  },
+  "progress": {
+    "sourceRef": {
+      "key": "component-set/Progress/Linear progress"
+    },
+    "activeRole": "label-brand-primary",
+    "trackRole": "label-brand-quaternary",
+    "radius": 4,
+    "sizes": {
+      "s": {
+        "thickness": 2,
+        "circularDiameter": 64,
+        "circularStroke": 4
+      },
+      "m": {
+        "thickness": 4,
+        "circularDiameter": 96,
+        "circularStroke": 4
+      },
+      "l": {
+        "thickness": 8,
+        "circularDiameter": 128,
+        "circularStroke": 4
+      }
+    },
+    "circular": {
+      "sourceRef": {
+        "key": "component-set/Progress/Circular progress"
+      },
+      "cap": "round",
+      "fontSize": 16,
+      "lineHeight": 24,
+      "fontWeight": 500,
+      "letterSpacing": 0,
+      "labelRole": "label-primary"
+    },
+    "unknown": {
+      "periodMs": 1200,
+      "fraction": 0.25
+    }
   }
 }
