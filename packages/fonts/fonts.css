@@ -1,6 +1,5 @@
-/* Self-hosted author Geist 1.400 and Geist Mono; exact sources in PROVENANCE.md.
- * One variable face per family covers weights 100–900. The theme disables
- * synthetic styles; these files contain upright glyphs only.
+/* Self-hosted author Geist 1.400, keyboard symbols, and Geist Mono.
+ * Exact sources in PROVENANCE.md. The theme disables synthetic styles.
  */
 @font-face {
   font-family: "Geist";
@@ -8,6 +7,18 @@
   font-weight: 100 900;
   font-display: swap;
   src: url("./fonts/Geist-Variable.woff2") format("woff2");
+}
+
+/* Geist does not contain Command. The small supplemental face has matching
+ * line metrics and a fixed authored symbol contour at every text weight.
+ */
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/LabUI-Symbols.woff2") format("woff2");
+  unicode-range: U+2318;
 }
 
 @font-face {

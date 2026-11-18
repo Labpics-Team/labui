@@ -25,8 +25,9 @@ const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const css = readFileSync(join(pkgRoot, 'fonts.css'), 'utf8');
 
 const FACES = [
-  { family: 'Geist', file: 'fonts/Geist-Variable.woff2' },
-  { family: 'Geist Mono', file: 'fonts/GeistMono-Variable.woff2' },
+  { family: 'Geist', file: 'fonts/Geist-Variable.woff2', minimumBytes: 10_000 },
+  { family: 'Geist', file: 'fonts/LabUI-Symbols.woff2', minimumBytes: 100 },
+  { family: 'Geist Mono', file: 'fonts/GeistMono-Variable.woff2', minimumBytes: 10_000 },
 ];
 
 describe('@labpics/fonts — @font-face и бинарники', () => {
@@ -34,15 +35,12 @@ describe('@labpics/fonts — @font-face и бинарники', () => {
     for (const f of FACES) {
       expect(css).toContain(`font-family: "${f.family}";`);
     }
-    // Ровно два @font-face-ПРАВИЛА (с `{`, не упоминания в комментарии) —
-    // ни лишних, ни недостающих начертаний.
-    expect(css.match(/@font-face\s*\{/g)).toHaveLength(2);
+    expect(css.match(/@font-face\s*\{/g)).toHaveLength(FACES.length);
   });
 
-  it('объявляет вариативную ось wght 100 900 и swap на КАЖДОМ face', () => {
-    // По одному вхождению на семейство — не «где-то в файле», а на каждом.
-    expect(css.match(/font-weight:\s*100 900;/g)).toHaveLength(2);
-    expect(css.match(/font-display:\s*swap;/g)).toHaveLength(2);
+  it('подключает исходные начертания и фиксированный символ для весов 100–900', () => {
+    expect(css.match(/font-weight:\s*100 900;/g)).toHaveLength(FACES.length);
+    expect(css.match(/font-display:\s*swap;/g)).toHaveLength(FACES.length);
   });
 
   it('регистрирует ТОЛЬКО прямые начертания — italic-фейса нет (решение ДС: без italic)', () => {
@@ -50,7 +48,7 @@ describe('@labpics/fonts — @font-face и бинарники', () => {
     // цветом; см. PROVENANCE.md). Пин на уровне регистрации: оба @font-face —
     // `font-style: normal`, и ни один не заявляет наклон. RED-proof: добавить
     // @font-face с `font-style: italic` (или src на *Italic.woff2) — падает.
-    expect(css.match(/font-style:\s*normal;/g)).toHaveLength(2);
+    expect(css.match(/font-style:\s*normal;/g)).toHaveLength(FACES.length);
     expect(css).not.toMatch(/font-style:\s*italic/);
   });
 
@@ -61,7 +59,7 @@ describe('@labpics/fonts — @font-face и бинарники', () => {
       // Магия WOFF2 = ASCII 'wOF2' (0x774F4632) — доказывает, что это шрифт,
       // а не HTML-заглушка/LFS-указатель, случайно попавший под тем же именем.
       expect(bytes.subarray(0, 4).toString('latin1')).toBe('wOF2');
-      expect(bytes.length).toBeGreaterThan(10_000);
+      expect(bytes.length).toBeGreaterThan(f.minimumBytes);
     }
   });
 
@@ -80,6 +78,26 @@ describe('@labpics/fonts — @font-face и бинарники', () => {
       expect(actual, `${file}: SHA-256 != upstream`).toBe(expected);
       // Проза и машинный пин не расходятся: PROVENANCE.md несёт ровно этот хэш.
       expect(provenance, `PROVENANCE.md не содержит хэш ${file}`).toContain(expected);
+    }
+  });
+
+  it('дополнение заменяет только отсутствующий Command и поставляется с лицензией', () => {
+    const symbolFace = css.match(/@font-face\s*\{[^}]*LabUI-Symbols[^}]*\}/)?.[0];
+    expect(symbolFace).toContain('font-family: "Geist"');
+    expect(symbolFace).toContain('unicode-range: U+2318;');
+    const ofl = readFileSync(join(pkgRoot, 'OFL-NotoSymbols.txt'), 'utf8');
+    expect(ofl).toContain('Copyright 2022 The Noto Project Authors');
+    expect(ofl).toContain('SIL OPEN FONT LICENSE Version 1.1');
+  });
+
+  it('web и native поставляют проверенные производные ресурсы', () => {
+    const report = JSON.parse(readFileSync(join(pkgRoot, 'symbols.json'), 'utf8'));
+    expect(report.codepoint).toBe('U+2318');
+    for (const [file, artifact] of Object.entries(report.artifacts)) {
+      const expected = artifact as { sha256: string; bytes: number };
+      const bytes = readFileSync(join(pkgRoot, '../..', file));
+      expect(bytes.length, file).toBe(expected.bytes);
+      expect(createHash('sha256').update(bytes).digest('hex'), file).toBe(expected.sha256);
     }
   });
 });
