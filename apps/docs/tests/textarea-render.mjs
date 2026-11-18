@@ -75,4 +75,4 @@ for (const [engine, kind] of Object.entries({ chromium, webkit })) {
     await browser.close();
   }
 }
-await writeFile(new URL('render.json', output), `${JSON.stringify(records, null, 2)}\n`);
+await writeFile(new URL('render.generated.json', output), `${JSON.stringify(records, null, 2)}\n`);

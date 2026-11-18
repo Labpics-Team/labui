@@ -61,7 +61,7 @@ try {
   }
   if (errors.length) throw new Error(errors.join('\n'));
   await writeFile(
-    new URL('render.json', output),
+    new URL('render.generated.json', output),
     `${JSON.stringify(
       {
         browser: browser.version(),

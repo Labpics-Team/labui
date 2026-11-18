@@ -20,7 +20,7 @@
     ]
   },
   "packedConsumer": "packed.json",
-  "render": "render.json",
+  "render": "render.generated.json",
   "source": "author-source.json",
   "checks": [
     "core/react/docs typecheck",
