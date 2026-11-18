@@ -16,9 +16,9 @@ const upper = (name) =>
     .map((part) => part[0].toUpperCase() + part.slice(1))
     .join('');
 const kotlinString = (value) => JSON.stringify(value).replaceAll('$', '\\$');
-// The authored Chip contours use explicit absolute commands. Reject unsupported
+// Authored component contours use explicit absolute commands. Reject unsupported
 // input at generation time instead of parsing or silently losing it at mount.
-function chipPath(prefix, data) {
+function authoredPath(prefix, data) {
   const commands = { M: ['moveTo', 2], L: ['lineTo', 2], C: ['cubicTo', 6], Z: ['close', 0] };
   const tokens = [];
   let end = 0;
@@ -83,7 +83,11 @@ function emitConstants(prefix, definition) {
       name === 'aliases'
     )
       continue;
-    if (name === 'data' && prefix.startsWith('ChipClose')) lines.push(...chipPath(prefix, value));
+    if (
+      name === 'data' &&
+      (prefix.startsWith('ChipClose') || prefix.startsWith('BreadcrumbGlyphs'))
+    )
+      lines.push(...authoredPath(prefix, value));
     else if (typeof value === 'number')
       lines.push(`    const val ${prefix}${upper(name)} = ${value}f`);
     else if (name === 'material' && typeof value === 'string')

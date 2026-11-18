@@ -10,6 +10,7 @@ internal data class LabLoaderMetrics(val diameter: Float)
 internal data class LabProgressMetrics(val thickness: Float, val circularDiameter: Float, val circularStroke: Float)
 internal data class LabChipMetrics(val height: Float, val radius: Float, val paddingX: Float, val paddingY: Float, val gap: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float, val leadingSize: Float, val closeSize: Float, val baseline: Float)
 internal data class LabTabsMetrics(val height: Float, val radius: Float, val padding: Float, val gap: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float, val iconSize: Float, val iconOnlySize: Float, val baseline: Float)
+internal data class LabBreadcrumbMetrics(val fontSize: Float, val lineHeight: Float, val multilineLineHeight: Float, val icon: Float, val gap: Float)
 
 public enum class LabBadgeColor(internal val role: String) { Neutral("neutral"), Gray("gray"), Blue("blue"), Red("red"), Orange("orange"), Green("green"), Yellow("yellow"), Teal("teal"), Mint("mint"), Indigo("indigo"), Purple("purple"), Pink("pink"), StaticDark("static-dark"), StaticLight("static-light"), Brand("brand") }
 
@@ -382,4 +383,67 @@ internal object LabComponents {
     const val TabsFocusWidth = 2f
     const val TabsFocusOffset = 2f
     const val TabsUnderlinedBottomIconOnlySize = 20f
+    val BreadcrumbS = LabBreadcrumbMetrics(12f, 12f, 18f, 14f, 6f)
+    val BreadcrumbM = LabBreadcrumbMetrics(14f, 12f, 20f, 16f, 8f)
+    val BreadcrumbL = LabBreadcrumbMetrics(16f, 16f, 24f, 20f, 10f)
+    const val BreadcrumbFontWeight = 500f
+    const val BreadcrumbLetterSpacing = 0f
+    const val BreadcrumbDefaultMaxItems = 4f
+    const val BreadcrumbRolesLabel = "label-secondary"
+    const val BreadcrumbRolesCurrent = "label-primary"
+    const val BreadcrumbRolesHover = "label-primary"
+    const val BreadcrumbRolesFocus = "border-focus"
+    const val BreadcrumbGlyphsChevronViewBox = 16f
+    const val BreadcrumbGlyphsChevronX = 5.734375f
+    const val BreadcrumbGlyphsChevronY = 3.3919270038604736f
+    // Shared contour: transform the canvas, never mutate this path.
+    val BreadcrumbGlyphsChevronPath by lazy { androidx.compose.ui.graphics.Path().apply {
+        moveTo(0.234521f, 0.234133f)
+        cubicTo(0.527434f, -0.0586204f, 0.990701f, -0.0768203f, 1.30483f, 0.179446f)
+        lineTo(1.36537f, 0.234133f)
+        lineTo(4.4253f, 3.29406f)
+        cubicTo(4.5479f, 3.41666f, 4.6747f, 3.54226f, 4.7729f, 3.65799f)
+        cubicTo(4.87717f, 3.78079f, 4.9955f, 3.94413f, 5.0659f, 4.16059f)
+        cubicTo(5.16157f, 4.45513f, 5.16163f, 4.77293f, 5.0659f, 5.06746f)
+        lineTo(5.0379f, 5.14626f)
+        cubicTo(4.96663f, 5.32406f, 4.86417f, 5.46266f, 4.7729f, 5.57006f)
+        cubicTo(4.6747f, 5.68573f, 4.54783f, 5.81139f, 4.4253f, 5.93399f)
+        lineTo(1.36537f, 8.99393f)
+        lineTo(1.30483f, 9.04859f)
+        cubicTo(0.990701f, 9.30473f, 0.527381f, 9.28659f, 0.234521f, 8.99393f)
+        cubicTo(-0.0778258f, 8.68153f, -0.0777191f, 8.17479f, 0.234521f, 7.86239f)
+        lineTo(3.29443f, 4.80246f)
+        cubicTo(3.3615f, 4.73539f, 3.41423f, 4.68219f, 3.4591f, 4.63579f)
+        cubicTo(3.46623f, 4.62846f, 3.47297f, 4.62099f, 3.4793f, 4.61433f)
+        cubicTo(3.47283f, 4.60753f, 3.46643f, 4.59973f, 3.4591f, 4.59219f)
+        cubicTo(3.41417f, 4.54579f, 3.36157f, 4.49273f, 3.29443f, 4.42553f)
+        lineTo(0.234521f, 1.36564f)
+        lineTo(0.179181f, 1.30509f)
+        cubicTo(-0.0771456f, 0.99094f, -0.0582458f, 0.527066f, 0.234521f, 0.234133f)
+        close()
+    } }
+    const val BreadcrumbGlyphsEllipsisViewBox = 16f
+    const val BreadcrumbGlyphsEllipsisX = 2.2662761211395264f
+    const val BreadcrumbGlyphsEllipsisY = 6.93359375f
+    // Shared contour: transform the canvas, never mutate this path.
+    val BreadcrumbGlyphsEllipsisPath by lazy { androidx.compose.ui.graphics.Path().apply {
+        moveTo(1.06667f, 2.13333f)
+        cubicTo(1.65577f, 2.13333f, 2.13333f, 1.6558f, 2.13333f, 1.06667f)
+        cubicTo(2.13333f, 0.4776f, 1.65577f, 0f, 1.06667f, 0f)
+        cubicTo(0.477567f, 0f, 0f, 0.4776f, 0f, 1.06667f)
+        cubicTo(0f, 1.6558f, 0.477567f, 2.13333f, 1.06667f, 2.13333f)
+        close()
+        moveTo(5.73333f, 2.13333f)
+        cubicTo(6.32247f, 2.13333f, 6.8f, 1.6558f, 6.8f, 1.06667f)
+        cubicTo(6.8f, 0.4776f, 6.32247f, 0f, 5.73333f, 0f)
+        cubicTo(5.1442f, 0f, 4.66667f, 0.4776f, 4.66667f, 1.06667f)
+        cubicTo(4.66667f, 1.6558f, 5.1442f, 2.13333f, 5.73333f, 2.13333f)
+        close()
+        moveTo(10.4f, 2.13333f)
+        cubicTo(10.9891f, 2.13333f, 11.4667f, 1.6558f, 11.4667f, 1.06667f)
+        cubicTo(11.4667f, 0.4776f, 10.9891f, 0f, 10.4f, 0f)
+        cubicTo(9.81087f, 0f, 9.33333f, 0.4776f, 9.33333f, 1.06667f)
+        cubicTo(9.33333f, 1.6558f, 9.81087f, 2.13333f, 10.4f, 2.13333f)
+        close()
+    } }
 }
