@@ -224,7 +224,7 @@ export class LabSheet extends LabElement {
           frame,
           handle,
           [
-            ...frame.querySelectorAll('.lab-sheet-handle, .lab-sheet-panel-body, .lab-sheet-body'),
+            ...frame.querySelectorAll('.lab-sheet-handle, .lab-sheet-panel-content'),
             ...positioner.querySelectorAll('.lab-sheet-preset'),
           ],
           {
@@ -289,15 +289,17 @@ export class LabSheet extends LabElement {
               <div class="lab-sheet-surface lab-material lab-material--sheet" part="surface">
                 <button class="lab-sheet-handle" type="button" aria-label="Изменить высоту панели"><span class="lab-sheet-indicator"></span></button>
                 <div class="lab-sheet-panel-body" part="scroll-area">
-                  ${
-                    this.heading || this.description
-                      ? html`<div class="lab-sheet-panel-heading">
-                    ${this.heading ? html`<h2 class="lab-sheet-heading" id=${`${prefix}-heading`}>${this.heading}</h2>` : null}
-                    ${this.description ? html`<p class="lab-sheet-description" id=${`${prefix}-description`}>${this.description}</p>` : null}
-                  </div>`
-                      : null
-                  }
-                  <div class="lab-sheet-body"><slot name="content"></slot></div>
+                  <div class="lab-sheet-panel-content">
+                    ${
+                      this.heading || this.description
+                        ? html`<div class="lab-sheet-panel-heading">
+                      ${this.heading ? html`<h2 class="lab-sheet-heading" id=${`${prefix}-heading`}>${this.heading}</h2>` : null}
+                      ${this.description ? html`<p class="lab-sheet-description" id=${`${prefix}-description`}>${this.description}</p>` : null}
+                    </div>`
+                        : null
+                    }
+                    <div class="lab-sheet-body"><slot name="content"></slot></div>
+                  </div>
                 </div>
                 ${this.closable ? html`<button class="lab-sheet-close" type="button" aria-label="Закрыть" @click=${() => this.changeOpen(false)}>×</button>` : null}
               </div>

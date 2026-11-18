@@ -13,6 +13,7 @@ const SMOKE_SPECS = [
   'material-first-paint.spec.ts',
   'button.spec.ts',
   'input.spec.ts',
+  'experience.spec.ts',
   'kbd.spec.ts',
   'checkbox.spec.ts',
   'selection.spec.ts',

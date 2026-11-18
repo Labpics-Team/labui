@@ -1,9 +1,11 @@
 import { mkdir, writeFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium, expect } from '@playwright/test';
 
 const baseURL = process.argv[2] ?? 'http://127.0.0.1:4328';
-const output = new URL('../../../docs/evidence/experience-20261117/', import.meta.url);
+const output = process.argv[3]
+  ? pathToFileURL(`${process.argv[3].replace(/\\/g, '/').replace(/\/$/, '')}/`)
+  : new URL('../../../docs/evidence/experience-20261118/', import.meta.url);
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch();
 const errors = [];
@@ -16,12 +18,13 @@ try {
     const page = await context.newPage();
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(`${baseURL}/experience.html`);
-    await page.getByRole('checkbox', { name: 'Тёмная тема' }).waitFor();
-    await expect(page.getByRole('checkbox', { name: 'Тёмная тема' })).toBeEnabled();
+    await page.getByRole('switch', { name: 'Тёмная тема' }).waitFor();
+    await expect(page.getByRole('switch', { name: 'Тёмная тема' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Изменить настройки' }).waitFor();
     await page.evaluate(() => document.fonts.ready);
     for (const theme of ['light', 'dark']) {
       if (theme === 'dark') {
-        const dark = page.getByRole('checkbox', { name: 'Тёмная тема' });
+        const dark = page.getByRole('switch', { name: 'Тёмная тема' });
         await dark.focus();
         await dark.press('Space');
       }

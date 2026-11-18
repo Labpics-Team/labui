@@ -19,104 +19,60 @@ input {
 }
 .workspace {
   min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+}
+.workspace-topbar,
+.workspace-main {
+  width: min(100% - 2.5rem, 40rem);
+  margin-inline: auto;
 }
 .workspace-topbar {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
   gap: 1rem;
-  padding: 1.5rem clamp(1.25rem, 5vw, 4rem);
+  padding-block: 1.5rem;
 }
 .workspace-brand {
-  display: flex;
-  align-items: baseline;
-  gap: .75rem;
   color: var(--lab-label-primary);
-  font-weight: 650;
-  font-size: 1.25rem;
-  letter-spacing: -.05em;
+  font-weight: 600;
   text-decoration: none;
 }
-.workspace-brand span,
-.workspace-caption {
+.workspace-brand:hover {
+  text-decoration: underline;
+}
+.workspace-caption,
+.workspace-local-note {
   color: var(--lab-label-secondary);
   font-size: .8125rem;
-  font-weight: 450;
-  letter-spacing: 0;
 }
 .workspace-main {
-  width: min(100% - min(2.5rem, 10vw), 38rem);
-  margin: clamp(1.5rem, 6vh, 5rem) auto 0;
+  padding-block: 1.5rem 3rem;
 }
-.workspace-intro {
-  margin-bottom: 2.5rem;
-}
-.workspace-eyebrow {
-  color: var(--lab-label-secondary);
-  font-size: .6875rem;
-  font-weight: 650;
-  letter-spacing: .12em;
-}
-.workspace-intro h1 {
-  margin: .75rem 0 .625rem;
-  font-size: clamp(1.5rem, 5vw, 2.75rem);
-  line-height: 1.1;
+.workspace-main > h1 {
+  margin: 0 0 1.5rem;
+  font-size: 1.75rem;
   font-weight: 600;
-  letter-spacing: -.045em;
+  line-height: 1.25;
+  letter-spacing: -.035em;
 }
-.workspace-intro > p:last-child {
-  color: var(--lab-label-secondary);
-  margin: 0;
-  max-width: 29rem;
+.workspace-card + .workspace-card {
+  margin-top: 1.5rem;
 }
-.workspace-card {
-  margin-top: 1.25rem;
-}
-.workspace-card-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  letter-spacing: -.02em;
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-.workspace-card-heading {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
-}
-.workspace-card-heading > div {
-  min-width: 0;
-}
-.workspace-card-heading p {
-  font-size: .8125rem;
-  color: var(--lab-label-secondary);
-  margin: .125rem 0 0;
-}
-.workspace-monogram {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 1rem;
-  background: var(--lab-bg-secondary);
-  font-size: 1.375rem;
-  font-weight: 600;
+.workspace-edit {
+  align-self: flex-start;
+  max-inline-size: 100%;
 }
 .workspace-details {
   margin: 0;
   display: grid;
-  gap: .75rem;
+  gap: 1rem;
   font-size: .875rem;
 }
 .workspace-details > div {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: .5rem 1.5rem;
+  gap: .25rem 1.5rem;
 }
 .workspace-details dt {
   color: var(--lab-label-secondary);
@@ -131,8 +87,14 @@ input {
   grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
 }
+.workspace-option [data-lab-switch] {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 2rem;
+}
 .workspace-option p {
-  margin: .375rem 0 0;
+  margin: .125rem 3rem 0 0;
   color: var(--lab-label-secondary);
   font-size: .8125rem;
 }
@@ -143,20 +105,26 @@ input {
   justify-content: flex-end;
   padding-top: .5rem;
 }
+.workspace-error {
+  margin: 0;
+  color: var(--lab-label-danger);
+  font-size: .875rem;
+}
+.workspace-status,
+.workspace-loading,
+.workspace-load-error p,
+.workspace-local-note {
+  margin: 1rem 0 0;
+  color: var(--lab-label-secondary);
+}
+.workspace-load-error {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+}
 .workspace-status {
   display: block;
-  min-height: 1.5rem;
-  margin: 1.25rem 0;
-  color: var(--lab-label-secondary);
   font-size: .875rem;
-  text-align: center;
-}
-.workspace-footer {
-  margin-top: auto;
-  padding: 2rem 1.25rem 1.5rem;
-  text-align: center;
-  color: var(--lab-label-secondary);
-  font-size: .75rem;
 }
 .workspace-snackbar {
   position: fixed;
@@ -178,6 +146,10 @@ input {
   padding-bottom: env(safe-area-inset-bottom);
 }
 @media (max-width: 28rem) {
+  .workspace-topbar,
+  .workspace-main {
+    width: calc(100% - 2rem);
+  }
   .workspace-caption {
     display: none;
   }

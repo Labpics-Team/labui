@@ -116,7 +116,6 @@ export const sheetCss = String.raw`
   display: flex;
   flex: 0 1 auto;
   flex-direction: column;
-  gap: var(--_sheet-body-gap, 0px);
   min-height: 0;
   max-height: max(
     0px,
@@ -129,6 +128,13 @@ export const sheetCss = String.raw`
   );
   overflow: auto;
   overscroll-behavior: contain;
+}
+.lab-sheet-panel-content {
+  /* Natural content is the measurement input; the scroll area is its output. */
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--_sheet-body-gap, 0px);
 }
 .lab-sheet-body {
   display: block;

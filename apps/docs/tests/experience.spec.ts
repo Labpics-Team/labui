@@ -70,14 +70,16 @@ test('reduced motion сохраняет конечное положение и �
   await expect(dialog).toBeHidden();
   await trigger.click();
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole('textbox')).toHaveValue('Labpics');
+  await expect(dialog.getByRole('textbox', { name: 'Название пространства' })).toHaveValue(
+    'Labpics',
+  );
 });
 
 test('Snackbar отменяет последнее сохранение и сохраняет отмену после reload', async ({ page }) => {
   await page.goto('/experience.html');
   await page.getByRole('button', { name: 'Изменить настройки' }).click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByRole('textbox').fill('Новая лаборатория');
+  await dialog.getByRole('textbox', { name: 'Название пространства' }).fill('Новая лаборатория');
   await dialog.getByRole('button', { name: 'Сохранить', exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('heading', { name: 'Новая лаборатория' })).toBeVisible();
@@ -105,13 +107,14 @@ for (const width of [320, 390]) {
     await dialog.getByRole('button', { name: 'Изменить высоту панели' }).press('Home');
     const name = dialog.getByRole('textbox', { name: 'Название пространства' });
     await name.scrollIntoViewIfNeeded();
-    const label = dialog.locator('.lab-field-label');
-    expect(await label.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(
-      true,
-    );
-    expect(await label.evaluate((element) => getComputedStyle(element).textOverflow)).not.toBe(
-      'ellipsis',
-    );
+    for (const label of await dialog.locator('.lab-field-label').all()) {
+      expect(
+        await label.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+      ).toBe(true);
+      expect(await label.evaluate((element) => getComputedStyle(element).textOverflow)).not.toBe(
+        'ellipsis',
+      );
+    }
     const heading = dialog.getByRole('heading');
     expect(
       await heading.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
@@ -129,3 +132,129 @@ for (const width of [320, 390]) {
     await expect(page.getByText('Выключены', { exact: true })).toBeVisible();
   });
 }
+
+test('асинхронная запись сохраняет ширину, исключает повтор и удерживает панель до результата', async ({
+  page,
+}) => {
+  await page.goto('/experience.html');
+  await page.getByRole('button', { name: 'Изменить настройки' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('textbox', { name: 'Название пространства' }).fill('После записи');
+  const save = dialog.getByRole('button', { name: 'Сохранить', exact: true });
+  const before = await save.boundingBox();
+  await page.evaluate(() => {
+    const completion = Object.getOwnPropertyDescriptor(IDBTransaction.prototype, 'oncomplete');
+    if (!completion?.set) throw new Error('Missing IndexedDB completion event');
+    Object.defineProperty(IDBTransaction.prototype, 'oncomplete', {
+      ...completion,
+      set(callback: ((event: Event) => void) | null) {
+        if (this.mode !== 'readwrite') return completion.set?.call(this, callback);
+        completion.set?.call(this, (event: Event) => {
+          Reflect.set(window, 'releaseWorkspaceCommit', () => {
+            Object.defineProperty(IDBTransaction.prototype, 'oncomplete', completion);
+            callback?.call(this, event);
+          });
+        });
+      },
+    });
+  });
+  await save.click();
+  await expect(save).toHaveAttribute('aria-busy', 'true');
+  expect((await save.boundingBox())?.width).toBeCloseTo(before?.width ?? 0, 1);
+  await expect(dialog.getByRole('textbox', { name: 'Название пространства' })).toHaveAttribute(
+    'readonly',
+    '',
+  );
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
+  await dialog.locator('form').evaluate((form: HTMLFormElement) => form.requestSubmit());
+  await expect
+    .poll(() => page.evaluate(() => typeof Reflect.get(window, 'releaseWorkspaceCommit')))
+    .toBe('function');
+  await page.evaluate(() => Reflect.get(window, 'releaseWorkspaceCommit')());
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'После записи' })).toBeVisible();
+  await page.getByRole('button', { name: 'Отменить', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Labpics', exact: true })).toBeVisible();
+});
+
+test('ошибка записи оставляет ввод и действие; повтор сохраняет все поля', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/experience.html');
+  await page.getByRole('button', { name: 'Изменить настройки' }).click();
+  const dialog = page.getByRole('dialog');
+  const name = dialog.getByRole('textbox', { name: 'Название пространства' });
+  await name.fill('Сохранённая студия');
+  await dialog
+    .getByRole('textbox', { name: 'Описание', exact: true })
+    .fill('Заметки о работе команды');
+  await dialog.getByRole('textbox', { name: 'Почта для уведомлений' }).fill('team@example.com');
+  await page.evaluate(() => {
+    const put = IDBObjectStore.prototype.put;
+    IDBObjectStore.prototype.put = () => {
+      IDBObjectStore.prototype.put = put;
+      throw new DOMException('Injected browser quota failure', 'QuotaExceededError');
+    };
+  });
+  const save = dialog.getByRole('button', { name: 'Сохранить', exact: true });
+  await save.click();
+  await expect(dialog.getByRole('alert')).toHaveText(
+    'Не удалось сохранить изменения. Попробуйте ещё раз.',
+  );
+  await expect(save).toBeFocused();
+  await expect(save).toBeEnabled();
+  await expect(name).toHaveValue('Сохранённая студия');
+  const other = await context.newPage();
+  await other.goto('/experience.html');
+  await expect(other.getByRole('heading', { name: 'Labpics', exact: true })).toBeVisible();
+  await other.close();
+  await save.click();
+  await expect(dialog).toBeHidden();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Сохранённая студия' })).toBeVisible();
+  await expect(page.getByText('Заметки о работе команды', { exact: true })).toBeVisible();
+  await expect(page.getByText('team@example.com', { exact: true })).toBeVisible();
+});
+
+test('отмена не затирает более новое сохранение из другой вкладки', async ({ page, context }) => {
+  await page.goto('/experience.html');
+  await page.getByRole('button', { name: 'Изменить настройки' }).click();
+  await page.getByRole('textbox', { name: 'Название пространства' }).fill('Первая запись');
+  await page.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
+  // Hold the actual action, which pauses its countdown, while the other tab writes.
+  await page.getByRole('button', { name: 'Отменить', exact: true }).focus();
+  const other = await context.newPage();
+  await other.goto('/experience.html');
+  await other.getByRole('button', { name: 'Изменить настройки' }).click();
+  await other.getByRole('textbox', { name: 'Название пространства' }).fill('Вторая запись');
+  await other.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect(other.getByRole('dialog')).toBeHidden();
+  await page.getByRole('button', { name: 'Отменить', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText('Настройки уже изменились');
+  await expect(page.getByRole('heading', { name: 'Вторая запись' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Вторая запись' })).toBeVisible();
+  await other.close();
+});
+
+test('недоступное хранилище допускает повтор чтения', async ({ page }) => {
+  await page.addInitScript(() => {
+    const open = IDBFactory.prototype.open;
+    IDBFactory.prototype.open = () => {
+      throw new DOMException('Storage unavailable', 'UnknownError');
+    };
+    Reflect.set(window, 'restoreWorkspaceStorage', () => {
+      IDBFactory.prototype.open = open;
+    });
+  });
+  await page.goto('/experience.html');
+  await expect(page.getByRole('alert')).toHaveText('Не удалось прочитать настройки.');
+  await expect(page.getByRole('button', { name: 'Изменить настройки' })).toHaveCount(0);
+  await page.evaluate(() => Reflect.get(window, 'restoreWorkspaceStorage')());
+  await page.getByRole('button', { name: 'Повторить', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Labpics', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Изменить настройки' })).toBeEnabled();
+});

@@ -4,54 +4,73 @@ import { Input } from '@labpics/ui-react/input';
 import { Sheet } from '@labpics/ui-react/sheet';
 import { Snackbar } from '@labpics/ui-react/snackbar';
 import { Switch } from '@labpics/ui-react/switch';
+import { Textarea } from '@labpics/ui-react/textarea';
 import { type ThemeScope, createThemeScope, initializeColors } from '@labui/colors/runtime';
 import { type FormEvent, type MouseEvent, StrictMode, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import {
+  type WorkspaceChange,
+  type WorkspaceRecord,
+  defaultWorkspace,
+  readWorkspace,
+  saveWorkspace,
+  undoWorkspace,
+} from './workspace-store.js';
 
-interface Settings {
-  name: string;
-  notifications: boolean;
-}
-const storageKey = 'labui.workspace.v1';
-const defaults: Settings = { name: 'Labpics', notifications: true };
-
-function readSettings(): Settings {
-  try {
-    const saved: unknown = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
-    if (
-      saved &&
-      typeof saved === 'object' &&
-      'name' in saved &&
-      'notifications' in saved &&
-      typeof saved.name === 'string' &&
-      saved.name.trim() &&
-      typeof saved.notifications === 'boolean'
-    ) {
-      return { name: saved.name, notifications: saved.notifications };
-    }
-  } catch {
-    /* Недоступное хранилище сохраняет работоспособность формы. */
-  }
-  return { ...defaults };
-}
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function Workspace() {
-  const [settings, setSettings] = useState(readSettings);
-  const [draft, setDraft] = useState(settings);
+  const [record, setRecord] = useState<WorkspaceRecord | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [draft, setDraft] = useState(defaultWorkspace);
   const [open, setOpen] = useState(false);
   const [invalid, setInvalid] = useState(false);
+  const [emailInvalid, setEmailInvalid] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [undoing, setUndoing] = useState(false);
+  const pending = useRef(false);
+  const restoreTriggerFocus = useRef(false);
   const [status, setStatus] = useState('');
-  const [notice, setNotice] = useState<{ key: number; message: string; undo?: Settings } | null>(
-    null,
-  );
+  const [notice, setNotice] = useState<{
+    key: number;
+    message: string;
+    undo?: WorkspaceChange;
+  } | null>(null);
   const noticeKey = useRef(0);
   const [dark, setDark] = useState(false);
   const [contrast, setContrast] = useState(false);
   const [themeReady, setThemeReady] = useState(false);
   const scope = useRef<ThemeScope>();
+  const mounted = useRef(false);
   const nameInput = useRef<HTMLInputElement>(null);
+  const emailInput = useRef<HTMLInputElement>(null);
+  const saveButton = useRef<HTMLButtonElement>(null);
   const settingsTrigger = useRef<HTMLButtonElement | null>(null);
 
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the retry counter starts a new storage read.
+  useEffect(() => {
+    let disposed = false;
+    setLoadError(false);
+    void readWorkspace().then(
+      (next) => {
+        if (!disposed) setRecord(next);
+      },
+      () => {
+        if (!disposed) setLoadError(true);
+      },
+    );
+    return () => {
+      disposed = true;
+    };
+  }, [loadAttempt]);
   useEffect(() => {
     let disposed = false;
     void initializeColors()
@@ -60,7 +79,10 @@ function Workspace() {
         scope.current = createThemeScope(document.documentElement);
         setThemeReady(true);
       })
-      .catch(() => setStatus('Доступна начальная тема. Не удалось загрузить настройку контраста.'));
+      .catch(() => {
+        if (!disposed)
+          setStatus('Доступна начальная тема. Не удалось загрузить настройку контраста.');
+      });
     return () => {
       disposed = true;
       scope.current?.dispose();
@@ -77,176 +99,272 @@ function Workspace() {
   }, [dark, contrast, themeReady]);
 
   function changeOpen(next: boolean) {
+    if (pending.current) return;
     if (next) {
-      setDraft(settings);
+      if (!record) return;
+      setDraft(record.workspace);
       setInvalid(false);
-      setStatus('');
+      setEmailInvalid(false);
+      setSaveError(false);
+      setNotice(null);
     }
     setOpen(next);
   }
-  function save(event: FormEvent) {
+
+  async function save(event: FormEvent) {
     event.preventDefault();
-    if (!draft.name.trim()) {
-      setInvalid(true);
-      nameInput.current?.focus();
+    if (pending.current) return;
+    const nameError = !draft.name.trim();
+    const emailError =
+      (draft.notifications || !!draft.email.trim()) && !emailPattern.test(draft.email.trim());
+    setInvalid(nameError);
+    setEmailInvalid(emailError);
+    if (nameError || emailError) {
+      (nameError ? nameInput : emailInput).current?.focus();
       return;
     }
-    const next = { ...draft, name: draft.name.trim() };
-    let persisted = true;
+    pending.current = true;
+    setSaving(true);
+    setSaveError(false);
     try {
-      localStorage.setItem(storageKey, JSON.stringify(next));
+      const change = await saveWorkspace(draft);
+      if (!mounted.current) return;
+      setRecord(change.after);
+      setOpen(false);
+      setNotice({ key: ++noticeKey.current, message: 'Настройки сохранены', undo: change });
     } catch {
-      persisted = false;
+      if (mounted.current) setSaveError(true);
+    } finally {
+      pending.current = false;
+      if (mounted.current) setSaving(false);
     }
-    setSettings(next);
-    setOpen(false);
-    setStatus(persisted ? '' : 'Настройки применены до закрытия страницы: хранилище недоступно.');
-    setNotice({
-      key: ++noticeKey.current,
-      message: persisted ? 'Настройки сохранены' : 'Изменения применены',
-      undo: settings,
-    });
   }
 
-  function undo(event: MouseEvent<HTMLButtonElement>): void {
+  // The button becomes focusable again after a failed commit; keep retry at the same place.
+  useEffect(() => {
+    if (saveError && !saving) saveButton.current?.focus();
+  }, [saveError, saving]);
+
+  useEffect(() => {
+    if (!undoing && restoreTriggerFocus.current) {
+      restoreTriggerFocus.current = false;
+      settingsTrigger.current?.focus({ preventScroll: true });
+    }
+  }, [undoing]);
+
+  async function undo(event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
-    if (!notice?.undo) return;
-    const previous = notice.undo;
+    if (!notice?.undo || pending.current) return;
+    pending.current = true;
+    setUndoing(true);
     try {
-      localStorage.setItem(storageKey, JSON.stringify(previous));
-      setStatus('');
+      const restored = await undoWorkspace(notice.undo);
+      const current = restored ?? (await readWorkspace());
+      if (!mounted.current) return;
+      setRecord(current);
+      setNotice({
+        key: ++noticeKey.current,
+        message: restored ? 'Изменения отменены' : 'Настройки уже изменились',
+      });
+      restoreTriggerFocus.current = true;
     } catch {
-      setStatus('Отмена применена до закрытия страницы: хранилище недоступно.');
+      if (mounted.current) {
+        const key = ++noticeKey.current;
+        setNotice((current) =>
+          current
+            ? {
+                ...current,
+                key,
+                message: 'Не удалось отменить. Попробуйте ещё раз.',
+              }
+            : null,
+        );
+      }
+    } finally {
+      pending.current = false;
+      if (mounted.current) setUndoing(false);
     }
-    setSettings(previous);
-    setNotice({ key: ++noticeKey.current, message: 'Изменения отменены' });
-    settingsTrigger.current?.focus({ preventScroll: true });
   }
 
+  const settings = record?.workspace;
   return (
     <div className="workspace">
       <header className="workspace-topbar">
         <a className="workspace-brand" href="./index.html">
-          labpics<span>LabUI</span>
+          LabUI
         </a>
-        <span className="workspace-caption">Рабочее пространство</span>
+        <span className="workspace-caption">Пример приложения</span>
       </header>
       <main className="workspace-main">
-        <div className="workspace-intro">
-          <h1>Настройки</h1>
-        </div>
+        <h1>Настройки</h1>
         <Card
           className="workspace-card"
           padding="l"
-          header={
-            <div className="workspace-card-heading">
-              <span className="workspace-monogram" aria-hidden="true">
-                {settings.name.slice(0, 1).toLocaleUpperCase()}
-              </span>
-              <div>
-                <h2 className="workspace-card-title">{settings.name}</h2>
-              </div>
-            </div>
-          }
+          caption="Рабочее пространство"
+          heading={settings?.name ?? 'Пространство'}
+          description={settings?.description}
           footer={
-            <Sheet
-              open={open}
-              onOpenChange={changeOpen}
-              defaultPosition="half"
-              heading="Настройки пространства"
-              onMotionError={() => setStatus('Не удалось открыть панель. Попробуйте ещё раз.')}
-              trigger={({ props, ref }) => (
-                <Button
-                  {...props}
-                  ref={(element) => {
-                    ref(element);
-                    settingsTrigger.current = element;
-                  }}
-                  type="neutral"
-                  kind="tinted"
-                >
-                  Изменить настройки
-                </Button>
-              )}
-              content={
-                <form className="workspace-form" onSubmit={save} noValidate>
-                  <Input
-                    ref={nameInput}
-                    label="Название пространства"
-                    name="workspace-name"
-                    value={draft.name}
-                    maxLength={80}
-                    autoComplete="organization"
-                    invalid={invalid}
-                    error="Введите название пространства"
-                    onValueChange={(name) => {
-                      setDraft((value) => ({ ...value, name }));
-                      if (name.trim()) setInvalid(false);
+            settings && (
+              <Sheet
+                open={open}
+                onOpenChange={changeOpen}
+                defaultPosition="flex"
+                heading="Настройки пространства"
+                onMotionError={() => setStatus('Не удалось открыть панель. Попробуйте ещё раз.')}
+                trigger={({ props, ref }) => (
+                  <Button
+                    {...props}
+                    className="workspace-edit"
+                    ref={(element) => {
+                      ref(element);
+                      settingsTrigger.current = element;
                     }}
-                  />
-                  <div className="workspace-option">
-                    <Switch
-                      checked={draft.notifications}
-                      onCheckedChange={(notifications) =>
-                        setDraft((value) => ({ ...value, notifications }))
+                    disabled={undoing}
+                  >
+                    Изменить настройки
+                  </Button>
+                )}
+                content={
+                  <form className="workspace-form" onSubmit={save} noValidate aria-busy={saving}>
+                    <Input
+                      ref={nameInput}
+                      label="Название пространства"
+                      name="workspace-name"
+                      value={draft.name}
+                      maxLength={80}
+                      autoComplete="organization"
+                      required
+                      readOnly={saving}
+                      invalid={invalid}
+                      error="Введите название пространства"
+                      onValueChange={(name) => {
+                        setDraft((value) => ({ ...value, name }));
+                        if (name.trim()) setInvalid(false);
+                      }}
+                    />
+                    <Textarea
+                      label="Описание"
+                      name="workspace-description"
+                      value={draft.description}
+                      maxLength={320}
+                      rows={3}
+                      readOnly={saving}
+                      onValueChange={(description) =>
+                        setDraft((value) => ({ ...value, description }))
                       }
-                    >
-                      Уведомления команды
-                    </Switch>
-                    <p>Изменения проектов и важные сообщения.</p>
-                  </div>
-                  <div className="workspace-actions">
-                    <Button type="neutral" kind="tinted" onClick={() => setOpen(false)}>
-                      Отмена
-                    </Button>
-                    <Button htmlType="submit">Сохранить</Button>
-                  </div>
-                </form>
-              }
-            />
+                    />
+                    <Input
+                      ref={emailInput}
+                      label="Почта для уведомлений"
+                      name="workspace-email"
+                      inputType="email"
+                      autoComplete="email"
+                      value={draft.email}
+                      maxLength={254}
+                      required={draft.notifications}
+                      readOnly={saving}
+                      invalid={emailInvalid}
+                      error="Проверьте адрес почты"
+                      onValueChange={(email) => {
+                        setDraft((value) => ({ ...value, email }));
+                        setEmailInvalid(false);
+                      }}
+                    />
+                    <div className="workspace-option">
+                      <Switch
+                        labelStart="Уведомления команды"
+                        checked={draft.notifications}
+                        disabled={saving}
+                        onCheckedChange={(notifications) =>
+                          setDraft((value) => ({ ...value, notifications }))
+                        }
+                      />
+                      <p>Изменения проектов и важные сообщения.</p>
+                    </div>
+                    {saveError && (
+                      <p className="workspace-error" role="alert">
+                        Не удалось сохранить изменения. Попробуйте ещё раз.
+                      </p>
+                    )}
+                    <div className="workspace-actions">
+                      <Button
+                        type="neutral"
+                        kind="tinted"
+                        disabled={saving}
+                        onClick={() => changeOpen(false)}
+                      >
+                        Отмена
+                      </Button>
+                      <Button ref={saveButton} htmlType="submit" loading={saving}>
+                        Сохранить
+                      </Button>
+                    </div>
+                  </form>
+                }
+              />
+            )
           }
         >
-          <dl className="workspace-details">
-            <div>
-              <dt>Уведомления команды</dt>
-              <dd>{settings.notifications ? 'Включены' : 'Выключены'}</dd>
+          {settings ? (
+            <dl className="workspace-details">
+              <div>
+                <dt>Почта для уведомлений</dt>
+                <dd>{settings.email || 'Не указана'}</dd>
+              </div>
+              <div>
+                <dt>Уведомления команды</dt>
+                <dd>{settings.notifications ? 'Включены' : 'Выключены'}</dd>
+              </div>
+            </dl>
+          ) : loadError ? (
+            <div className="workspace-load-error">
+              <p role="alert">Не удалось прочитать настройки.</p>
+              <Button size="s" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>
+                Повторить
+              </Button>
             </div>
-          </dl>
+          ) : (
+            <p className="workspace-loading">Загружаем настройки…</p>
+          )}
         </Card>
-        <Card
-          className="workspace-card"
-          padding="l"
-          header={<h2 className="workspace-card-title">Оформление</h2>}
-        >
+        <Card className="workspace-card" padding="l" heading="Оформление">
           <div className="workspace-preferences">
             <div className="workspace-option">
-              <Switch checked={dark} disabled={!themeReady} onCheckedChange={setDark}>
-                Тёмная тема
-              </Switch>
+              <Switch
+                labelStart="Тёмная тема"
+                checked={dark}
+                disabled={!themeReady}
+                onCheckedChange={setDark}
+              />
             </div>
             <div className="workspace-option">
-              <Switch checked={contrast} disabled={!themeReady} onCheckedChange={setContrast}>
-                Повышенный контраст
-              </Switch>
+              <Switch
+                labelStart="Повышенный контраст"
+                checked={contrast}
+                disabled={!themeReady}
+                onCheckedChange={setContrast}
+              />
               <p>Более отчётливые подписи и границы.</p>
             </div>
           </div>
         </Card>
         {status && <output className="workspace-status">{status}</output>}
+        <p className="workspace-local-note">Параметры пространства сохраняются в этом браузере.</p>
       </main>
       <Snackbar
         className="workspace-snackbar"
         open={notice !== null}
         message={notice?.message ?? ''}
         notificationKey={notice?.key}
+        duration={undoing ? 0 : undefined}
+        aria-busy={undoing || undefined}
         actionLabel={notice?.undo ? 'Отменить' : undefined}
         onAction={undo}
         onRuntimeError={(error) => reportError(error)}
         onOpenChange={(next) => {
-          if (!next) setNotice(null);
+          if (!next && !pending.current) setNotice(null);
         }}
       />
-      <footer className="workspace-footer">LabUI</footer>
     </div>
   );
 }

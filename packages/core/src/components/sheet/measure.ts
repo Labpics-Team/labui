@@ -5,9 +5,9 @@ export function measureSheetGeometry(positioner: HTMLElement): SheetGeometry {
   const view = positioner.ownerDocument.defaultView;
   if (!view) throw new Error('LabSheet: измерение требует окно документа');
   const surface = positioner.querySelector<HTMLElement>('.lab-sheet-surface');
-  const panel = positioner.querySelector<HTMLElement>('.lab-sheet-panel-body');
+  const content = positioner.querySelector<HTMLElement>('.lab-sheet-panel-content');
   const body = positioner.querySelector<HTMLElement>('.lab-sheet-body');
-  if (!surface || !panel || !body) throw new Error('LabSheet: отсутствует содержимое панели');
+  if (!surface || !content || !body) throw new Error('LabSheet: отсутствует содержимое панели');
   const measure = (selector: string): number => {
     const element = positioner.querySelector<HTMLElement>(selector);
     return element ? Number.parseFloat(view.getComputedStyle(element).height) : 0;
@@ -18,8 +18,12 @@ export function measureSheetGeometry(positioner: HTMLElement): SheetGeometry {
     positioner.querySelector('.lab-sheet-panel-heading')?.getBoundingClientRect().height ?? 0;
   const natural = bodyHeight + headingHeight;
   const bodyGap = bodyHeight > 0 && headingHeight > 0 ? gap : 0;
-  surface.style.setProperty('--_sheet-panel-gap', natural > 0 ? 'var(--_sheet-gap)' : '0px');
-  panel.style.setProperty('--_sheet-body-gap', bodyGap > 0 ? 'var(--_sheet-gap)' : '0px');
+  const panelGap = natural > 0 ? 'var(--_sheet-gap)' : '0px';
+  const contentGap = bodyGap > 0 ? 'var(--_sheet-gap)' : '0px';
+  if (surface.style.getPropertyValue('--_sheet-panel-gap') !== panelGap)
+    surface.style.setProperty('--_sheet-panel-gap', panelGap);
+  if (content.style.getPropertyValue('--_sheet-body-gap') !== contentGap)
+    content.style.setProperty('--_sheet-body-gap', contentGap);
   return sheetGeometry(
     positioner.getBoundingClientRect().height || view.innerHeight,
     measure('.lab-sheet-overlap'),

@@ -54,13 +54,15 @@ export function mountSheetMotion(
   let suppressClick = false;
   let lastGoal = geometry.viewport;
   let lastScale = -1;
+  let visibleHeight: number | undefined;
+  let resizeFrame: number | undefined;
   let role: keyof typeof motionSemanticRuntime = 'entrance';
 
   function sizeContent(): void {
-    frame.style.setProperty(
-      '--_sheet-visible-height',
-      `${geometry.viewport - geometry.tops[position]}px`,
-    );
+    const next = geometry.viewport - geometry.tops[position];
+    if (next === visibleHeight) return;
+    visibleHeight = next;
+    frame.style.setProperty('--_sheet-visible-height', `${next}px`);
   }
 
   function readTop(): number {
@@ -254,6 +256,7 @@ export function mountSheetMotion(
 
   function update(nextOpen: boolean, nextPosition: LabSheetPosition): void {
     if (disposed) return;
+    cancelResize();
     try {
       const nextGeometry = options.readGeometry();
       const resized =
@@ -275,11 +278,27 @@ export function mountSheetMotion(
     }
   }
 
-  const resize = new ResizeObserver(() => update(open, position));
+  function cancelResize(): void {
+    if (resizeFrame === undefined) return;
+    view.cancelAnimationFrame(resizeFrame);
+    resizeFrame = undefined;
+  }
+
+  function scheduleResize(): void {
+    if (disposed || resizeFrame !== undefined) return;
+    // Measuring also updates layout gaps and the scroll area's size. Do not
+    // mutate observed layout in ResizeObserver's current delivery cycle.
+    resizeFrame = view.requestAnimationFrame(() => {
+      resizeFrame = undefined;
+      update(open, position);
+    });
+  }
+
+  const resize = new ResizeObserver(scheduleResize);
   resize.observe(frame);
   for (const element of observed) resize.observe(element);
-  motion.on(view, 'resize', () => update(open, position));
-  if (view.visualViewport) motion.on(view.visualViewport, 'resize', () => update(open, position));
+  motion.on(view, 'resize', scheduleResize);
+  if (view.visualViewport) motion.on(view.visualViewport, 'resize', scheduleResize);
   frame.setAttribute('data-lab-motion', '');
   sizeContent();
   move(geometry.viewport, true);
@@ -289,6 +308,7 @@ export function mountSheetMotion(
     disposed = true;
     generation++;
     resize.disconnect();
+    cancelResize();
     try {
       cancelGesture();
     } finally {

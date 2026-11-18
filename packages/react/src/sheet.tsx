@@ -99,8 +99,7 @@ export function Sheet({
   const frame = useRef<HTMLDivElement>(null);
   const surface = useRef<HTMLDivElement>(null);
   const handle = useRef<HTMLButtonElement>(null);
-  const panel = useRef<HTMLDivElement>(null);
-  const body = useRef<HTMLDivElement>(null);
+  const panelContent = useRef<HTMLDivElement>(null);
   const motion = useRef<SheetMotion>();
   const disposeMaterial = useRef<() => void>();
   const latest = useRef({
@@ -172,15 +171,13 @@ export function Sheet({
     const currentFrame = frame.current;
     const currentSurface = surface.current;
     const currentHandle = handle.current;
-    const currentPanel = panel.current;
-    const currentBody = body.current;
+    const currentPanelContent = panelContent.current;
     if (
       !currentPositioner ||
       !currentFrame ||
       !currentSurface ||
       !currentHandle ||
-      !currentPanel ||
-      !currentBody
+      !currentPanelContent
     )
       return;
     if (effectiveOpen) setPresent(true);
@@ -193,8 +190,7 @@ export function Sheet({
           currentHandle,
           [
             currentHandle,
-            currentPanel,
-            currentBody,
+            currentPanelContent,
             ...currentPositioner.querySelectorAll('.lab-sheet-preset'),
           ],
           {
@@ -272,23 +268,23 @@ export function Sheet({
               >
                 <span className="lab-sheet-indicator" />
               </button>
-              <div ref={panel} className="lab-sheet-panel-body">
-                {(hasHeading || hasDescription) && (
-                  <div className="lab-sheet-panel-heading">
-                    {hasHeading && (
-                      <h2 {...api.getTitleProps()} className="lab-sheet-heading">
-                        {heading}
-                      </h2>
-                    )}
-                    {hasDescription && (
-                      <p {...api.getDescriptionProps()} className="lab-sheet-description">
-                        {description}
-                      </p>
-                    )}
-                  </div>
-                )}
-                <div ref={body} className="lab-sheet-body">
-                  {content}
+              <div className="lab-sheet-panel-body">
+                <div ref={panelContent} className="lab-sheet-panel-content">
+                  {(hasHeading || hasDescription) && (
+                    <div className="lab-sheet-panel-heading">
+                      {hasHeading && (
+                        <h2 {...api.getTitleProps()} className="lab-sheet-heading">
+                          {heading}
+                        </h2>
+                      )}
+                      {hasDescription && (
+                        <p {...api.getDescriptionProps()} className="lab-sheet-description">
+                          {description}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  <div className="lab-sheet-body">{content}</div>
                 </div>
               </div>
               {closable && (
