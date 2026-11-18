@@ -13,8 +13,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.innerShadow
@@ -100,6 +104,12 @@ internal fun SelectionIndicator(
     val metrics = selectionMetrics(size)
     val tiny = size == LabSelectionSize.Tiny
     val selected = state != ToggleableState.Off
+    val motion = rememberLabMotion()
+    val reveal = remember(motion) { motion.value(if (selected) 1f else 0f, "selection.mark") }
+    var lastSelectedState by remember { mutableStateOf(state) }
+    val glyphState = if (selected) state else lastSelectedState
+    SideEffect { if (selected) lastSelectedState = state }
+    LaunchedEffect(selected) { motion.animate { to(reveal, if (selected) 1f else 0f) } }
     val shape = if (radio) CircleShape else RoundedCornerShape(metrics.checkboxRadius.dp)
     val activeColor = colors[when (intent) {
         LabIntent.Accent -> LabComponents.SelectionRolesAccent
@@ -158,40 +168,41 @@ internal fun SelectionIndicator(
         else Modifier,
     )) {
         Canvas(Modifier.matchParentSize()) {
+            val alpha = reveal.value.coerceIn(0f, 1f)
             if (!tiny && !selected && enabled) {
                 val stroke = 1.dp.toPx()
                 drawRoundRect(colors[LabComponents.SelectionRolesUncheckedStroke], Offset(stroke / 2, stroke / 2),
                     Size(this.size.width - stroke, this.size.height - stroke),
                     CornerRadius(if (radio) this.size.width / 2 else metrics.checkboxRadius.dp.toPx() - stroke / 2), style = Stroke(stroke))
             }
-            if (radio && selected) {
+            if (radio && (selected || alpha > 0f)) {
                 val color = if (enabled) activeColor else disabledColor
                 if (tiny) {
                     val radius = metrics.tinyDot.dp.toPx() / 2
-                    drawCircle(color, radius)
+                    drawCircle(color, radius, alpha = alpha)
                     if (enabled) drawCircle(Brush.verticalGradient(listOf(highlight, white.copy(alpha = 0f)),
-                        startY = center.y - radius, endY = center.y + radius), radius)
+                        startY = center.y - radius, endY = center.y + radius), radius, alpha = alpha)
                 } else {
                     val stroke = (if (focused && enabled && intent == LabIntent.Accent) metrics.radioFocusStroke else metrics.radioStroke).dp.toPx()
                     val radius = (this.size.width - stroke) / 2
-                    drawCircle(color, radius, style = Stroke(stroke))
-                    if (enabled) drawCircle(gradient, radius, style = Stroke(stroke))
+                    drawCircle(color, radius, style = Stroke(stroke), alpha = alpha)
+                    if (enabled) drawCircle(gradient, radius, style = Stroke(stroke), alpha = alpha)
                 }
-            } else if (!radio && selected) {
+            } else if (!radio && (selected || alpha > 0f)) {
                 val glyph = metrics.glyphSize.dp.toPx()
                 val left = (this.size.width - glyph) / 2
-                if (state == ToggleableState.Indeterminate) {
+                if (glyphState == ToggleableState.Indeterminate) {
                     val top = metrics.mixedY.dp.toPx()
                     val height = metrics.mixedHeight.dp.toPx()
-                    drawRoundRect(glyphColor, Offset(left, top), Size(glyph, height), CornerRadius(height / 2))
+                    drawRoundRect(glyphColor, Offset(left, top), Size(glyph, height), CornerRadius(height / 2), alpha = alpha)
                     if (tiny && enabled) drawRoundRect(Brush.verticalGradient(listOf(highlight, white.copy(alpha = 0f)),
-                        startY = top, endY = top + height), Offset(left, top), Size(glyph, height), CornerRadius(height / 2))
+                        startY = top, endY = top + height), Offset(left, top), Size(glyph, height), CornerRadius(height / 2), alpha = alpha)
                 } else withTransform({
                     translate(left, (this@Canvas.size.height - glyph) / 2)
                     scale(glyph / LabComponents.SelectionCheckboxGlyphViewBox, glyph / LabComponents.SelectionCheckboxGlyphViewBox, Offset.Zero)
                 }) {
-                    drawPath(check, glyphColor)
-                    if (tiny && enabled) drawPath(check, Brush.verticalGradient(listOf(highlight, white.copy(alpha = 0f)), endY = LabComponents.SelectionCheckboxGlyphViewBox))
+                    drawPath(check, glyphColor, alpha = alpha)
+                    if (tiny && enabled) drawPath(check, Brush.verticalGradient(listOf(highlight, white.copy(alpha = 0f)), endY = LabComponents.SelectionCheckboxGlyphViewBox), alpha = alpha)
                 }
             }
         }

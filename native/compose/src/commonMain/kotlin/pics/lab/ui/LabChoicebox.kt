@@ -148,14 +148,11 @@ internal fun ChoiceboxOption(
             item.icon?.invoke(iconScope)
         }
     }
-    val text: @Composable () -> Unit = {
-        Column(verticalArrangement = Arrangement.spacedBy(LabTokens.Space1.dp)) {
-            BasicText(item.label, style = labelStyle)
-            item.description?.let { BasicText(it, style = LabType.body().copy(
-                color = colors[if (enabled) LabComponents.SelectionChoiceboxDescriptionRole else LabComponents.SelectionRolesDisabledLabel])) }
-            item.content?.invoke()
-        }
-    }
+    val label: @Composable () -> Unit = { BasicText(item.label, style = labelStyle) }
+    val description: (@Composable () -> Unit)? = item.description?.let { value -> {
+        BasicText(value, style = LabType.body().copy(
+            color = colors[if (enabled) LabComponents.SelectionChoiceboxDescriptionRole else LabComponents.SelectionRolesDisabledLabel]))
+    } }
     val bounds = if (layout == LabChoiceboxLayout.Card) Modifier.width(LabComponents.SelectionChoiceboxPreferredWidth.dp)
         .heightIn(min = LabComponents.SelectionChoiceboxCardHeight.dp)
         else Modifier.fillMaxWidth().heightIn(min = LabComponents.SelectionChoiceboxRowHeight.dp)
@@ -177,17 +174,24 @@ internal fun ChoiceboxOption(
             icon()
             indicator()
         }
-        text()
-    } else ChoiceboxRowLayout(surface, if (item.icon == null) null else icon, text, indicator)
+        Column(verticalArrangement = Arrangement.spacedBy(LabTokens.Space1.dp)) {
+            label(); description?.invoke(); item.content?.invoke()
+        }
+    } else ChoiceboxRowLayout(surface, if (item.icon == null) null else icon, label, description, item.content, indicator)
 }
 
 /** A long word gets the whole row before line breaking splits it into fragments. */
 @Composable
 private fun ChoiceboxRowLayout(
-    modifier: Modifier, icon: (@Composable () -> Unit)?, text: @Composable () -> Unit,
+    modifier: Modifier, icon: (@Composable () -> Unit)?, label: @Composable () -> Unit,
+    description: (@Composable () -> Unit)?, content: (@Composable () -> Unit)?,
     indicator: @Composable () -> Unit,
 ) {
-    Layout(modifier = modifier, content = { if (icon != null) icon(); text(); indicator() }) { measurables, constraints ->
+    Layout(modifier = modifier, content = {
+        icon?.invoke(); label(); description?.invoke()
+        if (content != null) Column(verticalArrangement = Arrangement.spacedBy(LabTokens.Space1.dp)) { content() }
+        indicator()
+    }) { measurables, constraints ->
         val loose = constraints.copy(minWidth = 0, minHeight = 0)
         val iconIndex = if (icon == null) -1 else 0
         val textIndex = if (icon == null) 0 else 1
@@ -197,21 +201,31 @@ private fun ChoiceboxRowLayout(
         val controlGap = LabComponents.SelectionChoiceboxHeaderGap.dp.roundToPx()
         val iconWidth = if (iconPlaceable == null) 0 else iconPlaceable.width + contentGap
         val available = (constraints.maxWidth - iconWidth - control.width - controlGap).coerceAtLeast(0)
-        val stacked = measurables[textIndex].minIntrinsicWidth(Constraints.Infinity) > available
-        val textPlaceable = measurables[textIndex].measure(loose.copy(maxWidth = if (stacked) constraints.maxWidth else available))
-        val width = constraints.constrainWidth(if (stacked) maxOf(textPlaceable.width, iconWidth + control.width)
-            else iconWidth + textPlaceable.width + controlGap + control.width)
+        // Only our own text participates in intrinsic reflow. Consumer content
+        // may use SubcomposeLayout (for example BoxWithConstraints or lazy lists),
+        // which intentionally does not implement intrinsic measurement.
+        val authoredText = textIndex until (textIndex + if (description == null) 1 else 2)
+        val stacked = authoredText.any { measurables[it].minIntrinsicWidth(Constraints.Infinity) > available }
+        val textPlaceables = (textIndex until measurables.lastIndex).map {
+            measurables[it].measure(loose.copy(maxWidth = if (stacked) constraints.maxWidth else available))
+        }
+        val textGap = LabTokens.Space1.dp.roundToPx()
+        val textWidth = textPlaceables.maxOf { it.width }
+        val textHeight = textPlaceables.sumOf { it.height } + (textPlaceables.size - 1) * textGap
+        val width = constraints.constrainWidth(if (stacked) maxOf(textWidth, iconWidth + control.width)
+            else iconWidth + textWidth + controlGap + control.width)
         val headerHeight = maxOf(iconPlaceable?.height ?: 0, control.height)
-        val height = constraints.constrainHeight(if (stacked) headerHeight + contentGap + textPlaceable.height
-            else maxOf(headerHeight, textPlaceable.height))
+        val height = constraints.constrainHeight(if (stacked) headerHeight + contentGap + textHeight
+            else maxOf(headerHeight, textHeight))
         layout(width, height) {
+            val textX = if (stacked) 0 else iconWidth
+            var textY = if (stacked) headerHeight + contentGap else (height - textHeight) / 2
+            for (text in textPlaceables) { text.placeRelative(textX, textY); textY += text.height + textGap }
             if (stacked) {
                 iconPlaceable?.placeRelative(0, (headerHeight - iconPlaceable.height) / 2)
                 control.placeRelative(width - control.width, (headerHeight - control.height) / 2)
-                textPlaceable.placeRelative(0, headerHeight + contentGap)
             } else {
                 iconPlaceable?.placeRelative(0, (height - iconPlaceable.height) / 2)
-                textPlaceable.placeRelative(iconWidth, (height - textPlaceable.height) / 2)
                 control.placeRelative(width - control.width, (height - control.height) / 2)
             }
         }

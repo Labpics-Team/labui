@@ -5,7 +5,7 @@
   "renderer": "Compose ImageComposeScene, CPU offscreen, Geist, density 1",
   "verification": {
     "command": "./gradlew :desktopTest --tests pics.lab.ui.SelectionRenderTest",
-    "tests": 7,
+    "tests": 9,
     "failures": 0,
     "checks": [
       "Mixed checkbox activates once and becomes checked; native Space and disabled behavior",
@@ -14,7 +14,9 @@
       "All 96 Check and 64 Radio variants remain within render bounds at text scales 1 and 2",
       "All 20 Choicebox chrome variants and decorative slot colors",
       "Long labels and descriptions retain whole words at text scale 2 in RTL",
-      "Neutral checked and mixed glyph pixels contrast in dark and increased-contrast dark modes"
+      "Neutral checked and mixed glyph pixels contrast in dark and increased-contrast dark modes",
+      "Constraint-aware descriptive content uses ordinary measurement; BoxWithConstraints does not trigger intrinsic measurement",
+      "Check and Radio render intermediate selected-mark poses through LabMotion and settle directly with reduced motion"
     ]
   },
   "selectionSheets": {
@@ -46,6 +48,8 @@
     "Unselected tiny controls retain keyboard focus paint although their authored focus frame is empty.",
     "Choicebox receives a whole-option keyboard focus outline; its Figma family does not contain focus variants.",
     "Choicebox row changes to a header plus full-width text when a word cannot fit beside the icon and indicator. The native action remains the same node.",
+    "Choicebox reflow measures only its authored label and description intrinsically; arbitrary descriptive content remains free to use subcomposition.",
+    "The shared selection indicator reveals and dismisses selected marks through one LabMotion scope, including the user's reduced-motion preference.",
     "Danger intent remains a semantic extension of the shared selection drawing; the authored Check and Radio families contain accent and neutral only."
   ],
   "preservedSourceDetails": [

@@ -5,12 +5,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.HoverInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,6 +64,45 @@ class SelectionRenderTest {
     private fun theme(appearance: LabAppearance = LabAppearance.Light): LabThemeState {
         val prefs = LabPreferences(appearance = appearance, reducedMotion = true)
         return LabThemeState(initialLabColors(prefs), prefs)
+    }
+
+    @Test fun choiceboxRowAcceptsConstraintAwareDescriptiveContent() {
+        val scene = ImageComposeScene(360, 200) { LabTheme(theme()) {
+            LabChoicebox("a", {}, listOf(LabChoiceboxItem("a", "Рабочее пространство", content = {
+                BoxWithConstraints { BasicText(if (maxWidth >= 100.dp) "Подробное описание" else "Описание") }
+            })), Modifier.padding(16.dp), layout = LabChoiceboxLayout.Row)
+        } }
+        try {
+            settle(scene)
+            val option = nodes(scene, Role.RadioButton).single()
+            assertTrue(option.config[SemanticsProperties.Text].any { it.text.contains("описание", ignoreCase = true) })
+        } finally { scene.close() }
+    }
+
+    @Test fun selectionMarksAnimateAndRespectReducedMotion() {
+        for (radio in listOf(false, true)) for (reduced in listOf(false, true)) {
+            val preferences = LabPreferences(reducedMotion = reduced)
+            val theme = LabThemeState(initialLabColors(preferences), preferences)
+            var state by mutableStateOf(ToggleableState.Off)
+            val scene = ImageComposeScene(32, 32) { LabTheme(theme) {
+                SelectionIndicator(state, radio, true, LabIntent.Accent, LabSelectionSize.Tiny, false, false)
+            } }
+            fun frame(millis: Long): ByteArray = scene.render(millis * 1_000_000).use { image ->
+                image.encodeToData()!!.use { it.bytes }
+            }
+            try {
+                frame(0); frame(16)
+                val empty = frame(32)
+                state = if (radio) ToggleableState.On else ToggleableState.Indeterminate
+                val reveal = (3L..65L).map { frame(it * 16).contentHashCode() }.distinct()
+                assertTrue(if (reduced) reveal.size <= 2 else reveal.size > 2,
+                    "Selection must ${if (reduced) "settle directly" else "render intermediate poses"}: radio=$radio, poses=${reveal.size}")
+                assertTrue(!empty.contentEquals(frame(1056)), "The selected mark must remain visible")
+                state = ToggleableState.Off
+                for (index in 67L..130L) frame(index * 16)
+                assertTrue(empty.contentEquals(frame(2096)), "The deselected mark must fully disappear")
+            } finally { scene.close() }
+        }
     }
     @OptIn(androidx.compose.ui.InternalComposeUiApi::class)
     private fun press(scene: ImageComposeScene, key: Key) {
