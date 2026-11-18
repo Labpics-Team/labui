@@ -99,9 +99,7 @@
     },
     "./progress.css": "./dist/progress.css"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "sideEffects": [
     "./src/components/*/index.ts",
     "./dist/theme.css",
