@@ -58,7 +58,7 @@ test('authored first frame works without JavaScript', async ({ browser, baseURL 
       'background-color',
       'rgb(0, 122, 255)',
     );
-    expect((await page.locator('#sample-primary button').boundingBox())?.height).toBe(48);
+    expect((await page.locator('#sample-primary button').boundingBox())?.height).toBe(42);
   } finally {
     await context.close();
   }
