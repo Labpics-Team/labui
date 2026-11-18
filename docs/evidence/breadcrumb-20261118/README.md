@@ -49,7 +49,7 @@ Figma округляет ширину текстовых блоков до 39/58
   Отдельная регрессия сохраняет действие и фокус при изменении предков.
 - `BreadcrumbConsumerTest`: 1 passed, 12 сочетаний темы/масштаба/направления.
   Самостоятельный consumer установлен из локальных Maven-артефактов
-  `0.1.0-breadcrumb-20261118.2`, без `uiSource` и includeBuild для LabUI.
+  `0.1.0-breadcrumb-20261118.3`, без `uiSource` и includeBuild для LabUI.
   Переход меняет маршрут приложения и текущий пункт. Это проверка поставляемых
   байтов, не свидетельство публичного выпуска.
 - Build и typecheck core/React/Vue/Solid/Svelte/Astro прошли. Colors: 255 tests.
@@ -69,7 +69,7 @@ node --test packages/react/test/breadcrumb-ssr.test.mjs
 
 ```powershell
 ./native/compose/gradlew.bat -p native/compose :desktopTest --tests pics.lab.ui.BreadcrumbRenderTest
-$env:ORG_GRADLE_PROJECT_publicationVersion = '0.1.0-breadcrumb-20261118.2'
+$env:ORG_GRADLE_PROJECT_publicationVersion = '0.1.0-breadcrumb-20261118.3'
 $env:ORG_GRADLE_PROJECT_publicationRepository = "$PWD/native/compose/build/breadcrumb-repository"
 ./native/compose/gradlew.bat -p native/compose publishDesktopPublicationToDistributionRepository publishKotlinMultiplatformPublicationToDistributionRepository :ui-colors:publishDesktopPublicationToDistributionRepository :ui-colors:publishKotlinMultiplatformPublicationToDistributionRepository
 $env:ORG_GRADLE_PROJECT_uiVersion = $env:ORG_GRADLE_PROJECT_publicationVersion

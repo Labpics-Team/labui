@@ -56,8 +56,8 @@ public fun LabBreadcrumb(
     modifier: Modifier = Modifier,
     size: LabBreadcrumbSize = LabBreadcrumbSize.Medium,
     maxItems: Int = LabComponents.BreadcrumbDefaultMaxItems.toInt(),
-    label: String = "РќР°РІРёРіР°С†РёРѕРЅРЅР°СЏ С†РµРїРѕС‡РєР°",
-    expandLabel: String = "РџРѕРєР°Р·Р°С‚СЊ РІСЃРµ СЂР°Р·РґРµР»С‹",
+    label: String = "Навигационная цепочка",
+    expandLabel: String = "Показать все разделы",
 ) {
     val metrics = when (size) {
         LabBreadcrumbSize.Small -> LabComponents.BreadcrumbS
