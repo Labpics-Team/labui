@@ -8,6 +8,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import java.io.File
@@ -19,6 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import pics.lab.ui.ColorProgramHost
@@ -37,14 +39,101 @@ class SettingsLayoutTest {
     private fun label(node: SemanticsNode): String =
         node.config.getOrNull(SemanticsProperties.Text)?.joinToString(" ") { it.text }.orEmpty()
 
-    private fun renderUntil(scene: ImageComposeScene, ready: () -> Boolean) {
+    private suspend fun renderUntil(scene: ImageComposeScene, ready: () -> Boolean) {
         val deadline = System.nanoTime() + 10_000_000_000L
         do {
-            scene.render().close()
+            scene.render(System.nanoTime()).close()
             if (ready()) return
-            Thread.sleep(10)
+            delay(10)
         } while (System.nanoTime() < deadline)
         error("Settings did not reach the expected state: ${nodes(scene).map(::label)}")
+    }
+
+    private suspend fun reveal(scene: ImageComposeScene, find: () -> SemanticsNode): SemanticsNode {
+        val target = find()
+        val scroll = generateSequence(target.parent) { it.parent }.first {
+            it.config.getOrNull(SemanticsActions.ScrollBy) != null
+        }
+        val viewport = scroll.boundsInRoot
+        assertTrue(viewport.height > 0, "The form must retain a scrollable viewport")
+        val top = target.positionInRoot.y
+        val bottom = top + target.size.height
+        val dy = if (top < viewport.top) top - viewport.top
+            else if (bottom > viewport.bottom) bottom - viewport.bottom else 0f
+        if (dy != 0f) {
+            assertTrue(scroll.config[SemanticsActions.ScrollBy].action!!.invoke(0f, dy))
+        }
+        try {
+            renderUntil(scene) {
+                val visible = find()
+                visible.boundsInRoot.height >= minOf(visible.size.height.toFloat(), viewport.height) - 1f
+            }
+        } catch (failure: IllegalStateException) {
+            snapshot(scene, File("build/settings-layout/reveal-failure.png"))
+            val visible = find()
+            val range = scroll.config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)
+            error("Cannot reveal ${label(visible)}: viewport=$viewport initialTop=$top dy=$dy " +
+                "position=${visible.positionInRoot} size=${visible.size} clipped=${visible.boundsInRoot} " +
+                "scroll=${range?.value?.invoke()}/${range?.maxValue?.invoke()}")
+        }
+        return find()
+    }
+
+    private fun press(scene: ImageComposeScene, node: SemanticsNode) {
+        val point = node.boundsInRoot.center
+        scene.sendPointerEvent(PointerEventType.Press, point)
+        scene.sendPointerEvent(PointerEventType.Release, point)
+    }
+
+    private fun snapshot(scene: ImageComposeScene, file: File) {
+        scene.render(System.nanoTime()).use { image -> image.encodeToData()!!.use { file.writeBytes(it.bytes) } }
+    }
+
+    @Test
+    fun shortSheetKeepsFieldsAndSaveReachableAtLargeTextScale() = runBlocking {
+        val output = File("build/settings-layout").apply { mkdirs() }
+        val directory = Files.createTempDirectory("labui-short-sheet-test").toFile()
+        val job = SupervisorJob()
+        val store = createWorkspaceStore(
+            directory.resolve(settingsFileName).absolutePath,
+            CoroutineScope(job + Dispatchers.IO),
+        )
+        store.updateDisplay { it.copy(
+            preferences = LabPreferences(reducedMotion = true), material = LabMaterial.Solid,
+        ) }
+        val colors = object : ColorProgramHost {
+            override suspend fun resolve(preferences: LabPreferences) = initialLabColors(preferences)
+            override fun close() = Unit
+        }
+        val scene = ImageComposeScene(320, 320, Density(1f, 2f)) { SettingsScreen(colors, store) }
+        fun button(text: String) = nodes(scene).single {
+            label(it) == text && it.config.getOrNull(SemanticsActions.OnClick) != null
+        }
+        fun field(text: String) = nodes(scene).single {
+            it.config.getOrNull(SemanticsProperties.ContentDescription)?.contains(text) == true
+        }
+        try {
+            renderUntil(scene) { nodes(scene).any { label(it) == "Редактировать" } }
+            press(scene, reveal(scene) { button("Редактировать") })
+            renderUntil(scene) { nodes(scene).any { label(it) == "Настройки пространства" } }
+            snapshot(scene, File(output, "edit-320-320-200-heading.png"))
+
+            val name = reveal(scene) { field("Название") }
+            assertTrue(name.config[SemanticsActions.SetText].action!!.invoke(AnnotatedString("Новая лаборатория")))
+            reveal(scene) { field("Описание") }
+            reveal(scene) { field("Почта для уведомлений") }
+            assertEquals("Лаборатория", store.data.first().workspace.name, "Editing must retain a draft until Save")
+            val save = reveal(scene) { button("Сохранить") }
+            snapshot(scene, File(output, "edit-320-320-200-save.png"))
+            press(scene, save)
+            renderUntil(scene) { runBlocking { store.data.first().workspace.name == "Новая лаборатория" } }
+            renderUntil(scene) { nodes(scene).none { label(it) == "Настройки пространства" } }
+            assertEquals("hello@labpics.ru", store.data.first().workspace.email)
+        } finally {
+            scene.close()
+            job.cancelAndJoin()
+            directory.deleteRecursively()
+        }
     }
 
     @Test
@@ -97,7 +186,7 @@ class SettingsLayoutTest {
                     assertTrue(above.bottom <= below.top, "Settings touch rows overlap: $above / $below")
                 }
                 File(output, "$width-${scale}-bounds.txt").writeText(labels.zip(bounds).joinToString("\n"))
-                scene.render().use { image -> image.encodeToData()!!.use {
+                scene.render(System.nanoTime()).use { image -> image.encodeToData()!!.use {
                     File(output, "$width-${scale}.png").writeBytes(it.bytes)
                 } }
                 // Hit the first row's padded upper edge, away from the small authored track.

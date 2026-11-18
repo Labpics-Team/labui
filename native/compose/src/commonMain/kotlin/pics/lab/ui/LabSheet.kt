@@ -188,15 +188,19 @@ public fun LabSheetHost(
                                     strokeWidth = LabSheetMaterial.strokeWidth.dp,
                                     strokeColor = colors[LabSheetMaterial.strokeRole],
                                 ) {
+                                    val focusOutset = (LabTokens.FocusRingOffset + LabTokens.FocusRingWidth).dp
                                     Column(
                                         Modifier.fillMaxWidth()
                                             .padding(
                                                 start = LabComponents.SheetPaddingX.dp,
                                                 end = LabComponents.SheetPaddingX.dp,
-                                                bottom = LabComponents.SheetPaddingBottom.dp,
+                                                bottom = (LabComponents.SheetPaddingBottom.dp - focusOutset)
+                                                    .coerceAtLeast(0.dp),
                                             ),
                                         verticalArrangement =
-                                            Arrangement.spacedBy(LabComponents.SheetContentGap.dp),
+                                            Arrangement.spacedBy(
+                                                (LabComponents.SheetContentGap.dp - focusOutset).coerceAtLeast(0.dp)
+                                            ),
                                     ) {
                                         Box(
                                             Modifier.fillMaxWidth()
@@ -283,53 +287,59 @@ public fun LabSheetHost(
                                                     )
                                             )
                                         }
-                                        Layout(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            content = {
-                                                BasicText(title, style = LabType.title())
-                                                LabButton(
-                                                    dismissLabel,
-                                                    dismiss,
-                                                    Modifier.focusRequester(closeFocus),
-                                                    enabled = dismissible,
-                                                    intent = LabIntent.Neutral,
-                                                    kind = LabButtonKind.Ghost,
-                                                    size = LabControlSize.Small,
-                                                )
-                                            },
-                                        ) { children, constraints ->
-                                            val gap = LabTokens.Space2.dp.roundToPx()
-                                            val loose = constraints.copy(minWidth = 0, minHeight = 0)
-                                            val action = children[1].measure(loose)
-                                            // Keep whole words beside the action when possible.
-                                            // Reposition the same nodes instead of replacing the
-                                            // focused button when font scale or width changes.
-                                            val inline = children[0].minIntrinsicWidth(Constraints.Infinity) +
-                                                gap + action.width <= constraints.maxWidth
-                                            val title = children[0].measure(loose.copy(
-                                                maxWidth = if (inline) constraints.maxWidth - action.width - gap
-                                                    else constraints.maxWidth,
-                                            ))
-                                            val height = if (inline) maxOf(title.height, action.height)
-                                                else title.height + gap + action.height
-                                            layout(constraints.maxWidth, height) {
-                                                title.placeRelative(0, if (inline) (height - title.height) / 2 else 0)
-                                                action.placeRelative(
-                                                    constraints.maxWidth - action.width,
-                                                    if (inline) (height - action.height) / 2 else title.height + gap,
-                                                )
-                                            }
-                                        }
+                                        // The title and form share the bounded viewport. A tall
+                                        // title cannot consume the space needed to reach fields
+                                        // and actions, including with the keyboard visible.
                                         Column(
                                             Modifier.fillMaxWidth()
                                                 .weight(1f, fill = false)
-                                                .verticalScroll(rememberScrollState()),
-                                            verticalArrangement =
-                                                Arrangement.spacedBy(
-                                                    LabComponents.SheetContentGap.dp
-                                                ),
-                                            content = sheet,
-                                        )
+                                                .verticalScroll(rememberScrollState())
+                                                // Use the existing outside spacing inside the
+                                                // viewport so first/last focus rings stay visible.
+                                                .padding(vertical = focusOutset),
+                                            verticalArrangement = Arrangement.spacedBy(
+                                                LabComponents.SheetContentGap.dp
+                                            ),
+                                        ) {
+                                            Layout(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                content = {
+                                                    BasicText(title, style = LabType.title())
+                                                    LabButton(
+                                                        dismissLabel,
+                                                        dismiss,
+                                                        Modifier.focusRequester(closeFocus),
+                                                        enabled = dismissible,
+                                                        intent = LabIntent.Neutral,
+                                                        kind = LabButtonKind.Ghost,
+                                                        size = LabControlSize.Small,
+                                                    )
+                                                },
+                                            ) { children, constraints ->
+                                                val gap = LabTokens.Space2.dp.roundToPx()
+                                                val loose = constraints.copy(minWidth = 0, minHeight = 0)
+                                                val action = children[1].measure(loose)
+                                                // Keep whole words beside the action when possible.
+                                                // Reposition the same nodes instead of replacing the
+                                                // focused button when font scale or width changes.
+                                                val inline = children[0].minIntrinsicWidth(Constraints.Infinity) +
+                                                    gap + action.width <= constraints.maxWidth
+                                                val title = children[0].measure(loose.copy(
+                                                    maxWidth = if (inline) constraints.maxWidth - action.width - gap
+                                                        else constraints.maxWidth,
+                                                ))
+                                                val height = if (inline) maxOf(title.height, action.height)
+                                                    else title.height + gap + action.height
+                                                layout(constraints.maxWidth, height) {
+                                                    title.placeRelative(0, if (inline) (height - title.height) / 2 else 0)
+                                                    action.placeRelative(
+                                                        constraints.maxWidth - action.width,
+                                                        if (inline) (height - action.height) / 2 else title.height + gap,
+                                                    )
+                                                }
+                                            }
+                                            sheet()
+                                        }
                                     }
                                 }
                             },
