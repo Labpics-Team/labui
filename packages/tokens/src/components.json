@@ -609,5 +609,41 @@
       "iconRole": "label-brand-primary",
       "descriptionRole": "label-secondary"
     }
+  },
+  "kbd": {
+    "sourceRef": {
+      "key": "component-set/Kbd/Kbd",
+      "inspected": "2026-11-18"
+    },
+    "fontWeight": 500,
+    "letterSpacing": 0,
+    "gap": 2,
+    "strokeWidth": 1,
+    "labelRole": "label-secondary",
+    "borderRole": "border-base",
+    "bottomBorderRole": "border-soft",
+    "firstFillRole": "fill-tertiary",
+    "remainingFillRole": "fill-quaternary",
+    "fillEndRole": "fill-none",
+    "sizes": {
+      "s": {
+        "height": 16,
+        "radius": 4,
+        "paddingX": 2,
+        "paddingY": 2,
+        "fontSize": 12,
+        "lineHeight": 12,
+        "bottomStrokeWidth": 1
+      },
+      "l": {
+        "height": 24,
+        "radius": 6,
+        "paddingX": 4,
+        "paddingY": 0,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "bottomStrokeWidth": 2
+      }
+    }
   }
 }

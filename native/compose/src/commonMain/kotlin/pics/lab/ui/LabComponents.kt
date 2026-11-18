@@ -5,6 +5,7 @@ internal data class LabButtonMetrics(val height: Float, val radius: Float, val p
 internal data class LabInputMetrics(val height: Float, val radius: Float, val paddingX: Float, val paddingY: Float, val contentHeight: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float)
 internal data class LabSwitchMetrics(val trackWidth: Float, val trackHeight: Float, val controlHeight: Float, val labelGap: Float, val fontSize: Float, val lineHeight: Float, val letterSpacing: Float, val fontWeight: Float)
 internal data class LabSelectionMetrics(val controlSize: Float, val controlHeight: Float, val labelGap: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float, val checkboxRadius: Float, val glyphSize: Float, val mixedHeight: Float, val mixedY: Float, val radioStroke: Float, val radioFocusStroke: Float, val tinyDot: Float)
+internal data class LabKbdMetrics(val height: Float, val radius: Float, val paddingX: Float, val paddingY: Float, val fontSize: Float, val lineHeight: Float, val bottomStrokeWidth: Float)
 
 public enum class LabBadgeColor(internal val role: String) { Neutral("neutral"), Gray("gray"), Blue("blue"), Red("red"), Orange("orange"), Green("green"), Yellow("yellow"), Teal("teal"), Mint("mint"), Indigo("indigo"), Purple("purple"), Pink("pink"), StaticDark("static-dark"), StaticLight("static-light"), Brand("brand") }
 
@@ -219,4 +220,16 @@ internal object LabComponents {
     const val SelectionChoiceboxHoverFillRole = "fill-quaternary"
     const val SelectionChoiceboxIconRole = "label-brand-primary"
     const val SelectionChoiceboxDescriptionRole = "label-secondary"
+    val KbdS = LabKbdMetrics(16f, 4f, 2f, 2f, 12f, 12f, 1f)
+    val KbdL = LabKbdMetrics(24f, 6f, 4f, 0f, 16f, 24f, 2f)
+    const val KbdFontWeight = 500f
+    const val KbdLetterSpacing = 0f
+    const val KbdGap = 2f
+    const val KbdStrokeWidth = 1f
+    const val KbdLabelRole = "label-secondary"
+    const val KbdBorderRole = "border-base"
+    const val KbdBottomBorderRole = "border-soft"
+    const val KbdFirstFillRole = "fill-tertiary"
+    const val KbdRemainingFillRole = "fill-quaternary"
+    const val KbdFillEndRole = "fill-none"
 }
