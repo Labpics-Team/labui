@@ -11,6 +11,7 @@ import {
   assertPublicCheck,
   assertPublicProvenance,
   assertSourceIdentity,
+  consumerPackages,
   parseIconsJson,
   projectPlatformMeasurement,
   projectPublicProvenance,
@@ -580,23 +581,38 @@ export async function prepareInputs(options) {
   }
   const packages = {};
   const files = [];
-  for (const [key, option, root, commit, file] of [
-    ['icons', '--icons-tarball', iconsRoot, pin.sourceCommit, 'package.json'],
-    ['uiCore', '--ui-core-tarball', uiRoot, uiCommit, 'packages/core/package.json'],
-    ['uiShadow', '--ui-shadow-tarball', uiRoot, uiCommit, 'packages/shadow/package.json'],
-  ]) {
+  for (const { key, name, option } of consumerPackages()) {
+    const root = key === 'icons' ? iconsRoot : uiRoot;
+    const commit = key === 'icons' ? pin.sourceCommit : uiCommit;
+    const file =
+      key === 'icons'
+        ? 'package.json'
+        : `packages/${name.slice('@labpics/ui-'.length)}/package.json`;
     files.push({
       repository: key === 'icons' ? pin.repository : 'Labpics-Team/labui',
       ...(await sourceFile(root, commit, file)),
     });
     const pkg = JSON.parse(await readFile(join(root, file)));
     const archive = await readFile(resolve(options.get(option)));
+    const packed = JSON.parse(
+      execFileSync('tar', ['-xOf', resolve(options.get(option)), 'package/package.json'], {
+        encoding: 'utf8',
+      }),
+    );
+    assert.equal(packed.name, pkg.name);
+    assert.equal(packed.version, pkg.version);
     packages[key] = {
       name: pkg.name,
       version: pkg.version,
       archiveSha256: hash(archive),
       archiveBytes: archive.length,
       sourceCommit: commit,
+      runtimeDependencies: Object.fromEntries(
+        ['dependencies', 'optionalDependencies', 'peerDependencies'].map((field) => [
+          field,
+          packed[field] ?? {},
+        ]),
+      ),
     };
   }
   const reference = await authorReference(iconsRoot, pin);
@@ -616,7 +632,7 @@ export async function prepareInputs(options) {
     });
   }
   const subject = validateSubject({
-    schemaVersion: 3,
+    schemaVersion: 4,
     packages,
     authorReference: reference,
     stateReferences: { 'status-circle': states, 'expression-face': expression },
@@ -822,9 +838,7 @@ async function main() {
     '--icons-source',
     '--ui-source',
     '--ui-commit',
-    '--icons-tarball',
-    '--ui-core-tarball',
-    '--ui-shadow-tarball',
+    ...consumerPackages().map(({ option }) => option),
     '--out',
   ];
   const options = new Map();

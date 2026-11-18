@@ -1010,6 +1010,7 @@ test('public publication preserves schema3 and schema4 package headers exactly',
     '@labpics/motion': '0.5.0',
   };
   v4.packages.uiCore.runtimeDependencies.peerDependencies = { typescript: '>=5' };
+  assert.deepEqual(validateSubject(v4), v4);
 
   for (const input of [v3, v4]) {
     assert.deepEqual(projectPublicProvenance(input, 'subject'), input);
