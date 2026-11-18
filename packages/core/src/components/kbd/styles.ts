@@ -1,6 +1,15 @@
 import { kbdProfile as p } from '@labpics/ui-tokens';
 
 const rem = (px: number) => `${px / 16}rem`;
+// Coverage is independent of the role used to paint the outside bottom stroke.
+const bottomMask = `
+.lab-kbd-key::after {
+  mask:
+    radial-gradient(circle at right top, transparent var(--_kbd-radius), #000 0) left top / var(--_kbd-radius) var(--_kbd-radius) no-repeat,
+    radial-gradient(circle at left top, transparent var(--_kbd-radius), #000 0) right top / var(--_kbd-radius) var(--_kbd-radius) no-repeat,
+    linear-gradient(#000 0 0) bottom / 100% var(--_kbd-depth) no-repeat;
+}
+`;
 const sizes = Object.entries(p.sizes)
   .map(
     ([size, m]) => `
@@ -24,7 +33,7 @@ export const kbdCss = `
   vertical-align: middle;
   gap: ${rem(p.gap)};
   color: var(--lab-${p.labelRole});
-  font-family: var(--lab-font-family, sans-serif);
+  font-family: var(--lab-font-family);
   font-weight: ${p.fontWeight};
   letter-spacing: ${p.letterSpacing}em;
   white-space: nowrap;
@@ -66,10 +75,7 @@ ${sizes}
   border-radius: 0 0 calc(var(--_kbd-radius) + var(--_kbd-depth)) calc(var(--_kbd-radius) + var(--_kbd-depth));
   corner-shape: round;
   background: var(--lab-${p.bottomBorderRole});
-  mask:
-    radial-gradient(circle at right top, transparent calc(var(--_kbd-radius) - .001px), #000 var(--_kbd-radius)) left top / var(--_kbd-radius) var(--_kbd-radius) no-repeat,
-    radial-gradient(circle at left top, transparent calc(var(--_kbd-radius) - .001px), #000 var(--_kbd-radius)) right top / var(--_kbd-radius) var(--_kbd-radius) no-repeat,
-    linear-gradient(#000 0 0) bottom / 100% var(--_kbd-depth) no-repeat;
   pointer-events: none;
 }
+${bottomMask}
 `;

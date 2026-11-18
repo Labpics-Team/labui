@@ -593,6 +593,7 @@
       "padding": 16,
       "cardHeight": 104,
       "rowHeight": 56,
+      "rowWrapWidth": 224,
       "iconSize": 24,
       "cardContentGap": 24,
       "rowContentGap": 8,

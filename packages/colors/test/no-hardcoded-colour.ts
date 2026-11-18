@@ -342,6 +342,14 @@ export function scanSource(relPath: string, source: string): Violation[] {
     (declaration) =>
       declaration.complete && declaration.conditions.some((condition) => condition.forcedColours),
   );
+  // Mask images describe coverage, not visible paint. Only complete declarations
+  // prove that boundary; arbitrary template holes could terminate the rule.
+  // Keep chromatic literals and functional colour expressions governed.
+  // https://www.w3.org/TR/css-masking-1/#MaskValues
+  const coverageMasks = analyzed.declarations.filter(
+    (declaration) =>
+      declaration.complete && /^(?:-webkit-)?mask(?:-image)?$/.test(declaration.property),
+  );
   const out: Violation[] = [];
   const lineAt = (index: number): number =>
     clean.slice(0, analyzed.sourceIndex(index)).split('\n').length;
@@ -355,6 +363,13 @@ export function scanSource(relPath: string, source: string): Violation[] {
     const gated = valueGated.includes(re);
     re.lastIndex = 0;
     for (let m = re.exec(text); m !== null; m = re.exec(text)) {
+      if (
+        /^(?:black|white|#000(?:000)?|#fff(?:fff)?)$/i.test(m[0]) &&
+        coverageMasks.some(
+          (declaration) => m.index >= declaration.start && m.index < declaration.end,
+        )
+      )
+        continue;
       // These are JS property/index expressions, not CSS named colour values.
       if (!isCss && gated && /^\s*[.[]/.test(text.slice(m.index + m[0].length))) continue;
       if (

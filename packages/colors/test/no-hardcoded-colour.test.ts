@@ -60,6 +60,26 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
     ]);
   });
 
+  it('permits achromatic coverage only in complete mask declarations', () => {
+    for (const property of ['mask', 'mask-image', '-webkit-mask', '-webkit-mask-image']) {
+      const rule = `.x { ${property}: linear-gradient(black, #000000, white, #FFF, transparent); }`;
+      expect(scanSource('p.css', rule)).toEqual([]);
+      expect(scanSource('p.ts', `const css = \`${rule}\`;`)).toEqual([]);
+      expect(scanSource('p.ts', `const css = \`${rule}\${unknown}\`;`)).toHaveLength(4);
+      expect(scanSource('p.css', `${rule} .y { background: white; color: #000; }`)).toHaveLength(2);
+      expect(scanSource('p.css', `.x { ${property}: linear-gradient(red, #123); }`)).toHaveLength(
+        2,
+      );
+      expect(
+        scanSource('p.css', `.x { ${property}: linear-gradient(rgb(0 0 0), transparent); }`),
+      ).toHaveLength(1);
+    }
+    expect(scanSource('p.css', '.x { --mask: linear-gradient(black, white); }')).toHaveLength(2);
+    expect(
+      scanSource('p.css', '.x { background-image: linear-gradient(black, white); }'),
+    ).toHaveLength(2);
+  });
+
   it('distinguishes numeric colour serialization and property access from hardcoded paints', () => {
     expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / ${c.a})`;')).toEqual([]);
     expect(
@@ -136,6 +156,12 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
         'const css = `@media (forced-colors: active) { .x { color: CanvasText; } }`;',
       ),
     ).toEqual([]);
+    expect(
+      scanSource(
+        'p.ts',
+        'const css = `@media (forced-colors: active) { ${unknown} .x { color: CanvasText; } }`;',
+      ),
+    ).toHaveLength(1);
   });
 
   it('DETECTS case-insensitively (#FFF / RGB( / BLACK)', () => {

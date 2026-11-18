@@ -205,6 +205,7 @@ internal object LabComponents {
     const val SelectionChoiceboxPadding = 16f
     const val SelectionChoiceboxCardHeight = 104f
     const val SelectionChoiceboxRowHeight = 56f
+    const val SelectionChoiceboxRowWrapWidth = 224f
     const val SelectionChoiceboxIconSize = 24f
     const val SelectionChoiceboxCardContentGap = 24f
     const val SelectionChoiceboxRowContentGap = 8f
