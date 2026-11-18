@@ -63,10 +63,13 @@ export function componentFiles(name: string, sourceRoot = repoRoot): string[] {
     if (seen.has(file)) return;
     seen.add(file);
     const source = readFileSync(resolve(sourceRoot, file), 'utf8');
-    const imports = file.endsWith('.css')
+    const isCss = file.endsWith('.css');
+    const imports = isCss
       ? cssImports(source)
       : ts.preProcessFile(source, true).importedFiles.map((imported) => imported.fileName);
-    for (const imported of imports.filter((path) => path.startsWith('.'))) {
+    for (const imported of imports.filter((path) =>
+      isCss ? !/^(?:[a-z][a-z0-9+.-]*:|\/|#)/i.test(path) : path.startsWith('.'),
+    )) {
       const base = resolve(sourceRoot, dirname(file), imported);
       const target = [base.replace(/\.js$/, '.ts'), base.replace(/\.js$/, '.tsx'), base].find(
         (path) => existsSync(path),
@@ -100,11 +103,20 @@ export interface DimensionViolation {
 const HAIRLINE_PX = new Set([0, 1, 2, -1, -2]);
 
 /** `litVar('--lab-x', '1rem')` / `litVar('--lab-x')` → `var(--lab-x, 1rem)`. */
-export function normalizeLit(source: string): string {
+export function normalizeLit(source: string, preserveOffsets = false): string {
+  const replacement = (whole: string, value: string): string =>
+    preserveOffsets ? value.padEnd(whole.length) : value;
   return source
-    .replace(/\$\{litVar\('(--lab-[a-z0-9-]+)',\s*'([^']+)'\)\}/g, 'var($1, $2)')
-    .replace(/\$\{litVar\('(--lab-[a-z0-9-]+)'\)\}/g, 'var($1)')
-    .replace(/\$\{litConcentricRadius\(([^)]*)\)\}/g, 'max(calc($1))');
+    .replace(
+      /\$\{litVar\('(--lab-[a-z0-9-]+)',\s*'([^']+)'\)\}/g,
+      (whole, name: string, fallback: string) => replacement(whole, `var(${name}, ${fallback})`),
+    )
+    .replace(/\$\{litVar\('(--lab-[a-z0-9-]+)'\)\}/g, (whole, name: string) =>
+      replacement(whole, `var(${name})`),
+    )
+    .replace(/\$\{litConcentricRadius\(([^)]*)\)\}/g, (whole, value: string) =>
+      replacement(whole, `max(calc(${value}))`),
+    );
 }
 
 /** Парсинг `<число><единица>` → px при корне 16px; null, если не длина. */

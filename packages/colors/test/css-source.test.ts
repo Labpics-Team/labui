@@ -96,6 +96,79 @@ describe('local integer layers need an effective isolation declaration', () => {
   });
 });
 
+describe('exceptions require complete static CSS in the source', () => {
+  it.each([
+    '.surface${suffix} { isolation: isolate; } .surface .paint { z-index: 9999; }',
+    '.surface { isolation: isolate; ${reset} } .surface .paint { z-index: 9999; }',
+    ".surface { isolation: isolate; color: ${litVar('--lab-label-primary')}; } .surface .paint { z-index: 9999; }",
+  ])('does not prove isolation by removing interpolation: %s', (css) => {
+    expect(scanZIndexSource('p.ts', `const styles = css\`${css}\`;`)).toMatchObject([
+      { rule: 'magic-zindex' },
+    ]);
+  });
+
+  it.each([
+    '@media (forced-colors: active)${condition} { .x { color: CanvasText; } }',
+    '@media (forced-colors: active) { ${rules} .x { color: CanvasText; } }',
+  ])('does not prove the forced palette through interpolation: %s', (css) => {
+    expect(scanSource('p.ts', `const styles = css\`${css}\`;`).map((hit) => hit.token)).toEqual([
+      'CanvasText',
+    ]);
+  });
+
+  it.each(['isolation: auto', 'all: unset'])(
+    'a reset in another literal cancels isolation irrespective of composition order: %s',
+    (reset) => {
+      const styles =
+        'const styles = `.surface { isolation: isolate; } .surface .paint { z-index: 9999; }`;';
+      const overrides = `const overrides = \`.surface { ${reset}; }\`;`;
+      for (const source of [
+        `${styles} ${overrides} const all = [styles, overrides];`,
+        `${overrides} ${styles} const all = [styles, overrides];`,
+      ]) {
+        expect(scanZIndexSource('p.ts', source)).toMatchObject([{ rule: 'magic-zindex' }]);
+      }
+    },
+  );
+
+  it.each([
+    [
+      'quoted cooked',
+      'const styles = ".surface { isolation: isolate; }\\n.surface .paint { z-index: 1; }";',
+    ],
+    [
+      'template cooked',
+      'const styles = `.surface { isolation: isolate; }\\n.surface .paint { z-index: 1; }`;',
+    ],
+    [
+      'String.raw',
+      'const styles = String.raw`.surface { isolation: isolate; }\n.surface .paint { z-index: 1; }`;',
+    ],
+    [
+      'single complete array literal',
+      'const styles = [".surface { isolation: isolate; }\\n.surface .paint { z-index: 1; }"].join("\\n");',
+    ],
+  ])('reads %s CSS using its actual string semantics', (_kind, source) => {
+    expect(scanZIndexSource('p.ts', source)).toEqual([]);
+  });
+
+  it('keeps backslash sequences raw for String.raw and reports cooked findings at the literal start', () => {
+    expect(
+      scanZIndexSource(
+        'p.ts',
+        'const styles = String.raw`.surface { isolation: isolate; }\\n.surface .paint { z-index: 1; }`;',
+      ),
+    ).toMatchObject([{ rule: 'magic-zindex' }]);
+    const source =
+      'const prefix = true;\nconst styles = ".x {\\n z-index: 9999;\\n color: #fff; }";';
+    expect(scanZIndexSource('p.ts', source)).toMatchObject([{ rule: 'magic-zindex', line: 2 }]);
+    expect(scanSource('p.ts', source)).toMatchObject([{ token: '#fff', line: 2 }]);
+    const palette =
+      'const styles = "@media (forced-colors: active) {\\n .x { color: CanvasText; }\\n }";';
+    expect(scanSource('p.ts', palette)).toEqual([]);
+  });
+});
+
 describe('forced palette is a condition proof, not a header spelling', () => {
   it.each([
     'screen and (forced-colors: active)',
@@ -150,9 +223,9 @@ describe('RGB serialization reads runtime expressions, not TypeScript annotation
 it('follows every local CSS import form through the actual component graph, once per file', () => {
   const root = mkdtempSync(join(tmpdir(), 'labui-css-imports-'));
   const files: Record<string, string> = {
-    'packages/core/src/components/probe/lab-probe.ts': 'import "./styles.css";',
+    'packages/core/src/components/probe/lab-probe.ts': 'import "./styles.css"; import "lit";',
     'packages/core/src/components/probe/styles.css':
-      '@import "./quoted.css"; @import url(./bare.css); @import url("./double.css") layer(base); @import url(\'./single.css\') screen;',
+      '@import "quoted.css"; @import url(bare.css); @import url("./double.css") layer(base); @import url(\'./single.css\') screen; @import "https://cdn.test/external.css"; @import url(//cdn.test/external.css);',
     'packages/core/src/components/probe/quoted.css': '@import "./styles.css";',
     'packages/core/src/components/probe/bare.css': '.x { width: 45px; }',
     'packages/core/src/components/probe/double.css': '.x { width: 46px; }',

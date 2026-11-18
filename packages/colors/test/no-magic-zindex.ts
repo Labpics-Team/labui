@@ -28,7 +28,7 @@
  */
 import { globSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { type CssDeclaration, cssDeclarations } from './css-source.js';
+import { type CssDeclaration, analyzeCssSource } from './css-source.js';
 import { repoRoot } from './no-literal-colour-fallback.js';
 import {
   canonicalTokens,
@@ -161,10 +161,13 @@ export function scanZIndexSource(
 ): ZIndexViolation[] {
   const out: ZIndexViolation[] = [];
   const isTs = relPath.endsWith('.ts') || relPath.endsWith('.tsx');
-  const text = stripComments(isTs ? normalizeLit(source) : source, isTs);
-  const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
+  const clean = stripComments(source, isTs);
+  const analyzed = analyzeCssSource(clean, isTs);
+  const text = isTs ? normalizeLit(analyzed.text, true) : analyzed.text;
+  const lineAt = (index: number): number =>
+    clean.slice(0, analyzed.sourceIndex(index)).split('\n').length;
 
-  const declarations = cssDeclarations(text, isTs);
+  const declarations = analyzed.declarations;
   const isolations = declarations.filter((declaration) =>
     ['isolation', 'all'].includes(declaration.property),
   );
@@ -179,7 +182,7 @@ export function scanZIndexSource(
       (declaration) =>
         declaration.property === 'z-index' && index >= declaration.start && index < declaration.end,
     );
-    if (!target || target.selectors.length === 0) return false;
+    if (!target?.complete || target.selectors.length === 0) return false;
     const guaranteed = (declaration: CssDeclaration): boolean =>
       declaration.conditions.every((condition) =>
         target.conditions.some((active) => active.key === condition.key),
@@ -204,7 +207,10 @@ export function scanZIndexSource(
             const winner = matching.filter(guaranteed).sort(priority).at(-1);
             if (!winner || !isolates(winner)) return false;
             return !isolations.some((declaration) => {
-              if (declaration.document !== target.document || isolates(declaration)) return false;
+              if (isolates(declaration)) return false;
+              // Literals may be composed in any order. A potential reset anywhere
+              // in the same source invalidates a proof from another literal.
+              if (declaration.document !== target.document) return true;
               const same = declaration.selectors.every((other) => sameSelector(root, other));
               const layered = [...declaration.conditions, ...winner.conditions].some((condition) =>
                 condition.key.startsWith('@layer '),

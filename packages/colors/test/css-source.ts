@@ -48,10 +48,12 @@ function literalSpans(file: ts.SourceFile): Span[] {
 
 interface CssText extends Span {
   readonly text: string;
+  readonly cooked?: string;
+  readonly complete: boolean;
 }
 
-/** Keep raw-source offsets; unknown interpolation cannot establish a proof. */
-function literalCss(file: ts.SourceFile): CssText[] {
+/** Raw text serves comment scanning; only complete static literals grant proofs. */
+function literalCss(file: ts.SourceFile, groupComments = true): CssText[] {
   const texts: CssText[] = [];
   const arrays = new Set<ts.ArrayLiteralExpression>();
   const variables = new Map<string, ts.ArrayLiteralExpression>();
@@ -105,11 +107,24 @@ function literalCss(file: ts.SourceFile): CssText[] {
         text = blankSpans(text, holes);
       }
       // Plain labels/import paths cannot grant a CSS exception.
-      texts.push({ text, start, end });
+      const rawTag =
+        ts.isTaggedTemplateExpression(node.parent) &&
+        ts.isPropertyAccessExpression(node.parent.tag) &&
+        ts.isIdentifier(node.parent.tag.expression) &&
+        node.parent.tag.expression.text === 'String' &&
+        node.parent.tag.name.text === 'raw';
+      texts.push({
+        text,
+        start,
+        end,
+        complete: !ts.isTemplateExpression(node),
+        cooked: ts.isStringLiteralLike(node) && !rawTag ? node.text : undefined,
+      });
     }
     ts.forEachChild(node, visit);
   };
   visit(file);
+  if (!groupComments) return texts.filter(({ text }) => /[{}:;]|\/\*/.test(text));
   // Generators also emit arrays of CSS lines with join(). Preserve that one
   // composition boundary so a block comment may span several literal elements.
   const grouped: CssText[] = [];
@@ -122,7 +137,7 @@ function literalCss(file: ts.SourceFile): CssText[] {
     let text = file.text.slice(start, end).replace(/[^\r\n]/g, ' ');
     for (const part of parts)
       text = text.slice(0, part.start - start) + part.text + text.slice(part.end - start);
-    grouped.push({ start, end, text });
+    grouped.push({ start, end, text, complete: false });
   }
   return [
     ...grouped,
@@ -179,6 +194,14 @@ export interface CssDeclaration extends Span {
   readonly selectors: readonly (readonly string[])[];
   readonly conditions: readonly CssCondition[];
   readonly document: number;
+  /** Interpolations and composed fragments can reveal resets, never exemptions. */
+  readonly complete: boolean;
+}
+
+export interface CssSource {
+  readonly text: string;
+  readonly declarations: readonly CssDeclaration[];
+  readonly sourceIndex: (index: number) => number;
 }
 
 /** A sufficient proof, not media-query evaluation: unknown branches stay false. */
@@ -236,18 +259,34 @@ function resolvedSelectors(source: string, parents: readonly (readonly string[])
   return selectors;
 }
 
-/** Read declarations only; nested declarations retain enclosing conditions. */
-export function cssDeclarations(source: string, isTs: boolean): CssDeclaration[] {
+/**
+ * Inspect every fragment, but allow exceptions only within complete static CSS.
+ * Cooked literal text comes from TypeScript; String.raw keeps its raw spelling.
+ * No decoder/source map is maintained: changed literals report their start.
+ */
+export function analyzeCssSource(source: string, isTs: boolean): CssSource {
   const texts = isTs
-    ? literalCss(sourceFile(source))
-    : [{ text: source, start: 0, end: source.length }];
+    ? literalCss(sourceFile(source), false)
+    : [{ text: source, start: 0, end: source.length, complete: true }];
   // Small scanner probes can also supply a bare CSS fragment with a TS filename.
-  if (texts.length === 0) texts.push({ text: source, start: 0, end: source.length });
+  if (texts.length === 0)
+    texts.push({ text: source, start: 0, end: source.length, complete: !isTs });
   const out: CssDeclaration[] = [];
+  let text = source;
+  const changed: Span[] = [];
   for (const [document, input] of texts.entries()) {
+    const rendered = input.cooked ?? input.text;
+    const cssText = blankSpans(rendered, cssComments(rendered));
+    if (input.complete && cssText !== input.text) {
+      text =
+        text.slice(0, input.start) +
+        cssText.padEnd(input.end - input.start) +
+        text.slice(input.end);
+      changed.push(input);
+    }
     let root: Root;
     try {
-      root = postcss.parse(input.text);
+      root = postcss.parse(cssText);
     } catch {
       continue; // An unparseable document cannot grant an exception.
     }
@@ -268,6 +307,7 @@ export function cssDeclarations(source: string, isTs: boolean): CssDeclaration[]
           selectors,
           conditions,
           document,
+          complete: input.complete,
         });
       } else if (node.type === 'rule') {
         const resolved = resolvedSelectors(node.selector, selectors);
@@ -295,7 +335,12 @@ export function cssDeclarations(source: string, isTs: boolean): CssDeclaration[]
     };
     visit(root, [], []);
   }
-  return out;
+  return {
+    text,
+    declarations: out,
+    sourceIndex: (index) =>
+      changed.find((span) => index >= span.start && index < span.end)?.start ?? index,
+  };
 }
 
 /** Both string and url() forms are CSS import syntax, with optional conditions. */

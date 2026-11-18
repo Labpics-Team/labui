@@ -36,7 +36,7 @@
 import { globSync, readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import ts from 'typescript';
-import { cssDeclarations, readsRuntimeData, stripComments } from './css-source.js';
+import { analyzeCssSource, readsRuntimeData, stripComments } from './css-source.js';
 import {
   NAMED_COLOURS,
   SYSTEM_COLOURS,
@@ -327,14 +327,17 @@ export function scanSource(relPath: string, source: string): Violation[] {
   if (ALLOWLIST.includes(relPath)) return [];
   const isCss = relPath.endsWith('.css');
   const clean = stripComments(source, !isCss);
-  const text = blankLicensedSpans(clean, relPath);
+  const analyzed = analyzeCssSource(clean, !isCss);
+  const text = blankLicensedSpans(analyzed.text, relPath);
   // System colours deliberately follow the user's forced palette, not Lab UI's
   // theme. Only this media condition licenses them; literal paints remain errors.
-  const forcedColours = cssDeclarations(clean, !isCss).filter((declaration) =>
-    declaration.conditions.some((condition) => condition.forcedColours),
+  const forcedColours = analyzed.declarations.filter(
+    (declaration) =>
+      declaration.complete && declaration.conditions.some((condition) => condition.forcedColours),
   );
   const out: Violation[] = [];
-  const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
+  const lineAt = (index: number): number =>
+    clean.slice(0, analyzed.sourceIndex(index)).split('\n').length;
   // Hex/functional forms (`#fff`, `rgb(`, `color-mix(…#fff…)`) introduce a literal
   // colour and cannot occur innocently, so they are reported wherever they match. A
   // bare named/system colour keyword is ambiguous with ordinary code tokens, so it is
