@@ -21,6 +21,7 @@ import { cardCss } from '../src/components/card/styles.js';
 import { chipCss } from '../src/components/chip/styles.js';
 import { inputCss } from '../src/components/input/styles.js';
 import { kbdCss } from '../src/components/kbd/styles.js';
+import { paginationCss } from '../src/components/pagination/styles.js';
 import { progressCss } from '../src/components/progress/styles.js';
 import { selectionCss } from '../src/components/selection/styles.js';
 import { sheetCss } from '../src/components/sheet/styles.js';
@@ -63,6 +64,7 @@ function main(): void {
   writeFileSync(join(dist, 'badge.css'), badgeCss);
   writeFileSync(join(dist, 'kbd.css'), kbdCss);
   writeFileSync(join(dist, 'progress.css'), progressCss);
+  writeFileSync(join(dist, 'pagination.css'), paginationCss);
 
   process.stdout.write(
     `ui-core: copied ${[...ownFiles, 'shadow.css', 'tokens.css'].join(', ')} to dist\n`,

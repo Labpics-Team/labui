@@ -225,6 +225,17 @@
         "types": "./dist/components/breadcrumb/contract.d.cts",
         "default": "./dist/components/breadcrumb/contract.cjs"
       }
+    },
+    "./pagination.css": "./dist/pagination.css",
+    "./pagination/contract": {
+      "import": {
+        "types": "./dist/components/pagination/contract.d.ts",
+        "default": "./dist/components/pagination/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/pagination/contract.d.cts",
+        "default": "./dist/components/pagination/contract.cjs"
+      }
     }
   },
   "files": ["dist"],
@@ -250,7 +261,8 @@
     "./dist/progress.css",
     "./dist/chip.css",
     "./dist/tabs.css",
-    "./dist/breadcrumb.css"
+    "./dist/breadcrumb.css",
+    "./dist/pagination.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

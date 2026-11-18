@@ -296,6 +296,10 @@
       "web": {
         "subpath": "pagination",
         "reactExport": "Pagination"
+      },
+      "profile": "pagination",
+      "native": {
+        "symbol": "LabPagination"
       }
     },
     {
@@ -1599,7 +1603,13 @@
       "uses": [
         {
           "family": "pagination",
-          "role": "part"
+          "role": "part",
+          "web": {
+            "scope": "Chevron-button"
+          },
+          "native": {
+            "scope": "Chevron-button"
+          }
         }
       ]
     },
@@ -1610,7 +1620,16 @@
       "uses": [
         {
           "family": "pagination",
-          "role": "variant"
+          "role": "variant",
+          "web": {
+            "scope": "Compact dots and externally driven media progress",
+            "props": {
+              "variant": "compact"
+            }
+          },
+          "native": {
+            "scope": "Compact Pagination"
+          }
         }
       ]
     },
@@ -1621,7 +1640,13 @@
       "uses": [
         {
           "family": "pagination",
-          "role": "part"
+          "role": "part",
+          "web": {
+            "scope": "Page-button"
+          },
+          "native": {
+            "scope": "Page-button"
+          }
         }
       ]
     },
@@ -1632,7 +1657,13 @@
       "uses": [
         {
           "family": "pagination",
-          "role": "root"
+          "role": "root",
+          "web": {
+            "scope": "Pagination"
+          },
+          "native": {
+            "scope": "Pagination"
+          }
         }
       ]
     },

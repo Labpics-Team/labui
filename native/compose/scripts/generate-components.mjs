@@ -85,7 +85,9 @@ function emitConstants(prefix, definition) {
       continue;
     if (
       name === 'data' &&
-      (prefix.startsWith('ChipClose') || prefix.startsWith('BreadcrumbGlyphs'))
+      (prefix.startsWith('ChipClose') ||
+        prefix.startsWith('BreadcrumbGlyphs') ||
+        prefix.startsWith('PaginationGlyphs'))
     )
       lines.push(...authoredPath(prefix, value));
     else if (typeof value === 'number')

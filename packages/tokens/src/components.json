@@ -966,5 +966,80 @@
         "data": "M1.06667 2.13333C1.65577 2.13333 2.13333 1.6558 2.13333 1.06667C2.13333 0.4776 1.65577 0 1.06667 0C0.477567 0 0 0.4776 0 1.06667C0 1.6558 0.477567 2.13333 1.06667 2.13333Z M5.73333 2.13333C6.32247 2.13333 6.8 1.6558 6.8 1.06667C6.8 0.4776 6.32247 0 5.73333 0C5.1442 0 4.66667 0.4776 4.66667 1.06667C4.66667 1.6558 5.1442 2.13333 5.73333 2.13333Z M10.4 2.13333C10.9891 2.13333 11.4667 1.6558 11.4667 1.06667C11.4667 0.4776 10.9891 0 10.4 0C9.81087 0 9.33333 0.4776 9.33333 1.06667C9.33333 1.6558 9.81087 2.13333 10.4 2.13333Z"
       }
     }
+  },
+  "pagination": {
+    "sourceRef": {
+      "key": "component/Pagination/Pagination"
+    },
+    "gap": 8,
+    "control": 40,
+    "radius": 12,
+    "padding": 12,
+    "fontSize": 16,
+    "lineHeight": 24,
+    "fontWeight": 500,
+    "stroke": 1,
+    "icon": 16,
+    "defaultSiblingCount": 1,
+    "maxSiblingCount": 4,
+    "roles": {
+      "label": "label-primary",
+      "chevron": "label-secondary",
+      "border": "border-base",
+      "active": "bg-tertiary",
+      "hover": "fill-quaternary",
+      "disabled": "label-tertiary",
+      "focus": "border-focus"
+    },
+    "glyphs": {
+      "chevron": {
+        "sourceRef": {
+          "key": "component-set/Pagination/Chevron-button",
+          "variant": {
+            "Direction": "Back",
+            "Hover": "False",
+            "Size": "Medium"
+          },
+          "path": ["chevron-back", "Vector"]
+        },
+        "viewBox": 16,
+        "x": 5.127604007720947,
+        "y": 3.3919270038604736,
+        "data": "M4.90313 0.234133C4.61026 -0.0586204 4.14699 -0.0768203 3.83286 0.179446L3.77226 0.234133L0.712394 3.29406C0.589734 3.41666 0.462974 3.54226 0.364734 3.65799C0.260468 3.78079 0.142141 3.94413 0.0717675 4.16059C-0.0239125 4.45513 -0.0239325 4.77293 0.0717675 5.06746L0.099761 5.14626C0.171014 5.32406 0.273528 5.46266 0.364734 5.57006C0.462954 5.68573 0.589808 5.81139 0.712394 5.93399L3.77226 8.99393L3.83286 9.04859C4.14699 9.30473 4.61026 9.28659 4.90313 8.99393C5.21553 8.68153 5.21539 8.17479 4.90313 7.86239L1.84326 4.80246C1.77619 4.73539 1.72346 4.68219 1.67853 4.63579C1.67139 4.62846 1.66473 4.62099 1.65833 4.61433C1.66486 4.60753 1.67126 4.59973 1.67853 4.59219C1.72346 4.54579 1.77606 4.49273 1.84326 4.42553L4.90313 1.36564L4.95846 1.30509C5.21479 0.99094 5.19593 0.527066 4.90313 0.234133Z"
+      },
+      "ellipsis": {
+        "diameter": 3,
+        "gap": 2,
+        "offsetY": 13
+      }
+    },
+    "compact": {
+      "sourceRef": {
+        "key": "component-set/Pagination/Compact Pagination",
+        "variant": {
+          "Selected": "1",
+          "Count": "2",
+          "Ambient": "False",
+          "Time-based": "False"
+        }
+      },
+      "dot": 8,
+      "recedingDot": 6,
+      "gap": 8,
+      "padding": 8,
+      "height": 24,
+      "track": 20,
+      "visiblePages": 5,
+      "inactiveOpacity": 0.08,
+      "ambientInactiveOpacity": 0.24,
+      "colorRole": "label-brand-primary",
+      "ambientColorRole": "label-primary",
+      "material": "base",
+      "radius": 9999
+    },
+    "focus": {
+      "width": 2,
+      "offset": 2
+    }
   }
 }

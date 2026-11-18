@@ -36,6 +36,7 @@ export default libraryPreset({
     'src/components/kbd/contract.ts',
     'src/components/chip/contract.ts',
     'src/components/breadcrumb/contract.ts',
+    'src/components/pagination/contract.ts',
     'src/ssr/index.ts',
     'src/proof/lab-proof.ts',
     'src/components/dialog/shared.ts',

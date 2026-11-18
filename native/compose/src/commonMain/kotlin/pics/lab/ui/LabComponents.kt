@@ -446,4 +446,69 @@ internal object LabComponents {
         cubicTo(9.33333f, 1.6558f, 9.81087f, 2.13333f, 10.4f, 2.13333f)
         close()
     } }
+    const val PaginationGap = 8f
+    const val PaginationControl = 40f
+    const val PaginationRadius = 12f
+    const val PaginationPadding = 12f
+    const val PaginationFontSize = 16f
+    const val PaginationLineHeight = 24f
+    const val PaginationFontWeight = 500f
+    const val PaginationStroke = 1f
+    const val PaginationIcon = 16f
+    const val PaginationDefaultSiblingCount = 1f
+    const val PaginationMaxSiblingCount = 4f
+    const val PaginationRolesLabel = "label-primary"
+    const val PaginationRolesChevron = "label-secondary"
+    const val PaginationRolesBorder = "border-base"
+    const val PaginationRolesActive = "bg-tertiary"
+    const val PaginationRolesHover = "fill-quaternary"
+    const val PaginationRolesDisabled = "label-tertiary"
+    const val PaginationRolesFocus = "border-focus"
+    const val PaginationGlyphsChevronViewBox = 16f
+    const val PaginationGlyphsChevronX = 5.127604007720947f
+    const val PaginationGlyphsChevronY = 3.3919270038604736f
+    // Shared contour: transform the canvas, never mutate this path.
+    val PaginationGlyphsChevronPath by lazy { androidx.compose.ui.graphics.Path().apply {
+        moveTo(4.90313f, 0.234133f)
+        cubicTo(4.61026f, -0.0586204f, 4.14699f, -0.0768203f, 3.83286f, 0.179446f)
+        lineTo(3.77226f, 0.234133f)
+        lineTo(0.712394f, 3.29406f)
+        cubicTo(0.589734f, 3.41666f, 0.462974f, 3.54226f, 0.364734f, 3.65799f)
+        cubicTo(0.260468f, 3.78079f, 0.142141f, 3.94413f, 0.0717675f, 4.16059f)
+        cubicTo(-0.0239125f, 4.45513f, -0.0239325f, 4.77293f, 0.0717675f, 5.06746f)
+        lineTo(0.099761f, 5.14626f)
+        cubicTo(0.171014f, 5.32406f, 0.273528f, 5.46266f, 0.364734f, 5.57006f)
+        cubicTo(0.462954f, 5.68573f, 0.589808f, 5.81139f, 0.712394f, 5.93399f)
+        lineTo(3.77226f, 8.99393f)
+        lineTo(3.83286f, 9.04859f)
+        cubicTo(4.14699f, 9.30473f, 4.61026f, 9.28659f, 4.90313f, 8.99393f)
+        cubicTo(5.21553f, 8.68153f, 5.21539f, 8.17479f, 4.90313f, 7.86239f)
+        lineTo(1.84326f, 4.80246f)
+        cubicTo(1.77619f, 4.73539f, 1.72346f, 4.68219f, 1.67853f, 4.63579f)
+        cubicTo(1.67139f, 4.62846f, 1.66473f, 4.62099f, 1.65833f, 4.61433f)
+        cubicTo(1.66486f, 4.60753f, 1.67126f, 4.59973f, 1.67853f, 4.59219f)
+        cubicTo(1.72346f, 4.54579f, 1.77606f, 4.49273f, 1.84326f, 4.42553f)
+        lineTo(4.90313f, 1.36564f)
+        lineTo(4.95846f, 1.30509f)
+        cubicTo(5.21479f, 0.99094f, 5.19593f, 0.527066f, 4.90313f, 0.234133f)
+        close()
+    } }
+    const val PaginationGlyphsEllipsisDiameter = 3f
+    const val PaginationGlyphsEllipsisGap = 2f
+    const val PaginationGlyphsEllipsisOffsetY = 13f
+    const val PaginationCompactDot = 8f
+    const val PaginationCompactRecedingDot = 6f
+    const val PaginationCompactGap = 8f
+    const val PaginationCompactPadding = 8f
+    const val PaginationCompactHeight = 24f
+    const val PaginationCompactTrack = 20f
+    const val PaginationCompactVisiblePages = 5f
+    const val PaginationCompactInactiveOpacity = 0.08f
+    const val PaginationCompactAmbientInactiveOpacity = 0.24f
+    const val PaginationCompactColorRole = "label-brand-primary"
+    const val PaginationCompactAmbientColorRole = "label-primary"
+    val PaginationCompactMaterial get() = LabMaterials.base
+    const val PaginationCompactRadius = 9999f
+    const val PaginationFocusWidth = 2f
+    const val PaginationFocusOffset = 2f
 }

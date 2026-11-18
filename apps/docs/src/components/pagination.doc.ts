@@ -1,184 +1,185 @@
-/*
- * `lab-pagination` documentation config — a component that OWNS a page value, so
- * per core-CONTRACT §1 it drives the Behaviors seam rather than opting out: the
- * @zag-js/pagination machine owns the page, derives the range (with ellipses) and
- * wires aria-current and the prev/next bounds.
- *
- * The states matrix and live example render REAL `<lab-pagination>` elements over
- * a fixed data shape (count + page-size). The `size` and `sibling-count`
- * attributes are reflected and re-drive the machine; clicking a page or prev/next
- * runs the machine. Nothing is faked.
- */
 import '@labpics/ui-core/pagination';
 import type { ComponentDoc } from '../template/component-doc.js';
 
-/** Build a real `<lab-pagination>` over a fixed dataset with the given attributes. */
 function makePagination(attrs: Readonly<Record<string, string | boolean>>): HTMLElement {
   const el = document.createElement('lab-pagination');
-  el.setAttribute('count', '200');
-  el.setAttribute('page-size', '10');
-  // Seed a middle page so the matrix shows both ellipses unless overridden.
-  if (!('page' in attrs)) el.setAttribute('default-page', '8');
-  for (const [key, value] of Object.entries(attrs)) {
-    if (value === false) continue;
-    if (value === true) {
-      el.setAttribute(key, '');
-    } else {
-      el.setAttribute(key, String(value));
-    }
-  }
+  el.count = 60;
+  el.defaultPage = 3;
+  for (const [key, value] of Object.entries(attrs))
+    if (value !== false) el.setAttribute(key, value === true ? '' : value);
   return el;
 }
-
 export const paginationDoc: ComponentDoc = {
   slug: 'pagination',
   order: 11,
   tag: 'lab-pagination',
   title: 'Pagination',
   summary:
-    'Navigate a paged collection one page at a time. Runs the @zag-js/pagination machine through the LabUI seam: the machine owns the page value, derives the page range (with ellipses) from count + page-size, and wires aria-current and the prev/next bounds — the element only paints with semantic --lab-* roles.',
+    'Нумерованные страницы и компактные точки. Выбор страницы меняет связанную выборку; ссылки сохраняют адрес назначения.',
   status: { kind: 'stable' },
-
   statesMatrix: {
     axes: [
       {
-        name: 'Size',
-        attribute: 'size',
+        name: 'Вариант',
+        attribute: 'variant',
         options: [
-          { label: 'S', value: 's' },
-          { label: 'M', value: 'm' },
-          { label: 'L', value: 'l' },
+          { label: 'Страницы', value: 'numbered' },
+          { label: 'Точки', value: 'compact' },
         ],
       },
       {
-        name: 'Sibling count',
-        attribute: 'sibling-count',
+        name: 'Доступность',
+        attribute: 'disabled',
         options: [
-          { label: '0', value: '0' },
-          { label: '1', value: '1' },
-          { label: '2', value: '2' },
+          { label: 'Доступно', value: false },
+          { label: 'Недоступно', value: true },
         ],
       },
     ],
     make: makePagination,
   },
-
   anatomy: [
     {
       index: 1,
-      name: 'Nav root',
+      name: 'Страницы',
       description:
-        'The Zag root element — a <nav> that scopes the machine and exposes the control group to assistive tech.',
+        'Контролы 40 px, интервал 8 px, Geist Medium 16/24. Выбранная страница использует нейтральную поверхность.',
     },
     {
       index: 2,
-      name: 'Prev / Next triggers',
+      name: 'Стрелки',
       description:
-        'The Zag prev/next trigger elements — buttons that step one page and disable at the bounds (reading --lab-label-tertiary when disabled).',
+        'Контуры Chevron-button. Недоступны за границами выборки; направление следует RTL.',
     },
     {
       index: 3,
-      name: 'Page item',
+      name: 'Пропуск',
       description:
-        'The Zag item element — one button per page. The current page reads --lab-fill-accent + --lab-label-on-accent and carries aria-current="page"; the machine owns which is current.',
+        'Три авторские точки обозначают скрытые номера. Не являются действием и исключены из дерева доступности.',
     },
     {
       index: 4,
-      name: 'Ellipsis',
+      name: 'Compact',
       description:
-        'An aria-hidden gap marker the machine inserts when the range is collapsed, reading --lab-label-tertiary.',
+        'До пяти точек 8 px; крайние уменьшаются, если за ними есть страницы. Ambient добавляет материал Base, progress — трек длиной 20 px.',
     },
   ],
-
   meaning: {
     purpose:
-      'Pagination splits a long, ordered collection into pages and lets the user move between them. Use it when the total set is large but bounded and the user benefits from position ("page 8 of 20") and random access to any page. Prefer it over infinite scroll when users need to find, bookmark, or return to a specific position. For unbounded feeds where position is irrelevant, infinite scroll fits better.',
+      'Позволяет вернуться к определённому участку конечной коллекции. Для медиа компактный вариант показывает текущий кадр и прогресс его воспроизведения.',
     dos: [
-      'Drive it from your data shape: count (total items) + page-size derive the pages.',
-      'Keep the current page obvious and reachable via prev/next AND direct page jumps.',
-      'Let the machine own the page value — read page-change, never set aria-current by hand.',
+      'Передавайте count и page-size из отображаемых данных.',
+      'Обновляйте данные в ответ на page-change либо задайте href с {page}.',
+      'В controlled-режиме обновляйте page только после принятия запроса.',
     ],
     donts: [
-      "Don't fake a boundary-count knob — the machine fixes the first/last boundary at 1.",
-      "Don't use pagination for an unbounded, position-irrelevant feed — that is infinite scroll.",
-      "Don't hardcode colours — it only ever reads --lab-* roles bound by an ancestor.",
+      'Не изображайте доступной отсутствующую страницу.',
+      'Не используйте точки без связанного содержимого.',
+      'Не запускайте автоматическую смену слайдов без доступной паузы в проигрывателе.',
     ],
   },
-
   liveExample: {
-    make: () => makePagination({}),
-    // Honest live controls: size and sibling-count are reflected attributes the
-    // machine reads, so flipping them really re-drives the range. Clicking a page
-    // or prev/next runs the Zag machine — the primary interaction.
-    controls: [
-      {
-        kind: 'select',
-        label: 'Size',
-        attribute: 'size',
-        options: [
-          { label: 'S', value: 's' },
-          { label: 'M', value: 'm' },
-          { label: 'L', value: 'l' },
-        ],
-      },
-      {
-        kind: 'select',
-        label: 'Sibling count',
-        attribute: 'sibling-count',
-        options: [
-          { label: '0', value: '0' },
-          { label: '1', value: '1' },
-          { label: '2', value: '2' },
-        ],
-      },
-    ],
+    make: () => {
+      const section = document.createElement('section');
+      const records = Array.from({ length: 24 }, (_, index) => `Исследование ${index + 1}`);
+      const list = document.createElement('ul');
+      const pagination = document.createElement('lab-pagination');
+      pagination.count = records.length;
+      pagination.pageSize = 3;
+      pagination.page = 1;
+      pagination.label = 'Страницы исследований';
+      pagination.previousLabel = 'Предыдущая страница';
+      pagination.nextLabel = 'Следующая страница';
+      pagination.pageLabel = 'Страница {page}';
+      const show = (page: number) => {
+        list.replaceChildren(
+          ...records.slice((page - 1) * 3, page * 3).map((text) => {
+            const li = document.createElement('li');
+            li.textContent = text;
+            return li;
+          }),
+        );
+      };
+      pagination.addEventListener('page-change', (event) => {
+        pagination.page = (event as CustomEvent<{ page: number }>).detail.page;
+        show(pagination.page);
+      });
+      show(1);
+      section.append(list, pagination);
+      return section;
+    },
+    controls: [],
   },
-
   api: {
     props: [
       {
         name: 'count',
         type: 'number',
         default: '0',
-        description: 'Total number of data items the pages are derived from.',
+        description: 'Число записей. Пустая выборка отключает оба направления.',
       },
       {
         name: 'page-size',
         type: 'number',
         default: '10',
-        description: 'Items per page. count / page-size gives the page total.',
+        description: 'Записей на странице; положительное целое.',
       },
       {
         name: 'page',
-        type: 'number',
-        default: '1',
-        description:
-          'Current page. Setting the attribute opts into controlled mode (the consumer owns it); otherwise the machine owns it from default-page and mirrors it back onto this property.',
+        type: 'number | undefined',
+        default: 'undefined',
+        description: 'Controlled-вход через свойство или атрибут. Отказ не меняет выбор.',
       },
       {
         name: 'default-page',
         type: 'number',
         default: '1',
-        description: 'Uncontrolled initial page — read once by the machine at init.',
+        description: 'Начальная неконтролируемая страница.',
+      },
+      {
+        name: 'variant',
+        type: "'numbered' | 'compact'",
+        default: "'numbered'",
+        description: 'Авторская анатомия страниц или точек.',
       },
       {
         name: 'sibling-count',
         type: 'number',
         default: '1',
-        description: 'Pages shown either side of the current page.',
+        description: 'Соседние номера с каждой стороны, 0–4. Не размер компонента.',
       },
       {
-        name: 'size',
-        type: "'s' | 'm' | 'l'",
-        default: "'m'",
-        description: 'Control density.',
+        name: 'href',
+        type: 'string',
+        default: "''",
+        description: 'Шаблон адреса, например ?page={page}. Пустой использует кнопки.',
+      },
+      {
+        name: 'ambient',
+        type: 'boolean',
+        default: 'false',
+        description: 'Материал Base под компактным вариантом.',
+      },
+      {
+        name: 'progress',
+        type: 'number | undefined',
+        default: 'undefined',
+        description:
+          'Временной трек Compact, 0–1. Значение приходит из проигрывателя; таймера внутри нет.',
+      },
+      { name: 'disabled', type: 'boolean', default: 'false', description: 'Отключает переходы.' },
+      {
+        name: 'label / previous-label / next-label / page-label',
+        type: 'string',
+        default: 'English labels',
+        description: 'Доступные имена. page-label поддерживает {page}.',
       },
     ],
     events: [
       {
         name: 'page-change',
         description:
-          'CustomEvent<{ page: number; pageSize: number }> fired when the machine changes the page. The machine is the source of truth.',
+          'CustomEvent<{page, pageSize}>: запрос страницы. React: onPageChange(page). Compose: onPageChange(Int).',
       },
     ],
     slots: [],

@@ -55,3 +55,4 @@ export { loaderProfile, progressProfile } from './progress.js';
 export { chipProfile } from './chip.js';
 export { tabsProfile } from './tabs.js';
 export { breadcrumbProfile } from './breadcrumb.js';
+export { paginationProfile } from './pagination.js';

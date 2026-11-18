@@ -1044,11 +1044,6 @@
       "className": "LabPagination",
       "props": [
         {
-          "name": "size",
-          "attr": "size",
-          "kind": "string"
-        },
-        {
           "name": "count",
           "attr": "count",
           "kind": "string"
@@ -1059,18 +1054,63 @@
           "kind": "string"
         },
         {
+          "name": "page",
+          "attr": "page",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultPage",
+          "attr": "default-page",
+          "kind": "string"
+        },
+        {
           "name": "siblingCount",
           "attr": "sibling-count",
           "kind": "string"
         },
         {
-          "name": "page",
-          "attr": "page",
+          "name": "variant",
+          "attr": "variant",
           "kind": "string"
         },
         {
-          "name": "defaultPage",
-          "attr": "default-page",
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "ambient",
+          "attr": "ambient",
+          "kind": "boolean"
+        },
+        {
+          "name": "progress",
+          "attr": "progress",
+          "kind": "prop"
+        },
+        {
+          "name": "href",
+          "attr": "href",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "previousLabel",
+          "attr": "previous-label",
+          "kind": "string"
+        },
+        {
+          "name": "nextLabel",
+          "attr": "next-label",
+          "kind": "string"
+        },
+        {
+          "name": "pageLabel",
+          "attr": "page-label",
           "kind": "string"
         }
       ],
