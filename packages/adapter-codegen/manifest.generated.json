@@ -764,6 +764,21 @@
           "name": "label",
           "attr": "label",
           "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "prop"
+        },
+        {
+          "name": "min",
+          "attr": "min",
+          "kind": "string"
+        },
+        {
+          "name": "max",
+          "attr": "max",
+          "kind": "string"
         }
       ],
       "events": [],
@@ -1143,6 +1158,11 @@
         {
           "name": "size",
           "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "variant",
+          "attr": "variant",
           "kind": "string"
         },
         {

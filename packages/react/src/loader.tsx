@@ -1,41 +1,131 @@
-/**
- * <Loader> — the native-React twin of the Lit `<lab-loader>` (ADR-0001).
- *
- * Same size axis, same indeterminate spinner drawn from currentColor, same a11y
- * contract (role="status" + aria-busy, visually-hidden accessible name) — parity
- * is CSS, not a second implementation.
- *
- * HONESTY (owner's iron rule): indeterminate only — no fake `value`/`percent`
- * prop. A real determinate progress bar is a separate component (Progress).
- *
- * Presentational; marked a Client Component for a consistent package boundary and
- * to ship the scoped stylesheet with it.
- */
 'use client';
-
-import type { LabLoaderSize } from '@labpics/ui-core';
-import { type HTMLAttributes, forwardRef } from 'react';
-import './loader.css';
-
+import {
+  type LabLoaderSize,
+  mountProgressMotion,
+  progressState,
+} from '@labpics/ui-core/progress/runtime';
+import { loaderProfile } from '@labpics/ui-tokens';
+import {
+  type CSSProperties,
+  type HTMLAttributes,
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from 'react';
+import '@labpics/ui-core/progress.css';
 export interface LoaderProps extends HTMLAttributes<HTMLOutputElement> {
-  /** Spinner size. */
   size?: LabLoaderSize;
-  /** Accessible name announced to assistive tech. */
   label?: string;
+  value?: number | null;
+  min?: number;
+  max?: number;
 }
-
 export const Loader = forwardRef<HTMLOutputElement, LoaderProps>(function Loader(
-  { size = 'm', label = 'Loading…', ...rest },
+  { size = 'm', label = 'Загрузка', value = null, min = 0, max = 100, style, ...rest },
   ref,
 ) {
-  // <output> carries an implicit role="status" — the semantically correct status
-  // region, no explicit role attribute needed. aria-busy marks the live in-flight
-  // state. The Lit twin is a custom element, which cannot be an <output>, so it
-  // sets role="status" on its host; both expose the same status role to AT.
+  const root = useRef<HTMLOutputElement>(null);
+  useImperativeHandle(ref, () => root.current as HTMLOutputElement);
+  const motion = useRef<ReturnType<typeof mountProgressMotion>>();
+  const state = progressState(value, min, max);
+  const unknown = state.value === null;
+  const center = loaderProfile.viewBox / 2;
+  const medium = loaderProfile.determinate.medium;
+  const large = loaderProfile.determinate.large;
+  const fraction = unknown ? null : state.fraction;
+  useEffect(() => {
+    if (!root.current) return;
+    motion.current = mountProgressMotion(root.current, 'loader');
+    return () => {
+      motion.current?.dispose();
+      motion.current = undefined;
+    };
+  }, []);
+  useEffect(() => {
+    motion.current?.update(fraction);
+  }, [fraction]);
   return (
-    <output {...rest} ref={ref} data-lab-loader="" data-size={size} aria-busy="true">
-      <span className="lab-loader-spinner" aria-hidden="true" />
-      <span className="lab-loader-label">{label}</span>
+    // biome-ignore lint/a11y/useFocusableInteractive: progressbar has no keyboard interaction; focus remains with the task.
+    <output
+      {...rest}
+      ref={root}
+      className={['lab-loader', rest.className].filter(Boolean).join(' ')}
+      data-lab-loader=""
+      // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: progressbar is read-only and represents both known and unknown values.
+      role="progressbar"
+      data-size={size}
+      data-state={state.status}
+      style={{ ...style, '--_progress-target': state.fraction } as CSSProperties}
+      aria-label={rest['aria-label'] ?? label}
+      aria-valuemin={state.min}
+      aria-valuemax={state.max}
+      aria-valuenow={state.value ?? undefined}
+      aria-valuetext={unknown ? undefined : state.text}
+    >
+      <svg
+        viewBox={`0 0 ${loaderProfile.viewBox} ${loaderProfile.viewBox}`}
+        aria-hidden="true"
+        style={unknown ? undefined : { display: 'none' }}
+      >
+        <g className="lab-progress-spin">
+          {loaderProfile.spokeOpacity.map((opacity, index) => (
+            <rect
+              key={opacity}
+              x={loaderProfile.segment.x}
+              y={loaderProfile.segment.y}
+              width={loaderProfile.segment.width}
+              height={loaderProfile.segment.height}
+              rx={loaderProfile.segment.radius}
+              fill="currentColor"
+              opacity={opacity}
+              transform={`rotate(${(index * 360) / loaderProfile.spokeOpacity.length} ${loaderProfile.viewBox / 2} ${loaderProfile.viewBox / 2})`}
+            />
+          ))}
+        </g>
+      </svg>
+      <svg
+        viewBox={`0 0 ${loaderProfile.viewBox} ${loaderProfile.viewBox}`}
+        aria-hidden="true"
+        style={unknown ? { display: 'none' } : undefined}
+      >
+        <circle
+          className="lab-loader-medium"
+          cx={center}
+          cy={center}
+          r={medium.ringRadius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={medium.stroke}
+        />
+        <g className="lab-loader-large">
+          <circle
+            cx={center}
+            cy={center}
+            r={large.ringRadius}
+            fill="none"
+            stroke={`var(--lab-${large.trackRole})`}
+            strokeWidth={large.stroke}
+          />
+          <circle
+            className="lab-progress-arc"
+            cx={center}
+            cy={center}
+            r={large.ringRadius}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={large.stroke}
+            pathLength="1"
+            transform={`rotate(-90 ${center} ${center})`}
+            visibility={state.fraction === 0 ? 'hidden' : 'visible'}
+          />
+        </g>
+      </svg>
+      <span
+        className="lab-loader-sector"
+        aria-hidden="true"
+        style={unknown ? { display: 'none' } : undefined}
+      />
     </output>
   );
 });

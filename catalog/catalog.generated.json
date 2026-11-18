@@ -58,7 +58,7 @@
         "native": {
           "symbol": "LabButton",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabButton.kt",
-          "revision": "ba5f4c1dd5f66385e2845a9518fe6aa7902871eb"
+          "revision": "b80b760a6285ebb96433da541962bff989dc717f"
         }
       },
       "sources": [
@@ -121,7 +121,7 @@
         "native": {
           "symbol": "LabInput",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabInput.kt",
-          "revision": "ba5f4c1dd5f66385e2845a9518fe6aa7902871eb"
+          "revision": "b80b760a6285ebb96433da541962bff989dc717f"
         }
       },
       "sources": [
@@ -236,7 +236,7 @@
         "native": {
           "symbol": "LabCheckbox",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabCheckbox.kt",
-          "revision": "ba5f4c1dd5f66385e2845a9518fe6aa7902871eb"
+          "revision": "b80b760a6285ebb96433da541962bff989dc717f"
         }
       },
       "sources": [
@@ -278,7 +278,7 @@
         "native": {
           "symbol": "LabRadioGroup",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabRadioGroup.kt",
-          "revision": "ba5f4c1dd5f66385e2845a9518fe6aa7902871eb"
+          "revision": "b80b760a6285ebb96433da541962bff989dc717f"
         }
       },
       "sources": [
@@ -320,7 +320,7 @@
         "native": {
           "symbol": "LabSwitch",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSwitch.kt",
-          "revision": "ba5f4c1dd5f66385e2845a9518fe6aa7902871eb"
+          "revision": "b80b760a6285ebb96433da541962bff989dc717f"
         }
       },
       "sources": [
@@ -573,7 +573,7 @@
         "native": {
           "symbol": "LabChoicebox",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChoicebox.kt",
-          "revision": "ba5f4c1dd5f66385e2845a9518fe6aa7902871eb"
+          "revision": "b80b760a6285ebb96433da541962bff989dc717f"
         }
       },
       "sources": [
@@ -1023,7 +1023,7 @@
         "native": {
           "symbol": "LabSnackbar",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSnackbar.kt",
-          "revision": "ba5f4c1dd5f66385e2845a9518fe6aa7902871eb"
+          "revision": "b80b760a6285ebb96433da541962bff989dc717f"
         }
       },
       "sources": [
@@ -1065,13 +1065,21 @@
         "subpath": "progress",
         "reactExport": "Progress"
       },
+      "profile": "progress",
+      "native": {
+        "symbol": "LabProgress"
+      },
       "documentation": "progress.doc.ts",
       "capabilities": {
         "web": {
           "tag": "lab-progress",
           "reactExport": "Progress"
         },
-        "native": null
+        "native": {
+          "symbol": "LabProgress",
+          "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabProgress.kt",
+          "revision": "b80b760a6285ebb96433da541962bff989dc717f"
+        }
       },
       "sources": [
         {
@@ -1079,7 +1087,14 @@
           "name": "Circular progress",
           "type": "component-set",
           "family": "progress",
-          "role": "variant"
+          "role": "variant",
+          "web": {
+            "props": {
+              "value": 25,
+              "variant": "circular"
+            },
+            "scope": "Круглое представление progress; подпись процента включается независимо."
+          }
         },
         {
           "page": "Progress",
@@ -1089,7 +1104,8 @@
           "role": "variant",
           "web": {
             "props": {
-              "value": 40
+              "value": 25,
+              "variant": "linear"
             },
             "scope": "Линейное представление progress."
           }
@@ -1101,10 +1117,14 @@
       "title": "Loader",
       "group": "feedback",
       "kind": "control",
-      "summary": "Обозначает ожидание без известной доли выполнения.",
+      "summary": "Компактное ожидание или измеренная доля выполнения.",
       "web": {
         "subpath": "loader",
         "reactExport": "Loader"
+      },
+      "profile": "loader",
+      "native": {
+        "symbol": "LabLoader"
       },
       "documentation": "loader.doc.ts",
       "capabilities": {
@@ -1112,7 +1132,11 @@
           "tag": "lab-loader",
           "reactExport": "Loader"
         },
-        "native": null
+        "native": {
+          "symbol": "LabLoader",
+          "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabLoader.kt",
+          "revision": "b80b760a6285ebb96433da541962bff989dc717f"
+        }
       },
       "sources": [
         {
@@ -1185,7 +1209,7 @@
         "native": {
           "symbol": "LabBadge",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabBadge.kt",
-          "revision": "ba5f4c1dd5f66385e2845a9518fe6aa7902871eb"
+          "revision": "b80b760a6285ebb96433da541962bff989dc717f"
         }
       },
       "sources": [
@@ -1271,7 +1295,7 @@
         "native": {
           "symbol": "LabKbd",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabKbd.kt",
-          "revision": "ba5f4c1dd5f66385e2845a9518fe6aa7902871eb"
+          "revision": "b80b760a6285ebb96433da541962bff989dc717f"
         }
       },
       "sources": [
@@ -1645,7 +1669,7 @@
         "native": {
           "symbol": "LabCard",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSurface.kt",
-          "revision": "ba5f4c1dd5f66385e2845a9518fe6aa7902871eb"
+          "revision": "b80b760a6285ebb96433da541962bff989dc717f"
         }
       },
       "sources": [
@@ -1687,7 +1711,7 @@
         "native": {
           "symbol": "LabSheetHost",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSheet.kt",
-          "revision": "ba5f4c1dd5f66385e2845a9518fe6aa7902871eb"
+          "revision": "b80b760a6285ebb96433da541962bff989dc717f"
         }
       },
       "sources": [
@@ -1773,7 +1797,7 @@
         "native": {
           "symbol": "LabMaterials",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt",
-          "revision": "ba5f4c1dd5f66385e2845a9518fe6aa7902871eb"
+          "revision": "b80b760a6285ebb96433da541962bff989dc717f"
         }
       },
       "sources": [

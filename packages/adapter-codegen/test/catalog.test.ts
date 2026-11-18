@@ -43,8 +43,8 @@ describe('semantic catalog joined to real API and documentation', () => {
     const progress = projection.families.find((family) => family.slug === 'progress');
     expect(progress?.capabilities.web?.tag).toBe('lab-progress');
     expect(
-      progress?.sources.find((source) => source.name === 'Circular progress')?.web,
-    ).toBeUndefined();
+      progress?.sources.find((source) => source.name === 'Circular progress')?.web?.props,
+    ).toEqual({ variant: 'circular', value: 25 });
     expect(
       progress?.sources.find((source) => source.name === 'Linear progress')?.web,
     ).toBeDefined();

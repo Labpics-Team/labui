@@ -10,7 +10,7 @@ import type { LabLoader } from '@labpics/ui-core/loader';
 import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-loader>, взятые прямо из класса ядра (LabLoader). */
-export type LoaderProps = Pick<LabLoader, 'size' | 'label'>;
+export type LoaderProps = Pick<LabLoader, 'size' | 'label' | 'value' | 'min' | 'max'>;
 
 /**
  * <Loader> — тонкая Vue-обёртка над <lab-loader>.
@@ -22,6 +22,9 @@ export const Loader: LabComponent<LoaderProps, never> = createLabComponent<
   specs: [
       { name: 'size', attr: 'size', kind: 'string' },
       { name: 'label', attr: 'label', kind: 'string' },
+      { name: 'value', attr: 'value', kind: 'prop' },
+      { name: 'min', attr: 'min', kind: 'string' },
+      { name: 'max', attr: 'max', kind: 'string' },
   ],
   events: [],
 });

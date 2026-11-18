@@ -91,9 +91,17 @@
       "types": "./dist/components/kbd/contract.d.ts",
       "import": "./dist/components/kbd/contract.js",
       "require": "./dist/components/kbd/contract.cjs"
-    }
+    },
+    "./progress/runtime": {
+      "types": "./dist/components/progress/runtime.d.ts",
+      "import": "./dist/components/progress/runtime.js",
+      "require": "./dist/components/progress/runtime.cjs"
+    },
+    "./progress.css": "./dist/progress.css"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": [
     "./src/components/*/index.ts",
     "./dist/theme.css",
@@ -112,7 +120,8 @@
     "./dist/chunk-*.cjs",
     "./dist/badge.css",
     "./dist/selection-controls.css",
-    "./dist/kbd.css"
+    "./dist/kbd.css",
+    "./dist/progress.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
@@ -134,7 +143,6 @@
     "@zag-js/pagination": "1.41.2",
     "@zag-js/pin-input": "1.41.2",
     "@zag-js/popover": "1.41.2",
-    "@zag-js/progress": "1.41.2",
     "@zag-js/select": "1.41.2",
     "@zag-js/slider": "1.41.2",
     "@zag-js/switch": "1.41.2",

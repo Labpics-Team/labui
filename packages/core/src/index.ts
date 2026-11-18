@@ -119,14 +119,14 @@ export {
 } from './components/field/field-a11y.js';
 
 // Disclosure — the compound `<lab-accordion>` (a GROUP machine, the Radio/Tabs
-// canon) and the single-machine `<lab-progress>`. Type-only: no Lit runtime
+// canon) and the measured `<lab-progress>`. Type-only: no Lit runtime
 // pulled into the React bundle.
 export type {
   LabAccordionItem,
   LabAccordionOrientation,
   LabAccordionSize,
 } from './components/accordion/lab-accordion.js';
-export type { LabProgressSize } from './components/progress/lab-progress.js';
+export type { LabProgressSize, LabProgressVariant } from './components/progress/lab-progress.js';
 
 // Compound + positioned controls — the canon fusing the keyed-compound group
 // machine (radio-group) with the positioned, dismissable overlay (popover). Each
