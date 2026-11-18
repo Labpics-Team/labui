@@ -31,7 +31,8 @@ for (const [component, definition] of Object.entries(profile)) {
 lines.push('', 'internal object LabComponents {');
 function emitConstants(prefix, definition) {
   for (const [name, value] of Object.entries(definition)) {
-    if (name === 'source' || name === 'sourceNode' || name === 'sizes') continue;
+    if (name === 'source' || name === 'sourceNode' || name === 'sourceRef' || name === 'sizes')
+      continue;
     if (typeof value === 'number') lines.push(`    const val ${prefix}${upper(name)} = ${value}f`);
     else if (name === 'material' && typeof value === 'string')
       lines.push(`    val ${prefix}${upper(name)} get() = LabMaterials.${value}`);
