@@ -32,4 +32,4 @@ for name, path, y in rows:
         draw.text((16, top + 8), label, fill="#505058")
         canvas.paste(image.resize((image.width // 2, image.height // 2), Image.Resampling.BOX), (92, top))
 canvas.save(here / "comparison.png")
-(here / "comparison.json").write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
+(here / "comparison.generated.json").write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
