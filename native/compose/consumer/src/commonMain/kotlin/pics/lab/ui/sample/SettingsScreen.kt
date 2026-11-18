@@ -49,7 +49,11 @@ import pics.lab.icons.symbols.settings
 import pics.lab.ui.*
 
 @Composable
-fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
+fun SettingsScreen(
+    host: ColorProgramHost,
+    store: WorkspaceStore,
+    snackbarDurationMillis: Long = LabSnackbarDefaults.durationMillis,
+) {
     var saved by remember(store) { mutableStateOf<WorkspaceSettings?>(null) }
     var loadError by remember { mutableStateOf(false) }
     var loadAttempt by remember { mutableStateOf(0) }
@@ -453,7 +457,8 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
             snackbar?.let { message ->
                 LabSnackbar(
                     message,
-                    Modifier.align(Alignment.BottomCenter)
+                    durationMillis = snackbarDurationMillis,
+                    modifier = Modifier.align(Alignment.BottomCenter)
                         .safeDrawingPadding()
                         .padding(24.dp)
                         .widthIn(max = 560.dp),

@@ -54,6 +54,10 @@ import pics.lab.motion.MotionTransition
 import kotlin.math.ceil
 import kotlin.time.TimeSource
 
+public object LabSnackbarDefaults {
+    public val durationMillis: Long get() = LabComponents.SnackbarDurationMs.toLong()
+}
+
 /** Authored feedback with hoisted visibility. A notification key restarts identical messages. */
 @Composable
 public fun LabSnackbar(
@@ -61,7 +65,7 @@ public fun LabSnackbar(
     modifier: Modifier = Modifier,
     open: Boolean = true,
     onDismiss: () -> Unit = {},
-    durationMillis: Long = LabComponents.SnackbarDurationMs.toLong(),
+    durationMillis: Long = LabSnackbarDefaults.durationMillis,
     notificationKey: Any? = message,
     material: LabMaterial = LabMaterial.Solid,
     actionLabel: String? = null,

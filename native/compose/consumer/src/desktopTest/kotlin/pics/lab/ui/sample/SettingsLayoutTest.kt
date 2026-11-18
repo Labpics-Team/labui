@@ -11,6 +11,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.sp
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
@@ -89,6 +90,21 @@ class SettingsLayoutTest {
         scene.render(System.nanoTime()).use { image -> image.encodeToData()!!.use { file.writeBytes(it.bytes) } }
     }
 
+    private fun authoredHeading(node: SemanticsNode): TextLayoutResult {
+        val results = mutableListOf<TextLayoutResult>()
+        assertTrue(node.config[SemanticsActions.GetTextLayoutResult].action!!.invoke(results))
+        val text = results.single()
+        assertEquals(20.sp, text.layoutInput.style.fontSize, "Figma Sheet title uses its own 20/20 role")
+        assertEquals(20.sp, text.layoutInput.style.lineHeight)
+        assertEquals(600, text.layoutInput.style.fontWeight?.weight)
+        assertEquals((-.33f).sp, text.layoutInput.style.letterSpacing)
+        for (line in 0 until text.lineCount - 1) {
+            val gap = text.layoutInput.text.text.substring(text.getLineEnd(line, visibleEnd = true), text.getLineStart(line + 1))
+            assertTrue(gap.any { it.isWhitespace() }, "Sheet headings must retain whole words at this width")
+        }
+        return text
+    }
+
     @Test
     fun shortSheetKeepsFieldsAndSaveReachableAtLargeTextScale() = runBlocking {
         val output = File("build/settings-layout").apply { mkdirs() }
@@ -116,6 +132,7 @@ class SettingsLayoutTest {
             renderUntil(scene) { nodes(scene).any { label(it) == "Редактировать" } }
             press(scene, reveal(scene) { button("Редактировать") })
             renderUntil(scene) { nodes(scene).any { label(it) == "Настройки пространства" } }
+            authoredHeading(nodes(scene).single { label(it) == "Настройки пространства" })
             snapshot(scene, File(output, "edit-320-320-200-heading.png"))
 
             val name = reveal(scene) { field("Название") }
@@ -173,9 +190,8 @@ class SettingsLayoutTest {
                 } == 4 }
                 val heading = nodes(scene).single { label(it) == "Оформление" }
                 val close = nodes(scene).single { label(it) == "Закрыть" }
-                val textLayout = mutableListOf<TextLayoutResult>()
-                assertTrue(heading.config[SemanticsActions.GetTextLayoutResult].action!!.invoke(textLayout))
-                assertTrue(textLayout.single().lineCount <= 2, "Sheet action must not squeeze the title into fragments")
+                val textLayout = authoredHeading(heading)
+                assertEquals(1, textLayout.lineCount, "The authored appearance heading fits at both tested scales")
                 if (scale == 2f) {
                     assertTrue(heading.boundsInRoot.bottom <= close.boundsInRoot.top,
                         "At large text scale the action belongs below the full-width heading")

@@ -47,8 +47,10 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.chrisbanes.haze.hazeSource
 import pics.lab.motion.MotionResult
 import pics.lab.motion.MotionTransition
@@ -304,7 +306,12 @@ public fun LabSheetHost(
                                             Layout(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 content = {
-                                                    BasicText(title, style = LabType.title())
+                                                    BasicText(title, style = LabType.body().copy(
+                                                        fontSize = LabComponents.SheetTypographyTitleFontSize.sp,
+                                                        lineHeight = LabComponents.SheetTypographyTitleLineHeight.sp,
+                                                        fontWeight = FontWeight(LabComponents.SheetTypographyTitleFontWeight.toInt()),
+                                                        letterSpacing = LabComponents.SheetTypographyTitleLetterSpacing.sp,
+                                                    ))
                                                     LabButton(
                                                         dismissLabel,
                                                         dismiss,

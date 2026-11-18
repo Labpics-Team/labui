@@ -4,7 +4,7 @@ final class SettingsExperienceTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
     }
-    func testEditValidateAndSaveThroughNativeAccessibility() {
+    func testEditValidateAndSaveThroughNativeAccessibility() throws {
         let app = XCUIApplication()
         app.launch()
         let open = app.buttons["Редактировать"]
@@ -16,6 +16,7 @@ final class SettingsExperienceTests: XCTestCase {
         // Compose exposes editable semantics through UIKit's text-view trait, including single-line inputs.
         let name = app.textViews["Название"]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
+        let previousName = try XCTUnwrap(name.value as? String)
         name.tap()
         let keyboardIntroduction = app.otherElements["UIContinuousPathIntroductionView"]
         if keyboardIntroduction.waitForExistence(timeout: 2) {
@@ -24,23 +25,14 @@ final class SettingsExperienceTests: XCTestCase {
         clear(name, in: app)
         name.typeText("Не сохранять")
         reveal(app.buttons["Отмена"], in: app, towardBottom: true).tap()
-        XCTAssertTrue(app.staticTexts["Лаборатория"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts[previousName].waitForExistence(timeout: 5))
         open.tap()
         name.tap()
-        XCTAssertEqual(name.value as? String, "Лаборатория")
+        XCTAssertEqual(name.value as? String, previousName)
         clear(name, in: app)
         reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
         reveal(message("Введите название", in: app), in: app, towardBottom: false)
         name.tap()
-        name.typeText("Нативная лаборатория 東京")
-        expectValue("Нативная лаборатория 東京", in: name)
-        reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
-        let undo = app.buttons["Отменить"]
-        XCTAssertTrue(undo.waitForExistence(timeout: 3))
-        undo.tap()
-        XCTAssertTrue(app.staticTexts["Лаборатория"].waitForExistence(timeout: 5))
-        open.tap()
-        clear(name, in: app)
         name.typeText("Нативная лаборатория 東京")
         expectValue("Нативная лаборатория 東京", in: name)
         reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
@@ -56,6 +48,37 @@ final class SettingsExperienceTests: XCTestCase {
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         XCTAssertEqual(name.value as? String, "Нативная лаборатория 東京")
         captureSettledFrame("Restored settings", in: app)
+    }
+
+    func testUndoRestoresThePreviousSavedWorkspace() throws {
+        let app = XCUIApplication()
+        app.launchEnvironment["LABUI_UI_TEST_SNACKBAR_DURATION_MS"] = "60000"
+        app.launch()
+        let open = app.buttons["Редактировать"]
+        XCTAssertTrue(open.waitForExistence(timeout: 15))
+        open.tap()
+        let name = app.textViews["Название"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        let previousName = try XCTUnwrap(name.value as? String)
+        let changedName = previousName == "Отменяемая лаборатория"
+            ? "Другая лаборатория" : "Отменяемая лаборатория"
+        name.tap()
+        let keyboardIntroduction = app.otherElements["UIContinuousPathIntroductionView"]
+        if keyboardIntroduction.waitForExistence(timeout: 2) {
+            keyboardIntroduction.buttons["Continue"].tap()
+        }
+        clear(name, in: app)
+        name.typeText(changedName)
+        expectValue(changedName, in: name)
+        reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
+        XCTAssertTrue(app.staticTexts[changedName].waitForExistence(timeout: 15))
+        let undo = app.buttons["Отменить"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 15))
+        undo.tap()
+        XCTAssertTrue(app.staticTexts[previousName].waitForExistence(timeout: 15))
+        open.tap()
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        XCTAssertEqual(name.value as? String, previousName)
     }
 
     private func clear(_ editor: XCUIElement, in app: XCUIApplication) {
