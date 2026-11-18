@@ -6,6 +6,7 @@ import {
   webBackdropBlur,
   webGlassFrost,
 } from '../src/profile';
+import { acrylicNoiseDataUri } from './build-acrylic-noise';
 
 /** Renderer conversion, kept out of the platform-neutral authoring document. */
 export function materialProfileCss(): string {
@@ -31,7 +32,7 @@ export function materialProfileCss(): string {
     '/* Generated from src/profile.json. Glass frost is a separate renderer mapping. */',
     firstPaintCss(),
     `:root { --lab-sheet-ghost-overlap: ${sheet.ghost.overlap}px; }`,
-    `[data-veil][data-veil-profile],.lab-material-ghost--sheet { --_veil-noise: url("./veil-noise.png"); --_veil-noise-size: ${Number((48 * materialProfile.noise.size).toFixed(4))}px; --_veil-noise-blend: ${materialProfile.noise.blendMode}; }`,
+    `[data-veil][data-veil-profile],.lab-material-ghost--sheet { --_veil-noise: ${acrylicNoiseDataUri(materialProfile.progressive.styles.strong.noiseOpacity)}; --_veil-noise-size: ${Number((48 * materialProfile.noise.size).toFixed(4))}px; --_veil-noise-blend: ${materialProfile.noise.blendMode}; }`,
     `.lab-material {\n${declarations('base')}\n}`,
     ...MATERIAL_TIERS.map((tier) => `.lab-material--${tier} {\n${declarations(tier)}\n}`),
     `.lab-material--sheet {\n${declarations(sheet.body.tier as MaterialTier)}\n  box-shadow: var(--lab-elevation-${sheet.body.shadow});\n  outline: ${sheet.body.stroke.width}px solid var(--lab-${sheet.body.stroke.role});\n  outline-offset: 0;\n}`,

@@ -20,7 +20,9 @@
  *   · cap bound: remove the eviction loop → sdfEntries exceeds the cap → FAILS.
  */
 import { describe, expect, it } from 'vitest';
+import { materialContour } from '../src/engine/contour';
 import { __computeDisplacementField, __fieldStats } from '../src/engine/liquid-glass';
+import type { CornerRadii } from '../src/engine/rounded-shape';
 import { hashBytes } from './engine-map-corpus';
 
 /** sdRoundRect calls added by running `fn()`. */
@@ -142,4 +144,39 @@ describe('SDF cache — memory is bounded by the cap (eviction bites)', () => {
     }
     expect(__fieldStats().sdfEntries).toBe(sdfCacheCap);
   });
+});
+
+describe('asymmetric finite-boundary field cache', () => {
+  const radii: CornerRadii = [60, 20, 12, 34, 0, 0, 30, 10];
+  const flush = () => {
+    for (let i = 0; i <= __fieldStats().sdfCacheCap; i++)
+      __computeDisplacementField(20 + i, 12, [2, 1, 0, 0, 0, 0, 0, 0], 8, 1);
+  };
+
+  for (const shape of [radii, materialContour(181, 113, radii, 0.6)]) {
+    it(`retains exact bytes through shrink/grow and computes only new pixels (${Array.isArray(shape) ? 'ellipse' : 'smooth'})`, () => {
+      const build = (depth: number) => __computeDisplacementField(181, 113, shape, depth, 1.5);
+      flush();
+      const cold = computesDelta(() => build(18));
+      const narrowHash = hashBytes(build(18).data);
+      const grown = computesDelta(() => build(60));
+      const wideHash = hashBytes(build(60).data);
+      expect(cold).toBeGreaterThan(0);
+      expect(grown).toBeGreaterThan(0);
+      expect(computesDelta(() => build(18))).toBe(0);
+      expect(hashBytes(build(18).data)).toBe(narrowHash);
+      flush();
+      const fromScratch = computesDelta(() => build(60));
+      expect(hashBytes(build(60).data)).toBe(wideHash);
+      expect(cold + grown).toBe(fromScratch);
+      // A full-depth traversal covers the whole boundary. The narrow result
+      // must match even when every previously skipped interior value exists.
+      build(1000);
+      expect(hashBytes(build(18).data)).toBe(narrowHash);
+      const bytes = __fieldStats().retainedBytes;
+      for (let i = 0; i < 12; i++) build(18 + i);
+      expect(__fieldStats().retainedBytes).toBe(bytes);
+      expect(__fieldStats().asymmetricEntries).toBeLessThanOrEqual(__fieldStats().sdfCacheCap);
+    });
+  }
 });

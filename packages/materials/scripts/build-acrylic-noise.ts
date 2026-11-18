@@ -126,8 +126,8 @@ export function acrylicNoisePng(opacity = materialProfile.noise.opacity): Uint8A
 }
 
 /** Тот же PNG как `url("data:image/png;base64,…")` для CSS-переменной. */
-export function acrylicNoiseDataUri(): string {
-  const base64 = Buffer.from(acrylicNoisePng()).toString('base64');
+export function acrylicNoiseDataUri(opacity?: number): string {
+  const base64 = Buffer.from(acrylicNoisePng(opacity)).toString('base64');
   return `url("data:image/png;base64,${base64}")`;
 }
 

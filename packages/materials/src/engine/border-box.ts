@@ -15,7 +15,13 @@ export function readBorderBox(el: HTMLElement, css: CSSStyleDeclaration): Border
   ] as const;
   const used = (value: string, fallback: number, extra: number): number => {
     const size = Number.parseFloat(value);
-    return Number.isFinite(size) ? size + (css.boxSizing === 'border-box' ? 0 : extra) : fallback;
+    if (!Number.isFinite(size)) return fallback;
+    if (css.boxSizing === 'border-box') return size;
+    const withoutScrollbar = size + extra;
+    // CSSOM's content width excludes a classic scrollbar or reserved gutter.
+    // offsetWidth/Height include it, but round the entire box. Subtract the
+    // rounded unscrolled box so ordinary fractional CSS sizes stay fractional.
+    return withoutScrollbar + Math.max(0, fallback - Math.round(withoutScrollbar));
   };
   return {
     width: used(

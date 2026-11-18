@@ -1,5 +1,6 @@
 import { mountMaterialRuntime } from '@labpics/ui-materials';
 import css from '@labpics/ui-materials/material.css?inline';
+import { readBorderBox } from '../../../../packages/materials/src/engine/border-box';
 
 // Deliberate test inputs: lifecycle, scope and media are isolated from Colors.
 // These values are not an author palette.
@@ -24,6 +25,7 @@ const stopShadow = mountMaterialRuntime(shadow);
 let stopOverlap: (() => void) | undefined;
 Object.assign(window, {
   materialFixture: {
+    borderBox: readBorderBox,
     stop,
     stopShadow,
     overlap() {

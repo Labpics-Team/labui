@@ -108,6 +108,7 @@ export async function verifyScrollPaint(page, origin, browser, display) {
           contentLayout: offsets(host),
           peerLayout: offsets(peer),
           capture: cap ? [cap.x - rect.x, cap.y - rect.y, cap.width, cap.height] : null,
+          renderer: host.getAttribute('data-lab-material-paint-renderer'),
           viewport: [rect.width, rect.height],
           contours: Array.from(
             host.querySelectorAll('.lab-material__contour,.lab-material__contour-stroke'),
@@ -131,13 +132,23 @@ export async function verifyScrollPaint(page, origin, browser, display) {
         result.peerLayout,
         `${browser}/${layout}/${stage}: content placement and gaps`,
       );
-      if (result.capture) {
+      const needsCapture = result.renderer === 'capture-svg' || result.renderer === 'capture-blend';
+      if (browser === 'firefox' || browser === 'webkit')
+        assert(needsCapture, `${browser}/${layout}/${stage}: capture renderer is missing`);
+      if (needsCapture) {
+        assert(result.capture, `${browser}/${layout}/${stage}: capture node is missing`);
         assert(
           Math.abs(result.capture[0]) < 1 && Math.abs(result.capture[1]) < 1,
           `${browser}/${layout}/${stage}: capture stays at viewport origin ${result.capture}`,
         );
         assert(result.capture[2] >= result.viewport[0] && result.capture[3] >= result.viewport[1]);
       }
+      if (contour)
+        assert.equal(
+          result.contours.length,
+          2,
+          `${browser}/${layout}/${stage}: contour and stroke must exist`,
+        );
       for (const box of result.contours)
         assert(
           Math.abs(box[0]) < 1 && Math.abs(box[1]) < 1,
@@ -179,7 +190,9 @@ export async function verifyScrollPaint(page, origin, browser, display) {
         for (const record of batch)
           records.push({ target: record.target.className, attribute: record.attributeName });
       });
-      for (const node of host.querySelectorAll('.lab-material__paint-runway,.lab-material__paint'))
+      for (const node of host.querySelectorAll(
+        '.lab-material__paint-runway,.lab-material__paint,.lab-material__contour,.lab-material__contour-stroke',
+      ))
         watch.observe(node, { attributes: true, childList: true, subtree: true });
       for (let i = 0; i < 20; i++) await new Promise(requestAnimationFrame);
       watch.disconnect();
@@ -195,7 +208,9 @@ export async function verifyScrollPaint(page, origin, browser, display) {
       const watch = new MutationObserver((records) => {
         count += records.length;
       });
-      for (const node of host.querySelectorAll('.lab-material__paint-runway,.lab-material__paint'))
+      for (const node of host.querySelectorAll(
+        '.lab-material__paint-runway,.lab-material__paint,.lab-material__contour,.lab-material__contour-stroke',
+      ))
         watch.observe(node, { attributes: true, childList: true, subtree: true });
       for (let i = 0; i < 20; i++) {
         host.scrollTo((i - 10) * 20, (i - 10) * 20);

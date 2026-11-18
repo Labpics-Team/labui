@@ -1,4 +1,9 @@
-import { type CornerRadii, type RoundedShape, normalizeCornerRadii } from './rounded-shape';
+import {
+  type CornerRadii,
+  type RoundedShape,
+  normalizeCornerRadii,
+  straightGeometry,
+} from './rounded-shape';
 
 /** One authored outline serves clipping, shadows, light and refraction. Figma
  * joins a circular arc to two cubic transitions; it is not a superellipse.
@@ -9,6 +14,7 @@ export interface MaterialContour {
   readonly height: number;
   readonly radii: CornerRadii;
   readonly smoothing: number;
+  readonly extents: CornerRadii;
   readonly key: string;
   readonly path: string;
   readonly corners: readonly ContourCorner[];
@@ -19,7 +25,7 @@ interface ContourCorner {
   readonly y: number;
   /** x, y, dx, dy, 1 / length², clockwise toward the left edge. */
   readonly segments: Float64Array;
-  /** AABB per consecutive 16-segment group. */
+  /** Preorder BVH nodes: minX, minY, maxX, maxY, first, end, skip. */
   readonly bounds: Float64Array;
   readonly curve: readonly number[];
 }
@@ -122,12 +128,13 @@ function corner(rx: number, ry: number, smoothing: number): ContourCorner {
     q * ry,
   ];
   const bounds: number[] = [];
-  for (let i = 0; i < values.length; i += 80) {
+  const branch = (start: number, end: number): void => {
+    const node = bounds.length;
     let minX = Number.POSITIVE_INFINITY;
     let minY = Number.POSITIVE_INFINITY;
     let maxX = Number.NEGATIVE_INFINITY;
     let maxY = Number.NEGATIVE_INFINITY;
-    for (let j = i; j < Math.min(i + 80, values.length); j += 5) {
+    for (let j = start; j < end; j += 5) {
       const x = values[j] ?? 0;
       const y = values[j + 1] ?? 0;
       const nextX = x + (values[j + 2] ?? 0);
@@ -137,8 +144,16 @@ function corner(rx: number, ry: number, smoothing: number): ContourCorner {
       maxX = Math.max(maxX, x, nextX);
       maxY = Math.max(maxY, y, nextY);
     }
-    bounds.push(minX, minY, maxX, maxY);
-  }
+    const leaf = end - start <= 40;
+    bounds.push(minX, minY, maxX, maxY, leaf ? start : -1, end, 0);
+    if (!leaf) {
+      const middle = start + Math.floor((end - start) / 10) * 5;
+      branch(start, middle);
+      branch(middle, end);
+    }
+    bounds[node + 6] = bounds.length;
+  };
+  branch(0, values.length);
   const result = {
     x: p * rx,
     y: p * ry,
@@ -218,6 +233,7 @@ export function materialContour(
     height: h,
     radii,
     smoothing: s,
+    extents: corners.flatMap((c) => [c.x, c.y]) as unknown as CornerRadii,
     key,
     corners,
     path: `${pathParts.join(' ')} Z`,
@@ -225,6 +241,15 @@ export function materialContour(
   contours.set(key, result);
   if (contours.size > CACHE_LIMIT) contours.delete(contours.keys().next().value as string);
   return result;
+}
+
+// A depth-first query needs at most the subdivision depth, not one slot per
+// segment. Queries are synchronous; this retained numeric stack never escapes.
+const traversal = new Uint32Array(64);
+function boundDistance(bounds: Float64Array, node: number, x: number, y: number): number {
+  const dx = Math.max(0, (bounds[node] ?? 0) - x, x - (bounds[node + 2] ?? 0));
+  const dy = Math.max(0, (bounds[node + 1] ?? 0) - y, y - (bounds[node + 3] ?? 0));
+  return dx * dx + dy * dy;
 }
 
 /** Signed inside distance; writes the inward normal without per-pixel allocation. */
@@ -236,52 +261,77 @@ export function contourGeometry(
 ): number {
   const right = contour.width - x;
   const bottom = contour.height - y;
-  let distance = Math.min(x, y, right, bottom);
-  const vertical = distance === y || distance === bottom;
-  normal[0] = vertical ? 0 : distance === x ? 1 : -1;
-  normal[1] = vertical ? (distance === y ? 1 : -1) : 0;
+  let distance = straightGeometry(x, y, contour.width, contour.height, contour.extents, normal);
+  let squared = distance * distance;
+  let sign = x < 0 || y < 0 || right < 0 || bottom < 0 ? -1 : 1;
   for (let i = 0; i < 4; i++) {
     const c = contour.corners[i] as ContourCorner;
     const sx = i === 1 || i === 2 ? -1 : 1;
     const sy = i >= 2 ? -1 : 1;
     const px = sx < 0 ? right : x;
     const py = sy < 0 ? bottom : y;
-    if (px >= c.x || py >= c.y) continue;
-    let minimum = Number.POSITIVE_INFINITY;
+    if (!c.segments.length) continue;
+    const diagonal = c.y * px + c.x * py - c.x * c.y;
+    if (diagonal > 0 && diagonal * diagonal >= squared * (c.x * c.x + c.y * c.y)) continue;
+    const dx = Math.max(0, -px, px - c.x);
+    const dy = Math.max(0, -py, py - c.y);
+    if (dx * dx + dy * dy >= squared) continue;
+    let minimum = squared;
     let nx = 0;
     let ny = 0;
-    let sign = 1;
-    for (let group = 0; group < c.bounds.length; group += 4) {
-      const bx = Math.max(0, (c.bounds[group] ?? 0) - px, px - (c.bounds[group + 2] ?? 0));
-      const by = Math.max(0, (c.bounds[group + 1] ?? 0) - py, py - (c.bounds[group + 3] ?? 0));
-      if (bx * bx + by * by >= minimum) continue;
-      const start = group * 20;
-      for (let j = start; j < Math.min(start + 80, c.segments.length); j += 5) {
-        const x0 = c.segments[j] ?? 0;
-        const y0 = c.segments[j + 1] ?? 0;
-        const dx = c.segments[j + 2] ?? 0;
-        const dy = c.segments[j + 3] ?? 0;
-        const t = Math.max(
-          0,
-          Math.min(1, ((px - x0) * dx + (py - y0) * dy) * (c.segments[j + 4] ?? 0)),
-        );
-        const qx = px - x0 - t * dx;
-        const qy = py - y0 - t * dy;
-        const squared = qx * qx + qy * qy;
-        if (squared < minimum) {
-          minimum = squared;
-          nx = qx;
-          ny = qy;
-          sign = qx * dy - qy * dx >= 0 ? 1 : -1;
+    let cornerSign = sign;
+    let pending = 0;
+    let node = 0;
+    for (;;) {
+      if (boundDistance(c.bounds, node, px, py) < minimum) {
+        const start = c.bounds[node + 4] ?? -1;
+        if (start < 0) {
+          const left = node + 7;
+          const right = c.bounds[left + 6] ?? c.bounds.length;
+          const dl = boundDistance(c.bounds, left, px, py);
+          const dr = boundDistance(c.bounds, right, px, py);
+          const near = dl <= dr ? left : right;
+          const far = dl <= dr ? right : left;
+          if (Math.max(dl, dr) < minimum) traversal[pending++] = far;
+          node = near;
+          continue;
+        }
+        const end = c.bounds[node + 5] ?? 0;
+        for (let j = start; j < end; j += 5) {
+          const x0 = c.segments[j] ?? 0;
+          const y0 = c.segments[j + 1] ?? 0;
+          const dx = c.segments[j + 2] ?? 0;
+          const dy = c.segments[j + 3] ?? 0;
+          const t = Math.max(
+            0,
+            Math.min(1, ((px - x0) * dx + (py - y0) * dy) * (c.segments[j + 4] ?? 0)),
+          );
+          const qx = px - x0 - t * dx;
+          const qy = py - y0 - t * dy;
+          const candidate = qx * qx + qy * qy;
+          if (candidate < minimum) {
+            minimum = candidate;
+            const length = candidate ? 1 : Math.hypot(dx, dy);
+            nx = candidate ? qx : dy / length;
+            ny = candidate ? qy : -dx / length;
+            cornerSign = qx * dy - qy * dx >= 0 ? 1 : -1;
+          }
         }
       }
+      if (!pending) break;
+      node = traversal[--pending] ?? 0;
     }
-    const candidate = sign * Math.sqrt(minimum);
-    if (candidate < distance) {
-      distance = candidate;
-      normal[0] = candidate ? (sx * nx) / candidate : 0;
-      normal[1] = candidate ? (sy * ny) / candidate : 0;
+    if (minimum < squared) {
+      squared = minimum;
+      distance = Math.sqrt(minimum);
+      sign = cornerSign;
+      normal[0] = distance ? (sx * nx) / distance : sx * nx;
+      normal[1] = distance ? (sy * ny) / distance : sy * ny;
     }
   }
-  return distance;
+  if (sign < 0) {
+    normal[0] = -(normal[0] ?? 0);
+    normal[1] = -(normal[1] ?? 0);
+  }
+  return sign * distance;
 }
