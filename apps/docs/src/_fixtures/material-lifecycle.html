@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head><meta charset="UTF-8" /><title>Material lifecycle</title></head>
+  <body>
+    <div id="backdrop" aria-hidden="true"></div>
+    <div id="scope" data-material="glass">
+      <div id="surface" class="lab-material lab-material--soft">Glass</div>
+      <div id="unrelated"></div>
+    </div>
+    <div id="shadow-host" data-material="glass"></div>
+    <output id="ready">loading</output>
+    <script type="module" src="./material-lifecycle.ts"></script>
+  </body>
+</html>

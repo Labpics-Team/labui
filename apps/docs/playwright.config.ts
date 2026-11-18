@@ -2,11 +2,14 @@ import { defineConfig, devices } from '@playwright/test';
 
 const SMOKE_SPECS = [
   'smoke.spec.ts',
+  'colors.spec.ts',
   'proof.spec.ts',
   'tokens.spec.ts',
   'z-order.spec.ts',
   'materials-flag.spec.ts',
   'acrylic-live.spec.ts',
+  'material-lifecycle.spec.ts',
+  'material-first-paint.spec.ts',
   'button.spec.ts',
   'input.spec.ts',
   'checkbox.spec.ts',
@@ -41,6 +44,11 @@ export default defineConfig({
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
+    },
+    {
+      name: 'firefox',
+      testMatch: /material-lifecycle\.spec\.ts$/,
+      use: { ...devices['Desktop Firefox'] },
     },
   ],
   webServer: {

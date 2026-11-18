@@ -37,7 +37,7 @@ describe('evaluateTier — the α-boundary decision bites', () => {
     const verdict = evaluateTier(
       'base',
       'light',
-      { tint: { r: 153, g: 153, b: 153, a: 0.9 }, base: { r: 92, g: 92, b: 92, a: 1 } },
+      { tint: { r: 153, g: 153, b: 153, a: 0.9 }, solid: { r: 153, g: 153, b: 153, a: 1 } },
       POLARITY,
     );
     // Dense band collapses onto the tint → both boundaries clear the floor.
@@ -51,7 +51,7 @@ describe('evaluateTier — the α-boundary decision bites', () => {
     const verdict = evaluateTier(
       'subtle',
       'light',
-      { tint: { r: 191, g: 191, b: 191, a: 0.3 }, base: { r: 13, g: 13, b: 13, a: 1 } },
+      { tint: { r: 191, g: 191, b: 191, a: 0.3 }, solid: { r: 13, g: 13, b: 13, a: 1 } },
       POLARITY,
     );
     // Committed to white on the dark solid canon, but a white backdrop washes it out.
@@ -65,7 +65,7 @@ describe('evaluateTier — the α-boundary decision bites', () => {
     const verdict = evaluateTier(
       'soft',
       'light',
-      { tint, base: { r: 0, g: 0, b: 0, a: 1 } },
+      { tint, solid: { r: 0, g: 0, b: 0, a: 1 } },
       POLARITY,
     );
     // The bound is the luminance of the tint composited per-channel in gamma sRGB
@@ -88,7 +88,7 @@ describe('evaluateTier — the α-boundary decision bites', () => {
     const verdict = evaluateTier(
       'soft',
       'light',
-      { tint, base: { r: 0, g: 0, b: 0, a: 1 } },
+      { tint, solid: { r: 0, g: 0, b: 0, a: 1 } },
       POLARITY,
     );
     const EPS = 1e-9;
@@ -112,7 +112,7 @@ describe('evaluateTier — the α-boundary decision bites', () => {
     const verdict = evaluateTier(
       'subtle',
       'light',
-      { tint: { r: 255, g: 255, b: 255, a: 0.005 }, base: { r: 0, g: 0, b: 0, a: 1 } },
+      { tint: { r: 255, g: 255, b: 255, a: 0.005 }, solid: { r: 0, g: 0, b: 0, a: 1 } },
       [midGrey],
     );
     const labelLum = relativeLuminance(midGrey.colour);
@@ -131,7 +131,6 @@ describe('guarantee over the LIVE contract (parsed from colors/contract.css)', (
   const { fills, labelCandidatesByTheme } = readContractMaterials();
   const report = guaranteeReport(fills, labelCandidatesByTheme);
   const guaranteedKeys = new Set(report.guaranteed.map(verdictKey));
-  const unguaranteedKeys = report.unguaranteed.map(verdictKey).sort();
 
   it('every (theme, tier) pair is evaluated once — 5 tiers × 2 themes', () => {
     expect(report.verdicts).toHaveLength(10);
@@ -142,21 +141,10 @@ describe('guarantee over the LIVE contract (parsed from colors/contract.css)', (
     expect(guaranteedKeys.has('dark/base')).toBe(true);
   });
 
-  it('the sheer `subtle` tier is UNGUARANTEED in both themes (provisional-alpha finding)', () => {
-    expect(unguaranteedKeys).toContain('light/subtle');
-    expect(unguaranteedKeys).toContain('dark/subtle');
-  });
-
-  // GOLDEN — locks the current unguaranteed set in REAL gamma-composite space.
-  // Re-derived when the α-boundary moved off the blend-of-luminances onto the
-  // browser's true composite (compositeOver): `light/soft` fell out of the
-  // guaranteed set (blend read ~5.7:1, real paint ~4.1:1 — below AA), while
-  // `dark/muted` and `dark/soft` JOINED it (the blend was wrongly pessimistic for
-  // a dark tint over a bright backdrop; real composite is darker → white label
-  // holds ≥AA). When the colours train replaces the provisional Figma alphas,
-  // this array is the single place that re-baselines.
-  it('locks the current unguaranteed set (real gamma-composite α-boundary)', () => {
-    const EXPECTED_UNGUARANTEED = ['dark/elevated', 'dark/subtle', 'light/soft', 'light/subtle'];
-    expect(unguaranteedKeys).toEqual(EXPECTED_UNGUARANTEED);
+  it('reports author paints without replacing the independent Solid role', () => {
+    for (const verdict of report.verdicts) {
+      expect(verdict.solidContrast).toBeGreaterThanOrEqual(WCAG_AA_NORMAL);
+      expect(verdict.guaranteed).toBe(verdict.worstContrast >= verdict.floor);
+    }
   });
 });

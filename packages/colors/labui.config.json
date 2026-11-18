@@ -1,1357 +1,962 @@
 {
-  "brand": {
-    "light": "#007AFF",
-    "dark": "#4A8FFF",
-    "light_ic": "#0040DD",
-    "dark_ic": "#409CFF"
+  "version": 2,
+  "description": "Author palette and semantic relationships for Lab UI v2.1. Program owns evaluation; component CSS consumes the role names.",
+  "anchors": {
+    "paper": [255, 255, 255],
+    "ink": [16, 16, 18],
+    "paper-text": [246, 248, 250],
+    "neutral-fill": [120, 120, 128],
+    "neutral-label-dark": [60, 60, 67],
+    "neutral-label-light": [176, 176, 185],
+    "surface-light-raised": [247, 248, 250],
+    "surface-dark-secondary": [28, 28, 30],
+    "surface-dark-tertiary": [36, 36, 38],
+    "control-light": [232, 232, 236],
+    "control-dark": [35, 35, 39],
+    "material-light-base-tint": [153, 153, 153],
+    "material-light-base-back": [92, 92, 92],
+    "material-light-elevated-back": [38, 38, 38],
+    "material-light-muted-tint": [179, 179, 179],
+    "material-light-muted-back": [56, 56, 56],
+    "material-light-soft-tint": [166, 166, 166],
+    "material-light-soft-back": [51, 51, 51],
+    "material-light-subtle-tint": [191, 191, 191],
+    "material-light-subtle-back": [13, 13, 13],
+    "material-dark-tint": [37, 37, 37],
+    "material-dark-base-back": [124, 124, 124],
+    "material-dark-elevated-tint": [130, 130, 130],
+    "material-dark-elevated-back": [31, 31, 31],
+    "material-dark-muted-back": [140, 140, 140],
+    "material-dark-soft-back": [156, 156, 156],
+    "brand": {
+      "light": [0, 122, 255],
+      "dark": [74, 143, 255],
+      "increased": {
+        "light": [0, 64, 221],
+        "dark": [64, 156, 255]
+      }
+    },
+    "danger": {
+      "light": [255, 59, 48],
+      "dark": [255, 58, 58],
+      "increased": {
+        "light": [215, 0, 21],
+        "dark": [255, 97, 97]
+      }
+    },
+    "warning": {
+      "light": [255, 161, 0],
+      "dark": [255, 144, 8],
+      "increased": {
+        "light": [201, 52, 0],
+        "dark": [255, 169, 64]
+      }
+    },
+    "success": {
+      "light": [52, 199, 89],
+      "dark": [48, 209, 88],
+      "increased": {
+        "light": [36, 138, 61],
+        "dark": [48, 219, 91]
+      }
+    },
+    "info": {
+      "light": [62, 135, 255],
+      "dark": [86, 150, 255],
+      "increased": {
+        "light": [0, 80, 207],
+        "dark": [149, 192, 255]
+      }
+    }
   },
-  "neutral": {
-    "anchors": {
-      "light": "#FFFFFF",
-      "mid": "#787880",
-      "dark": "#101012"
+  "roles": {
+    "bg-static-dark": {
+      "anchor": "ink",
+      "opacity": 1
     },
-    "tint": {
-      "ratio": 0.1,
-      "target_mp": 6.1,
-      "hue_stiffness": 9,
-      "hue_override_deg": 286
+    "bg-static-light": {
+      "anchor": "paper",
+      "opacity": 1
     },
-    "edge": {
-      "light": "#101012",
-      "dark": "#F6F8FA",
-      "light_ic": "#101012",
-      "dark_ic": "#F6F8FA"
+    "label-brand-primary": {
+      "anchor": "brand",
+      "opacity": 1
     },
-    "inverted": {
-      "light": "#B0B0B9",
-      "dark": "#3C3C43",
-      "light_ic": "#B0B0B9",
-      "dark_ic": "#3C3C43"
+    "label-brand-quaternary": {
+      "anchor": "brand",
+      "opacity": 0.322
+    },
+    "label-brand-secondary": {
+      "anchor": "brand",
+      "opacity": 0.722
+    },
+    "label-brand-tertiary": {
+      "anchor": "brand",
+      "opacity": 0.522
+    },
+    "label-danger-primary": {
+      "anchor": "danger",
+      "opacity": 1
+    },
+    "label-danger-quaternary": {
+      "anchor": "danger",
+      "opacity": 0.322
+    },
+    "label-danger-secondary": {
+      "anchor": "danger",
+      "opacity": 0.722
+    },
+    "label-danger-tertiary": {
+      "anchor": "danger",
+      "opacity": 0.522
+    },
+    "label-info-primary": {
+      "anchor": "info",
+      "opacity": 1
+    },
+    "label-info-quaternary": {
+      "anchor": "info",
+      "opacity": 0.322
+    },
+    "label-info-secondary": {
+      "anchor": "info",
+      "opacity": 0.722
+    },
+    "label-info-tertiary": {
+      "anchor": "info",
+      "opacity": 0.522
+    },
+    "label-static-dark-primary": {
+      "anchor": "ink",
+      "opacity": 1
+    },
+    "label-static-dark-quaternary": {
+      "anchor": "ink",
+      "opacity": 0.322
+    },
+    "label-static-dark-secondary": {
+      "anchor": "ink",
+      "opacity": 0.722
+    },
+    "label-static-dark-tertiary": {
+      "anchor": "ink",
+      "opacity": 0.522
+    },
+    "label-static-light-primary": {
+      "anchor": "paper",
+      "opacity": 1
+    },
+    "label-static-light-quaternary": {
+      "anchor": "paper",
+      "opacity": 0.322
+    },
+    "label-static-light-secondary": {
+      "anchor": "paper",
+      "opacity": 0.722
+    },
+    "label-static-light-tertiary": {
+      "anchor": "paper",
+      "opacity": 0.522
+    },
+    "label-success-primary": {
+      "anchor": "success",
+      "opacity": 1
+    },
+    "label-success-quaternary": {
+      "anchor": "success",
+      "opacity": 0.322
+    },
+    "label-success-secondary": {
+      "anchor": "success",
+      "opacity": 0.722
+    },
+    "label-success-tertiary": {
+      "anchor": "success",
+      "opacity": 0.522
+    },
+    "label-warning-primary": {
+      "anchor": "warning",
+      "opacity": 1
+    },
+    "label-warning-quaternary": {
+      "anchor": "warning",
+      "opacity": 0.322
+    },
+    "label-warning-secondary": {
+      "anchor": "warning",
+      "opacity": 0.722
+    },
+    "label-warning-tertiary": {
+      "anchor": "warning",
+      "opacity": 0.522
+    },
+    "fill-brand-primary": {
+      "anchor": "brand",
+      "opacity": 0.122
+    },
+    "fill-brand-quaternary": {
+      "anchor": "brand",
+      "opacity": 0.02
+    },
+    "fill-brand-secondary": {
+      "anchor": "brand",
+      "opacity": 0.078
+    },
+    "fill-brand-tertiary": {
+      "anchor": "brand",
+      "opacity": 0.039
+    },
+    "fill-danger-primary": {
+      "anchor": "danger",
+      "opacity": 0.122
+    },
+    "fill-danger-quaternary": {
+      "anchor": "danger",
+      "opacity": 0.02
+    },
+    "fill-danger-secondary": {
+      "anchor": "danger",
+      "opacity": 0.078
+    },
+    "fill-danger-tertiary": {
+      "anchor": "danger",
+      "opacity": 0.039
+    },
+    "fill-info-primary": {
+      "anchor": "info",
+      "opacity": 0.122
+    },
+    "fill-info-quaternary": {
+      "anchor": "info",
+      "opacity": 0.02
+    },
+    "fill-info-secondary": {
+      "anchor": "info",
+      "opacity": 0.078
+    },
+    "fill-info-tertiary": {
+      "anchor": "info",
+      "opacity": 0.039
+    },
+    "fill-none": {
+      "anchor": "neutral-fill",
+      "opacity": 0.0
+    },
+    "fill-static-dark-primary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.361
+    },
+    "fill-static-dark-quaternary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.161
+    },
+    "fill-static-dark-secondary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.322
+    },
+    "fill-static-dark-tertiary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.239
+    },
+    "fill-static-light-primary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.2
+    },
+    "fill-static-light-quaternary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.078
+    },
+    "fill-static-light-secondary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.161
+    },
+    "fill-static-light-tertiary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.122
+    },
+    "fill-success-primary": {
+      "anchor": "success",
+      "opacity": 0.122
+    },
+    "fill-success-quaternary": {
+      "anchor": "success",
+      "opacity": 0.02
+    },
+    "fill-success-secondary": {
+      "anchor": "success",
+      "opacity": 0.078
+    },
+    "fill-success-tertiary": {
+      "anchor": "success",
+      "opacity": 0.039
+    },
+    "fill-warning-primary": {
+      "anchor": "warning",
+      "opacity": 0.122
+    },
+    "fill-warning-quaternary": {
+      "anchor": "warning",
+      "opacity": 0.02
+    },
+    "fill-warning-secondary": {
+      "anchor": "warning",
+      "opacity": 0.078
+    },
+    "fill-warning-tertiary": {
+      "anchor": "warning",
+      "opacity": 0.039
+    },
+    "border-brand-base": {
+      "anchor": "brand",
+      "opacity": 0.2
+    },
+    "border-brand-soft": {
+      "anchor": "brand",
+      "opacity": 0.122
+    },
+    "border-brand-strong": {
+      "anchor": "brand",
+      "opacity": 1
+    },
+    "border-danger-base": {
+      "anchor": "danger",
+      "opacity": 0.2
+    },
+    "border-danger-soft": {
+      "anchor": "danger",
+      "opacity": 0.122
+    },
+    "border-danger-strong": {
+      "anchor": "danger",
+      "opacity": 1
+    },
+    "border-info-base": {
+      "anchor": "info",
+      "opacity": 0.2
+    },
+    "border-info-soft": {
+      "anchor": "info",
+      "opacity": 0.122
+    },
+    "border-info-strong": {
+      "anchor": "info",
+      "opacity": 1
+    },
+    "border-none": {
+      "anchor": "neutral-fill",
+      "opacity": 0.0
+    },
+    "border-static-dark-base": {
+      "anchor": "neutral-fill",
+      "opacity": 0.2
+    },
+    "border-static-dark-soft": {
+      "anchor": "neutral-fill",
+      "opacity": 0.122
+    },
+    "border-static-dark-strong": {
+      "anchor": "ink",
+      "opacity": 1
+    },
+    "border-static-light-base": {
+      "anchor": "neutral-fill",
+      "opacity": 0.161
+    },
+    "border-static-light-soft": {
+      "anchor": "neutral-fill",
+      "opacity": 0.078
+    },
+    "border-static-light-strong": {
+      "anchor": "paper",
+      "opacity": 1
+    },
+    "border-success-base": {
+      "anchor": "success",
+      "opacity": 0.2
+    },
+    "border-success-soft": {
+      "anchor": "success",
+      "opacity": 0.122
+    },
+    "border-success-strong": {
+      "anchor": "success",
+      "opacity": 1
+    },
+    "border-warning-base": {
+      "anchor": "warning",
+      "opacity": 0.2
+    },
+    "border-warning-soft": {
+      "anchor": "warning",
+      "opacity": 0.122
+    },
+    "border-warning-strong": {
+      "anchor": "warning",
+      "opacity": 1
+    },
+    "fx-focus-ring-brand": "@label-brand-primary",
+    "fx-focus-ring-danger": "@label-danger-primary",
+    "fx-focus-ring-neutral": "@label-primary",
+    "fx-focus-ring-warning": "@label-warning-primary",
+    "fx-glow-brand": {
+      "anchor": "brand",
+      "opacity": 0.522
+    },
+    "fx-glow-danger": {
+      "anchor": "danger",
+      "opacity": 0.522
+    },
+    "fx-glow-neutral": {
+      "anchor": "paper",
+      "opacity": 0.522
+    },
+    "fx-glow-warning": {
+      "anchor": "warning",
+      "opacity": 0.522
+    },
+    "badge-label-contrast": {
+      "anchor": "ink",
+      "opacity": 1
+    },
+    "badge-label-default": {
+      "anchor": "paper",
+      "opacity": 1
+    },
+    "fill-accent": "@border-brand-strong",
+    "fill-danger": "@border-danger-strong",
+    "fill-accent-tinted": "@fill-brand-primary",
+    "fill-danger-tinted": "@fill-danger-primary",
+    "label-accent": "@label-brand-primary",
+    "label-danger": "@label-danger-primary",
+    "label-on-accent": "@label-static-light-primary",
+    "label-on-danger": "@label-static-light-primary",
+    "border-accent": "@border-brand-strong",
+    "border-danger": "@border-danger-strong",
+    "border-focus": "@fx-focus-ring-brand",
+    "bg-tone-1": "@bg-primary",
+    "bg-tone-2": "@bg-secondary",
+    "bg-tone-3": "@bg-tertiary",
+    "badge-fill-brand": "@border-brand-strong",
+    "badge-label-on-brand": "@label-static-light-primary",
+    "badge-fill-danger": "@border-danger-strong",
+    "badge-label-on-danger": "@label-static-light-primary",
+    "badge-fill-warning": "@border-warning-strong",
+    "badge-label-on-warning": "@label-static-dark-primary",
+    "badge-fill-success": "@border-success-strong",
+    "badge-label-on-success": "@label-static-light-primary",
+    "badge-fill-info": "@border-info-strong",
+    "badge-label-on-info": "@label-static-light-primary",
+    "badge-fill-static-dark": "@bg-static-dark",
+    "badge-label-on-static-dark": "@label-static-light-primary",
+    "badge-fill-static-light": "@bg-static-light",
+    "badge-label-on-static-light": "@label-static-dark-primary",
+    "fx-glow-neutral-core": {
+      "anchor": "paper",
+      "opacity": 1
+    },
+    "fx-glow-neutral-subtle": {
+      "anchor": "paper",
+      "opacity": 0.522
+    },
+    "fx-glow-neutral-subtle-core": {
+      "anchor": "paper",
+      "opacity": 1
+    },
+    "fx-glow-neutral-bloom": {
+      "anchor": "paper",
+      "opacity": 0.522
+    },
+    "fx-glow-neutral-bloom-core": {
+      "anchor": "paper",
+      "opacity": 1
+    },
+    "fx-glow-brand-core": {
+      "anchor": "brand",
+      "opacity": 1
+    },
+    "fx-glow-brand-subtle": {
+      "anchor": "brand",
+      "opacity": 0.522
+    },
+    "fx-glow-brand-subtle-core": {
+      "anchor": "brand",
+      "opacity": 1
+    },
+    "fx-glow-brand-bloom": {
+      "anchor": "brand",
+      "opacity": 0.522
+    },
+    "fx-glow-brand-bloom-core": {
+      "anchor": "brand",
+      "opacity": 1
+    },
+    "fx-glow-danger-core": {
+      "anchor": "danger",
+      "opacity": 1
+    },
+    "fx-glow-danger-subtle": {
+      "anchor": "danger",
+      "opacity": 0.522
+    },
+    "fx-glow-danger-subtle-core": {
+      "anchor": "danger",
+      "opacity": 1
+    },
+    "fx-glow-danger-bloom": {
+      "anchor": "danger",
+      "opacity": 0.522
+    },
+    "fx-glow-danger-bloom-core": {
+      "anchor": "danger",
+      "opacity": 1
+    },
+    "fx-glow-warning-core": {
+      "anchor": "warning",
+      "opacity": 1
+    },
+    "fx-glow-warning-subtle": {
+      "anchor": "warning",
+      "opacity": 0.522
+    },
+    "fx-glow-warning-subtle-core": {
+      "anchor": "warning",
+      "opacity": 1
+    },
+    "fx-glow-warning-bloom": {
+      "anchor": "warning",
+      "opacity": 0.522
+    },
+    "fx-glow-warning-bloom-core": {
+      "anchor": "warning",
+      "opacity": 1
+    },
+    "fx-focus-ring-success": "@label-success-primary",
+    "fx-glow-success": {
+      "anchor": "success",
+      "opacity": 0.522
+    },
+    "fx-glow-success-core": {
+      "anchor": "success",
+      "opacity": 1
+    },
+    "fx-glow-success-subtle": {
+      "anchor": "success",
+      "opacity": 0.522
+    },
+    "fx-glow-success-subtle-core": {
+      "anchor": "success",
+      "opacity": 1
+    },
+    "fx-glow-success-bloom": {
+      "anchor": "success",
+      "opacity": 0.522
+    },
+    "fx-glow-success-bloom-core": {
+      "anchor": "success",
+      "opacity": 1
+    },
+    "fx-focus-ring-info": "@label-info-primary",
+    "fx-glow-info": {
+      "anchor": "info",
+      "opacity": 0.522
+    },
+    "fx-glow-info-core": {
+      "anchor": "info",
+      "opacity": 1
+    },
+    "fx-glow-info-subtle": {
+      "anchor": "info",
+      "opacity": 0.522
+    },
+    "fx-glow-info-subtle-core": {
+      "anchor": "info",
+      "opacity": 1
+    },
+    "fx-glow-info-bloom": {
+      "anchor": "info",
+      "opacity": 0.522
+    },
+    "fx-glow-info-bloom-core": {
+      "anchor": "info",
+      "opacity": 1
     }
   },
-  "palette": [
-    {
-      "key": "red",
-      "anchors": {
-        "light": "#FF3B30",
-        "dark": "#FF3A3A",
-        "light_ic": "#D70015",
-        "dark_ic": "#FF6161"
-      }
-    },
-    {
-      "key": "orange",
-      "anchors": {
-        "light": "#FFA100",
-        "dark": "#FF9008",
-        "light_ic": "#C93400",
-        "dark_ic": "#FFA940"
-      }
-    },
-    {
-      "key": "yellow",
-      "anchors": {
-        "light": "#FFD000",
-        "dark": "#FFD60A",
-        "light_ic": "#B25000",
-        "dark_ic": "#FFD426"
-      }
-    },
-    {
-      "key": "green",
-      "anchors": {
-        "light": "#34C759",
-        "dark": "#30D158",
-        "light_ic": "#248A3D",
-        "dark_ic": "#30DB5B"
-      }
-    },
-    {
-      "key": "teal",
-      "anchors": {
-        "light": "#5AC8FA",
-        "dark": "#64D2FF",
-        "light_ic": "#0071A4",
-        "dark_ic": "#70D7FF"
-      }
-    },
-    {
-      "key": "mint",
-      "anchors": {
-        "light": "#00C7BE",
-        "dark": "#63E6E2",
-        "light_ic": "#0C817B",
-        "dark_ic": "#6CEBE7"
-      }
-    },
-    {
-      "key": "blue",
-      "anchors": {
-        "light": "#3E87FF",
-        "dark": "#5696FF",
-        "light_ic": "#0050CF",
-        "dark_ic": "#95C0FF"
-      }
-    },
-    {
-      "key": "indigo",
-      "anchors": {
-        "light": "#5856D6",
-        "dark": "#5E5CE6",
-        "light_ic": "#3634A3",
-        "dark_ic": "#7D7AFF"
-      }
-    },
-    {
-      "key": "purple",
-      "anchors": {
-        "light": "#AF52DE",
-        "dark": "#BF5AF2",
-        "light_ic": "#8944AB",
-        "dark_ic": "#DA8FFF"
-      }
-    },
-    {
-      "key": "pink",
-      "anchors": {
-        "light": "#FF2D55",
-        "dark": "#FF2D55",
-        "light_ic": "#D30F45",
-        "dark_ic": "#FF6482"
-      }
-    }
-  ],
-  "sentiments": {
-    "categories": [
-      {
-        "name": "danger",
-        "family": "red"
+  "themes": {
+    "light": {
+      "bg-material-base-01": {
+        "anchor": "material-light-base-tint",
+        "opacity": 0.96
       },
-      {
-        "name": "warning",
-        "family": "orange",
-        "hue_floor_deg": 45,
-        "preferred_side": 1
+      "bg-material-base-02": {
+        "anchor": "material-light-base-back",
+        "opacity": 1
       },
-      {
-        "name": "success",
-        "family": "green"
+      "bg-material-elevated-01": {
+        "anchor": "paper",
+        "opacity": 0.8
       },
-      {
-        "name": "info",
-        "family": "blue"
-      }
-    ],
-    "hardness": 5,
-    "chroma_fraction": 1
-  },
-  "themes": [
-    {
-      "name": "light",
-      "preset": "srgb"
-    },
-    {
-      "name": "dark",
-      "preset": "dim"
-    },
-    {
-      "name": "light-ic",
-      "preset": "srgb-ic"
-    },
-    {
-      "name": "dark-ic",
-      "preset": "dim-ic"
-    }
-  ],
-  "roles": [
-    {
-      "name": "bg-tone-2",
-      "recipe": {
-        "kind": "dj-anchor",
-        "light": 2.03,
-        "dark": 5.78
-      }
-    },
-    {
-      "name": "bg-tone-3",
-      "recipe": {
-        "kind": "dj-anchor",
-        "light": 2.03,
-        "dark": 9.6
-      }
-    },
-    {
-      "name": "label-primary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.968,
-        "floor": "aa-text"
-      }
-    },
-    {
-      "name": "label-secondary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.627,
-        "floor": "aa-text"
-      }
-    },
-    {
-      "name": "label-tertiary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.461,
-        "floor": "aa-ui"
-      }
-    },
-    {
-      "name": "label-quaternary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.276,
-        "floor": "none"
-      }
-    },
-    {
-      "name": "border-strong",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.968,
-        "floor": "aa-ui"
-      }
-    },
-    {
-      "name": "border-base",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "neutral-border-base"
-      }
-    },
-    {
-      "name": "border-soft",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "neutral-border-soft"
-      }
-    },
-    {
-      "name": "border-none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "border-brand-none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "border-danger-none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "border-warning-none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "border-success-none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "border-info-none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "fill-primary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "neutral-fill-primary"
-      }
-    },
-    {
-      "name": "fill-secondary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "neutral-fill-secondary"
-      }
-    },
-    {
-      "name": "fill-tertiary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "neutral-fill-tertiary"
-      }
-    },
-    {
-      "name": "fill-quaternary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "neutral-fill-quaternary"
-      }
-    },
-    {
-      "name": "fill-none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "label-brand-primary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.968,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "brand"
-        }
-      }
-    },
-    {
-      "name": "label-brand-secondary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.627,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "brand"
-        }
-      }
-    },
-    {
-      "name": "label-brand-tertiary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.461,
-        "floor": "aa-ui",
-        "hue": {
-          "kind": "brand"
-        }
-      }
-    },
-    {
-      "name": "label-brand-quaternary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.276,
-        "floor": "none",
-        "hue": {
-          "kind": "brand"
-        }
-      }
-    },
-    {
-      "name": "fill-brand-primary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "fill-primary"
-      }
-    },
-    {
-      "name": "fill-brand-secondary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "fill-secondary"
-      }
-    },
-    {
-      "name": "fill-brand-tertiary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "fill-tertiary"
-      }
-    },
-    {
-      "name": "fill-brand-quaternary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "fill-quaternary"
-      }
-    },
-    {
-      "name": "border-brand-strong",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "border-strong",
-        "floor": "aa-ui"
-      }
-    },
-    {
-      "name": "border-brand-base",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "border-base"
-      }
-    },
-    {
-      "name": "border-brand-soft",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "border-soft"
-      }
-    },
-    {
-      "name": "label-danger-primary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.968,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "danger"
-        }
-      }
-    },
-    {
-      "name": "label-danger-secondary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.627,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "danger"
-        }
-      }
-    },
-    {
-      "name": "label-danger-tertiary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.461,
-        "floor": "aa-ui",
-        "hue": {
-          "kind": "sentiment",
-          "name": "danger"
-        }
-      }
-    },
-    {
-      "name": "label-danger-quaternary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.276,
-        "floor": "none",
-        "hue": {
-          "kind": "sentiment",
-          "name": "danger"
-        }
-      }
-    },
-    {
-      "name": "fill-danger-primary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "fill-primary"
-      }
-    },
-    {
-      "name": "fill-danger-secondary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "fill-secondary"
-      }
-    },
-    {
-      "name": "fill-danger-tertiary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "fill-tertiary"
-      }
-    },
-    {
-      "name": "fill-danger-quaternary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "fill-quaternary"
-      }
-    },
-    {
-      "name": "border-danger-strong",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "border-strong",
-        "floor": "aa-ui"
-      }
-    },
-    {
-      "name": "border-danger-base",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "border-base"
-      }
-    },
-    {
-      "name": "border-danger-soft",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "border-soft"
-      }
-    },
-    {
-      "name": "label-warning-primary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.968,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "warning"
-        }
-      }
-    },
-    {
-      "name": "label-warning-secondary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.627,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "warning"
-        }
-      }
-    },
-    {
-      "name": "label-warning-tertiary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.461,
-        "floor": "aa-ui",
-        "hue": {
-          "kind": "sentiment",
-          "name": "warning"
-        }
-      }
-    },
-    {
-      "name": "label-warning-quaternary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.276,
-        "floor": "none",
-        "hue": {
-          "kind": "sentiment",
-          "name": "warning"
-        }
-      }
-    },
-    {
-      "name": "fill-warning-primary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "fill-primary"
-      }
-    },
-    {
-      "name": "fill-warning-secondary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "fill-secondary"
-      }
-    },
-    {
-      "name": "fill-warning-tertiary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "fill-tertiary"
-      }
-    },
-    {
-      "name": "fill-warning-quaternary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "fill-quaternary"
-      }
-    },
-    {
-      "name": "border-warning-strong",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "border-strong",
-        "floor": "aa-ui"
-      }
-    },
-    {
-      "name": "border-warning-base",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "border-base"
-      }
-    },
-    {
-      "name": "border-warning-soft",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "border-soft"
-      }
-    },
-    {
-      "name": "label-success-primary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.968,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "success"
-        }
-      }
-    },
-    {
-      "name": "label-success-secondary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.627,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "success"
-        }
-      }
-    },
-    {
-      "name": "label-success-tertiary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.461,
-        "floor": "aa-ui",
-        "hue": {
-          "kind": "sentiment",
-          "name": "success"
-        }
-      }
-    },
-    {
-      "name": "label-success-quaternary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.276,
-        "floor": "none",
-        "hue": {
-          "kind": "sentiment",
-          "name": "success"
-        }
-      }
-    },
-    {
-      "name": "fill-success-primary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "fill-primary"
-      }
-    },
-    {
-      "name": "fill-success-secondary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "fill-secondary"
-      }
-    },
-    {
-      "name": "fill-success-tertiary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "fill-tertiary"
-      }
-    },
-    {
-      "name": "fill-success-quaternary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "fill-quaternary"
-      }
-    },
-    {
-      "name": "border-success-strong",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "border-strong",
-        "floor": "aa-ui"
-      }
-    },
-    {
-      "name": "border-success-base",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "border-base"
-      }
-    },
-    {
-      "name": "border-success-soft",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "border-soft"
-      }
-    },
-    {
-      "name": "label-info-primary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.968,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "info"
-        }
-      }
-    },
-    {
-      "name": "label-info-secondary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.627,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "info"
-        }
-      }
-    },
-    {
-      "name": "label-info-tertiary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.461,
-        "floor": "aa-ui",
-        "hue": {
-          "kind": "sentiment",
-          "name": "info"
-        }
-      }
-    },
-    {
-      "name": "label-info-quaternary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.276,
-        "floor": "none",
-        "hue": {
-          "kind": "sentiment",
-          "name": "info"
-        }
-      }
-    },
-    {
-      "name": "fill-info-primary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "fill-primary"
-      }
-    },
-    {
-      "name": "fill-info-secondary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "fill-secondary"
-      }
-    },
-    {
-      "name": "fill-info-tertiary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "fill-tertiary"
-      }
-    },
-    {
-      "name": "fill-info-quaternary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "fill-quaternary"
-      }
-    },
-    {
-      "name": "border-info-strong",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "border-strong",
-        "floor": "aa-ui"
-      }
-    },
-    {
-      "name": "border-info-base",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "border-base"
-      }
-    },
-    {
-      "name": "border-info-soft",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "border-soft"
-      }
-    },
-    {
-      "name": "fx-glow-brand",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "brand"
-        },
-        "step": "base"
-      }
-    },
-    {
-      "name": "fx-glow-danger",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "step": "base"
-      }
-    },
-    {
-      "name": "fx-glow-warning",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "step": "base"
-      }
-    },
-    {
-      "name": "fx-glow-neutral",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "neutral",
-          "pick": "light"
-        },
-        "step": "base"
-      }
-    },
-    {
-      "name": "fx-glow-inverted",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "inverted"
-        },
-        "position": "glow"
-      }
-    },
-    {
-      "name": "fx-skeleton-highlight",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "skeleton-highlight"
-      }
-    },
-    {
-      "name": "fx-glow-neutral-subtle",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "neutral",
-          "pick": "light"
-        },
-        "step": "subtle"
-      }
-    },
-    {
-      "name": "fx-glow-neutral-bloom",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "neutral",
-          "pick": "light"
-        },
-        "step": "bloom"
-      }
-    },
-    {
-      "name": "fx-glow-brand-subtle",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "brand"
-        },
-        "step": "subtle"
-      }
-    },
-    {
-      "name": "fx-glow-brand-bloom",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "brand"
-        },
-        "step": "bloom"
-      }
-    },
-    {
-      "name": "fx-glow-danger-subtle",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "step": "subtle"
-      }
-    },
-    {
-      "name": "fx-glow-danger-bloom",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "step": "bloom"
-      }
-    },
-    {
-      "name": "fx-glow-warning-subtle",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "step": "subtle"
-      }
-    },
-    {
-      "name": "fx-glow-warning-bloom",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "step": "bloom"
-      }
-    },
-    {
-      "name": "fx-glow-success",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "step": "base"
-      }
-    },
-    {
-      "name": "fx-glow-success-subtle",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "step": "subtle"
-      }
-    },
-    {
-      "name": "fx-glow-success-bloom",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "step": "bloom"
-      }
-    },
-    {
-      "name": "fx-glow-info",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "step": "base"
-      }
-    },
-    {
-      "name": "fx-glow-info-subtle",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "step": "subtle"
-      }
-    },
-    {
-      "name": "fx-glow-info-bloom",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "step": "bloom"
-      }
-    },
-    {
-      "name": "fill-neutral",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "label-primary"
-      }
-    },
-    {
-      "name": "fill-accent-tinted",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "fill-primary"
-      }
-    },
-    {
-      "name": "fill-danger-tinted",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "fill-primary"
-      }
-    },
-    {
-      "name": "label-accent",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "label-primary"
-      }
-    },
-    {
-      "name": "label-danger",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "label-primary"
-      }
-    },
-    {
-      "name": "border-accent",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "border-base"
-      }
-    },
-    {
-      "name": "border-danger",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "border-base"
-      }
-    },
-    {
-      "name": "border-focus",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "focus-ring"
-      }
-    }
-  ],
-  "components": [
-    {
-      "name": "badge-fill-brand",
-      "recipe": {
-        "kind": "pair-fill",
-        "source": {
-          "kind": "brand"
-        }
-      }
-    },
-    {
-      "name": "badge-fill-danger",
-      "recipe": {
-        "kind": "pair-fill",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        }
-      }
-    },
-    {
-      "name": "badge-fill-warning",
-      "recipe": {
-        "kind": "pair-fill",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        }
-      }
-    },
-    {
-      "name": "badge-fill-success",
-      "recipe": {
-        "kind": "pair-fill",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        }
-      }
-    },
-    {
-      "name": "badge-fill-info",
-      "recipe": {
-        "kind": "pair-fill",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        }
-      }
-    },
-    {
-      "name": "badge-fill-static",
-      "recipe": {
-        "kind": "pair-fill",
-        "source": {
-          "kind": "neutral",
-          "pick": "light"
-        }
+      "bg-material-elevated-02": {
+        "anchor": "material-light-elevated-back",
+        "opacity": 1
       },
-      "flag": {
-        "pick": ["dark", "light"]
-      }
+      "bg-material-muted-01": {
+        "anchor": "material-light-muted-tint",
+        "opacity": 0.8
+      },
+      "bg-material-muted-02": {
+        "anchor": "material-light-muted-back",
+        "opacity": 1
+      },
+      "bg-material-soft-01": {
+        "anchor": "material-light-soft-tint",
+        "opacity": 0.72
+      },
+      "bg-material-soft-02": {
+        "anchor": "material-light-soft-back",
+        "opacity": 1
+      },
+      "bg-material-subtle-01": {
+        "anchor": "material-light-subtle-tint",
+        "opacity": 0.44
+      },
+      "bg-material-subtle-02": {
+        "anchor": "material-light-subtle-back",
+        "opacity": 1
+      },
+      "bg-grouped-primary": {
+        "anchor": "surface-light-raised",
+        "opacity": 1
+      },
+      "bg-grouped-secondary": {
+        "anchor": "paper",
+        "opacity": 1
+      },
+      "bg-grouped-tertiary": {
+        "anchor": "surface-light-raised",
+        "opacity": 1
+      },
+      "bg-inverted": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "bg-primary": {
+        "anchor": "paper",
+        "opacity": 1
+      },
+      "bg-secondary": {
+        "anchor": "surface-light-raised",
+        "opacity": 1
+      },
+      "bg-tertiary": {
+        "anchor": "paper",
+        "opacity": 1
+      },
+      "bg-overlay-base": {
+        "anchor": "paper",
+        "opacity": 0.478
+      },
+      "bg-overlay-ghost": {
+        "anchor": "paper",
+        "opacity": 0.0
+      },
+      "bg-overlay-soft": {
+        "anchor": "paper",
+        "opacity": 0.2
+      },
+      "bg-overlay-strong": {
+        "anchor": "paper",
+        "opacity": 0.8
+      },
+      "label-inverted-primary": {
+        "anchor": "paper",
+        "opacity": 1
+      },
+      "label-inverted-quaternary": {
+        "anchor": "neutral-label-light",
+        "opacity": 0.322
+      },
+      "label-inverted-secondary": {
+        "anchor": "neutral-label-light",
+        "opacity": 0.722
+      },
+      "label-inverted-tertiary": {
+        "anchor": "neutral-label-light",
+        "opacity": 0.522
+      },
+      "label-primary": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "label-quaternary": {
+        "anchor": "neutral-label-dark",
+        "opacity": 0.322
+      },
+      "label-secondary": {
+        "anchor": "neutral-label-dark",
+        "opacity": 0.722
+      },
+      "label-tertiary": {
+        "anchor": "neutral-label-dark",
+        "opacity": 0.522
+      },
+      "fill-primary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.2
+      },
+      "fill-quaternary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.078
+      },
+      "fill-secondary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.161
+      },
+      "fill-tertiary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.122
+      },
+      "border-base": {
+        "anchor": "neutral-fill",
+        "opacity": 0.161
+      },
+      "border-inverted": {
+        "anchor": "paper",
+        "opacity": 1
+      },
+      "border-soft": {
+        "anchor": "neutral-fill",
+        "opacity": 0.078
+      },
+      "border-strong": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "fx-glow-inverted": {
+        "anchor": "neutral-label-light",
+        "opacity": 1
+      },
+      "fx-skeleton-highlight": {
+        "anchor": "paper",
+        "opacity": 0.078
+      },
+      "control-bg": {
+        "anchor": "paper",
+        "opacity": 1
+      },
+      "fill-neutral": {
+        "anchor": "control-light",
+        "opacity": 1
+      },
+      "label-on-neutral": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "fx-glow-neutral-alpha": 0.0,
+      "fx-glow-neutral-subtle-alpha": 0.0,
+      "fx-glow-neutral-bloom-alpha": 0.0,
+      "fx-glow-brand-alpha": 0.0,
+      "fx-glow-brand-subtle-alpha": 0.0,
+      "fx-glow-brand-bloom-alpha": 0.0,
+      "fx-glow-danger-alpha": 0.0,
+      "fx-glow-danger-subtle-alpha": 0.0,
+      "fx-glow-danger-bloom-alpha": 0.0,
+      "fx-glow-warning-alpha": 0.0,
+      "fx-glow-warning-subtle-alpha": 0.0,
+      "fx-glow-warning-bloom-alpha": 0.0,
+      "fx-glow-success-alpha": 0.0,
+      "fx-glow-success-subtle-alpha": 0.0,
+      "fx-glow-success-bloom-alpha": 0.0,
+      "fx-glow-info-alpha": 0.0,
+      "fx-glow-info-subtle-alpha": 0.0,
+      "fx-glow-info-bloom-alpha": 0.0
+    },
+    "dark": {
+      "bg-material-base-01": {
+        "anchor": "material-dark-tint",
+        "opacity": 0.92
+      },
+      "bg-material-base-02": {
+        "anchor": "material-dark-base-back",
+        "opacity": 1
+      },
+      "bg-material-elevated-01": {
+        "anchor": "material-dark-elevated-tint",
+        "opacity": 0.8
+      },
+      "bg-material-elevated-02": {
+        "anchor": "material-dark-elevated-back",
+        "opacity": 1
+      },
+      "bg-material-muted-01": {
+        "anchor": "material-dark-tint",
+        "opacity": 0.8
+      },
+      "bg-material-muted-02": {
+        "anchor": "material-dark-muted-back",
+        "opacity": 1
+      },
+      "bg-material-soft-01": {
+        "anchor": "material-dark-tint",
+        "opacity": 0.72
+      },
+      "bg-material-soft-02": {
+        "anchor": "material-dark-soft-back",
+        "opacity": 1
+      },
+      "bg-material-subtle-01": {
+        "anchor": "material-dark-tint",
+        "opacity": 0.56
+      },
+      "bg-material-subtle-02": {
+        "anchor": "material-dark-soft-back",
+        "opacity": 1
+      },
+      "bg-grouped-primary": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "bg-grouped-secondary": {
+        "anchor": "surface-dark-secondary",
+        "opacity": 1
+      },
+      "bg-grouped-tertiary": {
+        "anchor": "surface-dark-tertiary",
+        "opacity": 1
+      },
+      "bg-inverted": {
+        "anchor": "paper-text",
+        "opacity": 1
+      },
+      "bg-primary": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "bg-secondary": {
+        "anchor": "surface-dark-secondary",
+        "opacity": 1
+      },
+      "bg-tertiary": {
+        "anchor": "surface-dark-tertiary",
+        "opacity": 1
+      },
+      "bg-overlay-base": {
+        "anchor": "ink",
+        "opacity": 0.478
+      },
+      "bg-overlay-ghost": {
+        "anchor": "ink",
+        "opacity": 0.0
+      },
+      "bg-overlay-soft": {
+        "anchor": "ink",
+        "opacity": 0.2
+      },
+      "bg-overlay-strong": {
+        "anchor": "ink",
+        "opacity": 0.8
+      },
+      "label-inverted-primary": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "label-inverted-quaternary": {
+        "anchor": "neutral-label-dark",
+        "opacity": 0.322
+      },
+      "label-inverted-secondary": {
+        "anchor": "neutral-label-dark",
+        "opacity": 0.722
+      },
+      "label-inverted-tertiary": {
+        "anchor": "neutral-label-dark",
+        "opacity": 0.522
+      },
+      "label-primary": {
+        "anchor": "paper-text",
+        "opacity": 1
+      },
+      "label-quaternary": {
+        "anchor": "neutral-label-light",
+        "opacity": 0.322
+      },
+      "label-secondary": {
+        "anchor": "neutral-label-light",
+        "opacity": 0.722
+      },
+      "label-tertiary": {
+        "anchor": "neutral-label-light",
+        "opacity": 0.522
+      },
+      "fill-primary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.361
+      },
+      "fill-quaternary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.161
+      },
+      "fill-secondary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.322
+      },
+      "fill-tertiary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.239
+      },
+      "border-base": {
+        "anchor": "neutral-fill",
+        "opacity": 0.2
+      },
+      "border-inverted": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "border-soft": {
+        "anchor": "neutral-fill",
+        "opacity": 0.122
+      },
+      "border-strong": {
+        "anchor": "paper-text",
+        "opacity": 1
+      },
+      "fx-glow-inverted": {
+        "anchor": "neutral-label-dark",
+        "opacity": 1
+      },
+      "fx-skeleton-highlight": {
+        "anchor": "paper",
+        "opacity": 0.161
+      },
+      "control-bg": {
+        "anchor": "neutral-fill",
+        "opacity": 0.361
+      },
+      "fill-neutral": {
+        "anchor": "control-dark",
+        "opacity": 1
+      },
+      "label-on-neutral": {
+        "anchor": "paper-text",
+        "opacity": 1
+      },
+      "fx-glow-neutral-alpha": 0.0188,
+      "fx-glow-neutral-subtle-alpha": 0.0063,
+      "fx-glow-neutral-bloom-alpha": 0.1151,
+      "fx-glow-brand-alpha": 0.036,
+      "fx-glow-brand-subtle-alpha": 0.0112,
+      "fx-glow-brand-bloom-alpha": 0.2126,
+      "fx-glow-danger-alpha": 0.046,
+      "fx-glow-danger-subtle-alpha": 0.0146,
+      "fx-glow-danger-bloom-alpha": 0.2322,
+      "fx-glow-warning-alpha": 0.0333,
+      "fx-glow-warning-subtle-alpha": 0.0111,
+      "fx-glow-warning-bloom-alpha": 0.1778,
+      "fx-glow-success-alpha": 0.0332,
+      "fx-glow-success-subtle-alpha": 0.0128,
+      "fx-glow-success-bloom-alpha": 0.1761,
+      "fx-glow-info-alpha": 0.0356,
+      "fx-glow-info-subtle-alpha": 0.0119,
+      "fx-glow-info-bloom-alpha": 0.2015
     }
-  ],
-  "aliases": [
-    {
-      "alias": "fill-accent",
-      "target": "badge-fill-brand"
-    },
-    {
-      "alias": "fill-danger",
-      "target": "badge-fill-danger"
-    },
-    {
-      "alias": "fx-focus-ring-neutral",
-      "target": "label-primary"
-    },
-    {
-      "alias": "fx-focus-ring-brand",
-      "target": "label-brand-primary"
-    },
-    {
-      "alias": "fx-focus-ring-danger",
-      "target": "label-danger-primary"
-    },
-    {
-      "alias": "fx-focus-ring-warning",
-      "target": "label-warning-primary"
-    },
-    {
-      "alias": "fx-focus-ring-success",
-      "target": "label-success-primary"
-    },
-    {
-      "alias": "fx-focus-ring-info",
-      "target": "label-info-primary"
-    }
-  ]
+  }
 }

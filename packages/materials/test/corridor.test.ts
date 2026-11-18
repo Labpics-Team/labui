@@ -32,7 +32,7 @@ const FULL_WHITE: Rgba = { r: 255, g: 255, b: 255, a: 1 };
 describe('corridor default = black/white (backward compatible)', () => {
   it('omitting the backdrop corridor reproduces the black/white extrema exactly', () => {
     const tint: Rgba = { r: 128, g: 128, b: 128, a: 0.6 };
-    const fill = { tint, base: BLACK };
+    const fill = { tint, solid: BLACK };
     const legacy = evaluateTier('soft', 'light', fill, POLARITY);
     const explicit = evaluateTier('soft', 'light', fill, POLARITY, {
       backdrop: { min: BLACK, max: FULL_WHITE },
@@ -48,7 +48,7 @@ describe('corridor default = black/white (backward compatible)', () => {
 describe('narrowing the corridor is a strict, monotone tightening', () => {
   it('a narrower corridor never widens [effLow, effHigh]', () => {
     const tint: Rgba = { r: 191, g: 120, b: 40, a: 0.44 };
-    const fill = { tint, base: BLACK };
+    const fill = { tint, solid: BLACK };
     const full = evaluateTier('soft', 'light', fill, POLARITY);
     const narrow = evaluateTier('soft', 'light', fill, POLARITY, {
       backdrop: { min: { r: 60, g: 60, b: 60, a: 1 }, max: { r: 200, g: 200, b: 200, a: 1 } },
@@ -60,7 +60,7 @@ describe('narrowing the corridor is a strict, monotone tightening', () => {
   it('a sheer tier UNGUARANTEED over [black,white] becomes guaranteed over a tight known corridor', () => {
     // α=.3 white-ish tint: over the full band the white label washes out (unguaranteed).
     const tint: Rgba = { r: 191, g: 191, b: 191, a: 0.3 };
-    const fill = { tint, base: { r: 13, g: 13, b: 13, a: 1 } };
+    const fill = { tint, solid: { r: 13, g: 13, b: 13, a: 1 } };
     const full = evaluateTier('subtle', 'light', fill, POLARITY);
     expect(full.guaranteed).toBe(false);
     // …but if the real backdrop under the label is known to be dark [0..40], the
@@ -82,7 +82,7 @@ describe('cornerCorridor — per-channel extremes bound the reachable set from o
       { r: 128, g: 128, b: 0, a: 1 },
     ];
     const corridor = cornerCorridor(backdrops);
-    const verdict = evaluateTier('base', 'light', { tint, base: BLACK }, POLARITY, {
+    const verdict = evaluateTier('base', 'light', { tint, solid: BLACK }, POLARITY, {
       backdrop: corridor,
     });
     for (const bd of backdrops) {

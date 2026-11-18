@@ -1,5 +1,5 @@
 {
-  "$comment": "Canonical --lab-* semantic role contract. Source of truth for the presence test. Regenerate together with contract.css from reference/labui-tokens-snapshot.dtcg.json. Do not hand-edit. IC modes are reserved (not listed).",
+  "$comment": "Stable semantic role names consumed by LabUI. Both contrast modes expose this interface. labui.config.json supplies named anchors and role relationships; profile.mjs applies increased-contrast text opacity and primary aliases through Colors Program.",
   "groups": {
     "Backgrounds": [
       "--lab-bg-grouped-primary",

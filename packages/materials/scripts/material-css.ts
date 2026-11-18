@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MATERIAL_CSS_ORDER } from '../src/materials/order';
+import { materialProfileCss } from './profile-css';
 
 /*
  * ЕДИНСТВЕННАЯ сборка material.css из файлов-материалов: конкатенация по
@@ -16,5 +17,8 @@ export function materialsDir(): string {
 /** Собранный material.css — ровно то, что уезжает в dist. */
 export function readMaterialCss(): string {
   const dir = materialsDir();
-  return MATERIAL_CSS_ORDER.map((file) => readFileSync(resolve(dir, file), 'utf8')).join('\n');
+  return [
+    materialProfileCss(),
+    ...MATERIAL_CSS_ORDER.map((file) => readFileSync(resolve(dir, file), 'utf8')),
+  ].join('\n');
 }

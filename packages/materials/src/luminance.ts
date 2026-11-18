@@ -73,8 +73,8 @@ export function contrastRatio(l1: number, l2: number): number {
 
 /**
  * Composite a straight-alpha source over a fully-opaque backdrop, returning the
- * opaque result. This is the "solid canon" of a two-layer material fill: the
- * translucent `01` tint painted over the opaque `02` base.
+ * opaque result. This is a generic normal source-over operation; author Material/02 is a
+ * separate blend paint, handled by material-paints.ts.
  *
  * Channels stay CONTINUOUS (unrounded) — this feeds the luminance/guarantee math,
  * where quantising before taking luminance would inject the very byte error the

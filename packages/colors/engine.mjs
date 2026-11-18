@@ -1,32 +1,12 @@
-// Инициализация движка в node: wasm-байты читаются с диска (web-target
-// пакета тянет fetch только для URL — байты работают и в node, и в тестах).
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-import { prepareEngineConfig } from './prepare-config.mjs';
+import { initializeColors } from './program.mjs';
 
 const require = createRequire(import.meta.url);
-const here = dirname(fileURLToPath(import.meta.url));
 
-/** Поднять движок с загруженным паспортом labui; вернуть { colors, fingerprint }. */
-export async function createLabuiEngine() {
-  const pkgEntry = require.resolve('@labpics/colors');
-  const pkgDir = dirname(pkgEntry);
-  const mod = await import('@labpics/colors');
-  const wasm = await readFile(join(pkgDir, 'pkg', 'labcolors_bg.wasm'));
-  await mod.default({ module_or_path: wasm });
-  const colors = new mod.LabColors();
-  const parsed = JSON.parse(await readFile(join(here, 'labui.config.json'), 'utf8'));
-  // Разворот паспорта (влив components + флаги) — общий канон с браузерным демо:
-  // см. prepare-config.mjs. Здесь остаётся только node-специфика (диск, wasm-байты).
-  const config = prepareEngineConfig(parsed);
-  const fingerprint = colors.loadConfig(JSON.stringify(config));
-  return { colors, fingerprint };
+/** Node entry: the browser passes the emitted WASM URL instead of file bytes. */
+export async function initializeNodeColors() {
+  await initializeColors({
+    module_or_path: await readFile(require.resolve('@labpics/colors/pkg/labcolors_bg.wasm')),
+  });
 }
-
-/** Пин отпечатка паспорта (см. README): дрейф конфига виден по несовпадению.
- * Бамп 3d0fed67065f42e7: снос рецептов fx-shadow-* (ADR-0007, замена на
- * слоёную лестницу --lab-elevation-*), прежний пин 8b03771cdb8659ab. */
-export const PASSPORT_FINGERPRINT = '3d0fed67065f42e7';

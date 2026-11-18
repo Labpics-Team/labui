@@ -1,6 +1,8 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { materialProfile } from '../src/profile';
+import { acrylicNoisePng } from './build-acrylic-noise';
 import { readMaterialCss } from './material-css';
 
 /*
@@ -13,4 +15,16 @@ const here = dirname(fileURLToPath(import.meta.url));
 const dist = resolve(here, '..', 'dist');
 
 mkdirSync(dist, { recursive: true });
-writeFileSync(resolve(dist, 'material.css'), readMaterialCss());
+copyFileSync(resolve(here, '../src/profile.json'), resolve(dist, 'profile.json'));
+const css = readMaterialCss();
+writeFileSync(resolve(dist, 'material.css'), css);
+// Shadow-root consumers receive the exact stylesheet, without a hand-kept copy.
+writeFileSync(resolve(dist, 'css.js'), `export const materialCss = ${JSON.stringify(css)};\n`);
+writeFileSync(resolve(dist, 'css.cjs'), `exports.materialCss = ${JSON.stringify(css)};\n`);
+copyFileSync(resolve(here, '../src/css.d.ts'), resolve(dist, 'css.d.ts'));
+copyFileSync(resolve(here, '../src/css.d.ts'), resolve(dist, 'css.d.cts'));
+writeFileSync(resolve(dist, 'noise.png'), acrylicNoisePng());
+writeFileSync(
+  resolve(dist, 'veil-noise.png'),
+  acrylicNoisePng(materialProfile.progressive.styles.strong.noiseOpacity),
+);

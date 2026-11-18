@@ -1,0 +1,64 @@
+{
+  "date": "2026-11-18",
+  "sourceHead": "ac42e1ba840c11411a85c3cf596595d59995df58",
+  "checkedMerge": "527f8c1a49788718ae1a28b5fcf87522a766fd79",
+  "materialPixels": {
+    "url": "https://github.com/Labpics-Team/labui/actions/runs/44178639567",
+    "result": "success"
+  },
+  "icons": {
+    "url": "https://github.com/Labpics-Team/labui/actions/runs/44178639637",
+    "result": "success"
+  },
+  "generalCI": {
+    "url": "https://github.com/Labpics-Team/labui/actions/runs/44178639756",
+    "buildTypecheckUnit": "success",
+    "playwrightSmoke": "success",
+    "security": "failure: new unpatched CVE-2026-112366 picomatch; separate applicability review required"
+  },
+  "local": {
+    "materialTests": 174,
+    "result": "success",
+    "build": "success",
+    "typecheck": "success",
+    "biome": "success",
+    "newlyEligibleAtlasHeights": [200, 201]
+  },
+  "platforms": [
+    {
+      "os": "linux",
+      "groups": {
+        "MATERIAL_PAINT_ROW": 204,
+        "MATERIAL_SCROLL_ROW": 720,
+        "MATERIAL_INITIAL_SETTLE_ROW": 72,
+        "MATERIAL_SHAPE_ROW": 6,
+        "MATERIAL_BROWSER_PIXELS_REPORT": 6,
+        "MATERIAL_PIXEL_REPORT": 2,
+        "MATERIAL_DISPLAY_SYNC_ROW": 491
+      },
+      "scrollMutations": 0,
+      "disposedObservations": 0,
+      "shadowComparisons": 48,
+      "shadowMismatches": 0,
+      "initialSettleMutations": 0
+    },
+    {
+      "os": "macos",
+      "groups": {
+        "MATERIAL_PAINT_ROW": 204,
+        "MATERIAL_SCROLL_ROW": 720,
+        "MATERIAL_INITIAL_SETTLE_ROW": 72,
+        "MATERIAL_SHAPE_ROW": 6,
+        "MATERIAL_BROWSER_PIXELS_REPORT": 6,
+        "MATERIAL_PIXEL_REPORT": 2,
+        "MATERIAL_DISPLAY_SYNC_ROW": 5
+      },
+      "scrollMutations": 0,
+      "disposedObservations": 0,
+      "shadowComparisons": 48,
+      "shadowMismatches": 0,
+      "initialSettleMutations": 0
+    }
+  ],
+  "qualification": "Paint/scroll cover headless browser snapshots and isolated actual-display Linux/macOS. Shape/shadow compare browser snapshots in both headless/headed modes, not actual-display. Six shadow cases use native CSS, two independent CSS geometry. Optical Figma comparison and live movement have separate Chromium evidence in glass-independent-review.md. General CI does not pass until the unrelated security finding is resolved."
+}

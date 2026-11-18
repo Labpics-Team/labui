@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "source": {
+    "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+    "evidence": "docs/evidence/materials-20261117/figma-source.json"
+  },
+  "paints": {
+    "normalRole": "bg-material-{tier}-01",
+    "blendRole": "bg-material-{tier}-02",
+    "blendMode": { "light": "color-dodge", "dark": "overlay" }
+  },
+  "noise": {
+    "type": "monotone",
+    "blendMode": "screen",
+    "color": [1, 2, 5],
+    "opacity": 0.04,
+    "size": 0.2,
+    "density": 1
+  },
+  "compositions": {
+    "sheet": {
+      "source": "docs/evidence/materials-20261117/figma-sheet-source.json",
+      "body": {
+        "tier": "elevated",
+        "shadow": "modal",
+        "stroke": { "role": "border-base", "width": 1, "align": "outside" }
+      },
+      "ghost": {
+        "profile": "overlay-ghost",
+        "direction": "bottom",
+        "overlap": 32,
+        "paintRole": "bg-overlay-ghost"
+      }
+    }
+  },
+  "progressive": {
+    "source": "docs/evidence/materials-20261117/figma-progressive-source.json",
+    "startRadius": 0,
+    "startOffset": [0.5, 1],
+    "endOffset": [0.5, 0],
+    "styles": {
+      "ghost": { "radius": 4, "noiseOpacity": 0.04 },
+      "soft": { "radius": 12, "noiseOpacity": 0.06 },
+      "strong": { "radius": 24, "noiseOpacity": 0.06 }
+    },
+    "compositions": {
+      "ghost": ["ghost"],
+      "soft": ["soft"],
+      "strong": ["strong", "strong"],
+      "overlay-ghost": ["strong"]
+    }
+  },
+  "tiers": {
+    "subtle": {
+      "solidRole": "bg-primary",
+      "backdrop": { "radius": 12 },
+      "glass": {
+        "frost": 12,
+        "depth": 80,
+        "refraction": 1,
+        "dispersion": 0.6,
+        "lightAngle": -45,
+        "lightIntensity": 0.05
+      }
+    },
+    "soft": {
+      "solidRole": "bg-secondary",
+      "backdrop": { "radius": 24 },
+      "glass": {
+        "frost": 12,
+        "depth": 60,
+        "refraction": 0.8,
+        "dispersion": 0.6,
+        "lightAngle": 0,
+        "lightIntensity": 0.1
+      }
+    },
+    "muted": {
+      "solidRole": "bg-tertiary",
+      "backdrop": { "radius": 48 },
+      "glass": {
+        "frost": 20,
+        "depth": 60,
+        "refraction": 0.8,
+        "dispersion": 0.6,
+        "lightAngle": 0,
+        "lightIntensity": 0.2
+      }
+    },
+    "base": {
+      "solidRole": "bg-grouped-primary",
+      "backdrop": { "radius": 48 },
+      "glass": {
+        "frost": 20,
+        "depth": 60,
+        "refraction": 0.8,
+        "dispersion": 0.6,
+        "lightAngle": 0,
+        "lightIntensity": 0.2
+      }
+    },
+    "elevated": {
+      "solidRole": "bg-grouped-secondary",
+      "backdrop": { "radius": 128 },
+      "glass": {
+        "frost": 25,
+        "depth": 100,
+        "refraction": 1,
+        "dispersion": 0.6,
+        "lightAngle": 0,
+        "lightIntensity": 0.25
+      }
+    }
+  }
+}

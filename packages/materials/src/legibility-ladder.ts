@@ -44,6 +44,7 @@ import {
   unionCorridor,
   worstContrastOverBand,
 } from './material-guarantee';
+import { type MaterialPaints, materialPaintOver } from './material-paints';
 
 /** Which rung of the ladder produced a decision. */
 export type LadderCase = 'solid' | 'material' | 'image' | 'tainted' | 'boundary';
@@ -205,9 +206,18 @@ export function resolveOnSolid(
 /** (b) A label on a material tint over an UNKNOWN live backdrop — full corridor. */
 export function resolveOnMaterial(
   label: Rgba,
-  tint: Rgba,
+  tint: Rgba | MaterialPaints,
   options: LadderOptions = {},
 ): LadderDecision {
+  if ('normal' in tint) {
+    // The author's blend paint participates in the proof. A normal tint alone
+    // does not describe the image after color-dodge or overlay.
+    const painted = {
+      min: materialPaintOver(tint, FULL_BACKDROP.min),
+      max: materialPaintOver(tint, FULL_BACKDROP.max),
+    };
+    return decide('material', label, TRANSPARENT, painted, options.floor ?? WCAG_AA_NORMAL);
+  }
   return decide('material', label, tint, FULL_BACKDROP, options.floor ?? WCAG_AA_NORMAL);
 }
 
