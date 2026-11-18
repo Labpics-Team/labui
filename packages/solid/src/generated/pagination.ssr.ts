@@ -29,8 +29,8 @@ export function renderPagination(
       default-page=${ifDefined(props.defaultPage)}
       sibling-count=${ifDefined(props.siblingCount)}
       variant=${ifDefined(props.variant)}
-      ?disabled=${Boolean(props.disabled)}
-      ?ambient=${Boolean(props.ambient)}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
+      .ambient=${props.ambient === undefined ? noChange : props.ambient}
       .progress=${props.progress === undefined ? noChange : props.progress}
       href=${ifDefined(props.href)}
       label=${ifDefined(props.label)}
