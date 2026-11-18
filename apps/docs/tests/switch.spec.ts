@@ -59,8 +59,14 @@ test('delivered HTML carries the Lit element (React island mounts client-side)',
 test('SSR before JavaScript has the correct native value, name and icon-only geometry', async ({
   browser,
 }) => {
-  const { html, renderToString } = await import('../../../packages/core/dist/ssr/index.js');
-  await import('../../../packages/core/dist/components/switch/index.js');
+  // Load built artifacts at runtime; typechecking also runs before build.
+  // Absolute file URLs keep Playwright's source aliases out of this SSR consumer.
+  const { html, renderToString }: typeof import('@labpics/ui-core/ssr') = await import(
+    new URL('../../../packages/core/dist/ssr/index.js', import.meta.url).href
+  );
+  await import(
+    new URL('../../../packages/core/dist/components/switch/index.js', import.meta.url).href
+  );
   const output = renderToString(
     html`<lab-switch icon aria-label="Off"></lab-switch><lab-switch icon checked aria-label="On"></lab-switch>`,
   );
