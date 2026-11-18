@@ -79,11 +79,15 @@ internal fun rememberLabProgressMotion(state: LabProgressState, periodMillis: In
     val busyMotion = rememberLabMotion()
     val fraction = remember(valueMotion) { valueMotion.value(state.fraction, "progress.value") }
     val phase = remember(busyMotion) { busyMotion.value(0f, "progress.waiting") }
-    LaunchedEffect(state.value, state.fraction, reduced) {
-        if (state.value != null) valueMotion.animate {
-            to(fraction, state.fraction, MotionTransition.Tween(LabTokens.MotionTransitionDurationMs.toInt(),
-                MotionEase.Bezier(LabTokens.MotionTransitionEase0, LabTokens.MotionTransitionEase1,
-                    LabTokens.MotionTransitionEase2, LabTokens.MotionTransitionEase3)))
+    LaunchedEffect(state.value, state.fraction, running) {
+        if (state.value != null) {
+            val playback = valueMotion.animate {
+                to(fraction, state.fraction, MotionTransition.Tween(LabTokens.MotionTransitionDurationMs.toInt(),
+                    MotionEase.Bezier(LabTokens.MotionTransitionEase0, LabTokens.MotionTransitionEase1,
+                        LabTokens.MotionTransitionEase2, LabTokens.MotionTransitionEase3)))
+            }
+            if (!running) playback.finish()
+            try { playback.finished.await() } finally { playback.stop() }
         }
     }
     LaunchedEffect(state.value == null, running, periodMillis) {
