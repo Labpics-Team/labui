@@ -53,6 +53,9 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
     expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / ${c.a})`;')).toEqual([]);
     expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} 0 / ${c.a})`;')).toHaveLength(1);
     expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / .5)`;')).toHaveLength(1);
+    expect(scanSource('p.ts', 'const fill = `rgb(${0} ${0} ${0})`;')).toHaveLength(1);
+    expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / ${.5})`;')).toHaveLength(1);
+    expect(scanSource('p.ts', 'const fill = `rgb(${0xff} ${c.g} ${c.b})`;')).toHaveLength(1);
     expect(scanSource('p.ts', 'const fill = { r: black.r / alpha, g: white[key] };')).toEqual([]);
   });
 

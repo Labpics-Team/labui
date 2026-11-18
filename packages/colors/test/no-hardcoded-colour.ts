@@ -353,14 +353,20 @@ export function scanSource(relPath: string, source: string): Violation[] {
       if (!isCss && gated && /^\s*[.[]/.test(text.slice(m.index + m[0].length))) continue;
       // A serializer receives every channel from computed data. Keep partially
       // literal colours visible to the scanner, including numeric alpha.
-      if (
-        !isCss &&
-        re === FUNCTIONAL_HEX_RE &&
-        /^rgba?\(\s*\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s*[/,]\s*\$\{[^}]+\})?\s*\)/i.test(
-          text.slice(m.index),
+      if (!isCss && re === FUNCTIONAL_HEX_RE) {
+        const serialized = text
+          .slice(m.index)
+          .match(
+            /^rgba?\(\s*\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s*[/,]\s*\$\{[^}]+\})?\s*\)/i,
+          );
+        if (
+          serialized &&
+          [...serialized[0].matchAll(/\$\{([^}]+)\}/g)].every((channel) =>
+            Number.isNaN(Number(channel[1])),
+          )
         )
-      )
-        continue;
+          continue;
+      }
       if (gated && !isColourValuePosition(text, m.index)) continue;
       out.push({
         file: relPath,

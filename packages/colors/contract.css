@@ -186,7 +186,7 @@
   --lab-badge-fill-danger: var(--lab-border-danger-strong);
   --lab-badge-label-on-danger: var(--lab-label-static-light-primary);
   --lab-badge-fill-warning: var(--lab-border-warning-strong);
-  --lab-badge-label-on-warning: var(--lab-label-static-light-primary);
+  --lab-badge-label-on-warning: var(--lab-label-static-dark-primary);
   --lab-badge-fill-success: var(--lab-border-success-strong);
   --lab-badge-label-on-success: var(--lab-label-static-light-primary);
   --lab-badge-fill-info: var(--lab-border-info-strong);
@@ -401,7 +401,7 @@
   --lab-badge-fill-danger: var(--lab-border-danger-strong);
   --lab-badge-label-on-danger: var(--lab-label-static-light-primary);
   --lab-badge-fill-warning: var(--lab-border-warning-strong);
-  --lab-badge-label-on-warning: var(--lab-label-static-light-primary);
+  --lab-badge-label-on-warning: var(--lab-label-static-dark-primary);
   --lab-badge-fill-success: var(--lab-border-success-strong);
   --lab-badge-label-on-success: var(--lab-label-static-light-primary);
   --lab-badge-fill-info: var(--lab-border-info-strong);
@@ -617,7 +617,7 @@
   --lab-badge-fill-danger: var(--lab-border-danger-strong);
   --lab-badge-label-on-danger: var(--lab-label-static-light-primary);
   --lab-badge-fill-warning: var(--lab-border-warning-strong);
-  --lab-badge-label-on-warning: var(--lab-label-static-light-primary);
+  --lab-badge-label-on-warning: var(--lab-label-static-dark-primary);
   --lab-badge-fill-success: var(--lab-border-success-strong);
   --lab-badge-label-on-success: var(--lab-label-static-light-primary);
   --lab-badge-fill-info: var(--lab-border-info-strong);
@@ -830,7 +830,7 @@
   --lab-badge-fill-danger: var(--lab-border-danger-strong);
   --lab-badge-label-on-danger: var(--lab-label-static-light-primary);
   --lab-badge-fill-warning: var(--lab-border-warning-strong);
-  --lab-badge-label-on-warning: var(--lab-label-static-light-primary);
+  --lab-badge-label-on-warning: var(--lab-label-static-dark-primary);
   --lab-badge-fill-success: var(--lab-border-success-strong);
   --lab-badge-label-on-success: var(--lab-label-static-light-primary);
   --lab-badge-fill-info: var(--lab-border-info-strong);
@@ -1045,7 +1045,7 @@
   --lab-badge-fill-danger: var(--lab-border-danger-strong);
   --lab-badge-label-on-danger: var(--lab-label-static-light-primary);
   --lab-badge-fill-warning: var(--lab-border-warning-strong);
-  --lab-badge-label-on-warning: var(--lab-label-static-light-primary);
+  --lab-badge-label-on-warning: var(--lab-label-static-dark-primary);
   --lab-badge-fill-success: var(--lab-border-success-strong);
   --lab-badge-label-on-success: var(--lab-label-static-light-primary);
   --lab-badge-fill-info: var(--lab-border-info-strong);
@@ -1261,7 +1261,7 @@
   --lab-badge-fill-danger: var(--lab-border-danger-strong);
   --lab-badge-label-on-danger: var(--lab-label-static-light-primary);
   --lab-badge-fill-warning: var(--lab-border-warning-strong);
-  --lab-badge-label-on-warning: var(--lab-label-static-light-primary);
+  --lab-badge-label-on-warning: var(--lab-label-static-dark-primary);
   --lab-badge-fill-success: var(--lab-border-success-strong);
   --lab-badge-label-on-success: var(--lab-label-static-light-primary);
   --lab-badge-fill-info: var(--lab-border-info-strong);
