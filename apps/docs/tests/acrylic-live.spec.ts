@@ -166,10 +166,14 @@ test.describe('author paints in the backdrop renderer', () => {
 
   test('Screen grain does not darken a white backdrop', async ({ page }) => {
     const panel = page.getByTestId('surface-on-white');
+    const paintFilter = () =>
+      panel.evaluate((el) => el.style.getPropertyValue('--_material-paint-filter'));
+    const before = await paintFilter();
     await panel.evaluate((el) => {
       el.style.setProperty('--_tint', 'rgb(0 0 0 / 0)');
       el.style.setProperty('--_blend', 'rgb(0 0 0 / 0)');
     });
+    await expect.poll(paintFilter).not.toBe(before);
     await expect
       .poll(async () => Math.min(...Object.values(await patchColor(page, panel))))
       .toBeGreaterThanOrEqual(254.5);
