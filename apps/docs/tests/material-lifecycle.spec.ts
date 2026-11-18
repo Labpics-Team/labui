@@ -13,6 +13,59 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator('#ready')).toHaveText('ready');
 });
 
+test('local border boxes include classic scrollbars without rounding fractional geometry', async ({
+  browser,
+  browserName,
+  baseURL,
+}) => {
+  test.skip(
+    browserName !== 'chromium',
+    'Classic Chromium scrollbars exercise the CSSOM content-box difference',
+  );
+  const visibleScrollbars = await browser
+    .browserType()
+    .launch({ headless: true, ignoreDefaultArgs: ['--hide-scrollbars'] });
+  try {
+    const page = await visibleScrollbars.newPage({ baseURL });
+    await page.goto('/_fixtures/material-lifecycle.html');
+    await expect(page.locator('#ready')).toHaveText('ready');
+    const rows = await page.evaluate(() => {
+      const style = document.createElement('style');
+      style.textContent = '#scrollbar-box::-webkit-scrollbar{width:15px;height:15px}';
+      document.head.append(style);
+      const el = document.createElement('div');
+      el.id = 'scrollbar-box';
+      el.style.cssText =
+        'width:200.5px;height:100.25px;padding:10px;border:2px solid;overflow:scroll;position:fixed;left:0;top:0';
+      el.innerHTML = '<div style="width:400px;height:400px"></div>';
+      document.body.append(el);
+      const rows = [];
+      for (const sizing of ['content-box', 'border-box']) {
+        el.style.boxSizing = sizing;
+        const expected = el.getBoundingClientRect();
+        el.style.transform = 'translate(17px,11px) rotate(14deg) scale(.7)';
+        const actual = window.materialFixture.borderBox(el, getComputedStyle(el));
+        rows.push({
+          sizing,
+          actual: [actual.width, actual.height],
+          expected: [expected.width, expected.height],
+          scrollbar: el.offsetWidth - el.clientWidth - 4,
+        });
+        el.style.transform = '';
+      }
+      el.remove();
+      style.remove();
+      return rows;
+    });
+    for (const row of rows) {
+      expect(row.scrollbar).toBe(15);
+      expect(row.actual, row.sizing).toEqual(row.expected);
+    }
+  } finally {
+    await visibleScrollbars.close();
+  }
+});
+
 test('Glass retains all four optical edges across Sheet detents and restores the Flex field', async ({
   page,
   browserName,
@@ -395,6 +448,7 @@ test('overlapping mounts share an instance, removal and final disposal release i
 declare global {
   interface Window {
     materialFixture: {
+      borderBox: typeof import('../../../packages/materials/src/engine/border-box').readBorderBox;
       stop(): void;
       stopShadow(): void;
       overlap(): void;
@@ -1010,6 +1064,7 @@ test('fluid edge bands match the pixel renderer while retaining their nodes acro
       edge: string;
       length: number;
       count: number;
+      fluidCount: number;
       error: number;
       sameNodes: boolean;
       sameBlur: boolean;
@@ -1054,6 +1109,7 @@ test('fluid edge bands match the pixel renderer while retaining their nodes acro
           edge,
           length,
           count: reference.length,
+          fluidCount: fluid.querySelectorAll('.lab-veil__strip').length,
           error,
           sameNodes: nodes.every(
             (node, i) => fluid.querySelectorAll('.lab-veil__strip')[i] === node,
@@ -1074,6 +1130,7 @@ test('fluid edge bands match the pixel renderer while retaining their nodes acro
   });
   for (const result of comparisons) {
     expect(result.count).toBe(5);
+    expect(result.fluidCount).toBe(5);
     expect(result.error, `${result.edge}/${result.length}`).toBeLessThan(0.05);
     expect(result.sameNodes).toBe(true);
     expect(result.sameBlur).toBe(true);

@@ -16,9 +16,14 @@
     },
     "./material.css": "./dist/material.css",
     "./css": {
-      "types": "./dist/css.d.ts",
-      "import": "./dist/css.js",
-      "require": "./dist/css.cjs"
+      "import": {
+        "types": "./dist/css.d.ts",
+        "default": "./dist/css.js"
+      },
+      "require": {
+        "types": "./dist/css.d.cts",
+        "default": "./dist/css.cjs"
+      }
     },
     "./profile.json": "./dist/profile.json",
     "./noise.png": "./dist/noise.png",

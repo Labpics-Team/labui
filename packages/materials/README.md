@@ -180,6 +180,25 @@ DPR используют полный расчёт. [Пиксельная про
 Для ShadowRoot доступен `import { materialCss } from '@labpics/ui-materials/css'`.
 ESM/CJS строка и типы генерируются вместе с `material.css` из одной функции;
 адаптеры могут подключать ровно ту же систему внутри своего дерева.
+Корневая тема и режим инициализируются **один раз в документе**, до первого
+кадра. Строка оформляет внутреннее дерево и наследует эту область; она не
+заменяет корневую инициализацию:
+
+```ts
+import '@labui/colors/contract.css';
+import '@labpics/ui-materials/material.css';
+import { materialCss } from '@labpics/ui-materials/css';
+
+const sheet = new CSSStyleSheet();
+sheet.replaceSync(materialCss);
+shadowRoot.adoptedStyleSheets = [...shadowRoot.adoptedStyleSheets, sheet];
+```
+
+При SSR те же два корневых CSS включаются в HTML до декларативного Shadow DOM,
+а `materialCss` — в его `<style>`. Это сохраняет Solid по умолчанию, авторскую
+заливку Acrylic/Glass и ближайшие `data-theme`/`data-material` без JavaScript.
+LabUI `foundation.css` уже включает корневые стили. Значения по умолчанию на
+`:host` не задаются: они перекрыли бы тему и режим окружающей области.
 
 `evaluateTier` использует независимый Solid для выбора полярности надписи
 и оба paints для расчёта контраста. `resolveOnMaterial(label, paints)` также
