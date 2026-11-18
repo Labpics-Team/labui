@@ -3,6 +3,10 @@
   "run": "https://github.com/Labpics-Team/labui/actions/runs/44100730329",
   "platform": "linux",
   "capture": "display",
+  "limitations": [
+    "Historical measurement of sourceCommit, not verification of the current revision.",
+    "Linux WebKit paint preservation is unverified: its rows have measurable=false and do not assert the pixel-error bound. Distinct backdrops produced identical pixels, including [96,96,96] with maxError 143.0256; these rows are diagnostic observations, not passing paint checks."
+  ],
   "rows": [
     {
       "browser": "chromium",

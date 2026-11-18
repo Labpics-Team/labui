@@ -81,5 +81,5 @@ function firstPaintCss(): string {
   });
   const light = blocks.find((x) => x.theme === 'light')?.declarations;
   const darkValues = blocks.find((x) => x.theme === 'dark')?.declarations;
-  return `:root,[data-theme="light"]{\n${light}\n}\n[data-theme="dark"]{\n${darkValues}\n}\n@media(prefers-color-scheme:dark){:root:not([data-theme]){\n${darkValues}\n}}`;
+  return `:root,[data-theme="light"]{\n${light}\n}\n[data-theme="dark"]{\n${darkValues}\n}\n@media(prefers-color-scheme:dark){:root:not([data-theme="light"]):not([data-theme="dark"]){\n${darkValues}\n}}`;
 }

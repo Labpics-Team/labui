@@ -53,3 +53,49 @@ test('document theme initializes declarative shadow materials before JavaScript'
     await context.close();
   }
 });
+
+test('system theme and unrecognized root themes match explicit first paint', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const page = await context.newPage();
+    await page.setContent(`<!doctype html><html><head><style>${colorsCss}\n${materialCss}</style></head><body>
+      ${['acrylic', 'glass']
+        .flatMap((mode) =>
+          ['subtle', 'soft', 'muted', 'base', 'elevated'].map(
+            (tier) =>
+              `<div class="lab-material lab-material--${tier}" data-material="${mode}"></div>`,
+          ),
+        )
+        .join('')}
+      </body></html>`);
+    const read = () =>
+      page.locator('.lab-material').evaluateAll((elements) =>
+        elements.map((element) => {
+          const style = getComputedStyle(element);
+          return { color: style.backgroundColor, filter: style.backdropFilter };
+        }),
+      );
+    const theme = (value: string | null) =>
+      page.locator('html').evaluate((element, value) => {
+        if (value === null) element.removeAttribute('data-theme');
+        else element.setAttribute('data-theme', value);
+      }, value);
+    const explicit: Record<string, Awaited<ReturnType<typeof read>>> = {};
+    for (const value of ['light', 'dark']) {
+      await theme(value);
+      explicit[value] = await read();
+    }
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme });
+      for (const value of [null, '', 'auto', 'custom', 'light', 'dark']) {
+        await theme(value);
+        const expected = value === 'light' || value === 'dark' ? value : colorScheme;
+        expect(await read(), `${colorScheme}/${value ?? 'absent'}`).toEqual(explicit[expected]);
+      }
+    }
+  } finally {
+    await context.close();
+  }
+});
