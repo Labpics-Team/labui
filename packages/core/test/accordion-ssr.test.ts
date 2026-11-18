@@ -39,6 +39,15 @@ describe('Accordion server frame', () => {
     expect(output.match(/<button\b[^>]*aria-expanded="true"/g)).toHaveLength(1);
     expect(output).toContain('Second');
   });
+  it('respects explicit false for the default-true collapsible property', () => {
+    const output = renderToString(
+      html`<lab-accordion .items=${items} .defaultValue=${['first']} .collapsible=${false}></lab-accordion>`,
+    );
+    const open = [...output.matchAll(/<button\b[^>]+>/g)]
+      .map((match) => match[0])
+      .find((button) => button.includes('aria-expanded="true"'));
+    expect(open).toContain('aria-disabled="true"');
+  });
   it('avoids excessive region landmarks in a group that can open many panels', () => {
     const many = Array.from({ length: 7 }, (_, index) => ({
       value: String(index),

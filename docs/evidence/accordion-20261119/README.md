@@ -33,8 +33,13 @@ node --test packages/react/test/accordion-ssr.test.mjs
 
 Browser suite проверяет клавиатуру, relationships, controlled отказ, disabled,
 промежуточные кадры и retarget, немедленные inert/aria-hidden, reduced motion и
-точную medium геометрию. Packed consumer устанавливает tarball всех зависимостей
+точную medium геометрию: 34/34 проверки в Chromium и WebKit. Core SSR — 5/5,
+React SSR ESM/CJS — 2/2. Packed consumer устанавливает tarball всех зависимостей
 во временную папку; проверяет no-JS первый кадр, четыре SSR helper, Lit upgrade
 без клиентской подстановки items, React hydration, прежние DOM/id и введённый до
-гидратации текст публичного Textarea. Результат и хеши архивов — `packed.json`.
+гидратации текст публичного Textarea. Явное `collapsible=false` сохраняется после
+upgrade: открытый заголовок имеет `aria-disabled=true` до и после загрузки JS,
+остаётся доступен для фокуса и не закрывает панель при Enter. Эта семантика следует
+[WAI-ARIA APG](https://www.w3.org/WAI/ARIA/apg/patterns/accordion/).
+Оба браузера прошли проверку; результат и хеши архивов — `packed.json`.
 Полноценный стандартный SSR Vue/Solid/Svelte не обозначается покрытым этим helper.

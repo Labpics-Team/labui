@@ -198,6 +198,11 @@ try {
         await expect(section.getByRole('region')).toHaveCount(1);
         await expect(section.getByRole('textbox')).toHaveValue('Original');
       }
+      for (const name of ['vue', 'solid', 'svelte', 'astro']) {
+        await expect(
+          nojs.locator(`[data-fixed="${name}"]`).getByRole('button', { name: 'Draft' }),
+        ).toHaveAttribute('aria-disabled', 'true');
+      }
       await nojs.close();
       const page = await browser.newPage();
       const errors = [];
@@ -245,7 +250,11 @@ try {
         await empty.getByRole('button', { name: 'History' }).click();
         await expect(empty.getByRole('region')).toHaveCount(0);
         const fixed = page.locator(`[data-fixed="${name}"]`);
-        await fixed.getByRole('button', { name: 'Draft' }).click();
+        const fixedTrigger = fixed.getByRole('button', { name: 'Draft' });
+        await expect(fixedTrigger).toHaveAttribute('aria-disabled', 'true');
+        await fixedTrigger.focus();
+        await expect(fixedTrigger).toBeFocused();
+        await fixedTrigger.press('Enter');
         await expect(fixed.getByRole('button', { name: 'Draft' })).toHaveAttribute(
           'aria-expanded',
           'true',
@@ -266,6 +275,7 @@ try {
         noJsFirstPaint: true,
         shiftedServerIds: true,
         controlledEmptyAndRefusal: true,
+        explicitFalseSurvivesUpgrade: true,
         sameNodesAfterHydration: true,
         preHydrationDraftPreserved: true,
         itemsRestoredFromHTML: true,
