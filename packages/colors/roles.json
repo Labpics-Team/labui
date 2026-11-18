@@ -306,6 +306,18 @@
       "--lab-badge-tint-brand",
       "--lab-badge-icon-on-brand",
       "--lab-badge-label-brand"
+    ],
+    "AuthoredAvatar": [
+      "--lab-avatar-fill-red",
+      "--lab-avatar-fill-orange",
+      "--lab-avatar-fill-yellow",
+      "--lab-avatar-fill-green",
+      "--lab-avatar-fill-teal",
+      "--lab-avatar-fill-mint",
+      "--lab-avatar-fill-blue",
+      "--lab-avatar-fill-indigo",
+      "--lab-avatar-fill-purple",
+      "--lab-avatar-fill-pink"
     ]
   },
   "aliases": []

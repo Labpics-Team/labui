@@ -62,11 +62,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const taxonomy = JSON.parse(await readFile(path, 'utf8'));
   const existing = new Set(
     Object.entries(taxonomy.groups)
-      .filter(([name]) => name !== 'AuthoredBadge')
+      .filter(([name]) => name !== 'AuthoredBadge' && name !== 'AuthoredAvatar')
       .flatMap(([, roles]) => roles),
   );
   taxonomy.groups.AuthoredBadge = Object.keys(themeProfile().roles)
     .filter((role) => role.startsWith('badge-'))
+    .map((role) => `--lab-${role}`)
+    .filter((role) => !existing.has(role));
+  taxonomy.groups.AuthoredAvatar = Object.keys(themeProfile().roles)
+    .filter((role) => role.startsWith('avatar-'))
     .map((role) => `--lab-${role}`)
     .filter((role) => !existing.has(role));
   await writeFile(path, `${JSON.stringify(taxonomy, null, 2)}\n`);

@@ -61,3 +61,5 @@ export { accordionProfile } from './accordion.js';
 export { segmentedProfile } from './segmented.js';
 
 export { selectProfile } from './select.js';
+
+export { avatarProfile } from './avatar.js';

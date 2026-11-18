@@ -284,6 +284,17 @@
         "types": "./dist/components/select/behavior.d.cts",
         "default": "./dist/components/select/behavior.cjs"
       }
+    },
+    "./avatar.css": "./dist/avatar.css",
+    "./avatar/contract": {
+      "import": {
+        "types": "./dist/components/avatar/contract.d.ts",
+        "default": "./dist/components/avatar/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/avatar/contract.d.cts",
+        "default": "./dist/components/avatar/contract.cjs"
+      }
     }
   },
   "files": ["dist"],
@@ -314,7 +325,8 @@
     "./dist/pagination.css",
     "./dist/accordion.css",
     "./dist/segmented-control.css",
-    "./dist/select.css"
+    "./dist/select.css",
+    "./dist/avatar.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

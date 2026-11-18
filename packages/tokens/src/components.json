@@ -1231,5 +1231,110 @@
       "hover": "fill-quaternary",
       "focus": "border-focus"
     }
+  },
+  "avatar": {
+    "sourceRef": {
+      "key": "component-set/Avatar/Avatar"
+    },
+    "defaultColor": "blue",
+    "defaultFallback": "initials",
+    "sizes": {
+      "s": {
+        "diameter": 24,
+        "fontSize": 10.5,
+        "lineHeight": 9,
+        "statusSize": 6,
+        "statusGap": 1.5
+      },
+      "m": {
+        "diameter": 32,
+        "fontSize": 14,
+        "lineHeight": 12,
+        "statusSize": 8,
+        "statusGap": 2
+      },
+      "l": {
+        "diameter": 48,
+        "fontSize": 21,
+        "lineHeight": 18,
+        "statusSize": 12,
+        "statusGap": 3
+      }
+    },
+    "fontFamily": "Sunghyun Sans",
+    "letterBoxHeightRatio": 0.9375,
+    "fontWeight": 800,
+    "letterSpacing": 0,
+    "letterRole": "label-static-light-primary",
+    "highlightRole": "bg-static-light",
+    "highlightAlpha": 0.5,
+    "colors": {
+      "red": {
+        "anchor": "red",
+        "role": "avatar-fill-red"
+      },
+      "orange": {
+        "anchor": "orange",
+        "role": "avatar-fill-orange"
+      },
+      "yellow": {
+        "anchor": "yellow",
+        "role": "avatar-fill-yellow"
+      },
+      "green": {
+        "anchor": "green",
+        "role": "avatar-fill-green"
+      },
+      "teal": {
+        "anchor": "teal",
+        "role": "avatar-fill-teal"
+      },
+      "mint": {
+        "anchor": "mint",
+        "role": "avatar-fill-mint"
+      },
+      "blue": {
+        "anchor": "blue",
+        "role": "avatar-fill-blue"
+      },
+      "indigo": {
+        "anchor": "indigo",
+        "role": "avatar-fill-indigo"
+      },
+      "purple": {
+        "anchor": "purple",
+        "role": "avatar-fill-purple"
+      },
+      "pink": {
+        "anchor": "pink",
+        "role": "avatar-fill-pink"
+      }
+    },
+    "aliases": {
+      "neutral": "blue",
+      "brand": "blue",
+      "danger": "red",
+      "warning": "orange",
+      "success": "green",
+      "info": "teal"
+    },
+    "statuses": {
+      "online": {
+        "role": "label-info-primary",
+        "label": "В сети"
+      },
+      "offline": {
+        "role": "label-quaternary",
+        "label": "Не в сети"
+      },
+      "away": {
+        "role": "label-warning-primary",
+        "label": "Нет на месте"
+      },
+      "dnd": {
+        "role": "label-danger-primary",
+        "label": "Не беспокоить"
+      }
+    }
   }
 }

@@ -10,7 +10,7 @@ import '@labpics/ui-core/avatar';
 import type { LabAvatar } from '@labpics/ui-core/avatar';
 
 /** Пропы <lab-avatar>, взятые прямо из класса ядра (LabAvatar). */
-export type AvatarProps = Pick<LabAvatar, 'size' | 'color' | 'status' | 'src' | 'name'>;
+export type AvatarProps = Pick<LabAvatar, 'size' | 'color' | 'status' | 'src' | 'name' | 'initials' | 'fallback' | 'decorative' | 'statusLabel'>;
 
 /** <Avatar> — тонкая Solid-обёртка над <lab-avatar>. */
 export const Avatar: LabSolidComponent<AvatarProps, never> = createLabComponent<
@@ -23,6 +23,10 @@ export const Avatar: LabSolidComponent<AvatarProps, never> = createLabComponent<
     { name: 'status', attr: 'status', kind: 'string' },
     { name: 'src', attr: 'src', kind: 'string' },
     { name: 'name', attr: 'name', kind: 'string' },
+    { name: 'initials', attr: 'initials', kind: 'string' },
+    { name: 'fallback', attr: 'fallback', kind: 'string' },
+    { name: 'decorative', attr: 'decorative', kind: 'boolean' },
+    { name: 'statusLabel', attr: 'status-label', kind: 'string' },
   ],
   events: [],
 });

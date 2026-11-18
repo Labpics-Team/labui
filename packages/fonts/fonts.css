@@ -28,3 +28,14 @@
   font-display: swap;
   src: url("./fonts/GeistMono-Variable.woff2") format("woff2");
 }
+
+/* Rounded Avatar initials. An OFL substitute for the source's SF Pro Rounded;
+ * its name and metrics stay separate from the product's main Geist family.
+ */
+@font-face {
+  font-family: "Sunghyun Sans";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./fonts/SunghyunSans-ExtraBold.woff2") format("woff2");
+}

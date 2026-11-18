@@ -38,6 +38,7 @@ export default libraryPreset({
     'src/components/select/behavior.ts',
     'src/components/breadcrumb/contract.ts',
     'src/components/pagination/contract.ts',
+    'src/components/avatar/contract.ts',
     'src/ssr/index.ts',
     'src/ssr/element.ts',
     'src/ssr/element-browser.ts',

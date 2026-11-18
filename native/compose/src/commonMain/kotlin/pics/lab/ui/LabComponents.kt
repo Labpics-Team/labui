@@ -13,8 +13,13 @@ internal data class LabTabsMetrics(val height: Float, val radius: Float, val pad
 internal data class LabBreadcrumbMetrics(val fontSize: Float, val lineHeight: Float, val multilineLineHeight: Float, val icon: Float, val gap: Float)
 internal data class LabAccordionMetrics(val padding: Float, val radius: Float, val gap: Float, val contentGap: Float, val fontSize: Float, val lineHeight: Float, val iconSize: Float)
 internal data class LabSelectMetrics(val height: Float, val radius: Float, val paddingStart: Float, val paddingEnd: Float, val paddingY: Float, val gap: Float, val leadingSize: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float)
+internal data class LabAvatarMetrics(val diameter: Float, val fontSize: Float, val lineHeight: Float, val statusSize: Float, val statusGap: Float)
 
 public enum class LabBadgeColor(internal val role: String) { Neutral("neutral"), Gray("gray"), Blue("blue"), Red("red"), Orange("orange"), Green("green"), Yellow("yellow"), Teal("teal"), Mint("mint"), Indigo("indigo"), Purple("purple"), Pink("pink"), StaticDark("static-dark"), StaticLight("static-light"), Brand("brand") }
+
+public enum class LabAvatarColor(internal val role: String) { Red("avatar-fill-red"), Orange("avatar-fill-orange"), Yellow("avatar-fill-yellow"), Green("avatar-fill-green"), Teal("avatar-fill-teal"), Mint("avatar-fill-mint"), Blue("avatar-fill-blue"), Indigo("avatar-fill-indigo"), Purple("avatar-fill-purple"), Pink("avatar-fill-pink") }
+
+public enum class LabAvatarStatus(internal val role: String?, internal val label: String) { None(null, ""), Online("label-info-primary", "В сети"), Offline("label-quaternary", "Не в сети"), Away("label-warning-primary", "Нет на месте"), Dnd("label-danger-primary", "Не беспокоить") }
 
 internal object LabComponents {
     val ButtonS = LabButtonMetrics(36f, 9999f, 12f, 8f, 20f, 14f, 12f, 0f, 500f, 0f, 0.72f)
@@ -645,4 +650,24 @@ internal object LabComponents {
     const val SelectRolesBorder = "border-base"
     const val SelectRolesHover = "fill-quaternary"
     const val SelectRolesFocus = "border-focus"
+    val AvatarS = LabAvatarMetrics(24f, 10.5f, 9f, 6f, 1.5f)
+    val AvatarM = LabAvatarMetrics(32f, 14f, 12f, 8f, 2f)
+    val AvatarL = LabAvatarMetrics(48f, 21f, 18f, 12f, 3f)
+    val AvatarDefaultColor = LabAvatarColor.Blue
+    const val AvatarDefaultFallback = "initials"
+    const val AvatarFontFamily = "Sunghyun Sans"
+    const val AvatarLetterBoxHeightRatio = 0.9375f
+    const val AvatarFontWeight = 800f
+    const val AvatarLetterSpacing = 0f
+    const val AvatarLetterRole = "label-static-light-primary"
+    const val AvatarHighlightRole = "bg-static-light"
+    const val AvatarHighlightAlpha = 0.5f
+    const val AvatarStatusesOnlineRole = "label-info-primary"
+    const val AvatarStatusesOnlineLabel = "В сети"
+    const val AvatarStatusesOfflineRole = "label-quaternary"
+    const val AvatarStatusesOfflineLabel = "Не в сети"
+    const val AvatarStatusesAwayRole = "label-warning-primary"
+    const val AvatarStatusesAwayLabel = "Нет на месте"
+    const val AvatarStatusesDndRole = "label-danger-primary"
+    const val AvatarStatusesDndLabel = "Не беспокоить"
 }

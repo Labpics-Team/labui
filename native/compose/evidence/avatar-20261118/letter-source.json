@@ -1,0 +1,14 @@
+{
+  "id": "7719:58830",
+  "name": "Д",
+  "x": 0,
+  "y": 0,
+  "width": 32,
+  "height": 30,
+  "textAlignHorizontal": "CENTER",
+  "textAlignVertical": "CENTER",
+  "fontName": { "family": "SF Pro Rounded", "style": "Heavy" },
+  "fontSize": 14,
+  "lineHeight": { "unit": "PIXELS", "value": 12 },
+  "letterSpacing": { "unit": "PIXELS", "value": 0 }
+}

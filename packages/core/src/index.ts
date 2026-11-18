@@ -72,6 +72,7 @@ export type { LabKbdSize } from './components/kbd/lab-kbd.js';
 export type { LabLoaderSize } from './components/loader/lab-loader.js';
 export type {
   LabAvatarColor,
+  LabAvatarFallback,
   LabAvatarSize,
   LabAvatarStatus,
 } from './components/avatar/lab-avatar.js';

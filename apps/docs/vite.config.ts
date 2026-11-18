@@ -247,6 +247,8 @@ export default defineConfig({
         'fixture-proof': resolve(__dirname, 'src/_fixtures/proof.html'),
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
         'fixture-kbd-ssr': resolve(__dirname, 'src/_fixtures/kbd-ssr.html'),
+        'fixture-avatar-author': resolve(__dirname, 'src/_fixtures/avatar-author.html'),
+        'fixture-avatar-ssr': resolve(__dirname, 'src/_fixtures/avatar-ssr.html'),
         'fixture-colors-scope': resolve(__dirname, 'src/_fixtures/colors-scope.html'),
         'fixture-card-content': resolve(__dirname, 'src/_fixtures/card-content.html'),
         'fixture-selection': resolve(__dirname, 'src/_fixtures/selection.html'),

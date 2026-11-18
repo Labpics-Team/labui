@@ -16,6 +16,7 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { accordionCss } from '../src/components/accordion/styles.js';
+import { avatarCss } from '../src/components/avatar/styles.js';
 import { badgeCss } from '../src/components/badge/styles.js';
 import { breadcrumbCss } from '../src/components/breadcrumb/styles.js';
 import { cardCss } from '../src/components/card/styles.js';
@@ -71,6 +72,7 @@ function main(): void {
   writeFileSync(join(dist, 'kbd.css'), kbdCss);
   writeFileSync(join(dist, 'progress.css'), progressCss);
   writeFileSync(join(dist, 'pagination.css'), paginationCss);
+  writeFileSync(join(dist, 'avatar.css'), avatarCss);
 
   process.stdout.write(
     `ui-core: copied ${[...ownFiles, 'shadow.css', 'tokens.css'].join(', ')} to dist\n`,

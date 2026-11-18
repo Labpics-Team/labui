@@ -234,6 +234,15 @@ PNG сохраняются в `build/snackbar-render`. Платформенны�
 
 ## Разработка
 
+`LabAvatar` поддерживает портрет через Coil/Ktor, округлённые инициалы,
+текстурный fallback, десять цветов и независимое присутствие. Имя и статус
+образуют один доступный образ; `decorative` скрывает его, `statusLabel`
+локализует присутствие. Размеры и роли генерируются из общего Avatar-профиля.
+Прозрачный вырез вокруг точки работает на произвольном фоне и в RTL.
+Справка, источник Figma и ограничения шрифта — в [Avatar](../../docs/reference/avatar.md).
+`AvatarRenderTest` использует CPU `ImageComposeScene` и локальный HTTP-сервер:
+темы, fontScale, semantics, графемы, загрузка/ошибка/отмена предыдущего URL.
+
 JDK 21, Android SDK 37, Gradle wrapper 9.3.1. Android минимум API 33.
 Kotlin/Compose/AGP определены в `gradle/libs.versions.toml` и разделяются с
 consumer. Haze 2.1.0 содержит Apple klib ABI 2.4 и требует Kotlin 2.4.21.

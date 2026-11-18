@@ -87,3 +87,24 @@ python packages/fonts/scripts/build-symbols.py --cache-dir /tmp/labui-font-sourc
 Источники скачиваются только при пересборке; обычная сборка и открытие продукта
 используют локальные ресурсы. Размеры и контрольные суммы производных файлов
 собраны в [symbols.json](./symbols.json).
+
+## Округлённые инициалы Avatar
+
+В скрытом letter mark исходного Avatar указан SF Pro Rounded Heavy 800, 14 px.
+Поставляемая OFL-замена — **Sunghyun Sans ExtraBold**, самостоятельное семейство;
+она не выдаётся за тот же шрифт и не меняет Geist остального интерфейса.
+Проверены вес 800, 2793 Unicode mappings, вся кириллица А–я, Ё/ё и реальный набор.
+
+Источник: [Sunghyun Sans](https://github.com/anaclumos/sunghyun-sans/blob/068baca3972cc211f3e606cd2cfca3ec60bba982/fonts/ttf/SunghyunSans-ExtraBold.ttf),
+commit `068baca3972cc211f3e606cd2cfca3ec60bba982`, лицензия [OFL](OFL-SunghyunSans.txt).
+Native TTF не изменён, SHA-256
+`1f34867ceb912e6638d2300eef9cb30261af21b75036292b4b27d303145767a1`.
+Web WOFF2 сохраняет исходные контуры и метрики, SHA-256
+`7137d6a4ff3b89fee2bf9ba43f329c4be414472f40bd089366a3f8d671fa051f`.
+
+```sh
+python packages/fonts/scripts/build-avatar-font.py
+```
+
+Пересборка использует FontTools 4.68.0 и Brotli 1.2.1. `--source <TTF>` позволяет
+использовать скачанный файл; SHA-256 проверяется до сохранения ресурсов.

@@ -10,6 +10,8 @@ import { describe, expect, it } from 'vitest';
  * Хэш обязан совпасть и с апстримом, и с прозой PROVENANCE.md.
  */
 const EXPECTED_SHA256: Record<string, string> = {
+  'fonts/SunghyunSans-ExtraBold.woff2':
+    '7137d6a4ff3b89fee2bf9ba43f329c4be414472f40bd089366a3f8d671fa051f',
   'fonts/Geist-Variable.woff2': '46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d',
   'fonts/GeistMono-Variable.woff2':
     'afaacc4c5fbba89d2ebf7a02dc4070208540874592a5504d57175782fe893101',
@@ -28,10 +30,11 @@ const FACES = [
   { family: 'Geist', file: 'fonts/Geist-Variable.woff2', minimumBytes: 10_000 },
   { family: 'Geist', file: 'fonts/LabUI-Symbols.woff2', minimumBytes: 100 },
   { family: 'Geist Mono', file: 'fonts/GeistMono-Variable.woff2', minimumBytes: 10_000 },
+  { family: 'Sunghyun Sans', file: 'fonts/SunghyunSans-ExtraBold.woff2', minimumBytes: 10_000 },
 ];
 
 describe('@labpics/fonts — @font-face и бинарники', () => {
-  it('регистрирует оба семейства Geist / Geist Mono', () => {
+  it('регистрирует основной набор и отдельное семейство Avatar', () => {
     for (const f of FACES) {
       expect(css).toContain(`font-family: "${f.family}";`);
     }
@@ -39,7 +42,10 @@ describe('@labpics/fonts — @font-face и бинарники', () => {
   });
 
   it('подключает исходные начертания и фиксированный символ для весов 100–900', () => {
-    expect(css.match(/font-weight:\s*100 900;/g)).toHaveLength(FACES.length);
+    expect(css.match(/font-weight:\s*100 900;/g)).toHaveLength(
+      FACES.filter((f) => f.family !== 'Sunghyun Sans').length,
+    );
+    expect(css.match(/font-weight:\s*800;/g)).toHaveLength(1);
     expect(css.match(/font-display:\s*swap;/g)).toHaveLength(FACES.length);
   });
 

@@ -1,5 +1,19 @@
 import components from '@labpics/ui-tokens/components.json' with { type: 'json' };
 
+/** Avatar tint is a palette role, independent of Badge paint and chosen per theme. */
+export function authoredAvatarRoles(theme, contrast, source) {
+  return Object.fromEntries(
+    Object.values(components.avatar.colors).map(({ anchor, role }) => {
+      const definition = source.anchors[anchor];
+      const rgb =
+        contrast === 'more' && definition.increased
+          ? definition.increased[theme]
+          : definition[theme];
+      return [role, [...rgb, 1]];
+    }),
+  );
+}
+
 /** Figma's authored stack is resolved before Program compilation, once per theme.
  * The Color(gray) -> Difference(white) -> Dodge(gray) -> Burn(black) stack
  * has an exact two-valued result. W3C nonseparable Color uses 0.30/0.59/0.11

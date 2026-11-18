@@ -65,17 +65,34 @@ for (const [component, definition] of Object.entries(resolvedProfile)) {
     `internal data class Lab${upper(component)}Metrics(${properties.map((key) => `val ${key}: Float`).join(', ')})`,
   );
 }
-lines.push(
-  '',
-  `public enum class LabBadgeColor(internal val role: String) { ${Object.keys(profile.badge.colors)
-    .map((name) => `${upper(name)}(${kotlinString(name)})`)
-    .join(', ')} }`,
-);
+for (const [component, definition] of Object.entries(profile)) {
+  if (definition.colors)
+    lines.push(
+      '',
+      `public enum class Lab${upper(component)}Color(internal val role: String) { ${Object.entries(
+        definition.colors,
+      )
+        .map(([name, paint]) => `${upper(name)}(${kotlinString(paint.role ?? name)})`)
+        .join(', ')} }`,
+    );
+  if (definition.statuses)
+    lines.push(
+      '',
+      `public enum class Lab${upper(component)}Status(internal val role: String?, internal val label: String) { None(null, ""), ${Object.entries(
+        definition.statuses,
+      )
+        .map(
+          ([name, status]) =>
+            `${upper(name)}(${kotlinString(status.role)}, ${kotlinString(status.label)})`,
+        )
+        .join(', ')} }`,
+    );
+}
 lines.push('', 'internal object LabComponents {');
 function emitConstants(prefix, definition) {
   for (const [name, value] of Object.entries(definition)) {
-    if (prefix === 'Badge' && name === 'defaultColor') {
-      lines.push(`    val BadgeDefaultColor = LabBadgeColor.${upper(value)}`);
+    if (definition.colors && name === 'defaultColor') {
+      lines.push(`    val ${prefix}DefaultColor = Lab${prefix}Color.${upper(value)}`);
       continue;
     }
     if (

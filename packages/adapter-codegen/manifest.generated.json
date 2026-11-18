@@ -135,6 +135,26 @@
           "name": "name",
           "attr": "name",
           "kind": "string"
+        },
+        {
+          "name": "initials",
+          "attr": "initials",
+          "kind": "string"
+        },
+        {
+          "name": "fallback",
+          "attr": "fallback",
+          "kind": "string"
+        },
+        {
+          "name": "decorative",
+          "attr": "decorative",
+          "kind": "boolean"
+        },
+        {
+          "name": "statusLabel",
+          "attr": "status-label",
+          "kind": "string"
         }
       ],
       "events": [],

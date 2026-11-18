@@ -1,5 +1,11 @@
 # Lab UI Text
 
+Avatar отдельно использует `avatar_rounded_extrabold.ttf` — Sunghyun Sans
+ExtraBold 800, OFL-замену SF Pro Rounded Heavy из исходного макета.
+Контуры и SHA-256 исходного TTF сохранены; лицензия — `OFL-SunghyunSans.txt`.
+Закреплённый источник и команда воспроизведения находятся в разделе
+«Округлённые инициалы Avatar» [общего provenance](../../../../../../packages/fonts/PROVENANCE.md).
+
 Три начертания основаны на Geist font Version 1.400 из
 [vercel/geist-font tag 1.4.2](https://github.com/vercel/geist-font/tree/4d655731f83507f0258ce5541c297b6553d5d081/packages/next/dist/fonts/geist-sans),
 commit `4d655731f83507f0258ce5541c297b6553d5d081`.

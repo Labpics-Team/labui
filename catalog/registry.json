@@ -444,7 +444,9 @@
       "web": {
         "subpath": "avatar",
         "reactExport": "Avatar"
-      }
+      },
+      "native": { "symbol": "LabAvatar" },
+      "profile": "avatar"
     },
     {
       "slug": "kbd",

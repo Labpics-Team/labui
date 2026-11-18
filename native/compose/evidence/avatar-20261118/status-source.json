@@ -1,0 +1,324 @@
+{
+  "documentColorProfile": "SRGB",
+  "status": {
+    "id": "7719:56717",
+    "name": "Status indicator",
+    "type": "COMPONENT_SET",
+    "x": 96,
+    "y": 192,
+    "width": 132,
+    "height": 48,
+    "fills": [
+      {
+        "type": "SOLID",
+        "visible": true,
+        "opacity": 0.07999999821186066,
+        "blendMode": "NORMAL",
+        "color": {
+          "r": 0.47058823704719543,
+          "g": 0.47058823704719543,
+          "b": 0.501960813999176
+        },
+        "boundVariables": {
+          "color": {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:6006:58"
+          }
+        }
+      }
+    ],
+    "effects": [],
+    "visible": true,
+    "blendMode": "PASS_THROUGH",
+    "isMask": false,
+    "maskType": "ALPHA",
+    "children": [
+      {
+        "id": "7719:56716",
+        "name": "State=Online",
+        "type": "COMPONENT",
+        "x": 20,
+        "y": 20,
+        "width": 8,
+        "height": 8,
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": false,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {}
+          }
+        ],
+        "effects": [],
+        "visible": true,
+        "blendMode": "PASS_THROUGH",
+        "isMask": false,
+        "maskType": "ALPHA",
+        "children": [
+          {
+            "id": "7719:56715",
+            "name": "Ellipse",
+            "type": "ELLIPSE",
+            "x": 0,
+            "y": -5.684341886080802e-14,
+            "width": 8,
+            "height": 8,
+            "fills": [
+              {
+                "type": "SOLID",
+                "visible": true,
+                "opacity": 1,
+                "blendMode": "NORMAL",
+                "color": {
+                  "r": 0.120899997651577,
+                  "g": 0.4269326329231262,
+                  "b": 0.9300000071525574
+                },
+                "boundVariables": {
+                  "color": {
+                    "type": "VARIABLE_ALIAS",
+                    "id": "VariableID:6006:42"
+                  }
+                }
+              }
+            ],
+            "effects": [],
+            "visible": true,
+            "blendMode": "PASS_THROUGH",
+            "isMask": false,
+            "maskType": "ALPHA"
+          }
+        ]
+      },
+      {
+        "id": "7719:62535",
+        "name": "State=Away",
+        "type": "COMPONENT",
+        "x": 48,
+        "y": 20,
+        "width": 8,
+        "height": 8,
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": false,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {}
+          }
+        ],
+        "effects": [],
+        "visible": true,
+        "blendMode": "PASS_THROUGH",
+        "isMask": false,
+        "maskType": "ALPHA",
+        "children": [
+          {
+            "id": "7719:62536",
+            "name": "Ellipse",
+            "type": "ELLIPSE",
+            "x": 0,
+            "y": -5.684341886080802e-14,
+            "width": 8,
+            "height": 8,
+            "fills": [
+              {
+                "type": "SOLID",
+                "visible": true,
+                "opacity": 1,
+                "blendMode": "NORMAL",
+                "color": {
+                  "r": 0.929411768913269,
+                  "g": 0.4313725531101227,
+                  "b": 0
+                },
+                "boundVariables": {
+                  "color": {
+                    "type": "VARIABLE_ALIAS",
+                    "id": "VariableID:6006:34"
+                  }
+                }
+              }
+            ],
+            "effects": [],
+            "visible": true,
+            "blendMode": "PASS_THROUGH",
+            "isMask": false,
+            "maskType": "ALPHA"
+          }
+        ]
+      },
+      {
+        "id": "7719:62538",
+        "name": "State=Do not disturb",
+        "type": "COMPONENT",
+        "x": 76,
+        "y": 20,
+        "width": 8,
+        "height": 8,
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": false,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {}
+          }
+        ],
+        "effects": [],
+        "visible": true,
+        "blendMode": "PASS_THROUGH",
+        "isMask": false,
+        "maskType": "ALPHA",
+        "children": [
+          {
+            "id": "7719:62539",
+            "name": "Ellipse",
+            "type": "ELLIPSE",
+            "x": 0,
+            "y": -5.684341886080802e-14,
+            "width": 8,
+            "height": 8,
+            "fills": [
+              {
+                "type": "SOLID",
+                "visible": true,
+                "opacity": 1,
+                "blendMode": "NORMAL",
+                "color": {
+                  "r": 1,
+                  "g": 0.23137255012989044,
+                  "b": 0.1882352977991104
+                },
+                "boundVariables": {
+                  "color": {
+                    "type": "VARIABLE_ALIAS",
+                    "id": "VariableID:6006:30"
+                  }
+                }
+              }
+            ],
+            "effects": [],
+            "visible": true,
+            "blendMode": "PASS_THROUGH",
+            "isMask": false,
+            "maskType": "ALPHA"
+          }
+        ]
+      },
+      {
+        "id": "7719:56718",
+        "name": "State=Offline",
+        "type": "COMPONENT",
+        "x": 104,
+        "y": 20,
+        "width": 8,
+        "height": 8,
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": false,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {}
+          }
+        ],
+        "effects": [],
+        "visible": true,
+        "blendMode": "PASS_THROUGH",
+        "isMask": false,
+        "maskType": "ALPHA",
+        "children": [
+          {
+            "id": "7719:56719",
+            "name": "Ellipse",
+            "type": "ELLIPSE",
+            "x": 0,
+            "y": -5.684341886080802e-14,
+            "width": 8,
+            "height": 8,
+            "fills": [
+              {
+                "type": "SOLID",
+                "visible": true,
+                "opacity": 0.3199999928474426,
+                "blendMode": "NORMAL",
+                "color": {
+                  "r": 0.23529411852359772,
+                  "g": 0.23529411852359772,
+                  "b": 0.26274511218070984
+                },
+                "boundVariables": {
+                  "color": {
+                    "type": "VARIABLE_ALIAS",
+                    "id": "VariableID:6005:66"
+                  }
+                }
+              }
+            ],
+            "effects": [],
+            "visible": true,
+            "blendMode": "PASS_THROUGH",
+            "isMask": false,
+            "maskType": "ALPHA"
+          }
+        ]
+      }
+    ]
+  },
+  "mask": {
+    "id": "7719:58819",
+    "name": "Status indicator / Mask",
+    "type": "VECTOR",
+    "x": 0,
+    "y": -5.684341886080802e-14,
+    "width": 32,
+    "height": 32,
+    "fills": [
+      {
+        "type": "SOLID",
+        "visible": true,
+        "opacity": 1,
+        "blendMode": "NORMAL",
+        "color": {
+          "r": 0,
+          "g": 0,
+          "b": 0
+        },
+        "boundVariables": {}
+      }
+    ],
+    "effects": [],
+    "vectorPaths": [
+      {
+        "windingRule": "NONZERO",
+        "data": "M 16 0 C 24.836556434631348 0 32 7.163443565368652 32 16 C 32 18.34743022918701 31.494057595729828 20.576599836349487 30.5859375 22.5849609375 C 29.802829563617706 22.210315704345703 28.92604011297226 22 28 22 C 24.686291456222534 22 22 24.686291456222534 22 28 C 22 28.92604011297226 22.210315704345703 29.802829563617706 22.5849609375 30.5859375 C 20.576599836349487 31.494057595729828 18.34743022918701 32 16 32 C 7.163443565368652 32 0 24.836556434631348 0 16 C 0 7.163443565368652 7.163443565368652 0 16 0 Z"
+      }
+    ],
+    "visible": false,
+    "blendMode": "PASS_THROUGH",
+    "isMask": true,
+    "maskType": "ALPHA"
+  }
+}

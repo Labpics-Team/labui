@@ -36,7 +36,13 @@ kotlin {
             implementation("dev.chrisbanes.haze:haze-blur:2.1.0")
             implementation("dev.chrisbanes.haze:haze-glass:2.1.0")
             api("pics.lab:motion-compose:0.1.0")
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network)
         }
+        val desktopMain by getting
+        desktopMain.dependencies { implementation(libs.ktor.java) }
+        androidMain.dependencies { implementation(libs.ktor.android) }
+        iosMain.dependencies { implementation(libs.ktor.darwin) }
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")

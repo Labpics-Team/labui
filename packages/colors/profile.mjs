@@ -1,4 +1,4 @@
-import { authoredBadgeRoles } from './authored-paints.mjs';
+import { authoredAvatarRoles, authoredBadgeRoles } from './authored-paints.mjs';
 import config from './labui.config.json' with { type: 'json' };
 
 export const THEMES = Object.freeze(Object.keys(config.themes));
@@ -45,6 +45,10 @@ export function themeProfile(theme = 'light', contrast = 'normal', source = conf
     }
     roles['border-strong'] = '@label-primary';
   }
-  Object.assign(roles, authoredBadgeRoles(theme, contrast, source));
+  Object.assign(
+    roles,
+    authoredBadgeRoles(theme, contrast, source),
+    authoredAvatarRoles(theme, contrast, source),
+  );
   return { theme, contrast, roles, resolve, background: resolve('bg-primary').slice(0, 3) };
 }
