@@ -15,11 +15,12 @@ import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { switchCss } from '../src/components/switch/styles.js';
+import { badgeCss } from '../src/components/badge/styles.js';
 import { cardCss } from '../src/components/card/styles.js';
 import { inputCss } from '../src/components/input/styles.js';
 import { sheetCss } from '../src/components/sheet/styles.js';
 import { snackbarCss } from '../src/components/snackbar/styles.js';
+import { switchCss } from '../src/components/switch/styles.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '..', 'src');
@@ -49,6 +50,7 @@ function main(): void {
   writeFileSync(join(dist, 'snackbar.css'), snackbarCss);
   writeFileSync(join(dist, 'card.css'), cardCss);
   writeFileSync(join(dist, 'switch.css'), switchCss);
+  writeFileSync(join(dist, 'badge.css'), badgeCss);
 
   process.stdout.write(
     `ui-core: copied ${[...ownFiles, 'shadow.css', 'tokens.css'].join(', ')} to dist\n`,

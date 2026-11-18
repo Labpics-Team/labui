@@ -17,6 +17,7 @@
 ## Справочник
 
 - [Каталог компонентов](reference/catalog.md) — семейства, соответствие Figma и обнаруженные API Web/Compose.
+- [Badge](reference/badge.md) — авторские цвета, геометрия, знаки и состояния метки Web/Compose.
 - [Темы и материалы](reference/theme-materials.md) — оси, публичные входы и жизненный цикл runtime.
 - [Карта пакетов](reference/packages.md) — назначение пакетов и источники API.
 - [Инварианты](reference/invariants.md) — законы системы, их область и владелец.

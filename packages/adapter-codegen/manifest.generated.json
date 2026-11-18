@@ -165,7 +165,9 @@
       "slots": {
         "default": true,
         "named": [
-          "dot"
+          "dot",
+          "icon",
+          "icon-end"
         ],
         "dynamic": false
       }

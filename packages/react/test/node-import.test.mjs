@@ -13,6 +13,7 @@ for (const format of ['esm', 'cjs']) {
     const { Snackbar } = await load('@labpics/ui-react/snackbar');
     const { Card } = await load('@labpics/ui-react/card');
     const { Switch } = await load('@labpics/ui-react/switch');
+    const { Badge } = await load('@labpics/ui-react/badge');
     assert.ok(Sheet);
     const output = renderToString(
       createElement(Input, {
@@ -53,5 +54,9 @@ for (const format of ['esm', 'cjs']) {
     assert.match(control, /name="alerts"/);
     assert.match(control, /До/);
     assert.match(control, /После/);
+    const badge = renderToString(createElement(Badge, { color: 'yellow' }, 'Badge'));
+    assert.match(badge, /data-color="yellow"/);
+    assert.match(badge, /class="lab-badge-label">Badge/);
+    assert.doesNotMatch(badge, /role="button"|tabindex/);
   });
 }

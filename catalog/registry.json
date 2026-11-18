@@ -369,6 +369,9 @@
       "web": {
         "subpath": "badge",
         "reactExport": "Badge"
+      },
+      "native": {
+        "symbol": "LabBadge"
       }
     },
     {
@@ -590,7 +593,10 @@
           "family": "badge",
           "role": "root",
           "web": {
-            "scope": "Публичный API семейства; все авторские варианты ещё не сверены."
+            "scope": "15 цветов × Fill/Tinted × disabled; две декоративные иконки, общие авторские цвета и геометрия."
+          },
+          "native": {
+            "scope": "Compose Badge использует общий профиль 15 цветов, Fill/Tinted, disabled и двух декоративных иконок."
           }
         }
       ]

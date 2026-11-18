@@ -73,6 +73,12 @@
       "types": "./dist/components/sheet/measure.d.ts",
       "import": "./dist/components/sheet/measure.js",
       "require": "./dist/components/sheet/measure.cjs"
+    },
+    "./badge.css": "./dist/badge.css",
+    "./badge/contract": {
+      "types": "./dist/components/badge/contract.d.ts",
+      "import": "./dist/components/badge/contract.js",
+      "require": "./dist/components/badge/contract.cjs"
     }
   },
   "files": ["dist"],
@@ -90,7 +96,8 @@
     "./dist/proof/lab-proof.cjs",
     "./dist/components/**",
     "./dist/chunk-*.js",
-    "./dist/chunk-*.cjs"
+    "./dist/chunk-*.cjs",
+    "./dist/badge.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

@@ -6,10 +6,12 @@ Geist поставляется с пакетом; размеры использ�
 
 ## Текущее состояние
 
-Реализованы Button, state-based Input, Switch, Card, Sheet и Snackbar,
+Реализованы Button, Badge, state-based Input, Switch, Card, Sheet и Snackbar,
 генераторы общих токенов, геометрии компонентов и материалов, граница Colors
 Program и сценарий настроек. Button, Input, Switch, Card и Sheet читают общий профиль
 Figma. Input сохраняет подпись в разрыве рамки, Sheet поддерживает перетаскивание.
+Badge переносит 15 цветов, Fill/Tinted, общий disabled и два декоративных знака;
+геометрия и цветовые роли общие с вебом. [Контракт и проверки Badge](../../docs/reference/badge.md).
 Button имеет description/icon/iconEnd/iconOnly, authored hover/pressed/disabled
 и сегментный loader. Шум SCREEN, стек теней и progressive Ghost-overlay
 проецируются из общих material/shadow-профилей. Обе темы и Sheet осмотрены

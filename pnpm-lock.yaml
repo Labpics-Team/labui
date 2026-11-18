@@ -154,6 +154,9 @@ importers:
       '@labpics/colors':
         specifier: 1.0.3
         version: 1.0.3
+      '@labpics/ui-tokens':
+        specifier: workspace:*
+        version: link:../tokens
     devDependencies:
       '@types/css-tree':
         specifier: 3.2.0

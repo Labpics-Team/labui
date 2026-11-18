@@ -46,3 +46,5 @@ export { cardProfile } from './card.js';
 export { switchProfile } from './switch.js';
 
 export const PACKAGE_NAME = '@labpics/ui-tokens';
+
+export { badgeProfile } from './badge.js';

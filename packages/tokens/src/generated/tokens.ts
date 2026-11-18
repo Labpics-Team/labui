@@ -143,6 +143,16 @@ export const component = {
   'line-height-snackbar': 'var(--lab-line-height-snackbar)',
   'stroke-snackbar': 'var(--lab-stroke-snackbar)',
   'size-snackbar-timer': 'var(--lab-size-snackbar-timer)',
+  'size-badge': 'var(--lab-size-badge)',
+  'size-badge-icon': 'var(--lab-size-badge-icon)',
+  'radius-badge': 'var(--lab-radius-badge)',
+  'space-badge-x': 'var(--lab-space-badge-x)',
+  'space-badge-y': 'var(--lab-space-badge-y)',
+  'space-badge-gap': 'var(--lab-space-badge-gap)',
+  'font-size-badge': 'var(--lab-font-size-badge)',
+  'font-weight-badge': 'var(--lab-font-weight-badge)',
+  'line-height-badge': 'var(--lab-line-height-badge)',
+  'letter-spacing-badge': 'var(--lab-letter-spacing-badge)',
 } as const;
 
 export type ComponentToken = keyof typeof component;

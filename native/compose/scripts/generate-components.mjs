@@ -28,10 +28,27 @@ for (const [component, definition] of Object.entries(profile)) {
     `internal data class Lab${upper(component)}Metrics(${properties.map((key) => `val ${key}: Float`).join(', ')})`,
   );
 }
+lines.push(
+  '',
+  `public enum class LabBadgeColor(internal val role: String) { ${Object.keys(profile.badge.colors)
+    .map((name) => `${upper(name)}(${kotlinString(name)})`)
+    .join(', ')} }`,
+);
 lines.push('', 'internal object LabComponents {');
 function emitConstants(prefix, definition) {
   for (const [name, value] of Object.entries(definition)) {
-    if (name === 'source' || name === 'sourceNode' || name === 'sourceRef' || name === 'sizes')
+    if (prefix === 'Badge' && name === 'defaultColor') {
+      lines.push(`    val BadgeDefaultColor = LabBadgeColor.${upper(value)}`);
+      continue;
+    }
+    if (
+      name === 'source' ||
+      name === 'sourceNode' ||
+      name === 'sourceRef' ||
+      name === 'sizes' ||
+      name === 'colors' ||
+      name === 'aliases'
+    )
       continue;
     if (typeof value === 'number') lines.push(`    const val ${prefix}${upper(name)} = ${value}f`);
     else if (name === 'material' && typeof value === 'string')
