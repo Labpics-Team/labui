@@ -97,22 +97,28 @@ export function buildComponentTokens(): ResolvedToken[] {
   dimension('space', 'card-caption-gap', profile.card.captionGap);
   dimension('space', 'card-text-gap', profile.card.textGap);
   dimension('space', 'card-title-gap', profile.card.titleGap);
-  for (const [role, text] of Object.entries(profile.card.text)) {
-    const name = `card-${role}`;
-    dimension('font-size', name, text.fontSize);
-    dimension('line-height', name, text.lineHeight);
-    scalar('font-weight', name, text.fontWeight);
-    scalar(
-      'letter-spacing',
-      name,
-      text.letterSpacing / text.fontSize,
-      `${num(text.letterSpacing / text.fontSize, 6)}em`,
-    );
+  for (const [family, textRoles] of Object.entries({
+    card: profile.card.text,
+    sheet: profile.sheet.typography,
+  })) {
+    for (const [role, text] of Object.entries(textRoles)) {
+      const name = `${family}-${role}`;
+      dimension('font-size', name, text.fontSize);
+      dimension('line-height', name, text.lineHeight);
+      scalar('font-weight', name, text.fontWeight);
+      scalar(
+        'letter-spacing',
+        name,
+        text.letterSpacing / text.fontSize,
+        `${num(text.letterSpacing / text.fontSize, 6)}em`,
+      );
+    }
   }
   dimension('radius', 'sheet-top', profile.sheet.topRadius);
   dimension('space', 'sheet-x', profile.sheet.paddingX);
   dimension('space', 'sheet-bottom', profile.sheet.paddingBottom);
   dimension('space', 'sheet-content-gap', profile.sheet.contentGap);
+  dimension('space', 'sheet-header-gap', profile.sheet.headerGap);
   dimension('size', 'sheet-drag-area', profile.sheet.drag.areaHeight);
   dimension('size', 'sheet-drag-width', profile.sheet.drag.width);
   dimension('size', 'sheet-drag-height', profile.sheet.drag.height);

@@ -138,7 +138,7 @@ export const sheetCss = String.raw`
   display: flex;
   flex: none;
   flex-direction: column;
-  gap: var(--_sheet-gap);
+  gap: var(--lab-space-sheet-header-gap);
 }
 .lab-sheet-heading,
 .lab-sheet-description {
@@ -146,11 +146,17 @@ export const sheetCss = String.raw`
   margin: 0;
 }
 .lab-sheet-heading {
-  font-size: var(--lab-font-size-lg, 1.2rem);
-  letter-spacing: var(--lab-letter-spacing-lg, -0.0194em);
+  font-size: var(--lab-font-size-sheet-title);
+  font-weight: var(--lab-font-weight-sheet-title);
+  line-height: var(--lab-line-height-sheet-title);
+  letter-spacing: var(--lab-letter-spacing-sheet-title);
 }
 .lab-sheet-description {
   color: var(--lab-label-secondary);
+  font-size: var(--lab-font-size-sheet-description);
+  font-weight: var(--lab-font-weight-sheet-description);
+  line-height: var(--lab-line-height-sheet-description);
+  letter-spacing: var(--lab-letter-spacing-sheet-description);
 }
 .lab-sheet-close {
   position: absolute;

@@ -181,12 +181,19 @@
     "source": {
       "fileKey": "LuaiBd4anRi4DMZayKAnY2",
       "version": "2422536133022859436",
-      "node": "7533:4698"
+      "node": "7533:4698",
+      "title": "7719:54845",
+      "description": "7719:54846"
     },
     "topRadius": 32,
     "paddingX": 16,
     "paddingBottom": 16,
     "contentGap": 24,
+    "headerGap": 8,
+    "typography": {
+      "title": { "fontSize": 20, "lineHeight": 20, "fontWeight": 600, "letterSpacing": -0.33 },
+      "description": { "fontSize": 16, "lineHeight": 24, "fontWeight": 400, "letterSpacing": -0.25 }
+    },
     "bodyHeights": { "full": 776, "two-thirds": 540, "one-third": 270 },
     "drag": {
       "areaHeight": 24,
