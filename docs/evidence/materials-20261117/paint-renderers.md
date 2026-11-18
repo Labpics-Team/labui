@@ -44,7 +44,8 @@ Firefox использует середину диапазона только и
 диагностика сохраняет это число и проверяет диапазон, полученный из ±1 RGB
 промежуточного Normal и ±2 RGB финального смешивания. Авторские роли проверяются
 с отдельным пределом 2 RGB. Обычные snapshots Firefox/WebKit не подтверждают
-backdrop: для них используются Linux Xvfb/macOS screencapture.
+backdrop: Firefox проверяется через Linux Xvfb/macOS screencapture,
+WebKit — через macOS screencapture.
 
 Финальный исходник `51cfe7d`,
 [run44100730329](https://github.com/Labpics-Team/labui/actions/runs/44100730329):
@@ -62,6 +63,13 @@ Author-числа включают варианты без зерна и со ш
 Полные строки: [Linux](material-paints-final-display-linux.json),
 [macOS](material-paints-final-display-darwin.json).
 
+Linux WebKit **не подтверждает сохранение paints**. Его строки имеют
+`measurable:false`: предел ошибки не проверяется. В этом опыте шесть разных
+фонов давали одинаковые `[96,96,96]` с ошибкой до 143.0256 RGB. Это наблюдение
+не различает ограничение Xvfb и ошибку `capture-blend`; зелёный workflow не
+означает, что полупрозрачный paint на этой платформе корректен. JSON сохраняет
+историческое измерение указанного commit, а не проверку текущей ревизии.
+
 30 кадров translation/scale шести поверхностей: ноль мутаций фильтров/capture,
 все узлы сохранены, финальный dispose удаляет их полностью. p95 интервала rAF:
 Chromium Linux 17.3–17.4ms, Firefox Linux/macOS 18–19ms, Safari 18ms;
@@ -70,7 +78,8 @@ Chromium macOS 17.6–28.9ms. Это маленькая compositor-сцена н
 Проверки общего исходника: CI build/typecheck/unit и Playwright smoke зелёные;
 локально 180 Colors и 166 Materials.
 
-Эта проверка закрывает перенос paints и ограничение зерна. Она не закрывает
+Эта проверка подтверждает перенос paints и ограничение зерна только для
+compositor в таблице выше. Она не закрывает
 оставшиеся различия геометрии, светового края и дисперсии Glass. Для следующего
 сравнения отдельно экспортированы неизменённые `figma-dock-holdout.json/png`,
 Floating Dock `7671:9049`; эта сцена не участвовала в подборе линзы по кругам.
@@ -116,8 +125,9 @@ scroll anchoring и имеет layout containment; natural extent измеряе
 
 [Run 44118210819](https://github.com/Labpics-Team/labui/actions/runs/44118210819)
 прошёл на Linux/macOS: 12 flows × 10 stages × 3 browsers, snapshot и actual display;
-отдельно все десять авторских paints проверены внутри прокрученного capture на
-шести цветных фонах. В логе 1440 scroll и 408 paint rows; отдельно сохранены
+отдельно все десять авторских paints измерены внутри прокрученного capture на
+шести цветных фонах. Предел ошибки проверен только для строк `measurable:true`;
+Linux WebKit остаётся неподтверждённым. В логе 1440 scroll и 408 paint rows; отдельно сохранены
 [720 scroll и 204 paint строки реального display](material-scroll-origins.json).
 Общий CI `44118210711` также прошёл.
 Независимая проверка повторила 48 Firefox/WebKit сценариев; дополнительно

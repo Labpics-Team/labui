@@ -1,10 +1,11 @@
 {
-  "date": "2026-11-17T10:51:39.820Z",
+  "date": "2026-11-18T06:45:04.747Z",
   "browser": "140.0.7339.186",
   "results": [
     {
       "edge": "top",
       "length": 68,
+      "visibleStrips": 5,
       "max": 1,
       "mae": 0.00988562091503268,
       "over2": 0
@@ -12,6 +13,7 @@
     {
       "edge": "top",
       "length": 422,
+      "visibleStrips": 5,
       "max": 1,
       "mae": 0.0002281902755836405,
       "over2": 0
@@ -19,6 +21,7 @@
     {
       "edge": "top",
       "length": 804,
+      "visibleStrips": 5,
       "max": 1,
       "mae": 0.002261838953381242,
       "over2": 0
@@ -26,6 +29,7 @@
     {
       "edge": "bottom",
       "length": 68,
+      "visibleStrips": 5,
       "max": 1,
       "mae": 0.020561002178649236,
       "over2": 0
@@ -33,6 +37,7 @@
     {
       "edge": "bottom",
       "length": 422,
+      "visibleStrips": 5,
       "max": 1,
       "mae": 0.0001535896085659119,
       "over2": 0
@@ -40,6 +45,7 @@
     {
       "edge": "bottom",
       "length": 804,
+      "visibleStrips": 5,
       "max": 1,
       "mae": 0.0034273079049198453,
       "over2": 0
@@ -47,6 +53,7 @@
     {
       "edge": "left",
       "length": 68,
+      "visibleStrips": 5,
       "max": 1,
       "mae": 0.010130718954248366,
       "over2": 0
@@ -54,6 +61,7 @@
     {
       "edge": "left",
       "length": 422,
+      "visibleStrips": 5,
       "max": 1,
       "mae": 0.0002764612954186414,
       "over2": 0
@@ -61,6 +69,7 @@
     {
       "edge": "left",
       "length": 804,
+      "visibleStrips": 5,
       "max": 1,
       "mae": 0.0031670351943983784,
       "over2": 0
@@ -68,6 +77,7 @@
     {
       "edge": "right",
       "length": 68,
+      "visibleStrips": 5,
       "max": 1,
       "mae": 0.019934640522875816,
       "over2": 0
@@ -75,6 +85,7 @@
     {
       "edge": "right",
       "length": 422,
+      "visibleStrips": 5,
       "max": 1,
       "mae": 0.00014920133403545726,
       "over2": 0
@@ -82,6 +93,7 @@
     {
       "edge": "right",
       "length": 804,
+      "visibleStrips": 5,
       "max": 1,
       "mae": 0.0033927584300718627,
       "over2": 0

@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(new URL('../../../apps/docs/package.json', import.meta.url))(
@@ -11,6 +12,10 @@ const browser = await chromium.launch({ channel: 'chromium', headless: true });
 const page = await browser.newPage({ viewport: { width: 900, height: 900 } });
 const results = [];
 try {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setEmulatedMedia', {
+    features: [{ name: 'prefers-reduced-transparency', value: 'no-preference' }],
+  });
   await page.setContent(
     `<style>${css}body{margin:0;background:#fafafa;background-image:radial-gradient(circle,#304050 2px,transparent 2px);background-size:17px 17px}#veil{position:absolute;left:40px;top:40px;--_veil-noise:url("data:image/png;base64,${noise}")}</style><div id="veil" data-veil="bottom" data-veil-profile="overlay-ghost"></div>`,
   );
@@ -35,6 +40,22 @@ try {
         { edge, width, height },
       );
       await tick();
+      const visibleStrips = await page.locator('#veil > .lab-veil__strip').evaluateAll(
+        (strips) =>
+          strips.filter((strip) => {
+            const box = strip.getBoundingClientRect();
+            const style = getComputedStyle(strip);
+            return (
+              box.width > 0 &&
+              box.height > 0 &&
+              style.display !== 'none' &&
+              style.visibility === 'visible' &&
+              Number(style.opacity) > 0 &&
+              style.backdropFilter !== 'none'
+            );
+          }).length,
+      );
+      assert(visibleStrips > 0, `${edge}/${length}: no visible blur strips to compare`);
       const clip = { x: 40, y: 40, width, height };
       const before = await page.screenshot({ clip });
       await page
@@ -73,7 +94,7 @@ try {
         },
         { before: before.toString('base64'), after: after.toString('base64') },
       );
-      results.push({ edge, length, ...difference });
+      results.push({ edge, length, visibleStrips, ...difference });
       if (edge === 'bottom' && length === 422) {
         await writeFile(new URL('fluid-veil-before.png', import.meta.url), before);
         await writeFile(new URL('fluid-veil-after.png', import.meta.url), after);
@@ -83,7 +104,7 @@ try {
   const report = { date: new Date().toISOString(), browser: browser.version(), results };
   await writeFile(
     new URL('fluid-veil-pixels.json', import.meta.url),
-    JSON.stringify(report, null, 2),
+    `${JSON.stringify(report, null, 2)}\n`,
   );
   console.info(JSON.stringify(report, null, 2));
 } finally {
