@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -91,15 +92,16 @@ public fun LabPagination(
         .onPreviewKeyEvent { event ->
             if (!compact || disabled || total == 0 || event.type != KeyEventType.KeyDown) false else {
                 val next = when (event.key) {
-                    Key.MoveHome -> 1
-                    Key.MoveEnd -> total
-                    Key.DirectionRight -> selectedPage + if (rtl) -1 else 1
-                    Key.DirectionLeft -> selectedPage + if (rtl) 1 else -1
+                    Key.MoveHome -> 1L
+                    Key.MoveEnd -> total.toLong()
+                    Key.DirectionRight -> selectedPage.toLong() + if (rtl) -1 else 1
+                    Key.DirectionLeft -> selectedPage.toLong() + if (rtl) 1 else -1
                     else -> null
                 }
                 if (next == null) false else {
                     restoreFocus = true
-                    if (next.coerceIn(1, total) != selectedPage) onPageChange(next.coerceIn(1, total))
+                    val destination = next.coerceIn(1L, total.toLong()).toInt()
+                    if (destination != selectedPage) onPageChange(destination)
                     true
                 }
             }
@@ -126,7 +128,8 @@ public fun LabPagination(
                         val ratio = progress?.let { if (it.isFinite()) it.coerceIn(0f, 1f) else 0f }
                         val width = if (compact && current && ratio != null) LabComponents.PaginationCompactTrack else LabComponents.PaginationCompactDot
                         PaginationButton(pageLabel(value), current, disabled, scale, compact, width,
-                            if (compact && current) Modifier.focusRequester(selectedFocus) else Modifier,
+                            if (compact) Modifier.focusProperties { canFocus = current }
+                                .then(if (current) Modifier.focusRequester(selectedFocus) else Modifier) else Modifier,
                             onClick = { if (!current) onPageChange(value) }) { color ->
                             if (compact) Canvas(Modifier.size((width * scale).dp, (LabComponents.PaginationCompactDot * scale).dp).clearAndSetSemantics {}) {
                                 val inactive = if (ambient) LabComponents.PaginationCompactAmbientInactiveOpacity else LabComponents.PaginationCompactInactiveOpacity

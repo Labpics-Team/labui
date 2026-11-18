@@ -174,6 +174,7 @@ export class LabPagination extends LabElement {
   private async keyPage(event: KeyboardEvent): Promise<void> {
     if (
       this.variant !== 'compact' ||
+      this.href ||
       this.disabled ||
       event.altKey ||
       event.metaKey ||
@@ -189,6 +190,7 @@ export class LabPagination extends LabElement {
     if (page === undefined) return;
     event.preventDefault();
     this.api.setPage(page);
+    await Promise.resolve();
     await this.updateComplete;
     this.renderRoot.querySelector<HTMLElement>(`[data-page='${this.selectedPage}']`)?.focus();
   }
@@ -213,7 +215,7 @@ export class LabPagination extends LabElement {
           ? html`<span class="lab-pagination-dot" aria-hidden="true">${progress !== undefined ? html`<span class="lab-pagination-progress" style=${`--_pg-progress:${progress}`}></span>` : nothing}</span>`
           : page;
     const cls = `lab-pagination-control ${kind === 'page' ? 'lab-pagination-item' : `lab-pagination-trigger lab-pagination-${kind}`}`;
-    const tab = disabled || (compact && !current) ? -1 : 0;
+    const tab = disabled || (compact && !this.href && !current) ? -1 : 0;
     return this.href
       ? html`<a class=${cls} href=${href ?? nothing} aria-label=${label} aria-current=${current ? 'page' : nothing}
           aria-disabled=${disabled ? 'true' : nothing} tabindex=${tab} data-page=${kind === 'page' ? page : nothing}

@@ -125,6 +125,7 @@ export function Pagination({
     if (
       event.defaultPrevented ||
       !compact ||
+      href ||
       disabled ||
       event.altKey ||
       event.ctrlKey ||
@@ -159,7 +160,7 @@ export function Pagination({
       'data-page': kind === 'page' ? value : undefined,
       'data-receding': receding ? '' : undefined,
       'data-progress': ratio !== undefined ? '' : undefined,
-      tabIndex: unavailable || (compact && !current) ? -1 : 0,
+      tabIndex: unavailable || (compact && !href && !current) ? -1 : 0,
       onClick: (event: MouseEvent) => request(event, value, unavailable),
     };
     const content =

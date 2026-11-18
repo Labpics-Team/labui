@@ -85,9 +85,9 @@ function emitConstants(prefix, definition) {
       continue;
     if (
       name === 'data' &&
-      (prefix.startsWith('ChipClose') ||
-        prefix.startsWith('BreadcrumbGlyphs') ||
-        prefix.startsWith('PaginationGlyphs'))
+      typeof definition.viewBox === 'number' &&
+      typeof definition.x === 'number' &&
+      typeof definition.y === 'number'
     )
       lines.push(...authoredPath(prefix, value));
     else if (typeof value === 'number')

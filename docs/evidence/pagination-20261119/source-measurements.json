@@ -1,0 +1,589 @@
+{
+  "source": "Lab UI v2.1 / Pagination",
+  "capturedAt": "2026-11-19",
+  "root": {
+    "name": "Pagination",
+    "gap": 8
+  },
+  "pageButtons": [
+    {
+      "name": "State=Active",
+      "size": {
+        "x": 40,
+        "y": 40
+      },
+      "radius": 12,
+      "padding": 12,
+      "gap": 8,
+      "children": [
+        {
+          "name": "1",
+          "size": {
+            "x": 16,
+            "y": 16
+          },
+          "font": {
+            "fontFamily": "Geist",
+            "fontPostScriptName": "Geist-Medium",
+            "fontStyle": "Medium",
+            "fontWeight": 500,
+            "paragraphSpacing": 12,
+            "fontSize": 16,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "letterSpacing": 0,
+            "lineHeightPx": 24,
+            "lineHeightPercent": 115.38461303710938,
+            "lineHeightPercentFontSize": 150,
+            "lineHeightUnit": "PIXELS"
+          }
+        }
+      ],
+      "horizontalSizing": "HUG"
+    },
+    {
+      "name": "State=Default",
+      "size": {
+        "x": 40,
+        "y": 40
+      },
+      "radius": 12,
+      "padding": 12,
+      "gap": 8,
+      "children": [
+        {
+          "name": "1",
+          "size": {
+            "x": 16,
+            "y": 16
+          },
+          "font": {
+            "fontFamily": "Geist",
+            "fontPostScriptName": "Geist-Medium",
+            "fontStyle": "Medium",
+            "fontWeight": 500,
+            "paragraphSpacing": 12,
+            "fontSize": 16,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "letterSpacing": 0,
+            "lineHeightPx": 24,
+            "lineHeightPercent": 115.38461303710938,
+            "lineHeightPercentFontSize": 150,
+            "lineHeightUnit": "PIXELS"
+          }
+        }
+      ],
+      "horizontalSizing": "HUG"
+    },
+    {
+      "name": "State=Hover",
+      "size": {
+        "x": 40,
+        "y": 40
+      },
+      "radius": 12,
+      "padding": 12,
+      "gap": 8,
+      "children": [
+        {
+          "name": "1",
+          "size": {
+            "x": 16,
+            "y": 16
+          },
+          "font": {
+            "fontFamily": "Geist",
+            "fontPostScriptName": "Geist-Medium",
+            "fontStyle": "Medium",
+            "fontWeight": 500,
+            "paragraphSpacing": 12,
+            "fontSize": 16,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "letterSpacing": 0,
+            "lineHeightPx": 24,
+            "lineHeightPercent": 115.38461303710938,
+            "lineHeightPercentFontSize": 150,
+            "lineHeightUnit": "PIXELS"
+          }
+        }
+      ],
+      "horizontalSizing": "HUG"
+    },
+    {
+      "name": "State=Unknown",
+      "size": {
+        "x": 40,
+        "y": 40
+      },
+      "radius": 12,
+      "padding": 12,
+      "gap": 2,
+      "children": [
+        {
+          "name": "Ellipsis",
+          "size": {
+            "x": 16,
+            "y": 16
+          },
+          "gap": 2,
+          "children": [
+            {
+              "name": "Ellipse",
+              "size": {
+                "x": 3,
+                "y": 3
+              }
+            },
+            {
+              "name": "Ellipse",
+              "size": {
+                "x": 3,
+                "y": 3
+              }
+            },
+            {
+              "name": "Ellipse",
+              "size": {
+                "x": 3,
+                "y": 3
+              }
+            }
+          ]
+        }
+      ],
+      "horizontalSizing": "HUG"
+    }
+  ],
+  "compact": [
+    {
+      "name": "Selected=1, Count=2, Ambient=False, Time-based=False",
+      "size": {
+        "x": 40,
+        "y": 24
+      },
+      "radius": 9999,
+      "padding": 8,
+      "gap": 8,
+      "children": [
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          }
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.07999999821186066
+        }
+      ]
+    },
+    {
+      "name": "Selected=1, Count=2, Ambient=False, Time-based=True",
+      "size": {
+        "x": 52,
+        "y": 24
+      },
+      "radius": 9999,
+      "padding": 8,
+      "gap": 8,
+      "children": [
+        {
+          "name": "Track",
+          "size": {
+            "x": 20,
+            "y": 8
+          },
+          "children": [
+            {
+              "name": "Track",
+              "size": {
+                "x": 20,
+                "y": 8
+              },
+              "radius": 8,
+              "opacity": 0.07999999821186066
+            },
+            {
+              "name": "Active track",
+              "size": {
+                "x": 12,
+                "y": 8
+              },
+              "radius": 8
+            }
+          ]
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.07999999821186066
+        }
+      ]
+    },
+    {
+      "name": "Selected=1, Count=2, Ambient=True, Time-based=False",
+      "size": {
+        "x": 40,
+        "y": 24
+      },
+      "radius": 9999,
+      "padding": 8,
+      "gap": 8,
+      "children": [
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          }
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.23999999463558197
+        }
+      ]
+    },
+    {
+      "name": "Selected=1, Count=2, Ambient=True, Time-based=True",
+      "size": {
+        "x": 52,
+        "y": 24
+      },
+      "radius": 9999,
+      "padding": 8,
+      "gap": 8,
+      "children": [
+        {
+          "name": "Track",
+          "size": {
+            "x": 20,
+            "y": 8
+          },
+          "children": [
+            {
+              "name": "Track",
+              "size": {
+                "x": 20,
+                "y": 8
+              },
+              "radius": 8,
+              "opacity": 0.23999999463558197
+            },
+            {
+              "name": "Active track",
+              "size": {
+                "x": 12,
+                "y": 8
+              },
+              "radius": 8
+            }
+          ]
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.23999999463558197
+        }
+      ]
+    },
+    {
+      "name": "Selected=5, Count=6+, Ambient=False, Time-based=False",
+      "size": {
+        "x": 88,
+        "y": 24
+      },
+      "radius": 9999,
+      "padding": 8,
+      "gap": 8,
+      "children": [
+        {
+          "name": "Dot Container",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "padding": 1,
+          "children": [
+            {
+              "name": "Dot",
+              "size": {
+                "x": 6,
+                "y": 6
+              },
+              "opacity": 0.07999999821186066
+            }
+          ]
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.07999999821186066
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.07999999821186066
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.07999999821186066
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          }
+        }
+      ]
+    },
+    {
+      "name": "Selected=5, Count=6+, Ambient=True, Time-based=False",
+      "size": {
+        "x": 88,
+        "y": 24
+      },
+      "radius": 9999,
+      "padding": 8,
+      "gap": 8,
+      "children": [
+        {
+          "name": "Dot Container",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "padding": 1,
+          "children": [
+            {
+              "name": "Dot",
+              "size": {
+                "x": 6,
+                "y": 6
+              },
+              "opacity": 0.23999999463558197
+            }
+          ]
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.23999999463558197
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.23999999463558197
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.23999999463558197
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          }
+        }
+      ]
+    },
+    {
+      "name": "Selected=5, Count=6+, Ambient=False, Time-based=True",
+      "size": {
+        "x": 100,
+        "y": 24
+      },
+      "radius": 9999,
+      "padding": 8,
+      "gap": 8,
+      "children": [
+        {
+          "name": "Dot Container",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "padding": 1,
+          "children": [
+            {
+              "name": "Dot",
+              "size": {
+                "x": 6,
+                "y": 6
+              },
+              "opacity": 0.07999999821186066
+            }
+          ]
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.07999999821186066
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.07999999821186066
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.07999999821186066
+        },
+        {
+          "name": "Track",
+          "size": {
+            "x": 20,
+            "y": 8
+          },
+          "children": [
+            {
+              "name": "Track",
+              "size": {
+                "x": 20,
+                "y": 8
+              },
+              "radius": 8,
+              "opacity": 0.07999999821186066
+            },
+            {
+              "name": "Active track",
+              "size": {
+                "x": 12,
+                "y": 8
+              },
+              "radius": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Selected=5, Count=6+, Ambient=True, Time-based=True",
+      "size": {
+        "x": 100,
+        "y": 24
+      },
+      "radius": 9999,
+      "padding": 8,
+      "gap": 8,
+      "children": [
+        {
+          "name": "Dot Container",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "padding": 1,
+          "children": [
+            {
+              "name": "Dot",
+              "size": {
+                "x": 6,
+                "y": 6
+              },
+              "opacity": 0.23999999463558197
+            }
+          ]
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.23999999463558197
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.23999999463558197
+        },
+        {
+          "name": "Dot",
+          "size": {
+            "x": 8,
+            "y": 8
+          },
+          "opacity": 0.23999999463558197
+        },
+        {
+          "name": "Track",
+          "size": {
+            "x": 20,
+            "y": 8
+          },
+          "children": [
+            {
+              "name": "Track",
+              "size": {
+                "x": 20,
+                "y": 8
+              },
+              "radius": 8,
+              "opacity": 0.23999999463558197
+            },
+            {
+              "name": "Active track",
+              "size": {
+                "x": 12,
+                "y": 8
+              },
+              "radius": 8
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

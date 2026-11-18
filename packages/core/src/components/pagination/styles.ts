@@ -6,7 +6,7 @@ const glyph = p.glyphs.chevron;
 const chevron = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${glyph.viewBox} ${glyph.viewBox}'><path transform='translate(${glyph.x} ${glyph.y})' d='${glyph.data}'/></svg>`)}")`;
 const stackCss = `
 [data-lab-pagination] { isolation: isolate; }
-.lab-pagination-surface { z-index: -1; }
+[data-lab-pagination] > .lab-pagination-surface { z-index: -1; }
 `;
 const forcedColorsCss = `
 @media (forced-colors: active) {
@@ -53,7 +53,7 @@ export const paginationCss = `
 [data-lab-pagination][data-variant='compact'] .lab-pagination-control {
   min-inline-size: 0; min-block-size: ${rem(p.compact.height)}; padding: ${rem(p.compact.padding)} ${rem(p.compact.gap / 2)}; border: 0; border-radius: var(--_pg-pill); background: transparent;
 }
-.lab-pagination-surface { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+[data-lab-pagination] > .lab-pagination-surface { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
 .lab-pagination-dot { display: block; position: relative; flex: none; inline-size: var(--_pg-dot); block-size: ${rem(p.compact.dot)}; border-radius: var(--_pg-pill); background: currentColor; opacity: var(--_pg-opacity); overflow: hidden; }
 .lab-pagination-control[data-receding] .lab-pagination-dot { transform: scale(${p.compact.recedingDot / p.compact.dot}); }
 .lab-pagination-control[aria-current] .lab-pagination-dot { opacity: 1; }

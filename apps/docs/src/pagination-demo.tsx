@@ -1,10 +1,16 @@
 import '@labpics/ui-core/pagination';
+import type { LabPagination } from '@labpics/ui-core/pagination';
 import { Pagination } from '@labpics/ui-react/pagination';
 import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { wireThemeSwitch } from './theme-switch.js';
 
 wireThemeSwitch();
+function required<T extends Element = HTMLElement>(selector: string): T {
+  const element = document.querySelector<T>(selector);
+  if (!element) throw new Error(`Missing ${selector}`);
+  return element;
+}
 const records = Array.from(
   { length: 60 },
   (_, index) => `Study ${String(index + 1).padStart(2, '0')}`,
@@ -31,7 +37,7 @@ function Example() {
         count={200}
         page={3}
         onPageChange={(next) => {
-          document.querySelector('#refused')!.textContent = String(next);
+          required('#refused').textContent = String(next);
         }}
       />
       <h3>Compact</h3>
@@ -59,8 +65,8 @@ function Example() {
     </>
   );
 }
-const host = document.querySelector('lab-pagination[data-testid="lit-pagination"]')!;
-const output = document.querySelector('#lit-records')!;
+const host = required<LabPagination>('lab-pagination[data-testid="lit-pagination"]');
+const output = required('#lit-records');
 const show = (page: number) => {
   output.textContent = records.slice((page - 1) * 3, page * 3).join(' · ');
 };
@@ -70,9 +76,9 @@ host.addEventListener('page-change', (event) => {
   show(value);
 });
 show(3);
-const compact = document.querySelector('lab-pagination[data-testid="lit-compact"]')!;
+const compact = required('lab-pagination[data-testid="lit-compact"]');
 compact.addEventListener('page-change', (event) => {
-  document.querySelector('#lit-slide')!.textContent =
+  required('#lit-slide').textContent =
     `Frame ${(event as CustomEvent<{ page: number }>).detail.page}`;
 });
 const mount = document.querySelector('#react-root');

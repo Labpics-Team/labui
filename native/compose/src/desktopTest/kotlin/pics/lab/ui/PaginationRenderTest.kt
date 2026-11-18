@@ -2,6 +2,8 @@ package pics.lab.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
@@ -12,6 +14,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.SemanticsActions
@@ -89,6 +95,86 @@ class PaginationRenderTest {
                 assertTrue(next().config.contains(SemanticsProperties.Disabled))
                 total = 0; settle(scene, ready)
                 assertTrue(next().config.contains(SemanticsProperties.Disabled))
+            } finally { scene.close() }
+        }
+    }
+
+    @Test fun compactAndAmbientUseTheAuthoredDotAndTrackWidths() {
+        val output = File("build/pagination-render").apply { mkdirs() }
+        for (appearance in LabAppearance.entries) for (scale in listOf(1f, 2f)) {
+            val ready = AtomicBoolean(false)
+            val theme = LabThemeState(initialLabColors(LabPreferences(appearance = appearance)))
+            val scene = ImageComposeScene(360, 240, Density(1f, scale)) {
+                val font = labFontFamily(); val resolver = LocalFontFamilyResolver.current
+                LaunchedEffect(font) { resolver.preload(font); ready.set(true) }
+                LabTheme(theme, font) {
+                    LabScene(Modifier.fillMaxSize(), background = {
+                        Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(theme.colors["bg-grouped-primary"], theme.colors["fill-brand-tertiary"])) ))
+                    }) {
+                        Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            LabPagination(1, {}, 2, pageSize = 1, variant = LabPaginationVariant.Compact, label = "Dots")
+                            LabPagination(1, {}, 2, pageSize = 1, variant = LabPaginationVariant.Compact, ambient = true, label = "Ambient")
+                            LabPagination(1, {}, 2, pageSize = 1, variant = LabPaginationVariant.Compact, ambient = true, progress = .6f, label = "Media")
+                        }
+                    }
+                }
+            }
+            try {
+                File(output, "compact-${appearance.name.lowercase()}-${(scale * 100).toInt()}.png").writeBytes(settle(scene, ready))
+                for ((name, width) in listOf("Dots" to 40, "Ambient" to 40, "Media" to 52)) {
+                    val node = nodes(scene).single { it.config.getOrNull(SemanticsProperties.ContentDescription)?.contains(name) == true }
+                    assertEquals(width * scale, node.boundsInRoot.width)
+                    assertEquals(24 * scale, node.boundsInRoot.height)
+                }
+            } finally { scene.close() }
+        }
+    }
+
+    @OptIn(androidx.compose.ui.InternalComposeUiApi::class)
+    @Test fun compactKeyboardKeepsOneTabStopAndCannotOverflowPageBounds() {
+        for (direction in LayoutDirection.entries) {
+            val ready = AtomicBoolean(false)
+            val theme = LabThemeState(initialLabColors(LabPreferences()))
+            var page by mutableStateOf(3)
+            var accept by mutableStateOf(false)
+            val requests = mutableListOf<Int>()
+            val scene = ImageComposeScene(360, 160) {
+                val font = labFontFamily(); val resolver = LocalFontFamilyResolver.current
+                LaunchedEffect(font) { resolver.preload(font); ready.set(true) }
+                LabTheme(theme, font) {
+                    CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                        Column {
+                            LabPagination(page, { requests += it; if (accept) page = it }, Int.MAX_VALUE,
+                                pageSize = 1, variant = LabPaginationVariant.Compact)
+                            LabButton("Outside", {})
+                        }
+                    }
+                }
+            }
+            fun current() = nodes(scene).single { it.config.getOrNull(SemanticsProperties.Selected) == true }
+            fun press(key: Key) {
+                scene.sendKeyEvent(KeyEvent(key, KeyEventType.KeyDown))
+                scene.sendKeyEvent(KeyEvent(key, KeyEventType.KeyUp))
+                settle(scene, ready)
+            }
+            try {
+                settle(scene, ready)
+                current().config[SemanticsActions.RequestFocus].action!!.invoke(); settle(scene, ready)
+                val forward = if (direction == LayoutDirection.Rtl) Key.DirectionLeft else Key.DirectionRight
+                press(forward)
+                assertEquals(listOf(4), requests); assertEquals(3, page)
+                assertTrue(current().config.getOrNull(SemanticsProperties.Focused) == true)
+                accept = true; settle(scene, ready)
+                press(Key.MoveEnd); assertEquals(Int.MAX_VALUE, page)
+                press(forward); assertEquals(Int.MAX_VALUE, page)
+                assertEquals(listOf(4, Int.MAX_VALUE), requests)
+                press(Key.MoveHome); assertEquals(1, page)
+                press(if (direction == LayoutDirection.Rtl) Key.DirectionRight else Key.DirectionLeft)
+                assertEquals(1, page)
+                press(Key.Tab)
+                assertTrue(nodes(scene).single { it.config.getOrNull(SemanticsProperties.Focused) == true }
+                    .config.getOrNull(SemanticsProperties.Text)?.any { it.text == "Outside" } == true,
+                    "Tab must leave Compact instead of visiting inactive dots")
             } finally { scene.close() }
         }
     }

@@ -97,11 +97,18 @@ test('links keep native navigation, ellipses are passive, and disabled links are
     'aria-hidden',
     'true',
   );
+  const compact = page.getByTestId('lit-compact');
+  await compact.evaluate((el) => el.setAttribute('href', '?page={page}'));
+  await compact.getByRole('link', { name: 'Page 3', exact: true }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(compact.locator('[aria-current]')).toHaveAttribute('data-page', '3');
+  await page.keyboard.press('Tab');
+  await expect(compact.getByRole('link', { name: 'Page 4', exact: true })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\?page=4$/);
 });
 
-test('authored dimensions and semantic colors match at 100 and 200 percent without overflow', async ({
-  page,
-}) => {
+test('authored control geometry scales to 200 percent without overflow', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   for (const scale of [1, 2]) {
@@ -121,4 +128,37 @@ test('authored dimensions and semantic colors match at 100 and 200 percent witho
   await page.setViewportSize({ width: 360, height: 900 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(errors).toEqual([]);
+});
+
+test('ambient material fills the compact capsule in both renderers regardless of CSS import order', async ({
+  page,
+}) => {
+  for (const scale of [1, 2]) {
+    await page.evaluate((scale) => {
+      document.documentElement.style.fontSize = `${scale * 16}px`;
+    }, scale);
+    for (const prefix of ['lit', 'react']) {
+      const surface = page.getByTestId(`${prefix}-ambient`).locator('.lab-pagination-surface');
+      await expect(surface).toHaveClass(/lab-material/);
+      const geometry = await surface.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const parent = element.parentElement?.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return {
+          position: style.position,
+          width: rect.width,
+          height: rect.height,
+          parentWidth: parent?.width,
+          parentHeight: parent?.height,
+        };
+      });
+      expect(geometry).toEqual({
+        position: 'absolute',
+        width: 100 * scale,
+        height: 24 * scale,
+        parentWidth: 100 * scale,
+        parentHeight: 24 * scale,
+      });
+    }
+  }
 });

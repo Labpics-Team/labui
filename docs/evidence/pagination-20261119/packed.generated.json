@@ -1,0 +1,84 @@
+{
+  "archives": [
+    {
+      "name": "@labpics/ui-tokens",
+      "sha256": "b00e15b11fbadcf84bfd4ecee6af8d8205478f55297118a6e5e9fe7d0ef0d4e2"
+    },
+    {
+      "name": "@labpics/ui-shadow",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "@labpics/ui-materials",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "@labpics/fonts",
+      "sha256": "d88c7478b94becc1ddbf77f92c4af2fb00ec882cb456847a38c2ee3bd6b35fd9"
+    },
+    {
+      "name": "@labui/colors",
+      "sha256": "2dfc01336750f554b4a4e46155bb10caaf3c804df98ec237008961fee268decb"
+    },
+    {
+      "name": "@labpics/ui-core",
+      "sha256": "98fa8c4709633e714844193066ede4ec866c5f46516e61d04b61fe1c654d27b3"
+    },
+    {
+      "name": "@labpics/ui-react",
+      "sha256": "a62fce56a4405597337851e327bb281c30bf23e35f074573fa6de8b36563c062"
+    },
+    {
+      "name": "@labpics/ui-vue",
+      "sha256": "909f5066d057558553d94796b8ca123935a9672d9e16b2982efcf47a551313f6"
+    },
+    {
+      "name": "@labpics/ui-solid",
+      "sha256": "2ce9da2aacb98ba49b243ac2a7b24e636923ed432ef4c703641777e85f6f17dd"
+    },
+    {
+      "name": "@labpics/ui-svelte",
+      "sha256": "31148037ce5845c523dd5d1b0769594862478863366c223a52be0b8304d198e4"
+    },
+    {
+      "name": "@labpics/ui-astro",
+      "sha256": "abea2b7844efc2b948277d0d8005f3ae9a6daba18bcc6d161898670f604ebfbf"
+    }
+  ],
+  "records": [
+    {
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "renderers": [
+        "vue",
+        "solid",
+        "svelte",
+        "astro",
+        "react"
+      ],
+      "styledSSR": true,
+      "retainedServerNodes": true,
+      "controlledRefusal": true,
+      "dataChanged": true,
+      "loadedGeist": true,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "browser": "26.0",
+      "renderers": [
+        "vue",
+        "solid",
+        "svelte",
+        "astro",
+        "react"
+      ],
+      "styledSSR": true,
+      "retainedServerNodes": true,
+      "controlledRefusal": true,
+      "dataChanged": true,
+      "loadedGeist": true,
+      "errors": []
+    }
+  ]
+}

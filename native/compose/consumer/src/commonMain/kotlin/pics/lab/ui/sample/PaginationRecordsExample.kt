@@ -9,17 +9,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.TextStyle
 import pics.lab.ui.LabPagination
-import pics.lab.ui.LabType
+import pics.lab.ui.labFontFamily
 
 /** A Maven consumer: the selected page changes the records actually shown. */
 @Composable
 fun PaginationRecordsExample() {
     val records = remember { List(24) { "Исследование ${it + 1}" } }
     var page by remember { mutableStateOf(1) }
+    val body = TextStyle(fontFamily = labFontFamily(), fontSize = 16.sp, lineHeight = 24.sp)
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        BasicText("Исследования", style = LabType.body())
-        records.drop((page - 1) * 3).take(3).forEach { BasicText(it, style = LabType.body()) }
+        BasicText("Исследования", style = body)
+        records.drop((page - 1) * 3).take(3).forEach { BasicText(it, style = body) }
         LabPagination(page, { page = it }, records.size, pageSize = 3, label = "Страницы исследований",
             previousLabel = "Предыдущая страница", nextLabel = "Следующая страница", pageLabel = { "Страница $it" })
     }
