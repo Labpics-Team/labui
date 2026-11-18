@@ -6,8 +6,9 @@ on:
     paths: &consumer-paths
       - '.github/workflows/icons-consumer.yml'
       - '.github/scripts/browser-check.sh'
-      - 'apps/docs/tests/icons-*'
-      - 'apps/docs/tests/prepare-icons-inputs*.mjs'
+      - 'apps/docs/tests/**/icons-*'
+      - 'apps/docs/tests/**/prepare-icons-inputs*.mjs'
+      - 'apps/docs/tests/run-node-tests.mjs'
       - 'packages/core/**'
       - 'packages/shadow/**'
       - 'apps/docs/package.json'
@@ -65,7 +66,7 @@ jobs:
 
       - name: Проверить независимый oracle и владение browser lifecycle
         shell: bash
-        run: node --test ui/apps/docs/tests/prepare-icons-inputs.test.mjs ui/apps/docs/tests/icons-public-provenance.test.mjs ui/apps/docs/tests/icons-public-terminal.test.mjs ui/apps/docs/tests/icons-public-entrypoints.test.mjs ui/apps/docs/tests/icons-state-continuity.test.mjs ui/apps/docs/tests/icons-git-diagnostics.test.mjs
+        run: node ui/apps/docs/tests/run-node-tests.mjs icons
 
       - name: Проверить установленный Lab UI в штатном browser runtime
         id: browser
