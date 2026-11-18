@@ -122,6 +122,10 @@
   --lab-size-sheet-drag-height: 0.25rem;
   --lab-radius-sheet-drag: 0.25rem;
   --lab-space-sheet-drag-top: 0.875rem;
+  --lab-space-sheet-drag-center-offset: 0.0313rem;
+  --lab-size-sheet-body-full: 48.5rem;
+  --lab-size-sheet-body-two-thirds: 33.75rem;
+  --lab-size-sheet-body-one-third: 16.875rem;
   --lab-radius-snackbar: 624.9375rem;
   --lab-space-snackbar-start: 0.75rem;
   --lab-space-snackbar-end: 0.5rem;

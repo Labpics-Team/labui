@@ -118,6 +118,9 @@ export function buildComponentTokens(): ResolvedToken[] {
   dimension('size', 'sheet-drag-height', profile.sheet.drag.height);
   dimension('radius', 'sheet-drag', profile.sheet.drag.radius);
   dimension('space', 'sheet-drag-top', profile.sheet.drag.top);
+  dimension('space', 'sheet-drag-center-offset', profile.sheet.drag.centerOffset);
+  for (const [position, height] of Object.entries(profile.sheet.bodyHeights))
+    dimension('size', `sheet-body-${position}`, height);
   const snackbar = profile.snackbar;
   dimension('radius', 'snackbar', snackbar.radius);
   dimension('space', 'snackbar-start', snackbar.paddingStart);

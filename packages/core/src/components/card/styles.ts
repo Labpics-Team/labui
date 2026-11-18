@@ -20,7 +20,7 @@ lab-card:has(> [slot="media"]) { --_card-slotted-top-radius: 0px; }
 [data-lab-card][data-padding="none"] { --_card-padding: 0px; }
 [data-lab-card][data-padding="s"] { --_card-padding: var(--lab-space-sm); }
 [data-lab-card][data-padding="m"] { --_card-padding: var(--lab-space-md); }
-.lab-card-image {
+[data-lab-card] > .lab-card-image {
   position: absolute;
   inset: var(--lab-contour-inset, 0px);
   border-radius: inherit;

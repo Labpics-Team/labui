@@ -660,6 +660,18 @@
         }
       }
     },
+    "sheet-drag-center-offset": {
+      "$type": "dimension",
+      "$value": {
+        "value": 0.5,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.0313rem"
+        }
+      }
+    },
     "snackbar-start": {
       "$type": "dimension",
       "$value": {
@@ -1379,6 +1391,42 @@
       "$extensions": {
         "com.labpics.ui-tokens": {
           "css": "0.25rem"
+        }
+      }
+    },
+    "sheet-body-full": {
+      "$type": "dimension",
+      "$value": {
+        "value": 776,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "48.5rem"
+        }
+      }
+    },
+    "sheet-body-two-thirds": {
+      "$type": "dimension",
+      "$value": {
+        "value": 540,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "33.75rem"
+        }
+      }
+    },
+    "sheet-body-one-third": {
+      "$type": "dimension",
+      "$value": {
+        "value": 270,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "16.875rem"
         }
       }
     },

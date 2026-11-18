@@ -53,6 +53,7 @@ export const inputCss = String.raw`
 }
 [data-lab-input] .lab-input-frame {
   position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
   min-width: 0;
@@ -61,7 +62,7 @@ export const inputCss = String.raw`
   color: var(--lab-label-primary);
   background: transparent;
 }
-[data-lab-input] .lab-field-label {
+[data-lab-input] .lab-input-frame > .lab-field-label {
   position: absolute;
   inset-block-start: calc(-1 * var(--lab-space-input-label-overhang));
   inset-inline-start: var(--_input-start);

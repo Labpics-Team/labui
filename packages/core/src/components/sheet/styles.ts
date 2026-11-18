@@ -2,8 +2,9 @@
 export const sheetCss = String.raw`
 /* Геометрия Core Sheet; native DOM сохраняет те же semantic paints и материалы. */
 .lab-sheet-positioner {
-  --_sheet-inset: var(--lab-space-sheet-inset, 1rem);
-  --_sheet-gap: var(--lab-space-sheet-gap, 1.5rem);
+  --_sheet-inset: var(--lab-space-sheet-x, 1rem);
+  --_sheet-bottom: var(--lab-space-sheet-bottom, 1rem);
+  --_sheet-gap: var(--lab-space-sheet-content-gap, 1.5rem);
   --_sheet-overlap: var(--lab-sheet-ghost-overlap);
   color: var(--lab-label-primary);
   position: fixed;
@@ -46,7 +47,7 @@ export const sheetCss = String.raw`
   height: max(0px, calc(100% - var(--_sheet-top)));
   min-width: 0;
   min-height: 0;
-  border-radius: var(--lab-radius-sheet, 2rem) var(--lab-radius-sheet, 2rem) 0 0;
+  border-radius: var(--lab-radius-sheet-top, 2rem) var(--lab-radius-sheet-top, 2rem) 0 0;
   /* biome-ignore lint/correctness/noUnknownProperty lint/correctness/noUnknownFunction: CSS Borders 4 сохраняет контур Core Sheet; Biome 1.9.4 старше свойства. */
   corner-shape: superellipse(var(--lab-radius-corner-k, 1.1));
   color: var(--lab-label-primary);
@@ -68,7 +69,7 @@ export const sheetCss = String.raw`
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  padding: 0 var(--_sheet-inset) var(--_sheet-inset);
+  padding: 0 var(--_sheet-inset) var(--_sheet-bottom);
   border-radius: inherit;
   /* biome-ignore lint/correctness/noUnknownProperty: CSS Borders 4; поверхность наследует контур Core Sheet. */
   corner-shape: inherit;
@@ -102,11 +103,11 @@ export const sheetCss = String.raw`
 }
 .lab-sheet-indicator {
   position: absolute;
-  top: var(--lab-size-sheet-indicator-y, 0.875rem);
+  top: var(--lab-space-sheet-drag-top, 0.875rem);
   left: 50%;
-  width: var(--lab-size-sheet-indicator-w, 2.25rem);
-  height: var(--lab-size-sheet-indicator-h, 0.25rem);
-  transform: translateX(calc(-50% + var(--lab-size-sheet-indicator-x, 0.0313rem)));
+  width: var(--lab-size-sheet-drag-width, 2.25rem);
+  height: var(--lab-size-sheet-drag-height, 0.25rem);
+  transform: translateX(calc(-50% + var(--lab-space-sheet-drag-center-offset, 0.03125rem)));
   border-radius: var(--lab-radius-pill, 9999px);
   background: var(--lab-label-tertiary);
   pointer-events: none;
@@ -123,7 +124,7 @@ export const sheetCss = String.raw`
       var(--_sheet-visible-height) -
       var(--lab-size-sheet-drag-area, 1.5rem) -
       var(--_sheet-panel-gap, 0px) -
-      var(--_sheet-inset)
+      var(--_sheet-bottom)
     )
   );
   overflow: auto;

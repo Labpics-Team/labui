@@ -187,12 +187,14 @@
     "paddingX": 16,
     "paddingBottom": 16,
     "contentGap": 24,
+    "bodyHeights": { "full": 776, "two-thirds": 540, "one-third": 270 },
     "drag": {
       "areaHeight": 24,
       "width": 36,
       "height": 4,
       "radius": 4,
-      "top": 14
+      "top": 14,
+      "centerOffset": 0.5
     }
   },
   "snackbar": {
