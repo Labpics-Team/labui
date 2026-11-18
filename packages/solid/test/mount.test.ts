@@ -29,6 +29,29 @@ afterEach(() => {
 });
 
 describe('Solid mount (проброс на <lab-*>)', () => {
+  it.each([false, true])(
+    'withdrawing a boolean is independent of an intervening Lit update (%s)',
+    async (interveningUpdate) => {
+      const [disabled, setDisabled] = createSignal<boolean | undefined>();
+      const host = mount(() =>
+        createComponent(Button, {
+          get disabled() {
+            return disabled();
+          },
+          children: 'Save',
+        }),
+      );
+      const el = host.querySelector('lab-button');
+      await el?.updateComplete;
+      setDisabled(true);
+      if (interveningUpdate) await el?.updateComplete;
+      setDisabled(undefined);
+      await el?.updateComplete;
+      expect(el?.disabled).toBe(false);
+      expect(el?.hasAttribute('disabled')).toBe(false);
+      expect(el?.shadowRoot?.querySelector('button')?.disabled).toBe(false);
+    },
+  );
   it('withdrawing defaulted Chip attributes restores its defaults and preserves explicit empty values', async () => {
     const [size, setSize] = createSignal<LabChip['size'] | undefined>('s');
     const [mode, setMode] = createSignal<LabChip['mode'] | undefined>('action');

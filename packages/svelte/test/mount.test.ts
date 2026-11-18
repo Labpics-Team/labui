@@ -20,6 +20,26 @@ afterEach(() => {
 });
 
 describe('Svelte mount (проброс на <lab-*>)', () => {
+  it.each([false, true])(
+    'withdrawing a boolean is independent of an intervening Lit update (%s)',
+    async (interveningUpdate) => {
+      host = document.createElement('div');
+      document.body.appendChild(host);
+      const component = mount(Harness, { target: host, props: {} });
+      instance = component;
+      flushSync();
+      const el = host.querySelector('lab-button');
+      await el?.updateComplete;
+      component.setDisabled(true);
+      flushSync();
+      if (interveningUpdate) await el?.updateComplete;
+      component.setDisabled(undefined);
+      flushSync();
+      await el?.updateComplete;
+      expect(el?.disabled).toBe(false);
+      expect(el?.hasAttribute('disabled')).toBe(false);
+    },
+  );
   it('withdrawing defaulted Chip attributes restores its defaults and preserves explicit empty values', async () => {
     host = document.createElement('div');
     document.body.append(host);

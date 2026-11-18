@@ -34,7 +34,10 @@ export function forwardDeclared(
       if (value !== undefined) (element as unknown as Record<string, unknown>)[spec.name] = value;
     } else if (spec.kind === 'boolean') {
       if (value === undefined) element.removeAttribute(spec.attr);
-      else Reflect.set(element, spec.name, value);
+      // Reflection is asynchronous: removing an as-yet absent attribute cannot
+      // cancel a true property set earlier in the same update. Withdraw a flag
+      // through its property too; initial/repeated omission is skipped above.
+      Reflect.set(element, spec.name, value === undefined ? false : value);
     } else if (value === undefined || value === null) {
       element.removeAttribute(spec.attr);
     } else {
