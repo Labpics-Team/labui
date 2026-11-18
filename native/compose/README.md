@@ -108,6 +108,33 @@ Reduced motion и неактивный lifecycle останавливают ож
 Источник, CPU PNG и сравнение находятся в
 [evidence/progress-20261118](evidence/progress-20261118/README.md).
 
+## Tabs
+
+`LabTabs` переносит Tinted и Underlined из общего профиля Figma. `value` строго
+управляется приложением; отказ `onValueChange` сохраняет выбранную панель,
+пока фокус перемещается стрелками. `automatic = false` оставляет выбор Enter/Space.
+Панели сохраняют обычный `remember`, а скрытая панель исключается из фокуса
+и accessibility tree. Значения вкладок должны быть уникальными.
+
+```kotlin
+LabTabs(value = section, onValueChange = { section = it }, items = listOf(
+    LabTabItem("project", "Проект"),
+    LabTabItem("notes", "Заметки"),
+), variant = LabTabsVariant.Tinted) { value ->
+    val editor = remember { TextFieldState() }
+    LabInput(editor, if (value == "project") "План проекта" else "Заметки", singleLine = false)
+}
+```
+
+`orientation` задаёт Horizontal/Vertical; `edge` — Start/End линии Underlined,
+где Start/End у Vertical зеркалятся в RTL. Icon/iconEnd получают цвет и размер,
+а icon-only сохраняет доступное имя из `label`. При 200% горизонтальный список
+прокручивается к фокусу; вертикальный становится над панелью, если рядом
+недостаточно места. Панель и её фокус при этом не пересоздаются.
+
+[Источник, CPU PNG и проверка установленного consumer](evidence/tabs-20261118/README.md)
+покрывают обе темы, 100/125/200%, Solid/Acrylic/Glass и общий Lab Motion.
+
 ## Switch
 
 `LabSwitch` читает единственный общий профиль `packages/tokens/src/components.json`:

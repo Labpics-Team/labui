@@ -9,6 +9,7 @@ internal data class LabKbdMetrics(val height: Float, val radius: Float, val padd
 internal data class LabLoaderMetrics(val diameter: Float)
 internal data class LabProgressMetrics(val thickness: Float, val circularDiameter: Float, val circularStroke: Float)
 internal data class LabChipMetrics(val height: Float, val radius: Float, val paddingX: Float, val paddingY: Float, val gap: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float, val leadingSize: Float, val closeSize: Float, val baseline: Float)
+internal data class LabTabsMetrics(val height: Float, val radius: Float, val padding: Float, val gap: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float, val iconSize: Float, val iconOnlySize: Float, val baseline: Float)
 
 public enum class LabBadgeColor(internal val role: String) { Neutral("neutral"), Gray("gray"), Blue("blue"), Red("red"), Orange("orange"), Green("green"), Yellow("yellow"), Teal("teal"), Mint("mint"), Indigo("indigo"), Purple("purple"), Pink("pink"), StaticDark("static-dark"), StaticLight("static-light"), Brand("brand") }
 
@@ -361,4 +362,24 @@ internal object LabComponents {
         lineTo(11.064403533935547f, 0.26360249519348145f)
         close()
     } }
+    val TabsS = LabTabsMetrics(36f, 10f, 8f, 6f, 14f, 20f, 500f, 0f, 16f, 20f, 15f)
+    val TabsM = LabTabsMetrics(48f, 12f, 12f, 8f, 16f, 24f, 500f, 0f, 20f, 24f, 18f)
+    val TabsL = LabTabsMetrics(56f, 12f, 16f, 8f, 16f, 24f, 500f, 0f, 20f, 24f, 18f)
+    const val TabsListRadius = 16f
+    const val TabsListPadding = 4f
+    const val TabsListFourHorizontalPadding = 2f
+    const val TabsListSeparatorInset = 8f
+    const val TabsStrokeWidth = 1f
+    val TabsActiveShadow get() = LabShadows.xs
+    const val TabsRolesLabel = "label-primary"
+    const val TabsRolesInactiveLabel = "label-secondary"
+    const val TabsRolesDisabledLabel = "label-quaternary"
+    const val TabsRolesTrack = "fill-quaternary"
+    const val TabsRolesHover = "fill-quaternary"
+    const val TabsRolesActiveFill = "control-bg"
+    const val TabsRolesBorder = "border-base"
+    const val TabsRolesIndicator = "border-strong"
+    const val TabsFocusWidth = 2f
+    const val TabsFocusOffset = 2f
+    const val TabsUnderlinedBottomIconOnlySize = 20f
 }

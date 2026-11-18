@@ -130,7 +130,9 @@
     }
   },
   "textarea": {
-    "sourceRef": { "key": "component-set/Input & Textarea/Textarea" },
+    "sourceRef": {
+      "key": "component-set/Input & Textarea/Textarea"
+    },
     "height": 112,
     "rows": 3,
     "labelFontSize": 14,
@@ -833,6 +835,77 @@
         "y": 5.7001953125,
         "data": "M 11.064403533935547 0.26360249519348145 C 11.4159035384655 -0.08744749426841736 11.985503435134888 -0.0876375138759613 12.336803436279297 0.26360249519348145 C 12.688003450632095 0.6151024997234344 12.688203424215317 1.1856723725795746 12.336803436279297 1.5370423793792725 L 7.573203086853027 6.2997026443481445 L 12.336803436279297 11.064403533935547 C 12.688003450632095 11.4159035384655 12.688203424215317 11.985503435134888 12.336803436279297 12.336803436279297 C 11.985503435134888 12.688203424215317 11.4159035384655 12.688003450632095 11.064403533935547 12.336803436279297 L 6.2997026443481445 7.573203086853027 L 1.5370423793792725 12.336803436279297 C 1.1856723725795746 12.688203424215317 0.6151024997234344 12.688003450632095 0.26360249519348145 12.336803436279297 C -0.0876375138759613 11.985503435134888 -0.08744749426841736 11.4159035384655 0.26360249519348145 11.064403533935547 L 5.0273027420043945 6.2997026443481445 L 0.26360249519348145 1.5370423793792725 C -0.08786749839782715 1.1855623722076416 -0.08786749839782715 0.61507248878479 0.26360249519348145 0.26360249519348145 C 0.61507248878479 -0.08786749839782715 1.1855623722076416 -0.08786749839782715 1.5370423793792725 0.26360249519348145 L 6.2997026443481445 5.0273027420043945 L 11.064403533935547 0.26360249519348145 Z"
       }
+    }
+  },
+  "tabs": {
+    "sourceRef": {
+      "key": "component-set/Tab/Tab / Tinted"
+    },
+    "sizes": {
+      "s": {
+        "height": 36,
+        "radius": 10,
+        "padding": 8,
+        "gap": 6,
+        "fontSize": 14,
+        "lineHeight": 20,
+        "fontWeight": 500,
+        "letterSpacing": 0,
+        "iconSize": 16,
+        "iconOnlySize": 20,
+        "baseline": 15
+      },
+      "m": {
+        "height": 48,
+        "radius": 12,
+        "padding": 12,
+        "gap": 8,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 500,
+        "letterSpacing": 0,
+        "iconSize": 20,
+        "iconOnlySize": 24,
+        "baseline": 18
+      },
+      "l": {
+        "height": 56,
+        "radius": 12,
+        "padding": 16,
+        "gap": 8,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 500,
+        "letterSpacing": 0,
+        "iconSize": 20,
+        "iconOnlySize": 24,
+        "baseline": 18
+      }
+    },
+    "list": {
+      "radius": 16,
+      "padding": 4,
+      "fourHorizontalPadding": 2,
+      "separatorInset": 8
+    },
+    "strokeWidth": 1,
+    "activeShadow": "xs",
+    "roles": {
+      "label": "label-primary",
+      "inactiveLabel": "label-secondary",
+      "disabledLabel": "label-quaternary",
+      "track": "fill-quaternary",
+      "hover": "fill-quaternary",
+      "activeFill": "control-bg",
+      "border": "border-base",
+      "indicator": "border-strong"
+    },
+    "focus": {
+      "width": 2,
+      "offset": 2
+    },
+    "underlined": {
+      "bottomIconOnlySize": 20
     }
   }
 }
