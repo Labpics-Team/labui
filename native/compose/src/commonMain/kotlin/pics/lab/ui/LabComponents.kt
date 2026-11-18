@@ -5,6 +5,8 @@ internal data class LabButtonMetrics(val height: Float, val radius: Float, val p
 internal data class LabInputMetrics(val height: Float, val radius: Float, val paddingX: Float, val paddingY: Float, val contentHeight: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float)
 internal data class LabSwitchMetrics(val trackWidth: Float, val trackHeight: Float, val controlHeight: Float, val labelGap: Float, val fontSize: Float, val lineHeight: Float, val letterSpacing: Float, val fontWeight: Float)
 internal data class LabSelectionMetrics(val controlSize: Float, val controlHeight: Float, val labelGap: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float, val checkboxRadius: Float, val glyphSize: Float, val mixedHeight: Float, val mixedY: Float, val radioStroke: Float, val radioFocusStroke: Float, val tinyDot: Float)
+internal data class LabLoaderMetrics(val diameter: Float)
+internal data class LabProgressMetrics(val thickness: Float, val circularDiameter: Float, val circularStroke: Float)
 
 public enum class LabBadgeColor(internal val role: String) { Neutral("neutral"), Gray("gray"), Blue("blue"), Red("red"), Orange("orange"), Green("green"), Yellow("yellow"), Teal("teal"), Mint("mint"), Indigo("indigo"), Purple("purple"), Pink("pink"), StaticDark("static-dark"), StaticLight("static-light"), Brand("brand") }
 
@@ -219,4 +221,41 @@ internal object LabComponents {
     const val SelectionChoiceboxHoverFillRole = "fill-quaternary"
     const val SelectionChoiceboxIconRole = "label-brand-primary"
     const val SelectionChoiceboxDescriptionRole = "label-secondary"
+    val LoaderS = LabLoaderMetrics(16f)
+    val LoaderM = LabLoaderMetrics(24f)
+    val LoaderL = LabLoaderMetrics(48f)
+    const val LoaderColorRole = "label-primary"
+    const val LoaderViewBox = 24f
+    const val LoaderPeriodMs = 800f
+    const val LoaderSegmentX = 11f
+    const val LoaderSegmentY = 2f
+    const val LoaderSegmentWidth = 2f
+    const val LoaderSegmentHeight = 7f
+    const val LoaderSegmentRadius = 1f
+    val LoaderSpokeOpacity = listOf(0.05f, 0.1f, 0.2f, 0.4f, 0.6f, 0.8f, 1f, 0.02f)
+    const val LoaderDeterminateMediumRingRadius = 9f
+    const val LoaderDeterminateMediumStroke = 2f
+    const val LoaderDeterminateMediumSectorRadius = 6f
+    const val LoaderDeterminateMediumSecondaryRole = "label-secondary"
+    const val LoaderDeterminateMediumGradientFromDegrees = 0f
+    const val LoaderDeterminateMediumGradientPrimaryStop = 0.75f
+    const val LoaderDeterminateMediumGradientSecondaryStop = 1f
+    const val LoaderDeterminateLargeRingRadius = 9f
+    const val LoaderDeterminateLargeStroke = 2f
+    const val LoaderDeterminateLargeTrackRole = "label-quaternary"
+    const val LoaderDeterminateLargeCap = "round"
+    val ProgressS = LabProgressMetrics(2f, 64f, 4f)
+    val ProgressM = LabProgressMetrics(4f, 96f, 4f)
+    val ProgressL = LabProgressMetrics(8f, 128f, 4f)
+    const val ProgressActiveRole = "label-brand-primary"
+    const val ProgressTrackRole = "label-brand-quaternary"
+    const val ProgressRadius = 4f
+    const val ProgressCircularCap = "round"
+    const val ProgressCircularFontSize = 16f
+    const val ProgressCircularLineHeight = 24f
+    const val ProgressCircularFontWeight = 500f
+    const val ProgressCircularLetterSpacing = 0f
+    const val ProgressCircularLabelRole = "label-primary"
+    const val ProgressUnknownPeriodMs = 1200f
+    const val ProgressUnknownFraction = 0.25f
 }

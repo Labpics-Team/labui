@@ -49,3 +49,4 @@ export const PACKAGE_NAME = '@labpics/ui-tokens';
 
 export { badgeProfile } from './badge.js';
 export { selectionProfile } from './selection.js';
+export { loaderProfile, progressProfile } from './progress.js';
