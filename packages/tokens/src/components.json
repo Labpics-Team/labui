@@ -1093,7 +1093,11 @@
         "path": [
           "chevron-down",
           "Vector"
-        ]
+        ],
+        "variant": {
+          "Hover": "False",
+          "Expanded": "False"
+        }
       },
       "viewBox": 16,
       "x": 3.3802082538604736,
