@@ -176,7 +176,8 @@ describe('no magic dimensions in migrated components (dimension contract)', () =
     expect(governed).not.toContain('packages/core/src/components/menu/lab-menu.ts');
     expect(MIGRATED.card).toContain('packages/core/src/components/card/styles.ts');
     expect(MIGRATED.input).toContain('packages/core/src/components/input/styles.ts');
-    expect(MIGRATED.textarea).toContain('packages/core/src/components/field/field-styles.ts');
+    expect(MIGRATED.input).toContain('packages/core/src/components/field/outlined-styles.ts');
+    expect(MIGRATED.textarea).toContain('packages/core/src/components/field/outlined-styles.ts');
     expect(MIGRATED['radio-group']).toContain('packages/core/src/components/selection/styles.ts');
     expect(governed).not.toContain('packages/react/src/radio-group.css');
     expect(governed).not.toContain('packages/react/src/card.css');
