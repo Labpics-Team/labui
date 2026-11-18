@@ -1,3 +1,4 @@
+import { render } from '@lit-labs/ssr';
 /**
  * Lit SSR shim — the ~10-line per-stack wiring the spike (spike-FINDINGS.md)
  * identified as the cost of WC deep-SSR on Vue/Svelte/Solid/Astro.
@@ -18,12 +19,20 @@
  * so element registration works in Node. Import order is load-bearing — keep
  * the shim import first.
  */
-import '@lit-labs/ssr/lib/install-global-dom-shim.js';
-import { render } from '@lit-labs/ssr';
+import { installWindowOnGlobal } from '@lit-labs/ssr/lib/dom-shim.js';
 import { collectResultSync } from '@lit-labs/ssr/lib/render-result.js';
 import { type TemplateResult, html, noChange } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+
+// The upstream install-global entry awaits its optional CSS import hook. Static
+// sibling component imports can then execute before customElements exists and
+// silently skip registration. LabUI ships CSS strings and files, not CSS module
+// imports: install its required DOM globals synchronously before this entry
+// completes, so generated synchronous SSR adapters can register their elements.
+// SSR 4.1's window shim has no window self-reference; a caller may
+// therefore already have its registry installed while globalThis.window is absent.
+installWindowOnGlobal(typeof customElements === 'undefined' ? {} : { customElements });
 
 /**
  * Render a Lit template to a declarative-shadow-DOM HTML string.
