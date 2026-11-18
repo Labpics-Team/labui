@@ -1,8 +1,14 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import ts from 'typescript';
-import type { CatalogProjection, CatalogRegistry, NativeApi } from '../../../catalog/types.js';
+import type {
+  CatalogProjection,
+  CatalogRegistry,
+  NativeApi,
+  ProfileSourceRef,
+} from '../../../catalog/types.js';
 import { analyzeCore } from './analyze.js';
 import { coreComponentsDir, repoRoot } from './paths.js';
 
@@ -13,6 +19,67 @@ function ensure(condition: unknown, message: string): asserts condition {
 }
 export const sourceKey = (source: { page: string; name: string; type: string }) =>
   `${source.type}/${source.page}/${source.name}`;
+const componentProfiles = () =>
+  json<Record<string, unknown>>(join(repoRoot, 'packages/tokens/src/components.json'));
+const nativeSourceDirectory = 'native/compose/src/commonMain/kotlin/pics/lab/ui';
+
+/** Profile measurements refer to registry sources; they do not copy source identity. */
+export function validateProfileSources(
+  registry: CatalogRegistry,
+  profiles: Record<string, unknown>,
+): ProfileSourceRef[] {
+  validatePublicMetadata(profiles);
+  const sources = new Map(registry.sources.map((source) => [sourceKey(source), source]));
+  const refs: ProfileSourceRef[] = [];
+  for (const [profile, definition] of Object.entries(profiles)) {
+    const families = registry.families
+      .filter((family) => family.profile === profile)
+      .map((family) => family.slug);
+    ensure(families.length > 0, `Profile is outside the catalog: ${profile}`);
+    ensure(
+      definition && typeof definition === 'object' && 'sourceRef' in definition,
+      `Profile needs a registry sourceRef: ${profile}`,
+    );
+    ensure(!('source' in definition), `Duplicated profile source metadata: ${profile}`);
+    const visit = (value: unknown, location: string): void => {
+      if (!value || typeof value !== 'object') return;
+      if ('sourceRef' in value) {
+        const ref = value.sourceRef as ProfileSourceRef;
+        ensure(ref && typeof ref === 'object', `Invalid profile sourceRef: ${location}`);
+        const source = sources.get(ref.key);
+        ensure(source, `Unknown profile source: ${location}`);
+        ensure(
+          source.uses.some((use) => families.includes(use.family)),
+          `Profile source belongs to another family: ${location}`,
+        );
+        ensure(
+          !['publicUrl', 'page', 'name', 'role'].some((key) => Object.hasOwn(ref, key)),
+          `Duplicated profile source metadata: ${location}`,
+        );
+        if (ref.variant)
+          ensure(
+            source.type === 'component-set' &&
+              Object.keys(ref.variant).length > 0 &&
+              Object.values(ref.variant).every((item) => typeof item === 'string' && item.trim()),
+            `Invalid profile variant selector: ${location}`,
+          );
+        if (ref.path)
+          ensure(
+            Array.isArray(ref.path) &&
+              ref.path.length > 0 &&
+              ref.path.every((part) => typeof part === 'string' && part.trim()) &&
+              (source.type === 'component' || ref.variant),
+            `Invalid profile layer path: ${location}`,
+          );
+        refs.push(ref);
+      }
+      for (const [key, child] of Object.entries(value))
+        if (key !== 'sourceRef') visit(child, `${location}.${key}`);
+    };
+    visit(definition, profile);
+  }
+  return refs;
+}
 
 /** Refuse private provenance anywhere in the published catalog or profile metadata. */
 export function validatePublicMetadata(value: unknown): void {
@@ -75,34 +142,51 @@ function documentation(): Map<string, string> {
 }
 
 /** The native tree may be supplied before the web/native branches are integrated. */
-export function discoverNative(nativeRoot: string): NativeApi {
-  const relativeDirectory = 'native/compose/src/commonMain/kotlin/pics/lab/ui';
-  const directory = join(nativeRoot, relativeDirectory);
-  const symbols: { name: string; file: string }[] = [];
-  for (const file of readdirSync(directory)
+export function discoverNative(nativeRoot: string): Omit<NativeApi, 'revision'> {
+  const directory = join(nativeRoot, nativeSourceDirectory);
+  const files = readdirSync(directory)
     .filter((name) => name.endsWith('.kt'))
-    .sort()) {
-    const source = readFileSync(join(directory, file), 'utf8');
+    .sort();
+  ensure(files.length > 0, 'No native Kotlin source inputs');
+  const digest = createHash('sha256');
+  const symbols: { name: string; file: string }[] = [];
+  for (const file of files) {
+    const source = readFileSync(join(directory, file), 'utf8').replaceAll('\r\n', '\n');
+    digest.update(file).update('\0').update(source).update('\0');
     for (const match of source.matchAll(/^public (?:fun|object) (Lab\w+)\b/gm)) {
       symbols.push({
         name: match[1] ?? '',
-        file: `native/compose/src/commonMain/kotlin/pics/lab/ui/${file}`,
+        file: `${nativeSourceDirectory}/${file}`,
       });
     }
   }
-  // A catalog-only commit must not invalidate the native observation. Its provenance
-  // belongs to the last change of the inspected source tree, not the current HEAD.
-  execFileSync('git', ['diff', '--quiet', 'HEAD', '--', relativeDirectory], { cwd: nativeRoot });
   return {
-    revision: execFileSync('git', ['log', '-1', '--format=%H', '--', relativeDirectory], {
-      cwd: nativeRoot,
-      encoding: 'utf8',
-    }).trim(),
+    sourceDigest: `sha256:${digest.digest('hex')}`,
     symbols,
   };
 }
 
-export function buildCatalog(registry: CatalogRegistry, native: NativeApi): CatalogProjection {
+/** Only a changed observation needs a new Git source link; builds use the saved link. */
+function nativeSourceRevision(nativeRoot: string): string {
+  const sourcePaths = readdirSync(join(nativeRoot, nativeSourceDirectory))
+    .filter((name) => name.endsWith('.kt'))
+    .map((file) => `${nativeSourceDirectory}/${file}`);
+  // The glob includes deleted Kotlin inputs, but excludes unrelated documentation.
+  const sourceGlob = `:(glob)${nativeSourceDirectory}/*.kt`;
+  const options = { cwd: nativeRoot, stdio: 'pipe' as const };
+  execFileSync('git', ['ls-files', '--error-unmatch', '--', ...sourcePaths], options);
+  execFileSync('git', ['diff', '--quiet', 'HEAD', '--', sourceGlob], options);
+  return execFileSync('git', ['log', '-1', '--format=%H', '--', sourceGlob], {
+    ...options,
+    encoding: 'utf8',
+  }).trim();
+}
+
+export function buildCatalog(
+  registry: CatalogRegistry,
+  native: NativeApi,
+  profile = componentProfiles(),
+): CatalogProjection {
   ensure(registry.schemaVersion === 1, 'Unknown catalog schema');
   validatePublicMetadata(registry);
   ensure(
@@ -119,10 +203,6 @@ export function buildCatalog(registry: CatalogRegistry, native: NativeApi): Cata
   const web = new Map(manifest.components.map((component) => [component.subpath, component]));
   const exports = moduleExports(join(repoRoot, 'packages/react/src/index.ts'));
   const docs = documentation();
-  const profile = json<Record<string, unknown>>(
-    join(repoRoot, 'packages/tokens/src/components.json'),
-  );
-  validatePublicMetadata(profile);
   for (const slug of docs.keys())
     ensure(families.has(slug), `Documentation is outside the catalog: ${slug}`);
   for (const component of manifest.components) {
@@ -162,6 +242,7 @@ export function buildCatalog(registry: CatalogRegistry, native: NativeApi): Cata
         );
     }
   }
+  validateProfileSources(registry, profile);
   return {
     source: registry.source,
     groups: registry.groups,
@@ -220,8 +301,12 @@ export function validateSourceCache(
   registry: CatalogRegistry,
   setsPath: string,
   componentsPath: string,
+  profiles?: Record<string, unknown>,
 ): void {
-  type Metadata = { name: string; containing_frame: { pageName: string } };
+  type Metadata = {
+    name: string;
+    containing_frame: { pageName: string; containingComponentSet?: { name: string } };
+  };
   const sets = json<{ meta: { component_sets: Metadata[] } }>(setsPath).meta.component_sets;
   const components = json<{ meta: { components: Metadata[] } }>(componentsPath).meta.components;
   const key = (item: Metadata, type: string) =>
@@ -240,36 +325,86 @@ export function validateSourceCache(
       [...expected].every((ref) => observed.has(ref)),
     'Component-set inventory differs from the source cache',
   );
-  const singletons = new Set(components.map((item) => key(item, 'component')));
+  const excluded = new Set(registry.sourceExclusions.map((entry) => entry.page));
+  ensure(excluded.size === registry.sourceExclusions.length, 'Duplicate source exclusion');
+  ensure(
+    registry.sourceExclusions.every((entry) => entry.page.trim() && entry.reason.trim()),
+    'Source exclusion needs an exact page and a reason',
+  );
+  ensure(
+    registry.sources.every((source) => !excluded.has(source.page)),
+    'Source is both cataloged and excluded',
+  );
+  const standalone = components.filter((item) => !item.containing_frame.containingComponentSet);
+  const singletons = new Set(standalone.map((item) => key(item, 'component')));
+  const classified = new Set(registry.sources.map(sourceKey));
+  for (const item of standalone) {
+    ensure(
+      classified.has(key(item, 'component')) || excluded.has(item.containing_frame.pageName),
+      `Unclassified standalone source: ${item.containing_frame.pageName} / ${item.name}`,
+    );
+  }
   for (const source of registry.sources.filter((source) => source.type === 'component')) {
     ensure(
       singletons.has(sourceKey(source)),
       `Singleton source missing: ${source.page} / ${source.name}`,
     );
   }
+  if (profiles)
+    for (const ref of validateProfileSources(registry, profiles)) {
+      if (!ref.variant) continue;
+      const matches = components.filter((item) => {
+        const parent = item.containing_frame.containingComponentSet;
+        if (!parent || key({ ...item, name: parent.name }, 'component-set') !== ref.key)
+          return false;
+        const properties = Object.fromEntries(
+          item.name.split(/,\s*/).map((part) => {
+            const separator = part.indexOf('=');
+            return [part.slice(0, separator), part.slice(separator + 1)];
+          }),
+        );
+        return Object.entries(ref.variant ?? {}).every(
+          ([name, value]) => properties[name] === value,
+        );
+      });
+      ensure(matches.length === 1, `Profile variant does not select one source: ${ref.key}`);
+    }
 }
 
 export function catalogMain(args = process.argv.slice(2)): void {
+  const check = args.includes('--check');
   const option = (name: string) => {
     const index = args.indexOf(name);
     return index < 0 ? undefined : args[index + 1];
   };
   const registry = json<CatalogRegistry>(join(repoRoot, 'catalog/registry.json'));
+  const profiles = componentProfiles();
   const nativePath = join(repoRoot, 'catalog/native-api.generated.json');
   const nativeRoot =
     option('--native-root') ??
     (existsSync(join(repoRoot, 'native/compose')) ? repoRoot : undefined);
-  const native = nativeRoot ? discoverNative(resolve(nativeRoot)) : json<NativeApi>(nativePath);
+  let native = json<NativeApi>(nativePath);
+  if (nativeRoot) {
+    const root = resolve(nativeRoot);
+    const observation = discoverNative(root);
+    if (
+      native.sourceDigest !== observation.sourceDigest ||
+      serialize(native.symbols) !== serialize(observation.symbols)
+    ) {
+      ensure(!check, 'Native API observation is stale; run pnpm catalog:generate');
+      native = { revision: nativeSourceRevision(root), ...observation };
+    }
+  }
   const sets = option('--source-sets');
   const components = option('--source-components');
   if (sets || components) {
     ensure(sets && components, 'Supply both --source-sets and --source-components');
-    validateSourceCache(registry, sets, components);
+    validateSourceCache(registry, sets, components, profiles);
   }
-  const result = buildCatalog(registry, native);
+  const result = buildCatalog(registry, native, profiles);
   const output = join(repoRoot, 'catalog/catalog.generated.json');
   const serialized = serialize(result);
-  if (args.includes('--check')) {
+  if (check) {
     ensure(
       readFileSync(output, 'utf8') === serialized,
       'Catalog projection is stale; run pnpm catalog:generate',

@@ -1,5 +1,6 @@
 {
   "revision": "466e986698309cb49d33a1f32d9df2e086d20afd",
+  "sourceDigest": "sha256:f7a2ce5269b8bff685efe469d9777e48cfb216d36683d216a68747a650e2b15f",
   "symbols": [
     {
       "name": "LabButton",

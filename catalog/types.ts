@@ -40,11 +40,20 @@ export interface CatalogRegistry {
   readonly groups: readonly { readonly id: string; readonly title: string }[];
   readonly families: readonly CatalogFamily[];
   readonly sources: readonly CatalogSource[];
+  /** Asset collections outside the component-family catalog, classified by exact page. */
+  readonly sourceExclusions: readonly { readonly page: string; readonly reason: string }[];
 }
 
 export interface NativeApi {
   readonly revision: string;
+  readonly sourceDigest: string;
   readonly symbols: readonly { readonly name: string; readonly file: string }[];
+}
+
+export interface ProfileSourceRef {
+  readonly key: string;
+  readonly variant?: Readonly<Record<string, string>>;
+  readonly path?: readonly string[];
 }
 
 export interface CatalogEntry extends CatalogFamily {

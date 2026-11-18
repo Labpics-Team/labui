@@ -761,6 +761,17 @@
     },
     {
       "page": "Charts",
+      "name": "Data highlight",
+      "type": "component",
+      "uses": [
+        {
+          "family": "charts",
+          "role": "part"
+        }
+      ]
+    },
+    {
+      "page": "Charts",
       "name": "Donut & Pie chart",
       "type": "component-set",
       "uses": [
@@ -774,6 +785,17 @@
       "page": "Charts",
       "name": "Grid pattern",
       "type": "component-set",
+      "uses": [
+        {
+          "family": "charts",
+          "role": "part"
+        }
+      ]
+    },
+    {
+      "page": "Charts",
+      "name": "Legend",
+      "type": "component",
       "uses": [
         {
           "family": "charts",
@@ -829,6 +851,17 @@
       "page": "Charts",
       "name": "Radar",
       "type": "component-set",
+      "uses": [
+        {
+          "family": "charts",
+          "role": "variant"
+        }
+      ]
+    },
+    {
+      "page": "Charts",
+      "name": "Radar chart",
+      "type": "component",
       "uses": [
         {
           "family": "charts",
@@ -1133,6 +1166,17 @@
     },
     {
       "page": "Dropdown Menu",
+      "name": "Dropdown Menu",
+      "type": "component",
+      "uses": [
+        {
+          "family": "menu",
+          "role": "root"
+        }
+      ]
+    },
+    {
+      "page": "Dropdown Menu",
       "name": "Dropdown Menu Item",
       "type": "component-set",
       "uses": [
@@ -1282,6 +1326,17 @@
     {
       "page": "Layers",
       "name": "Base",
+      "type": "component",
+      "uses": [
+        {
+          "family": "materials",
+          "role": "material"
+        }
+      ]
+    },
+    {
+      "page": "Layers",
+      "name": "Base",
       "type": "component-set",
       "uses": [
         {
@@ -1315,6 +1370,17 @@
     },
     {
       "page": "Layers",
+      "name": "Ghost",
+      "type": "component",
+      "uses": [
+        {
+          "family": "materials",
+          "role": "material"
+        }
+      ]
+    },
+    {
+      "page": "Layers",
       "name": "Muted",
       "type": "component-set",
       "uses": [
@@ -1333,6 +1399,17 @@
     {
       "page": "Layers",
       "name": "Soft",
+      "type": "component",
+      "uses": [
+        {
+          "family": "materials",
+          "role": "material"
+        }
+      ]
+    },
+    {
+      "page": "Layers",
+      "name": "Soft",
       "type": "component-set",
       "uses": [
         {
@@ -1344,6 +1421,17 @@
           "native": {
             "scope": "Рецепт в LabMaterials; визуальные варианты требуют проверки."
           }
+        }
+      ]
+    },
+    {
+      "page": "Layers",
+      "name": "Strong",
+      "type": "component",
+      "uses": [
+        {
+          "family": "materials",
+          "role": "material"
         }
       ]
     },
@@ -1447,6 +1535,17 @@
         {
           "family": "pagination",
           "role": "part"
+        }
+      ]
+    },
+    {
+      "page": "Pagination",
+      "name": "Pagination",
+      "type": "component",
+      "uses": [
+        {
+          "family": "pagination",
+          "role": "root"
         }
       ]
     },
@@ -1639,8 +1738,30 @@
     },
     {
       "page": "Timeline",
+      "name": "Timeline Horizontal",
+      "type": "component",
+      "uses": [
+        {
+          "family": "timeline",
+          "role": "variant"
+        }
+      ]
+    },
+    {
+      "page": "Timeline",
       "name": "Timeline Row",
       "type": "component-set",
+      "uses": [
+        {
+          "family": "timeline",
+          "role": "variant"
+        }
+      ]
+    },
+    {
+      "page": "Timeline",
+      "name": "Timeline Vertical",
+      "type": "component",
       "uses": [
         {
           "family": "timeline",
@@ -1669,6 +1790,16 @@
           "role": "part"
         }
       ]
+    }
+  ],
+  "sourceExclusions": [
+    {
+      "page": "🟣 Icons",
+      "reason": "Самостоятельные иконки относятся к библиотеке графических ресурсов, а не к семействам UI-компонентов."
+    },
+    {
+      "page": "🟤 Flags",
+      "reason": "Флаги стран относятся к библиотеке графических ресурсов, а не к семействам UI-компонентов."
     }
   ]
 }

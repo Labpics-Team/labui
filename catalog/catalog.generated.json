@@ -776,6 +776,13 @@
           "type": "component-set",
           "family": "pagination",
           "role": "part"
+        },
+        {
+          "page": "Pagination",
+          "name": "Pagination",
+          "type": "component",
+          "family": "pagination",
+          "role": "root"
         }
       ]
     },
@@ -798,6 +805,13 @@
         "native": null
       },
       "sources": [
+        {
+          "page": "Dropdown Menu",
+          "name": "Dropdown Menu",
+          "type": "component",
+          "family": "menu",
+          "role": "root"
+        },
         {
           "page": "Dropdown Menu",
           "name": "Dropdown Menu Item",
@@ -1298,6 +1312,13 @@
         },
         {
           "page": "Charts",
+          "name": "Data highlight",
+          "type": "component",
+          "family": "charts",
+          "role": "part"
+        },
+        {
+          "page": "Charts",
           "name": "Donut & Pie chart",
           "type": "component-set",
           "family": "charts",
@@ -1307,6 +1328,13 @@
           "page": "Charts",
           "name": "Grid pattern",
           "type": "component-set",
+          "family": "charts",
+          "role": "part"
+        },
+        {
+          "page": "Charts",
+          "name": "Legend",
+          "type": "component",
           "family": "charts",
           "role": "part"
         },
@@ -1342,6 +1370,13 @@
           "page": "Charts",
           "name": "Radar",
           "type": "component-set",
+          "family": "charts",
+          "role": "variant"
+        },
+        {
+          "page": "Charts",
+          "name": "Radar chart",
+          "type": "component",
           "family": "charts",
           "role": "variant"
         },
@@ -1501,8 +1536,22 @@
         },
         {
           "page": "Timeline",
+          "name": "Timeline Horizontal",
+          "type": "component",
+          "family": "timeline",
+          "role": "variant"
+        },
+        {
+          "page": "Timeline",
           "name": "Timeline Row",
           "type": "component-set",
+          "family": "timeline",
+          "role": "variant"
+        },
+        {
+          "page": "Timeline",
+          "name": "Timeline Vertical",
+          "type": "component",
           "family": "timeline",
           "role": "variant"
         }
@@ -1666,6 +1715,13 @@
         {
           "page": "Layers",
           "name": "Base",
+          "type": "component",
+          "family": "materials",
+          "role": "material"
+        },
+        {
+          "page": "Layers",
+          "name": "Base",
           "type": "component-set",
           "family": "materials",
           "role": "material",
@@ -1691,6 +1747,13 @@
         },
         {
           "page": "Layers",
+          "name": "Ghost",
+          "type": "component",
+          "family": "materials",
+          "role": "material"
+        },
+        {
+          "page": "Layers",
           "name": "Muted",
           "type": "component-set",
           "family": "materials",
@@ -1705,6 +1768,13 @@
         {
           "page": "Layers",
           "name": "Soft",
+          "type": "component",
+          "family": "materials",
+          "role": "material"
+        },
+        {
+          "page": "Layers",
+          "name": "Soft",
           "type": "component-set",
           "family": "materials",
           "role": "material",
@@ -1714,6 +1784,13 @@
           "native": {
             "scope": "Рецепт в LabMaterials; визуальные варианты требуют проверки."
           }
+        },
+        {
+          "page": "Layers",
+          "name": "Strong",
+          "type": "component",
+          "family": "materials",
+          "role": "material"
         },
         {
           "page": "Layers",

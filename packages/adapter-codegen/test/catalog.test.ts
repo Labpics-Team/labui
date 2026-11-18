@@ -1,8 +1,25 @@
-import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
-import type { CatalogRegistry, NativeApi } from '../../../catalog/types.js';
-import { buildCatalog, validatePublicMetadata } from '../src/catalog.js';
+import { afterAll, describe, expect, it } from 'vitest';
+import type { CatalogRegistry, NativeApi, ProfileSourceRef } from '../../../catalog/types.js';
+import {
+  buildCatalog,
+  catalogMain,
+  discoverNative,
+  validateProfileSources,
+  validatePublicMetadata,
+  validateSourceCache,
+} from '../src/catalog.js';
 import { repoRoot } from '../src/paths.js';
 
 const registry = JSON.parse(
@@ -11,6 +28,11 @@ const registry = JSON.parse(
 const native = JSON.parse(
   readFileSync(join(repoRoot, 'catalog/native-api.generated.json'), 'utf8'),
 ) as NativeApi;
+const profiles = JSON.parse(
+  readFileSync(join(repoRoot, 'packages/tokens/src/components.json'), 'utf8'),
+);
+const temporary = mkdtempSync(join(tmpdir(), 'labui-catalog-'));
+afterAll(() => rmSync(temporary, { recursive: true, force: true }));
 
 describe('semantic catalog joined to real API and documentation', () => {
   it('reproduces its published projection without equating existing API with source coverage', () => {
@@ -120,4 +142,185 @@ describe('semantic catalog joined to real API and documentation', () => {
     }
     expect(() => validatePublicMetadata(registry)).not.toThrow();
   });
+
+  it('resolves every profile reference and rejects a wrong family or duplicated identity', () => {
+    expect(() => validateProfileSources(registry, profiles)).not.toThrow();
+    const wrong = structuredClone(profiles);
+    wrong.button.sourceRef.key = 'component-set/Switch/Switch';
+    expect(() => validateProfileSources(registry, wrong)).toThrow(
+      'Profile source belongs to another family: button',
+    );
+    wrong.button.sourceRef.key = 'component-set/Button/Missing';
+    expect(() => validateProfileSources(registry, wrong)).toThrow('Unknown profile source: button');
+    const duplicate = structuredClone(profiles);
+    duplicate.button.sourceRef.page = 'Button';
+    expect(() => validateProfileSources(registry, duplicate)).toThrow(
+      'Duplicated profile source metadata: button',
+    );
+  });
+
+  it('resolves Switch selectors and layer paths against the inspected author subtree', () => {
+    type Node = { name: string; type: string; children?: Node[] };
+    const snapshot = JSON.parse(
+      readFileSync(new URL('./fixtures/switch-source.json', import.meta.url), 'utf8'),
+    ) as { sourceKey: string; variants: Node[] };
+    for (const state of ['on', 'off']) {
+      const ref = profiles.switch.cutout[state].sourceRef as ProfileSourceRef;
+      expect(ref).toBeDefined();
+      expect(ref.key).toBe(snapshot.sourceKey);
+      const variants = snapshot.variants.filter((variant) => {
+        const properties = Object.fromEntries(
+          variant.name.split(', ').map((part) => part.split('=')),
+        );
+        return Object.entries(ref.variant ?? {}).every(([key, value]) => properties[key] === value);
+      });
+      expect(variants).toHaveLength(1);
+      let node = variants[0];
+      for (const name of ref.path ?? []) {
+        const children = node?.children?.filter((child) => child.name === name) ?? [];
+        expect(children).toHaveLength(1);
+        node = children[0];
+      }
+      expect(node?.type).toBe('VECTOR');
+    }
+  });
+});
+
+describe('complete source inventory from independently supplied metadata', () => {
+  const inventory: CatalogRegistry = {
+    ...registry,
+    sources: [
+      {
+        page: 'Switch',
+        name: 'Switch',
+        type: 'component-set',
+        uses: [{ family: 'switch', role: 'root' }],
+      },
+      {
+        page: 'Snackbar',
+        name: 'Snackbar',
+        type: 'component',
+        uses: [{ family: 'snackbar', role: 'root' }],
+      },
+    ],
+  };
+  const setsPath = join(temporary, 'sets.json');
+  const componentsPath = join(temporary, 'components.json');
+  const components = [
+    { name: 'Snackbar', containing_frame: { pageName: 'Snackbar' } },
+    { name: 'arrow-right', containing_frame: { pageName: '🟣 Icons' } },
+    { name: 'RU', containing_frame: { pageName: '🟤 Flags' } },
+    ...['neutral, Toggle=false', 'accent, Toggle=true'].map((type) => ({
+      name: `Type=${type}, Size=medium, State=default, Icon=true`,
+      containing_frame: { pageName: 'Switch', containingComponentSet: { name: 'Switch' } },
+    })),
+  ];
+  writeFileSync(
+    setsPath,
+    JSON.stringify({
+      meta: { component_sets: [{ name: 'Switch', containing_frame: { pageName: 'Switch' } }] },
+    }),
+  );
+  writeFileSync(componentsPath, JSON.stringify({ meta: { components } }));
+
+  it('classifies standalone components, variant members and explicit asset collections', () => {
+    expect(() =>
+      validateSourceCache(inventory, setsPath, componentsPath, {
+        switch: profiles.switch,
+        snackbar: profiles.snackbar,
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects deleting a standalone Snackbar from the registry', () => {
+    expect(() =>
+      validateSourceCache(
+        {
+          ...inventory,
+          sources: inventory.sources.filter((source) => source.page !== 'Snackbar'),
+        },
+        setsPath,
+        componentsPath,
+      ),
+    ).toThrow('Unclassified standalone source: Snackbar / Snackbar');
+  });
+
+  it('rejects a missing cached singleton and an unclassified asset page', () => {
+    const missingPath = join(temporary, 'missing-components.json');
+    writeFileSync(missingPath, JSON.stringify({ meta: { components: components.slice(1) } }));
+    expect(() => validateSourceCache(inventory, setsPath, missingPath)).toThrow(
+      'Singleton source missing: Snackbar / Snackbar',
+    );
+    expect(() =>
+      validateSourceCache({ ...inventory, sourceExclusions: [] }, setsPath, componentsPath),
+    ).toThrow('Unclassified standalone source: 🟣 Icons / arrow-right');
+  });
+
+  it('rejects an invented or ambiguous author variant selector', () => {
+    const wrong = structuredClone(profiles.switch);
+    wrong.cutout.on.sourceRef.variant.State = 'imaginary';
+    expect(() =>
+      validateSourceCache(inventory, setsPath, componentsPath, { switch: wrong }),
+    ).toThrow('Profile variant does not select one source: component-set/Switch/Switch');
+    wrong.cutout.on.sourceRef.variant = { Size: 'medium' };
+    expect(() =>
+      validateSourceCache(inventory, setsPath, componentsPath, { switch: wrong }),
+    ).toThrow('Profile variant does not select one source: component-set/Switch/Switch');
+  });
+});
+
+it('native provenance follows consumed Kotlin inputs rather than unrelated commits', () => {
+  const root = join(temporary, 'native-repo');
+  const directory = join(root, 'native/compose/src/commonMain/kotlin/pics/lab/ui');
+  mkdirSync(directory, { recursive: true });
+  const git = (...args: string[]) => execFileSync('git', args, { cwd: root, stdio: 'pipe' });
+  const commit = () => {
+    git('add', '.');
+    git(
+      '-c',
+      'user.name=Catalog test',
+      '-c',
+      'user.email=catalog@example.invalid',
+      'commit',
+      '--quiet',
+      '-m',
+      'fixture',
+    );
+  };
+  git('init', '--quiet');
+  git('config', 'core.autocrlf', 'false');
+  writeFileSync(join(directory, 'LabExample.kt'), 'public fun LabExample() = Unit\n');
+  commit();
+  const before = discoverNative(root);
+  writeFileSync(join(directory, 'README.md'), 'This file is not a Kotlin source input.\n');
+  commit();
+  expect(discoverNative(root)).toEqual(before);
+  writeFileSync(join(directory, 'LabExample.kt'), 'public fun LabExample() = 1\n');
+  const changed = discoverNative(root);
+  expect(changed.sourceDigest).not.toBe(before.sourceDigest);
+  expect(changed.symbols).toEqual(before.symbols);
+  commit();
+  expect(discoverNative(root)).toEqual(changed);
+  writeFileSync(join(directory, 'LabAdded.kt'), 'public object LabAdded\n');
+  const added = discoverNative(root);
+  expect(added.symbols.map((symbol) => symbol.name)).toEqual(['LabAdded', 'LabExample']);
+  commit();
+  expect(discoverNative(root)).toEqual(added);
+  rmSync(join(directory, 'LabAdded.kt'));
+  commit();
+  const removed = discoverNative(root);
+  expect(removed.sourceDigest).toBe(changed.sourceDigest);
+});
+
+it('checks a source snapshot without Git and detects changed input even with the same API', () => {
+  const root = join(temporary, 'source-snapshot');
+  const directory = 'native/compose/src/commonMain/kotlin/pics/lab/ui';
+  cpSync(join(repoRoot, directory), join(root, directory), { recursive: true });
+  expect(existsSync(join(root, '.git'))).toBe(false);
+  expect(() => catalogMain(['--check', '--native-root', root])).not.toThrow();
+  const source = join(root, directory, 'LabSwitch.kt');
+  writeFileSync(source, `${readFileSync(source, 'utf8')}\n// Changed source snapshot\n`);
+  expect(() => catalogMain(['--check', '--native-root', root])).toThrow(
+    'Native API observation is stale; run pnpm catalog:generate',
+  );
 });
