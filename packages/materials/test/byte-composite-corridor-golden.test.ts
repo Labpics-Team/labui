@@ -22,10 +22,12 @@ import { readContractMaterials } from './contract-values';
  * package README "Unguaranteed pairs"). Byte-identical to lab-colors' SSOT
  * quantiser on this domain — proven tie-free by `byte-composite-golden.test.ts`.
  *
+ * These are the tint-only helper outputs, not a visual material-renderer claim.
  * CHANGELOG
+ *   v2 (2026-11-17) — live Figma opacity variables; RGB remains unchanged.
  *   v1 (2026-07-06) — initial capture. Provisional Figma-anchor material alphas.
  */
-const GOLDEN_VERSION = 1;
+const GOLDEN_VERSION = 2;
 
 interface CompositeGolden {
   /** tint over pure black — the effLow corridor corner. */
@@ -38,15 +40,15 @@ interface CompositeGolden {
 
 // theme/tier → frozen #RRGGBB of each committed composite byte.
 const GOLDEN: Record<string, CompositeGolden> = {
-  'light/base': { overBlack: '#949494', overWhite: '#9C9C9C', solid: '#979797' },
-  'light/muted': { overBlack: '#939393', overWhite: '#C1C1C1', solid: '#9D9D9D' },
-  'light/soft': { overBlack: '#747474', overWhite: '#C1C1C1', solid: '#838383' },
+  'light/base': { overBlack: '#939393', overWhite: '#9D9D9D', solid: '#979797' },
+  'light/muted': { overBlack: '#8F8F8F', overWhite: '#C2C2C2', solid: '#9A9A9A' },
+  'light/soft': { overBlack: '#787878', overWhite: '#BFBFBF', solid: '#868686' },
   'light/subtle': { overBlack: '#545454', overWhite: '#E3E3E3', solid: '#5B5B5B' },
   'light/elevated': { overBlack: '#CCCCCC', overWhite: '#FFFFFF', solid: '#D4D4D4' },
-  'dark/base': { overBlack: '#212121', overWhite: '#3B3B3B', solid: '#2E2E2E' },
-  'dark/muted': { overBlack: '#1E1E1E', overWhite: '#4C4C4C', solid: '#383838' },
-  'dark/soft': { overBlack: '#1A1A1A', overWhite: '#676767', solid: '#494949' },
-  'dark/subtle': { overBlack: '#141414', overWhite: '#878787', solid: '#5B5B5B' },
+  'dark/base': { overBlack: '#222222', overWhite: '#363636', solid: '#2C2C2C' },
+  'dark/muted': { overBlack: '#1E1E1E', overWhite: '#515151', solid: '#3A3A3A' },
+  'dark/soft': { overBlack: '#1B1B1B', overWhite: '#626262', solid: '#464646' },
+  'dark/subtle': { overBlack: '#151515', overWhite: '#858585', solid: '#595959' },
   'dark/elevated': { overBlack: '#686868', overWhite: '#9B9B9B', solid: '#6E6E6E' },
 };
 
