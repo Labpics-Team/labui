@@ -25,6 +25,7 @@ import { selectionCss } from '../src/components/selection/styles.js';
 import { sheetCss } from '../src/components/sheet/styles.js';
 import { snackbarCss } from '../src/components/snackbar/styles.js';
 import { switchCss } from '../src/components/switch/styles.js';
+import { tabsCss } from '../src/components/tabs/styles.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '..', 'src');
@@ -55,6 +56,7 @@ function main(): void {
   writeFileSync(join(dist, 'card.css'), cardCss);
   writeFileSync(join(dist, 'chip.css'), chipCss);
   writeFileSync(join(dist, 'switch.css'), switchCss);
+  writeFileSync(join(dist, 'tabs.css'), tabsCss);
   writeFileSync(join(dist, 'selection-controls.css'), selectionCss);
   writeFileSync(join(dist, 'badge.css'), badgeCss);
   writeFileSync(join(dist, 'kbd.css'), kbdCss);

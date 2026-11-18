@@ -1,0 +1,77 @@
+{
+  "archives": [
+    {
+      "name": "@labpics/ui-tokens",
+      "sha256": "1d098575d29a0887d83a5cb5011fe3d9ac78509990c52b80e99771e5f3390d71"
+    },
+    {
+      "name": "@labpics/ui-shadow",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "@labpics/ui-materials",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "@labpics/fonts",
+      "sha256": "d88c7478b94becc1ddbf77f92c4af2fb00ec882cb456847a38c2ee3bd6b35fd9"
+    },
+    {
+      "name": "@labui/colors",
+      "sha256": "2dfc01336750f554b4a4e46155bb10caaf3c804df98ec237008961fee268decb"
+    },
+    {
+      "name": "@labpics/ui-core",
+      "sha256": "7be600c097d2fc59a585f1979792018a501050b115bce63f3b832a33142f03bb"
+    },
+    {
+      "name": "@labpics/ui-react",
+      "sha256": "f73d7b1400be0cd1ffdc246232f1e67b1fc86d422ef38b41d3ea287fd04617c5"
+    },
+    {
+      "name": "@labpics/ui-vue",
+      "sha256": "ba7d6a7315225b648f7120fada5bb060ef8d11a27cab1231bd69e656f5cc04f6"
+    },
+    {
+      "name": "@labpics/ui-solid",
+      "sha256": "0449513849138d2b470165a2147f42542d41bf54b9b924dd473811252f70dc19"
+    },
+    {
+      "name": "@labpics/ui-svelte",
+      "sha256": "58e71d171831ab29836215cc208e39221455f33e33e78f2ddb7f9bafb88c83cf"
+    },
+    {
+      "name": "@labpics/ui-astro",
+      "sha256": "914a5fea9e94acc0cb59e96111d35f35f3781c5c360bfcf79ab54afbe48432e6"
+    }
+  ],
+  "declarations": true,
+  "records": [
+    {
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "adapters": 4,
+      "nativeReact": true,
+      "noJsFirstPaint": true,
+      "shiftedServerIds": true,
+      "controlledNullAndRefusal": true,
+      "sameNodesAfterHydration": true,
+      "preHydrationDraftPreserved": true,
+      "stylesIncluded": true,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "browser": "26.0",
+      "adapters": 4,
+      "nativeReact": true,
+      "noJsFirstPaint": true,
+      "shiftedServerIds": true,
+      "controlledNullAndRefusal": true,
+      "sameNodesAfterHydration": true,
+      "preHydrationDraftPreserved": true,
+      "stylesIncluded": true,
+      "errors": []
+    }
+  ]
+}

@@ -10,7 +10,10 @@
   "types": "./dist/index.d.ts",
   "exports": {
     "./adapter-runtime": {
-      "import": { "types": "./dist/adapter-runtime.d.ts", "default": "./dist/adapter-runtime.js" },
+      "import": {
+        "types": "./dist/adapter-runtime.d.ts",
+        "default": "./dist/adapter-runtime.js"
+      },
       "require": {
         "types": "./dist/adapter-runtime.d.cts",
         "default": "./dist/adapter-runtime.cjs"
@@ -200,6 +203,17 @@
         "types": "./dist/components/chip/contract.d.cts",
         "default": "./dist/components/chip/contract.cjs"
       }
+    },
+    "./tabs.css": "./dist/tabs.css",
+    "./tabs/runtime": {
+      "import": {
+        "types": "./dist/components/tabs/runtime.d.ts",
+        "default": "./dist/components/tabs/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/tabs/runtime.d.cts",
+        "default": "./dist/components/tabs/runtime.cjs"
+      }
     }
   },
   "files": ["dist"],
@@ -223,7 +237,8 @@
     "./dist/selection-controls.css",
     "./dist/kbd.css",
     "./dist/progress.css",
-    "./dist/chip.css"
+    "./dist/chip.css",
+    "./dist/tabs.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

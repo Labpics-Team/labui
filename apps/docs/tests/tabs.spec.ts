@@ -1,380 +1,354 @@
-import { type Locator, type Page, expect, test } from '@playwright/test';
+import { type Locator, expect, test } from '@playwright/test';
 
-/**
- * Tabs suite — a COMPOUND component that consumes the @zag-js/tabs GROUP machine
- * through the LabUI seam, verified on BOTH renderers.
- *
- * The fixture (`tabs.html`) mounts the Lit `<lab-tabs>` and the native-React
- * `<Tabs>` with identical specimens under one [data-theme]. These checks are the
- * Tabs' browser-side definition of done:
- *   1. Render — both renderers paint a real tablist with a token.
- *   2. Machine behaviour — clicking a tab selects it (data-selected moves) on both.
- *   3. a11y roving — arrow keys move selection via the machine (automatic mode).
- *   4. Disabled — a disabled tab does not select.
- *   5. Visual parity — the selected underline resolves the SAME computed colour.
- *   6. Tokens + theme — re-pointing a role / flipping [data-theme] re-skins both.
- */
-
-function litHost(page: Page, testid: string): Locator {
-  return page.getByTestId(testid);
-}
-/** All Lit triggers (shadow-pierced) in document order. */
-function litTriggers(page: Page, testid: string): Locator {
-  return litHost(page, testid).locator('.trigger');
-}
-/** All React triggers in document order. */
-function reactTriggers(page: Page, testid: string): Locator {
-  return page.getByTestId(testid).locator('.lab-tabs-trigger');
-}
-/** All Lit panels (shadow-pierced) in document order. */
-function litPanels(page: Page, testid: string): Locator {
-  return litHost(page, testid).locator('.panel');
-}
-/** All React panels in document order. */
-function reactPanels(page: Page, testid: string): Locator {
-  return page.getByTestId(testid).locator('.lab-tabs-panel');
-}
-
-const underline = (el: HTMLElement) => getComputedStyle(el).borderBottomColor;
-
+const tabs = (root: Locator) => root.locator('[role="tab"]');
+const selected = (root: Locator) => root.locator('[role="tab"][aria-selected="true"]');
+const activePaint = (root: Locator) => selected(root).locator('.lab-tabs-active');
 test.beforeEach(async ({ page }) => {
   await page.goto('/tabs.html');
 });
 
-test('delivered HTML carries the Lit element (React island mounts client-side)', async ({
-  request,
-}) => {
-  const body = await (await request.get('/tabs.html')).text();
-  expect(body).toMatch(/<lab-tabs/i);
-  expect(body).toContain('id="react-root"');
-});
-
-test('render: both renderers expose a tablist with three tabs', async ({ page }) => {
-  await expect(litHost(page, 'lit-tabs')).toBeVisible();
-  await expect(litTriggers(page, 'lit-tabs')).toHaveCount(3);
-  await expect(reactTriggers(page, 'react-tabs')).toHaveCount(3);
-  // Roles come from the machine — a real tablist, not div soup.
-  await expect(litHost(page, 'lit-tabs').locator('[role="tablist"]')).toBeVisible();
-  await expect(page.getByTestId('react-tabs').locator('[role="tablist"]')).toBeVisible();
-});
-
-test('machine behaviour: clicking a tab moves selection on both renderers', async ({ page }) => {
-  // Default selection is the first tab (account).
-  const litTabsList = litTriggers(page, 'lit-tabs');
-  await expect(litTabsList.nth(0)).toHaveAttribute('data-selected', /.*/);
-  await litTabsList.nth(1).click();
-  await expect(litTabsList.nth(1)).toHaveAttribute('data-selected', /.*/);
-  await expect(litTabsList.nth(0)).not.toHaveAttribute('data-selected', /.*/);
-  await expect(litTabsList.nth(1)).toHaveAttribute('aria-selected', 'true');
-
-  const reactTabsList = reactTriggers(page, 'react-tabs');
-  await expect(reactTabsList.nth(0)).toHaveAttribute('data-selected', /.*/);
-  await reactTabsList.nth(1).click();
-  await expect(reactTabsList.nth(1)).toHaveAttribute('data-selected', /.*/);
-  await expect(reactTabsList.nth(0)).not.toHaveAttribute('data-selected', /.*/);
-});
-
-test('a11y roving: ArrowRight selects the next tab via the machine (automatic)', async ({
-  page,
-}) => {
-  const litTabsList = litTriggers(page, 'lit-tabs');
-  await litTabsList.nth(0).focus();
-  await page.keyboard.press('ArrowRight');
-  // Automatic activation: focusing the next tab selects it.
-  await expect(litTabsList.nth(1)).toHaveAttribute('data-selected', /.*/);
-});
-
-/**
- * The blocks below assert ONLY what `@zag-js/tabs@1.41.2`'s connect actually
- * emits (verified against tabs.connect.js): `role=tab`/`tablist`/`tabpanel`,
- * `aria-selected` on every trigger, `hidden` on unselected panels, roving
- * `tabindex` (composite defaults true), `aria-controls` on the SELECTED trigger
- * only, and `aria-labelledby` on every panel. Nothing the machine does not give
- * is asserted (honesty — same discipline as the radio-group fix).
- */
-
-test('roles: real ARIA-tabs pattern on both renderers (3 tabs + ≥1 tabpanel)', async ({ page }) => {
-  for (const root of [litHost(page, 'lit-tabs'), page.getByTestId('react-tabs')]) {
-    await expect(root.locator('[role="tablist"]')).toHaveCount(1);
-    await expect(root.locator('[role="tab"]')).toHaveCount(3);
-    // The machine renders all panels but hides the inactive ones; at least the
-    // selected panel is present as a real tabpanel.
-    expect(await root.locator('[role="tabpanel"]').count()).toBeGreaterThanOrEqual(1);
-  }
-});
-
-test('panel visibility: selecting a tab shows ITS panel and hides the others', async ({ page }) => {
-  // Lit — panel order matches trigger order (account, password, team).
-  const litP = litPanels(page, 'lit-tabs');
-  await expect(litP.nth(0)).toBeVisible(); // account is the default selection
-  await expect(litP.nth(1)).toHaveAttribute('hidden', /.*/);
-  await expect(litP.nth(1)).toBeHidden();
-
-  await litTriggers(page, 'lit-tabs').nth(1).click(); // select password
-  await expect(litP.nth(1)).toBeVisible();
-  await expect(litP.nth(0)).toHaveAttribute('hidden', /.*/);
-  await expect(litP.nth(0)).toBeHidden();
-
-  // React — same contract.
-  const reactP = reactPanels(page, 'react-tabs');
-  await expect(reactP.nth(0)).toBeVisible();
-  await expect(reactP.nth(1)).toBeHidden();
-
-  await reactTriggers(page, 'react-tabs').nth(1).click();
-  await expect(reactP.nth(1)).toBeVisible();
-  await expect(reactP.nth(0)).toBeHidden();
-});
-
-test('roving tabindex: selected trigger is 0, the rest are -1 (composite machine)', async ({
-  page,
-}) => {
-  // Zag tabs default `composite: true`, so the selected trigger takes tabindex=0
-  // and the unselected take -1 — one tab stop, arrows move within. Verified in
-  // tabs.connect.js: `tabIndex: triggerState.selected && composite ? 0 : -1`.
-  for (const triggers of [litTriggers(page, 'lit-tabs'), reactTriggers(page, 'react-tabs')]) {
-    await expect(triggers.nth(0)).toHaveAttribute('tabindex', '0'); // account selected
-    await expect(triggers.nth(1)).toHaveAttribute('tabindex', '-1');
-    await expect(triggers.nth(2)).toHaveAttribute('tabindex', '-1');
-  }
-});
-
-test('aria wiring: selected trigger aria-controls == visible panel id; panel labelled by it', async ({
-  page,
-}) => {
-  for (const testid of ['lit-tabs', 'react-tabs']) {
-    const selectedTrigger =
-      testid === 'lit-tabs' ? litTriggers(page, testid).nth(0) : reactTriggers(page, testid).nth(0);
-    const visiblePanel =
-      testid === 'lit-tabs' ? litPanels(page, testid).nth(0) : reactPanels(page, testid).nth(0);
-
-    // Machine sets aria-controls on the SELECTED trigger only → the visible panel id.
-    const controls = await selectedTrigger.getAttribute('aria-controls');
-    expect(controls).toBeTruthy();
-    expect(await visiblePanel.getAttribute('id')).toBe(controls);
-
-    // Every panel is labelled by its trigger (aria-labelledby == trigger id).
-    const triggerId = await selectedTrigger.getAttribute('id');
-    expect(triggerId).toBeTruthy();
-    expect(await visiblePanel.getAttribute('aria-labelledby')).toBe(triggerId);
-  }
-});
-
-test('aria-selected: exactly one trigger is selected, it flips on click (both renderers)', async ({
-  page,
-}) => {
-  for (const triggers of [litTriggers(page, 'lit-tabs'), reactTriggers(page, 'react-tabs')]) {
-    await expect(triggers.nth(0)).toHaveAttribute('aria-selected', 'true');
-    await expect(triggers.nth(1)).toHaveAttribute('aria-selected', 'false');
-    await triggers.nth(1).click();
-    await expect(triggers.nth(1)).toHaveAttribute('aria-selected', 'true');
-    await expect(triggers.nth(0)).toHaveAttribute('aria-selected', 'false');
-  }
-});
-
-test('keyboard (React): Arrow moves selection, Home/End jump to ends', async ({ page }) => {
-  // Zag tabs keyMap (tabs.connect.js getListProps): ArrowRight/Left + Home/End.
-  // The third tab (team) is disabled, so End lands on it but cannot select — assert
-  // only the moves the machine actually performs on enabled tabs.
-  const triggers = reactTriggers(page, 'react-tabs');
-  await triggers.nth(0).focus();
-
-  await page.keyboard.press('ArrowRight'); // account → password (automatic activation)
-  await expect(triggers.nth(1)).toHaveAttribute('data-selected', /.*/);
-
-  await page.keyboard.press('Home'); // jump back to the first tab
-  await expect(triggers.nth(0)).toHaveAttribute('data-selected', /.*/);
-});
-
-test('disabled: a disabled tab does not select on either renderer', async ({ page }) => {
-  // The third tab (team) is disabled.
-  const litTeam = litTriggers(page, 'lit-tabs').nth(2);
-  await expect(litTeam).toHaveAttribute('data-disabled', /.*/);
-  await litTeam.click({ force: true });
-  await expect(litTeam).not.toHaveAttribute('data-selected', /.*/);
-
-  const reactTeam = reactTriggers(page, 'react-tabs').nth(2);
-  await expect(reactTeam).toHaveAttribute('data-disabled', /.*/);
-  await reactTeam.click({ force: true });
-  await expect(reactTeam).not.toHaveAttribute('data-selected', /.*/);
-});
-
-test('visual parity: Lit and React resolve the same selected underline colour', async ({
-  page,
-}) => {
-  const litSelected = litHost(page, 'lit-tabs').locator('.trigger[data-selected]');
-  const reactSelected = page.getByTestId('react-tabs').locator('.lab-tabs-trigger[data-selected]');
-  await expect(reactSelected).toBeVisible();
-  expect(await reactSelected.evaluate(underline)).toBe(await litSelected.evaluate(underline));
-});
-
-test('tokens: re-pointing --lab-fill-accent re-skins BOTH selected underlines', async ({
-  page,
-}) => {
-  const litSelected = litHost(page, 'lit-tabs').locator('.trigger[data-selected]');
-  const reactSelected = page.getByTestId('react-tabs').locator('.lab-tabs-trigger[data-selected]');
-  await expect(reactSelected).toBeVisible();
-
-  await page.evaluate(() => {
-    document.documentElement.style.setProperty('--lab-fill-accent', 'rgb(1, 2, 3)');
+for (const renderer of ['lit', 'react']) {
+  test(`${renderer}: selection, disabled skip, names and ARIA relationships`, async ({ page }) => {
+    const root = page.getByTestId(`${renderer}-tabs`);
+    await expect(tabs(root)).toHaveCount(3);
+    await expect(selected(root)).toHaveText('Account');
+    await tabs(root).nth(0).focus();
+    await page.keyboard.press('End');
+    await expect(tabs(root).nth(1)).toBeFocused();
+    await expect(selected(root)).toHaveText('Password');
+    const panel = root.locator('[role="tabpanel"]:not([hidden])');
+    await expect(panel).toHaveAttribute(
+      'id',
+      (await selected(root).getAttribute('aria-controls')) ?? '',
+    );
+    await expect(panel).toHaveAttribute(
+      'aria-labelledby',
+      (await selected(root).getAttribute('id')) ?? '',
+    );
+    await tabs(root).nth(2).click({ force: true });
+    await expect(selected(root)).toHaveText('Password');
+    await tabs(root).nth(1).focus();
+    await page.keyboard.press('Home');
+    await expect(selected(root)).toHaveText('Account');
   });
-  await expect.poll(() => litSelected.evaluate(underline)).toBe('rgb(1, 2, 3)');
-  await expect.poll(() => reactSelected.evaluate(underline)).toBe('rgb(1, 2, 3)');
-});
 
-test('theme: flipping [data-theme] re-skins both renderers with zero edits', async ({ page }) => {
-  const litSelected = litHost(page, 'lit-tabs').locator('.trigger[data-selected]');
-  const reactSelected = page.getByTestId('react-tabs').locator('.lab-tabs-trigger[data-selected]');
-  await expect(reactSelected).toBeVisible();
+  test(`${renderer}: controlled refusal preserves the approved panel`, async ({ page }) => {
+    const root = page.getByTestId(`${renderer}-controlled`);
+    await tabs(root).nth(1).click();
+    await expect(selected(root)).toHaveText('Account');
+    await expect(root.locator('[role="tabpanel"]').nth(0)).toBeVisible();
+    await expect(root.locator('[role="tabpanel"]').nth(1)).toBeHidden();
+    await expect(tabs(root).nth(1)).toBeFocused();
+    if (renderer === 'lit')
+      expect(await root.evaluate((el) => (el as HTMLElement & { value: string }).value)).toBe(
+        'account',
+      );
+  });
 
-  const litDark = await litSelected.evaluate(underline);
-  const reactDark = await reactSelected.evaluate(underline);
-
-  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
-
-  await expect.poll(() => litSelected.evaluate(underline)).not.toBe(litDark);
-  await expect.poll(() => reactSelected.evaluate(underline)).not.toBe(reactDark);
-});
-
-/**
- * The axis blocks below assert the Orientation × Size × Activation model the Lit
- * element documents (`orientation`, `size`, `activation-mode`). They read the
- * OBSERVABLE computed outcome of each axis — not the wiring — on BOTH renderers, so
- * the same paint contract is proven however each renderer sources the state
- * (`:host([orientation])` reflect on Lit; the machine's `data-orientation` /
- * `data-size` on React).
- */
-
-const borderBottomWidth = (el: HTMLElement) => getComputedStyle(el).borderBottomWidth;
-const borderInlineEndWidth = (el: HTMLElement) => getComputedStyle(el).borderInlineEndWidth;
-const borderInlineEndColor = (el: HTMLElement) => getComputedStyle(el).borderInlineEndColor;
-const paddingInline = (el: HTMLElement) =>
-  `${getComputedStyle(el).paddingLeft} ${getComputedStyle(el).paddingRight}`;
-const fontSize = (el: HTMLElement) => getComputedStyle(el).fontSize;
-
-test('orientation=vertical: the selected underline moves to border-inline-end on both renderers', async ({
-  page,
-}) => {
-  // Horizontal (default) paints the selected accent on border-BOTTOM and nothing on
-  // the inline-end edge. Vertical flips the branch: the list track + the selected
-  // trigger's accent move to border-INLINE-END, and border-bottom drops to 0.
-  const litSelected = litHost(page, 'lit-tabs-vertical').locator('.trigger[data-selected]');
-  const reactSelected = page
-    .getByTestId('react-tabs-vertical')
-    .locator('.lab-tabs-trigger[data-selected]');
-  await expect(litSelected).toBeVisible();
-  await expect(reactSelected).toBeVisible();
-
-  for (const selected of [litSelected, reactSelected]) {
-    // The vertical branch is live: bottom border is gone, inline-end carries weight.
-    expect(await selected.evaluate(borderBottomWidth)).toBe('0px');
-    expect(await selected.evaluate(borderInlineEndWidth)).not.toBe('0px');
-    // …and the accent fill paints on that inline-end edge (the underline branch).
-    expect(await selected.evaluate(borderInlineEndColor)).not.toBe('rgba(0, 0, 0, 0)');
-  }
-
-  // Parity: both renderers resolve the SAME accent on the inline-end edge.
-  expect(await reactSelected.evaluate(borderInlineEndColor)).toBe(
-    await litSelected.evaluate(borderInlineEndColor),
-  );
-});
-
-test('size: s and l shift trigger padding and font-size away from the default m on both renderers', async ({
-  page,
-}) => {
-  // size maps onto the --_pad-* / --_font knobs the trigger reads. Assert the
-  // density actually differs from the default m, and that l > s, on each renderer.
-  for (const [defaultId, smallId, largeId] of [
-    ['lit-tabs', 'lit-tabs-s', 'lit-tabs-l'],
-    ['react-tabs', 'react-tabs-s', 'react-tabs-l'],
-  ] as const) {
-    const trigger = (id: string) =>
-      id.startsWith('lit') ? litTriggers(page, id).first() : reactTriggers(page, id).first();
-
-    const [mPad, sPad, lPad] = await Promise.all([
-      trigger(defaultId).evaluate(paddingInline),
-      trigger(smallId).evaluate(paddingInline),
-      trigger(largeId).evaluate(paddingInline),
-    ]);
-    expect(sPad, `${smallId}: padding differs from m`).not.toBe(mPad);
-    expect(lPad, `${largeId}: padding differs from m`).not.toBe(mPad);
-    expect(sPad, `${smallId}: padding differs from l`).not.toBe(lPad);
-
-    const px = (v: string) => Number.parseFloat(v);
-    const [mFont, sFont, lFont] = await Promise.all([
-      trigger(defaultId).evaluate(fontSize),
-      trigger(smallId).evaluate(fontSize),
-      trigger(largeId).evaluate(fontSize),
-    ]);
-    expect(px(sFont), `${smallId}: font smaller than m`).toBeLessThan(px(mFont));
-    expect(px(lFont), `${largeId}: font larger than m`).toBeGreaterThan(px(mFont));
-  }
-});
-
-test('activation-mode=manual: focusing a tab does NOT select it; Enter/Space does (both renderers)', async ({
-  page,
-}) => {
-  // Default automatic activation selects on focus (asserted in the roving tests
-  // above). Manual activation only MOVES focus on arrow keys — selection waits for
-  // Enter or Space. The team tab (3rd) is disabled, so we stay on account↔password.
-  for (const id of ['lit-tabs-manual', 'react-tabs-manual'] as const) {
-    const triggers = id.startsWith('lit') ? litTriggers(page, id) : reactTriggers(page, id);
-
-    await triggers.nth(0).focus();
-    await expect(triggers.nth(0)).toHaveAttribute('data-selected', /.*/);
-
-    // ArrowRight moves focus to password but, under manual activation, selection
-    // stays on account — the opposite of automatic mode.
+  test(`${renderer}: manual activation waits for Enter and Space`, async ({ page }) => {
+    const root = page.getByTestId(`${renderer}-tabs-manual`);
+    await tabs(root).nth(0).focus();
     await page.keyboard.press('ArrowRight');
-    await expect(triggers.nth(1), `${id}: focus moved to password`).toBeFocused();
-    await expect(
-      triggers.nth(1),
-      `${id}: manual activation does NOT select on focus`,
-    ).not.toHaveAttribute('data-selected', /.*/);
-    await expect(triggers.nth(0), `${id}: selection stayed on account`).toHaveAttribute(
-      'data-selected',
-      /.*/,
-    );
-
-    // Enter (then Space on a fresh move) commits the focused tab — manual activation.
+    await expect(tabs(root).nth(1)).toBeFocused();
+    await expect(selected(root)).toHaveText('Account');
     await page.keyboard.press('Enter');
-    await expect(triggers.nth(1), `${id}: Enter selects the focused tab`).toHaveAttribute(
-      'data-selected',
-      /.*/,
-    );
-
-    await triggers.nth(0).focus();
+    await expect(selected(root)).toHaveText('Password');
+    await page.keyboard.press('ArrowLeft');
+    await expect(tabs(root).nth(0)).toBeFocused();
     await page.keyboard.press('Space');
-    await expect(triggers.nth(0), `${id}: Space selects the focused tab`).toHaveAttribute(
-      'data-selected',
-      /.*/,
+    await expect(selected(root)).toHaveText('Account');
+  });
+
+  test(`${renderer}: manual Tab and Shift+Tab leave the tablist from the focused tab`, async ({
+    page,
+  }) => {
+    const root = page.getByTestId(`${renderer}-tabs-manual`);
+    const list = root.locator('[role="tablist"]');
+    await tabs(root).first().focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(tabs(root).nth(1)).toBeFocused();
+    await expect(tabs(root).nth(1)).toHaveAttribute('tabindex', '0');
+    await page.keyboard.press('Shift+Tab');
+    expect(
+      await list.evaluate((el) =>
+        el.contains(
+          el.getRootNode() instanceof ShadowRoot
+            ? (el.getRootNode() as ShadowRoot).activeElement
+            : document.activeElement,
+        ),
+      ),
+    ).toBe(false);
+    await tabs(root).nth(1).focus();
+    await page.keyboard.press('Enter');
+    await expect(selected(root)).toHaveText('Password');
+    await page.keyboard.press('ArrowLeft');
+    await expect(tabs(root).first()).toBeFocused();
+    await page.keyboard.press('Tab');
+    expect(
+      await list.evaluate((el) =>
+        el.contains(
+          el.getRootNode() instanceof ShadowRoot
+            ? (el.getRootNode() as ShadowRoot).activeElement
+            : document.activeElement,
+        ),
+      ),
+    ).toBe(false);
+  });
+
+  for (const variant of ['tinted', 'underlined']) {
+    for (const orientation of ['horizontal', 'vertical']) {
+      test(`${renderer}/${variant}/${orientation}: mounted panel keeps draft and identity`, async ({
+        page,
+      }) => {
+        const root = page.getByTestId(`${renderer}-${variant}-${orientation}`);
+        const editor = root.locator('textarea');
+        await editor.fill('Unfinished 日本語 draft');
+        await editor.evaluate((node) => {
+          (node as HTMLElement & { retained?: boolean }).retained = true;
+        });
+        if (renderer === 'react') await root.getByRole('button', { name: 'Saved 0' }).click();
+        await tabs(root).nth(1).click();
+        await expect(editor).toBeHidden();
+        await editor.evaluate((node) => node.focus());
+        await expect(editor).not.toBeFocused();
+        await expect(root.locator('[role="tabpanel"][hidden]').first()).toHaveAttribute(
+          'inert',
+          '',
+        );
+        await tabs(root).nth(0).click();
+        await expect(editor).toHaveValue('Unfinished 日本語 draft');
+        expect(
+          await editor.evaluate((node) => (node as HTMLElement & { retained?: boolean }).retained),
+        ).toBe(true);
+        if (renderer === 'react')
+          await expect(root.getByRole('button', { name: 'Saved 1' })).toBeVisible();
+      });
+    }
+  }
+}
+
+test('Lit controlled acceptance, uncontrolled state, reordering and no selection are distinct', async ({
+  page,
+}) => {
+  const root = page.getByTestId('lit-tabs');
+  await tabs(root).nth(1).click();
+  expect(
+    await root.evaluate((el) => (el as HTMLElement & { value?: string }).value),
+  ).toBeUndefined();
+  await root.evaluate(async (el) => {
+    const host = el as HTMLElement & {
+      items: unknown[];
+      value: string | null;
+      updateComplete: Promise<unknown>;
+    };
+    host.value = null;
+    await host.updateComplete;
+    host.items = [...host.items].reverse();
+  });
+  await expect(selected(root)).toHaveCount(0);
+  await expect(root.locator('[role="tab"][tabindex="0"]')).toHaveCount(1);
+  await root.evaluate((el) =>
+    el.addEventListener('value-change', (event) => {
+      (el as HTMLElement & { value: string }).value = (
+        event as CustomEvent<{ value: string }>
+      ).detail.value;
+    }),
+  );
+  await tabs(root).nth(1).click();
+  await expect(selected(root)).toHaveText('Password');
+});
+
+test('React keyed fragments preserve each editor when tabs are reordered', async ({ page }) => {
+  const root = page.getByTestId('react-reorder');
+  await root.getByRole('textbox', { name: 'Draft a' }).fill('Retained A');
+  await root.getByRole('tab', { name: 'b', exact: true }).click();
+  await root.getByRole('textbox', { name: 'Draft b' }).fill('Retained B');
+  await root.getByRole('button', { name: 'Reverse tabs' }).click();
+  await expect(root.getByRole('textbox', { name: 'Draft b' })).toHaveValue('Retained B');
+  await root.getByRole('tab', { name: 'a', exact: true }).click();
+  await expect(root.getByRole('textbox', { name: 'Draft a' })).toHaveValue('Retained A');
+});
+
+test('vertical labels retain authored centered alignment', async ({ page }) => {
+  for (const renderer of ['lit', 'react'])
+    for (const variant of ['tinted', 'underlined']) {
+      const root = page.getByTestId(`${renderer}-${variant}-vertical`);
+      const error = await tabs(root)
+        .first()
+        .evaluate((node) => {
+          const label = node.querySelector('.lab-tabs-label');
+          if (!label) throw new Error('Tab label required');
+          const control = node.getBoundingClientRect();
+          const text = label.getBoundingClientRect();
+          return Math.abs(control.x + control.width / 2 - text.x - text.width / 2);
+        });
+      expect(error).toBeLessThan(1);
+    }
+});
+
+for (const orientation of ['horizontal', 'vertical']) {
+  for (const mode of ['automatic', 'manual']) {
+    for (const dir of ['ltr', 'rtl']) {
+      test(`Lit keyboard ${orientation}/${mode}/${dir}`, async ({ page }) => {
+        const root = page.getByTestId('lit-tinted-horizontal');
+        await root.evaluate((host, props) => Object.assign(host, props), {
+          orientation,
+          activationMode: mode,
+          dir,
+        });
+        await tabs(root).first().focus();
+        await page.keyboard.press(
+          orientation === 'vertical' ? 'ArrowDown' : dir === 'rtl' ? 'ArrowLeft' : 'ArrowRight',
+        );
+        await expect(tabs(root).nth(1)).toBeFocused();
+        await expect(selected(root)).toHaveText(mode === 'manual' ? 'Draft' : 'Details');
+        if (mode === 'manual') await page.keyboard.press('Enter');
+        await page.keyboard.press('End');
+        await expect(tabs(root).nth(3)).toBeFocused();
+      });
+    }
+  }
+}
+
+for (const theme of ['light', 'dark']) {
+  for (const scale of [1, 1.25, 2]) {
+    test(`authored geometry and renderer parity ${theme}/${scale}`, async ({ page }) => {
+      await page.evaluate(
+        ({ theme, scale }) => {
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.fontSize = `${scale * 100}%`;
+        },
+        { theme, scale },
+      );
+      for (const variant of ['tinted', 'underlined']) {
+        const lit = page.getByTestId(`lit-${variant}-horizontal`);
+        const react = page.getByTestId(`react-${variant}-horizontal`);
+        await expect(tabs(react).first()).toBeVisible();
+        for (const root of [lit, react]) {
+          const trigger = tabs(root).first();
+          expect((await trigger.boundingBox())?.height).toBeCloseTo(48 * scale, 0);
+          expect(await trigger.evaluate((node) => getComputedStyle(node).fontWeight)).toBe('500');
+          expect(await trigger.evaluate((node) => getComputedStyle(node).letterSpacing)).toBe(
+            'normal',
+          );
+          const size = await root.locator('[role="tablist"]').boundingBox();
+          expect(size?.height).toBeCloseTo((variant === 'tinted' ? 52 : 48) * scale, 0);
+        }
+        const paint = (node: HTMLElement) => ({
+          fill: getComputedStyle(node).backgroundColor,
+          shadow: getComputedStyle(node).boxShadow,
+        });
+        expect(await activePaint(lit).evaluate(paint)).toEqual(
+          await activePaint(react).evaluate(paint),
+        );
+        expect(
+          await activePaint(lit).evaluate((node) => getComputedStyle(node).boxShadow),
+        ).not.toBe('none');
+      }
+    });
+  }
+}
+
+test('tinted equal widths, separators and the four-tab author exception', async ({ page }) => {
+  for (const renderer of ['lit', 'react']) {
+    const root = page.getByTestId(`${renderer}-tinted-horizontal`);
+    const widths = await tabs(root).evaluateAll((nodes) =>
+      nodes.map((node) => node.getBoundingClientRect().width),
     );
+    expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(1);
+    expect(
+      await tabs(root)
+        .nth(1)
+        .evaluate((el) => getComputedStyle(el, '::before').display),
+    ).toBe('none');
+    expect(
+      await tabs(root)
+        .nth(2)
+        .evaluate((el) => getComputedStyle(el, '::before').width),
+    ).toBe('1px');
+    await tabs(root).nth(1).click();
+    expect(
+      await tabs(root)
+        .nth(2)
+        .evaluate((el) => getComputedStyle(el, '::before').display),
+    ).toBe('none');
   }
 });
 
-test('event contract: selecting a tab fires the public value-change with the new value (both renderers)', async ({
-  page,
-}) => {
-  // Lit dispatches a composed CustomEvent('value-change') whose detail.value is the
-  // newly selected tab; React surfaces its `onValueChange(value)` payload into a
-  // readout node. Both must fire with "password" when the second tab is chosen.
-  const litDetail = page.evaluate(
-    () =>
-      new Promise<string>((resolve) => {
-        const host = document.querySelector('[data-testid="lit-tabs"]');
-        host?.addEventListener(
-          'value-change',
-          (e) => resolve((e as CustomEvent<{ value: string }>).detail.value),
-          { once: true },
-        );
-      }),
-  );
-  await litTriggers(page, 'lit-tabs').nth(1).click();
-  expect(await litDetail).toBe('password');
+test('underlined edges mirror with RTL; icon-only Bottom uses 44px', async ({ page }) => {
+  const root = page.getByTestId('lit-tabs');
+  await root.evaluate((el) => {
+    Object.assign(el, {
+      items: [{ value: 'account', label: 'Account', iconOnly: true, icon: 'account-icon' }],
+      orientation: 'horizontal',
+      edge: 'end',
+    });
+    const icon = document.createElement('span');
+    icon.slot = 'account-icon';
+    icon.textContent = '◇';
+    el.append(icon);
+  });
+  expect((await tabs(root).first().boundingBox())?.height).toBe(44);
+  await expect(tabs(root).first()).toHaveAccessibleName('Account');
+  await root.evaluate((el) => Object.assign(el, { edge: 'start' }));
+  expect((await tabs(root).first().boundingBox())?.height).toBe(48);
+  for (const dir of ['ltr', 'rtl']) {
+    await root.evaluate(
+      (el, dir) => Object.assign(el, { orientation: 'vertical', dir, edge: 'end' }),
+      dir,
+    );
+    const trigger = await tabs(root).first().boundingBox();
+    const line = await activePaint(root).boundingBox();
+    if (!trigger || !line) throw new Error('Visible tab and indicator required');
+    expect(line.width).toBe(1);
+    expect(line.x).toBeCloseTo(dir === 'rtl' ? trigger.x : trigger.x + trigger.width - 1, 0);
+  }
+});
 
-  // React: the readout starts empty (no spurious fire on mount) and fills with the
-  // selected value once the public onValueChange emits.
-  const readout = page.getByTestId('react-tabs-event-value');
-  await expect(readout).toBeEmpty();
-  await reactTriggers(page, 'react-tabs-event').nth(1).click();
-  await expect(readout).toHaveText('password');
+test('narrow 200% keeps long labels reachable without page overflow', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%';
+  });
+  const root = page.getByTestId('lit-tinted-horizontal');
+  await root.evaluate((el) => {
+    const host = el as HTMLElement & { items: { value: string; label: string }[] };
+    host.items = host.items.map((item) => ({
+      ...item,
+      label: `Long project ${item.label} description`,
+    }));
+  });
+  const list = root.locator('[role="tablist"]');
+  expect(await list.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  await tabs(root).first().focus();
+  await page.keyboard.press('End');
+  await expect(tabs(root).last()).toBeFocused();
+  await expect.poll(() => list.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('Motion respects reduced motion and rapid interruption without errors', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.evaluate(() => {
+    document.documentElement.dataset.motionErrors = '0';
+    document.addEventListener('motion-error', () => {
+      document.documentElement.dataset.motionErrors = String(
+        Number(document.documentElement.dataset.motionErrors) + 1,
+      );
+    });
+  });
+  for (const renderer of ['lit', 'react']) {
+    const root = page.getByTestId(`${renderer}-tabs`);
+    for (const index of [1, 0, 1, 0]) await tabs(root).nth(index).click();
+    await expect(selected(root)).toHaveText('Account');
+    await expect(activePaint(root)).toHaveCSS('opacity', '1');
+  }
+  expect(await page.evaluate(() => document.documentElement.dataset.motionErrors)).toBe('0');
+});
+
+test('horizontal panels follow their content height', async ({ page }) => {
+  for (const renderer of ['lit', 'react']) {
+    const panel = page.getByTestId(`${renderer}-tabs`).locator('[role="tabpanel"]:not([hidden])');
+    expect((await panel.boundingBox())?.height).toBeLessThan(50);
+  }
 });

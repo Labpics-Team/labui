@@ -1,6 +1,6 @@
 {
-  "revision": "465c3ea5c4fd7ce1e0ed9148a26658c5e878d89d",
-  "sourceDigest": "sha256:6d06856019de44dba44d38420428da4483a449c685bb079aa6c4dcd212fef1f8",
+  "revision": "c27afdb491841a3adad6dccc6affc9ae36d137ff",
+  "sourceDigest": "sha256:2d2c46a67a6bfe136494f449f6017566130e56dd9062662693d3bb5c8e8e3b6f",
   "symbols": [
     {
       "name": "LabBadge",
@@ -85,6 +85,10 @@
     {
       "name": "LabSwitch",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSwitch.kt"
+    },
+    {
+      "name": "LabTabs",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabTabs.kt"
     },
     {
       "name": "LabTheme",

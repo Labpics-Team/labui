@@ -1,0 +1,18 @@
+.tabs-demo .specimens {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
+}
+.renderer > lab-tabs {
+  margin-block: 2rem;
+}
+.renderer :is(textarea, input) {
+  font: inherit;
+  box-sizing: border-box;
+  max-inline-size: 100%;
+}
+.renderer textarea {
+  display: block;
+  inline-size: 100%;
+  margin-block-start: 0.5rem;
+}

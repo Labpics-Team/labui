@@ -10,7 +10,7 @@ import type { LabTabs } from '@labpics/ui-core/tabs';
 import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-tabs>, взятые прямо из класса ядра (LabTabs). */
-export type TabsProps = Pick<LabTabs, 'orientation' | 'size' | 'activationMode' | 'value' | 'defaultValue' | 'items'>;
+export type TabsProps = Pick<LabTabs, 'variant' | 'edge' | 'orientation' | 'size' | 'activationMode' | 'value' | 'defaultValue' | 'label' | 'dir' | 'items'>;
 
 /**
  * <Tabs> — тонкая Vue-обёртка над <lab-tabs>.
@@ -21,11 +21,15 @@ export const Tabs: LabComponent<TabsProps, 'value-change'> = createLabComponent<
   'value-change'
 >('lab-tabs', {
   specs: [
+      { name: 'variant', attr: 'variant', kind: 'string' },
+      { name: 'edge', attr: 'edge', kind: 'string' },
       { name: 'orientation', attr: 'orientation', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },
       { name: 'activationMode', attr: 'activation-mode', kind: 'string' },
-      { name: 'value', attr: 'value', kind: 'string' },
+      { name: 'value', attr: 'value', kind: 'prop' },
       { name: 'defaultValue', attr: 'default-value', kind: 'string' },
+      { name: 'label', attr: 'label', kind: 'string' },
+      { name: 'dir', attr: 'dir', kind: 'string' },
       { name: 'items', attr: 'items', kind: 'prop' },
   ],
   events: ['value-change'],

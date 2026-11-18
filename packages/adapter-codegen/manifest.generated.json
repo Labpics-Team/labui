@@ -1694,6 +1694,16 @@
       "className": "LabTabs",
       "props": [
         {
+          "name": "variant",
+          "attr": "variant",
+          "kind": "string"
+        },
+        {
+          "name": "edge",
+          "attr": "edge",
+          "kind": "string"
+        },
+        {
           "name": "orientation",
           "attr": "orientation",
           "kind": "string"
@@ -1711,11 +1721,21 @@
         {
           "name": "value",
           "attr": "value",
-          "kind": "string"
+          "kind": "prop"
         },
         {
           "name": "defaultValue",
           "attr": "default-value",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "dir",
+          "attr": "dir",
           "kind": "string"
         },
         {

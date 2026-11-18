@@ -266,6 +266,10 @@
       "web": {
         "subpath": "tabs",
         "reactExport": "Tabs"
+      },
+      "profile": "tabs",
+      "native": {
+        "symbol": "LabTabs"
       }
     },
     {
@@ -1349,7 +1353,9 @@
             "scope": "Общая рамка Input/Textarea, базовая геометрия и 13 авторских состояний; rows и size=s/l расширяют исходный многострочный вариант."
           },
           "native": {
-            "props": { "singleLine": false },
+            "props": {
+              "singleLine": false
+            },
             "scope": "LabInput в многострочном режиме: профиль Textarea, перенос подписи и состояния default/filled/focused/error/readonly/disabled."
           }
         }
@@ -1782,12 +1788,18 @@
     },
     {
       "page": "Tab",
-      "name": "Tab",
+      "name": "Tab / Tinted",
       "type": "component-set",
       "uses": [
         {
           "family": "tabs",
-          "role": "variant"
+          "role": "variant",
+          "web": {
+            "scope": "Авторские Tinted/Underlined и tab-control: общий профиль, сохранённые панели, controlled выбор, клавиатура/RTL и SSR."
+          },
+          "native": {
+            "scope": "LabTabs по общему профилю: сохранённые панели, controlled выбор, клавиатура/RTL, масштаб текста и Motion."
+          }
         }
       ]
     },
@@ -1800,7 +1812,10 @@
           "family": "tabs",
           "role": "variant",
           "web": {
-            "scope": "Текущее подчёркнутое представление вкладки."
+            "scope": "Авторские Tinted/Underlined и tab-control: общий профиль, сохранённые панели, controlled выбор, клавиатура/RTL и SSR."
+          },
+          "native": {
+            "scope": "LabTabs по общему профилю: сохранённые панели, controlled выбор, клавиатура/RTL, масштаб текста и Motion."
           }
         }
       ]
@@ -1812,7 +1827,13 @@
       "uses": [
         {
           "family": "tabs",
-          "role": "part"
+          "role": "part",
+          "web": {
+            "scope": "Авторские Tinted/Underlined и tab-control: общий профиль, сохранённые панели, controlled выбор, клавиатура/RTL и SSR."
+          },
+          "native": {
+            "scope": "LabTabs по общему профилю: сохранённые панели, controlled выбор, клавиатура/RTL, масштаб текста и Motion."
+          }
         }
       ]
     },

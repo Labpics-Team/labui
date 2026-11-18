@@ -10,7 +10,7 @@ import '@labpics/ui-core/tabs';
 import type { LabTabs } from '@labpics/ui-core/tabs';
 
 /** SSR-пропы <lab-tabs> (атрибуты/свойства), взяты из класса ядра (LabTabs). */
-export type TabsSsrProps = Partial<Pick<LabTabs, 'orientation' | 'size' | 'activationMode' | 'value' | 'defaultValue' | 'items'>> & { 'aria-label'?: string; 'form'?: string };
+export type TabsSsrProps = Partial<Pick<LabTabs, 'variant' | 'edge' | 'orientation' | 'size' | 'activationMode' | 'value' | 'defaultValue' | 'label' | 'dir' | 'items'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-tabs> — предрендеренные строки контента. */
 export type TabsSsrSlots = { default?: string; dynamic?: Readonly<Record<string, string>> };
 
@@ -24,11 +24,15 @@ export function renderTabs(
   slots: TabsSsrSlots = {},
 ): string {
   return renderToString(html`<lab-tabs
+      variant=${ifDefined(props.variant)}
+      edge=${ifDefined(props.edge)}
       orientation=${ifDefined(props.orientation)}
       size=${ifDefined(props.size)}
       activation-mode=${ifDefined(props.activationMode)}
-      value=${ifDefined(props.value)}
+      .value=${props.value === undefined ? noChange : props.value}
       default-value=${ifDefined(props.defaultValue)}
+      label=${ifDefined(props.label)}
+      dir=${ifDefined(props.dir)}
       .items=${props.items === undefined ? noChange : props.items}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}
