@@ -36,7 +36,7 @@ test('настройки: проверка ввода, отмена, сохра�
 test('мобильная панель: тема, положение, Escape и доступность', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/experience.html');
-  const dark = page.getByRole('checkbox', { name: 'Тёмная тема' });
+  const dark = page.getByRole('switch', { name: 'Тёмная тема' });
   await expect(dark).toBeEnabled();
   await dark.focus();
   await dark.press('Space');
@@ -117,7 +117,7 @@ for (const width of [320, 390]) {
       await heading.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
     ).toBe(true);
     await name.fill('Новая лаборатория');
-    const notifications = dialog.getByRole('checkbox', { name: 'Уведомления команды' });
+    const notifications = dialog.getByRole('switch', { name: 'Уведомления команды' });
     await notifications.focus();
     await notifications.press('Space');
     await expect(notifications).not.toBeChecked();

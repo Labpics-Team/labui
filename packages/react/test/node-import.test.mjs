@@ -12,6 +12,7 @@ for (const format of ['esm', 'cjs']) {
     const { Sheet } = await load('@labpics/ui-react/sheet');
     const { Snackbar } = await load('@labpics/ui-react/snackbar');
     const { Card } = await load('@labpics/ui-react/card');
+    const { Switch } = await load('@labpics/ui-react/switch');
     assert.ok(Sheet);
     const output = renderToString(
       createElement(Input, {
@@ -40,5 +41,17 @@ for (const format of ['esm', 'cjs']) {
     assert.match(card, /<h2 class="lab-card-title">Title<\/h2>/);
     assert.match(card, /Description/);
     assert.match(card, /src="\/image.png"/);
+    const control = renderToString(
+      createElement(
+        Switch,
+        { defaultChecked: true, required: true, name: 'alerts', icon: true, labelStart: 'До' },
+        'После',
+      ),
+    );
+    assert.match(control, /role="switch"/);
+    assert.match(control, /checked=""/);
+    assert.match(control, /name="alerts"/);
+    assert.match(control, /До/);
+    assert.match(control, /После/);
   });
 }

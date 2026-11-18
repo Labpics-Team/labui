@@ -38,6 +38,7 @@ export default libraryPreset({
     'src/components/sheet/measure.ts',
     'src/components/snackbar/runtime.ts',
     'src/components/card/runtime.ts',
+    'src/components/switch/runtime.ts',
     'src/motion/sheet.ts',
     ...componentEntries,
   ],

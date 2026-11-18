@@ -43,5 +43,6 @@ export * from './generated/tokens.js';
 export * from './generated/motion.js';
 export { snackbarProfile } from './snackbar.js';
 export { cardProfile } from './card.js';
+export { switchProfile } from './switch.js';
 
 export const PACKAGE_NAME = '@labpics/ui-tokens';

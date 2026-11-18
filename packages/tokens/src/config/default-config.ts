@@ -1,3 +1,4 @@
+import { switchProfile } from '../switch.js';
 import type { TokensConfig } from './types.js';
 
 /**
@@ -86,15 +87,15 @@ export const defaultConfig: TokensConfig = {
       // DESIGN-CHOICE per ADR-0006 §2 (micro not snapping 4px grid w/o visible shift):
       // switch tracks, loader strokes 3px, checkbox tiny=14px. Added to reach
       // MIGRATED=27/27 + no-magic guard while keeping exact values (E1).
-      'switch-track-s': 2.25,
-      'switch-track-m': 2.75,
-      'switch-track-l': 3.25,
-      'switch-track-h-s': 1.25,
-      'switch-track-h-m': 1.5,
-      'switch-track-h-l': 1.75,
-      'switch-thumb-s': 0.875,
-      'switch-thumb-m': 1.125,
-      'switch-thumb-l': 1.375,
+      'switch-track-s': switchProfile.sizes.s.trackWidth / 16,
+      'switch-track-m': switchProfile.sizes.m.trackWidth / 16,
+      'switch-track-l': switchProfile.sizes.l.trackWidth / 16,
+      'switch-track-h-s': switchProfile.sizes.s.trackHeight / 16,
+      'switch-track-h-m': switchProfile.sizes.m.trackHeight / 16,
+      'switch-track-h-l': switchProfile.sizes.l.trackHeight / 16,
+      'switch-thumb-s': (switchProfile.sizes.s.trackHeight - 2 * switchProfile.thumb.padding) / 16,
+      'switch-thumb-m': (switchProfile.sizes.m.trackHeight - 2 * switchProfile.thumb.padding) / 16,
+      'switch-thumb-l': (switchProfile.sizes.l.trackHeight - 2 * switchProfile.thumb.padding) / 16,
       'loader-stroke-s': 0.125,
       'loader-stroke-m': 0.1875,
       'loader-stroke-l': 0.25,

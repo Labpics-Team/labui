@@ -37,6 +37,12 @@
     "./input.css": "./dist/input.css",
     "./snackbar.css": "./dist/snackbar.css",
     "./card.css": "./dist/card.css",
+    "./switch.css": "./dist/switch.css",
+    "./switch/runtime": {
+      "types": "./dist/components/switch/runtime.d.ts",
+      "import": "./dist/components/switch/runtime.js",
+      "require": "./dist/components/switch/runtime.cjs"
+    },
     "./package.json": "./package.json",
     "./dialog/shared": {
       "types": "./dist/components/dialog/shared.d.ts",
@@ -79,6 +85,7 @@
     "./dist/input.css",
     "./dist/snackbar.css",
     "./dist/card.css",
+    "./dist/switch.css",
     "./dist/proof/lab-proof.js",
     "./dist/proof/lab-proof.cjs",
     "./dist/components/**",
