@@ -76,6 +76,10 @@ Sharp Small без/с выбором, Sharp Medium без/с выбором. `we
 - Colors: 255/255. Общие роли, generated CSS/native contract, отсутствие inline
   paint literals, непредусмотренных размеров, motion и неименованных z-index.
 - Typecheck всех workspace packages и docs прошёл; Biome и source verification чисты.
+- Адаптеры и каталог: 32/32; документация: 17/17. Обычная сборка docs с
+  `catalog:check` прошла. На `/components.html?component=chip` проверены 56
+  состояний и два живых примера; реальный click меняет `aria-pressed` на `true`,
+  ошибок страницы нет. `catalog-page.png` показывает выбранный live example.
 - Установленный isolated consumer из 11 npm tarballs: ESM/CJS core и React,
   восемь CSS exports, Vue/Solid imports, четыре renderChip SSR, browser bundle,
   Svelte client/server и Astro compile прошли. После исправления `exports.types`
