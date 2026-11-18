@@ -47,8 +47,8 @@ function inModeScope(el: Element, mode: string): boolean {
 
 function themeOf(el: Element): string {
   for (let scope: Element | null = el; scope; scope = composedParent(scope)) {
-    if (scope.hasAttribute('data-theme'))
-      return scope.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    const theme = scope.getAttribute('data-theme');
+    if (theme === 'dark' || theme === 'light') return theme;
   }
   return el.ownerDocument.defaultView?.matchMedia('(prefers-color-scheme: dark)').matches
     ? 'dark'

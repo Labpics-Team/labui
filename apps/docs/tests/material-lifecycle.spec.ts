@@ -686,6 +686,46 @@ test('a detached shadow host reconnects in a later frame and follows its new sco
   await expect(surface).toHaveAttribute('data-lab-material-mode', 'solid');
 });
 
+test('runtime themes match first paint for automatic and unrecognized values', async ({ page }) => {
+  const surfaces = [page.locator('#surface'), page.locator('#shadow-surface')];
+  for (const colorScheme of ['dark', 'light'] as const) {
+    await page.emulateMedia({ colorScheme });
+    await page.reload();
+    await expect(page.locator('#ready')).toHaveText('ready');
+    for (const theme of [null, '', 'auto', 'custom', 'light', 'dark']) {
+      await page.locator('html').evaluate((el, theme) => {
+        if (theme === null) el.removeAttribute('data-theme');
+        else el.setAttribute('data-theme', theme);
+      }, theme);
+      const expected = theme === 'light' || theme === 'dark' ? theme : colorScheme;
+      for (const surface of surfaces) {
+        await expect(surface).toHaveAttribute('data-lab-material-theme', expected);
+        await expect(surface).toHaveCSS(
+          '--_material-paint-blend-mode',
+          expected === 'dark' ? 'overlay' : 'color-dodge',
+        );
+      }
+    }
+  }
+  // Unknown nested values inherit the nearest explicit boundary, as CSS does.
+  await page.evaluate(() => {
+    document.documentElement.dataset.theme = 'light';
+    for (const el of document.querySelectorAll<HTMLElement>('#scope, #shadow-host'))
+      el.dataset.theme = 'dark';
+  });
+  for (const surface of surfaces) {
+    await surface.evaluate((el) => el.setAttribute('data-theme', 'auto'));
+    await expect(surface).toHaveAttribute('data-lab-material-theme', 'dark');
+  }
+  await page.evaluate(() => {
+    for (const el of document.querySelectorAll<HTMLElement>('#scope, #shadow-host'))
+      el.dataset.theme = 'custom';
+  });
+  for (const surface of surfaces) {
+    await expect(surface).toHaveAttribute('data-lab-material-theme', 'light');
+  }
+});
+
 test('author paints follow the operating system palette without an explicit theme', async ({
   page,
   browserName,
