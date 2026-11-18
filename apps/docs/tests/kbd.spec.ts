@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { type Page, expect, test } from '@playwright/test';
 
@@ -53,6 +54,68 @@ test('single slots, nested chords and legacy size keep keyboard-input semantics'
     const key = renderer === 'lit' ? alias.locator('kbd') : alias;
     await expect(key).toHaveAttribute('data-size', 'l');
     expect(await key.evaluate((el) => (el as HTMLElement).tabIndex)).toBe(-1);
+  }
+});
+
+test('the delivered SSR adapter preserves a chord across hydration and later updates', async ({
+  browser,
+  baseURL,
+}) => {
+  // A fresh process catches bootstrap ordering: an earlier SSR import in the
+  // Playwright worker must not accidentally prepare the registry for this test.
+  const module = new URL('../../../packages/vue/dist/ssr.js', import.meta.url).href;
+  const output = execFileSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `const {renderKbd} = await import(${JSON.stringify(module)}); process.stdout.write(renderKbd({keys:['Ctrl','Shift','P'],size:'l'}));`,
+    ],
+    { encoding: 'utf8' },
+  );
+  expect(output).toContain('shadowrootmode="open"');
+  expect(output).toContain('keys=');
+  const installer = new URL(
+    '../../../packages/core/node_modules/@lit-labs/ssr/lib/dom-shim.js',
+    import.meta.url,
+  ).href;
+  const preserved = execFileSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `const {installWindowOnGlobal}=await import(${JSON.stringify(installer)}); installWindowOnGlobal(); const previous=customElements; previous.define('lab-kbd-sentinel',class extends HTMLElement{}); await import(${JSON.stringify(module)}); process.stdout.write(String(customElements===previous && !!customElements.get('lab-kbd-sentinel')));`,
+    ],
+    { encoding: 'utf8' },
+  );
+  expect(preserved).toBe('true');
+  const page = await browser.newPage();
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  try {
+    await page.route('**/kbd-ssr.html', async (route) => {
+      const response = await route.fetch();
+      await route.fulfill({
+        response,
+        body: (await response.text()).replace('<!-- SSR-KBD -->', output),
+      });
+    });
+    await page.goto(`${baseURL}/_fixtures/kbd-ssr.html`);
+    await page.evaluate(async () => {
+      await customElements.whenDefined('lab-kbd');
+      const key = document.querySelector('lab-kbd');
+      if (!key) throw new Error('Missing server-rendered Kbd');
+      await key.updateComplete;
+      key.size = 's';
+      await key.updateComplete;
+    });
+    await expect(page.locator('lab-kbd .lab-kbd-key')).toHaveText(['Ctrl', 'Shift', 'P']);
+    expect(
+      await page.locator('lab-kbd').evaluate((el) => (el as HTMLElementTagNameMap['lab-kbd']).keys),
+    ).toEqual(['Ctrl', 'Shift', 'P']);
+    expect(errors).toEqual([]);
+  } finally {
+    await page.close();
   }
 });
 

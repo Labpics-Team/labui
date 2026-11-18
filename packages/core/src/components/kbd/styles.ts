@@ -41,6 +41,7 @@ ${sizes}
   min-block-size: var(--_kbd-height);
   padding: var(--_kbd-pad-y) var(--_kbd-pad-x);
   border-radius: var(--_kbd-radius);
+  corner-shape: round;
   background: linear-gradient(to bottom, var(--lab-${p.firstFillRole}), var(--lab-${p.fillEndRole}));
 }
 [data-lab-kbd] > .lab-kbd-key { font: inherit; letter-spacing: inherit; }
@@ -53,6 +54,7 @@ ${sizes}
   inset: 0;
   border: ${rem(p.strokeWidth)} solid var(--lab-${p.borderRole});
   border-radius: inherit;
+  corner-shape: round;
   pointer-events: none;
 }
 .lab-kbd-key::after {
@@ -62,6 +64,7 @@ ${sizes}
   bottom: calc(-1 * var(--_kbd-depth));
   height: calc(var(--_kbd-radius) + var(--_kbd-depth));
   border-radius: 0 0 calc(var(--_kbd-radius) + var(--_kbd-depth)) calc(var(--_kbd-radius) + var(--_kbd-depth));
+  corner-shape: round;
   background: var(--lab-${p.bottomBorderRole});
   mask:
     radial-gradient(circle at right top, transparent calc(var(--_kbd-radius) - .001px), #000 var(--_kbd-radius)) left top / var(--_kbd-radius) var(--_kbd-radius) no-repeat,

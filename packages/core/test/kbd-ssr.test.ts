@@ -16,6 +16,7 @@ describe('Kbd first server frame', () => {
     expect(output.match(/<kbd[ >]/g)).toHaveLength(3);
     expect(output).toContain('&lt;K&gt;');
     expect(output).toContain('data-size="l"');
+    expect(output).toContain('keys="[&quot;Ctrl&quot;,&quot;&lt;K&gt;&quot;]"');
   });
 
   it('normalizes the old medium spelling and preserves an empty-list slot', () => {

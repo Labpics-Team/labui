@@ -9,7 +9,7 @@ export type { LabKbdSize } from './contract.js';
 export class LabKbd extends LabElement {
   static override properties = {
     size: { reflect: true },
-    keys: { type: Array },
+    keys: { type: Array, reflect: true },
   };
   declare size: LabKbdSize;
   declare keys: readonly string[];

@@ -11,6 +11,8 @@ PNG экспортированы в масштабе 3×.
 strokeRightWeight = 0`, `strokeBottomWeight = 1/2` для Small/Large и
 `strokeAlign = OUTSIDE`. Вложенный Container имеет обводку 1 INSIDE.
 У всех восьми masters отсутствует эффект тени.
+Web явно использует `corner-shape: round`: глобальная форма Superellipse не
+должна менять авторские круговые углы Kbd.
 
 Общий профиль находится в `packages/tokens/src/components.json#kbd`.
 `packages/tokens/test/kbd-profile.test.ts` сверяет размеры, отступы, радиусы,
@@ -60,6 +62,9 @@ pnpm catalog:check
   из Figma для прямого сравнения поверхности и символа.
 - SSR сохраняет single slot, пустой список и пустой JSON attribute, экранирует
   подписи списка. Сгенерированные Vue/Svelte/Solid/Astro передают `keys`.
+  Список отражается JSON-атрибутом, поэтому сохраняется после гидратации DSD.
+  Браузерная проверка запускает собранный Vue SSR в новом Node-процессе,
+  загружает результат с тем же порядком импорта, что Astro, и меняет размер.
 
 У Skia при `TextOverflow.Visible` ширина параграфа может оставаться шириной
 доступного контейнера, хотя сам текстовый узел измерен по подписи.
@@ -71,3 +76,20 @@ pnpm catalog:check
 
 Источники: [Lab UI v2.1](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1),
 [семантика kbd](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/kbd).
+
+## Результат 18 ноября
+
+16 браузерных проверок Chromium/WebKit прошли; две Compose-проверки прошли
+без окна. Сверка восьми masters, четыре Kbd SSR-проверки, 32 проверки генератора,
+typecheck core/react/docs и актуальность каталога/нативного профиля прошли.
+Fresh ESM import и CJS require собранного SSR-адаптера возвращают DSD;
+уже существующий customElements registry и его определения сохраняются.
+Причина прежней гонки и контракт bootstrap описаны в [SSR](../../../../docs/reference/ssr.md).
+
+`comparison-small.png` ставит рядом Figma, Chromium и Compose. Контур `⌘`
+соответствует Noto Sans Symbols 2: максимальное расстояние между образцами
+контуров — 0,008485 px при реальных 12 px без подгонки масштаба.
+В Compose границы сглаженного символа отличаются максимум на один физический
+пиксель при 3×; смещения под отдельный символ не добавлены.
+`command-shape-comparison.json` сохраняет также результаты сравнения с Inter
+и Segoe UI Symbol, которые исходному контуру не соответствуют.

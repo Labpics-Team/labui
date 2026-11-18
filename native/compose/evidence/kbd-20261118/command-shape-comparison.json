@@ -1,0 +1,29 @@
+[
+  {
+    "font": "Noto Sans Symbols 2",
+    "version": "Version 2.008; ttfautohint (v1.8.4.7-5d5b)",
+    "fontContours": 6,
+    "figmaContours": 6,
+    "size": 12,
+    "comparison": "same font size; glyph minX/minY aligned; no scale fitting; explicit closing segments; sampled curves128steps and lines0.01px",
+    "symmetricSampleDistancePx": 0.008485281374238813
+  },
+  {
+    "font": "Inter Variable",
+    "version": "Version 4.001;git-9221beed3",
+    "fontContours": 6,
+    "figmaContours": 6,
+    "size": 12,
+    "comparison": "same font size; glyph minX/minY aligned; no scale fitting; explicit closing segments; sampled curves128steps and lines0.01px",
+    "symmetricSampleDistancePx": 0.686138005014048
+  },
+  {
+    "font": "Segoe UI Symbol",
+    "version": "Version 6.24",
+    "fontContours": 6,
+    "figmaContours": 6,
+    "size": 12,
+    "comparison": "same font size; glyph minX/minY aligned; no scale fitting; explicit closing segments; sampled curves128steps and lines0.01px",
+    "symmetricSampleDistancePx": 2.148986296302926
+  }
+]

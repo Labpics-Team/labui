@@ -133,6 +133,14 @@ class KbdRenderTest {
             }
             try {
                 File(output, "kbd-source-${size.name.lowercase()}-3x.png").writeBytes(settle(scene, ready))
+                val layouts = scene.semanticsOwners.flatMap { walk(it.unmergedRootSemanticsNode) }
+                    .flatMap { node -> mutableListOf<TextLayoutResult>().also {
+                        node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(it)
+                    } }
+                File(output, "kbd-source-${size.name.lowercase()}-3x.json").writeText(
+                    "{\"size\":\"$size\",\"density\":3,\"text\":[" + layouts.joinToString {
+                        "{\"width\":${it.size.width},\"height\":${it.size.height},\"firstBaseline\":${it.firstBaseline}}"
+                    } + "]}\n")
             } finally { scene.close() }
         }
     }
