@@ -84,8 +84,8 @@ describe('no magic motion in component styles (motion contract)', () => {
   });
 
   it('IGNORES a pinned loop in its own file but not elsewhere', () => {
-    const loop = '.s { animation: lab-loader-spin 0.7s linear infinite; }';
-    expect(scanMotionSource('packages/react/src/loader.css', loop)).toEqual([]);
+    const loop = '.s { animation: lab-button-spin 0.7s linear infinite; }';
+    expect(scanMotionSource('packages/react/src/button.css', loop)).toEqual([]);
     expect(scanMotionSource('packages/react/src/badge.css', loop)).toMatchObject([
       { rule: 'magic-animation' },
     ]);
