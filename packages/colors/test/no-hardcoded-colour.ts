@@ -21,6 +21,8 @@
  *      flagged: they carry no brand colour (a transparent border / a
  *      `currentColor` SVG fill inherits the role-driven colour) and are
  *      legitimate everywhere. They are the documented allowed keywords.
+ *      System colours are also legitimate inside `(forced-colors: active)`:
+ *      https://www.w3.org/TR/css-color-adjust-1/#forced-colors-mode.
  *   3. A named / system colour is matched ONLY in CSS VALUE POSITION — right
  *      after a `:` (a declaration value), never as a substring of a property
  *      name (`white-space`) or identifier (`Fieldset`).
@@ -33,6 +35,8 @@
  */
 import { globSync, readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
+import ts from 'typescript';
+import { cssBlocks } from './css-source.js';
 import {
   NAMED_COLOURS,
   SYSTEM_COLOURS,
@@ -328,6 +332,25 @@ function isColourValuePosition(text: string, index: number): boolean {
   return COLOUR_ATTR_RE.test(text.slice(0, delimiterAt).trimEnd());
 }
 
+/** A serializer reads data; wrapping a numeric constant in ${...} is still paint. */
+function isComputedRgb(source: string): boolean {
+  const rgb =
+    /^rgba?\(\s*\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s*[/,]\s*\$\{[^}]+\})?\s*\)/i.exec(
+      source,
+    );
+  if (!rgb) return false;
+  const readsData = (node: ts.Node): boolean => {
+    if (ts.isIdentifier(node)) return !['NaN', 'Infinity', 'undefined'].includes(node.text);
+    if (ts.isCallExpression(node)) return node.arguments.some(readsData);
+    if (ts.isPropertyAccessExpression(node)) return readsData(node.expression);
+    return ts.forEachChild(node, (child) => readsData(child) || undefined) === true;
+  };
+  return [...rgb[0].matchAll(/\$\{([^}]+)\}/g)].every((channel) => {
+    const parsed = ts.createSourceFile('channel.ts', `(${channel[1]})`, ts.ScriptTarget.Latest);
+    return readsData(parsed);
+  });
+}
+
 /**
  * Scan one file's (comment-stripped) text for any free-standing colour literal.
  * An allowlisted path yields nothing. The `Violation` shape matches the fallback
@@ -337,6 +360,11 @@ export function scanSource(relPath: string, source: string): Violation[] {
   if (ALLOWLIST.includes(relPath)) return [];
   const isCss = relPath.endsWith('.css');
   const text = blankLicensedSpans(stripComments(source, isCss), relPath);
+  // System colours deliberately follow the user's forced palette, not Lab UI's
+  // theme. Only this media condition licenses them; literal paints remain errors.
+  const forcedColours = cssBlocks(text).filter((block) =>
+    /^@media\s*\(\s*forced-colors\s*:\s*active\s*\)$/i.test(block.header),
+  );
   const out: Violation[] = [];
   const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
   // Hex/functional forms (`#fff`, `rgb(`, `color-mix(…#fff…)`) introduce a literal
@@ -351,16 +379,14 @@ export function scanSource(relPath: string, source: string): Violation[] {
     for (let m = re.exec(text); m !== null; m = re.exec(text)) {
       // These are JS property/index expressions, not CSS named colour values.
       if (!isCss && gated && /^\s*[.[]/.test(text.slice(m.index + m[0].length))) continue;
-      // A serializer receives every channel from computed data. Keep partially
-      // literal colours visible to the scanner, including numeric alpha.
       if (
-        !isCss &&
-        re === FUNCTIONAL_HEX_RE &&
-        /^rgba?\(\s*\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s*[/,]\s*\$\{[^}]+\})?\s*\)/i.test(
-          text.slice(m.index),
-        )
+        re === VALUE_SYSTEM_RE &&
+        forcedColours.some((block) => m.index >= block.start && m.index < block.end)
       )
         continue;
+      // A serializer receives every channel from computed data. Keep partially
+      // literal colours visible to the scanner, including numeric alpha.
+      if (!isCss && re === FUNCTIONAL_HEX_RE && isComputedRgb(text.slice(m.index))) continue;
       if (gated && !isColourValuePosition(text, m.index)) continue;
       out.push({
         file: relPath,

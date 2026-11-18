@@ -124,18 +124,15 @@ describe('no magic motion in component styles (motion contract)', () => {
     ]);
   });
 
-  // ── (6) Живой кросс-чек: дыра reduced-motion в lab-card закрыта токеном, а
-  // не вернувшимся ручным media-query (карточка была единственным компонентом
-  // с transition без RM-блока — теперь RM владеет токен-слой).
-  it('lab-card rides the transition role on both stacks, with no manual RM query', () => {
-    const core = readFileSync(
-      resolve(repoRoot, 'packages/core/src/components/card/lab-card.ts'),
-      'utf8',
-    );
-    const react = readFileSync(resolve(repoRoot, 'packages/react/src/card.css'), 'utf8');
-    for (const src of [core, react]) {
-      expect(src).toContain('var(--lab-motion-transition-duration)');
-      expect(src).not.toContain('prefers-reduced-motion');
-    }
+  it('the motion scan follows shared core styles after renderer CSS consolidation', () => {
+    const surface = motionSurfaceFiles();
+    expect(surface).toContain('packages/core/src/components/card/styles.ts');
+    expect(surface).toContain('packages/core/src/components/input/styles.ts');
+    const file = 'packages/core/src/components/card/styles.ts';
+    const source = readFileSync(resolve(repoRoot, file), 'utf8');
+    expect(scanMotionSource(file, source)).toEqual([]);
+    expect(scanMotionSource(file, `${source}\n.x { transition: opacity 120ms; }`)).toMatchObject([
+      { rule: 'magic-transition' },
+    ]);
   });
 });

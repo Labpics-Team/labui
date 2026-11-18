@@ -22,88 +22,72 @@
  * Lit-исходники сперва нормализуются (`litVar('X', 'f')` → `var(X, f)`), так
  * что один сканер читает shadow-близнеца (TS) и React-близнеца (CSS) одинаково.
  */
-import { globSync, readFileSync } from 'node:fs';
-import { relative, resolve } from 'node:path';
+import { existsSync, globSync, readFileSync } from 'node:fs';
+import { dirname, relative, resolve } from 'node:path';
+import ts from 'typescript';
+import { classify } from './consumed-contract.js';
+import { stripComments } from './css-source.js';
+export { stripComments } from './css-source.js';
 import { repoRoot } from './no-literal-colour-fallback.js';
 
-/**
- * Компоненты, мигрированные на размерный контракт. Волна миграции ДОБАВЛЯЕТ
- * свой компонент сюда тем же PR, что мигрирует, — в этом вся церемония.
- * Каждая запись перечисляет все файлы, красящие компонент на любом рендерере.
- */
-export const MIGRATED: Readonly<Record<string, readonly string[]>> = {
-  'radio-group': [
-    'packages/core/src/components/radio-group/lab-radio-group.ts',
-    'packages/react/src/radio-group.css',
-  ],
-  accordion: [
-    'packages/core/src/components/accordion/lab-accordion.ts',
-    'packages/react/src/accordion.css',
-  ],
-  badge: ['packages/core/src/components/badge/lab-badge.ts', 'packages/react/src/badge.css'],
-  breadcrumb: [
-    'packages/core/src/components/breadcrumb/lab-breadcrumb.ts',
-    'packages/react/src/breadcrumb.css',
-  ],
-  button: ['packages/core/src/components/button/lab-button.ts', 'packages/react/src/button.css'],
-  card: ['packages/core/src/components/card/lab-card.ts', 'packages/react/src/card.css'],
-  input: [
-    'packages/core/src/components/input/lab-input.ts',
-    'packages/core/src/components/field/field-styles.ts',
-    'packages/react/src/input.css',
-  ],
-  kbd: ['packages/core/src/components/kbd/lab-kbd.ts', 'packages/react/src/kbd.css'],
-  'pin-input': [
-    'packages/core/src/components/pin-input/lab-pin-input.ts',
-    'packages/react/src/pin-input.css',
-  ],
-  tabs: ['packages/core/src/components/tabs/lab-tabs.ts', 'packages/react/src/tabs.css'],
-  textarea: [
-    'packages/core/src/components/textarea/lab-textarea.ts',
-    'packages/core/src/components/field/field-styles.ts',
-    'packages/react/src/textarea.css',
-  ],
-  progress: [
-    'packages/core/src/components/progress/lab-progress.ts',
-    'packages/react/src/progress.css',
-  ],
-  loader: ['packages/core/src/components/loader/lab-loader.ts', 'packages/react/src/loader.css'],
-  switch: ['packages/core/src/components/switch/lab-switch.ts', 'packages/react/src/switch.css'],
-  checkbox: [
-    'packages/core/src/components/checkbox/lab-checkbox.ts',
-    'packages/react/src/checkbox.css',
-  ],
-  avatar: ['packages/core/src/components/avatar/lab-avatar.ts', 'packages/react/src/avatar.css'],
-  dialog: ['packages/core/src/components/dialog/lab-dialog.ts', 'packages/react/src/dialog.css'],
-  'alert-dialog': [
-    'packages/core/src/components/alert-dialog/lab-alert-dialog.ts',
-    // React twin reuses <Dialog> (shares dialog.css); alert-dialog.tsx has no dimension literals.
-  ],
-  tooltip: [
-    'packages/core/src/components/tooltip/lab-tooltip.ts',
-    'packages/react/src/tooltip.css',
-  ],
-  'tags-input': [
-    'packages/core/src/components/tags-input/lab-tags-input.ts',
-    'packages/react/src/tags-input.css',
-  ],
-  combobox: [
-    'packages/core/src/components/combobox/lab-combobox.ts',
-    'packages/react/src/combobox.css',
-  ],
-  'number-input': [
-    'packages/core/src/components/number-input/lab-number-input.ts',
-    'packages/react/src/number-input.css',
-  ],
-  // НЕ мигрированы (аудит дрейфа shadcn, 2026-07-09): menu / select / pagination /
-  // slider / popover. Их живые размеры дрейфанули от канона шкалы (наследие shadcn):
-  //   control-h: 1.875rem→канон 2rem (s), 2.25rem→2.5rem (m), 2.75rem→3rem (l);
-  //   slider:    border-radius 0.375rem→канон --lab-radius-xs 0.25rem;
-  //   popover:   голые литералы 0.0625/0.625/1.125/1.5/9.0625rem без токенов шкалы.
-  // Обернуть их в канонические токены = молча сдвинуть пиксели в рантайме — запрещено
-  // мандатом байт-идентичности (#137). Нормализация — отдельным видимым PR с дизайн-
-  // санкцией; до тех пор литералы остаются голыми и компоненты не в этом списке.
-};
+/** Migration status is per component; source files follow its actual imports. */
+const MIGRATED_COMPONENTS = [
+  'radio-group',
+  'accordion',
+  'badge',
+  'breadcrumb',
+  'button',
+  'card',
+  'input',
+  'kbd',
+  'pin-input',
+  'tabs',
+  'textarea',
+  'progress',
+  'loader',
+  'switch',
+  'checkbox',
+  'avatar',
+  'dialog',
+  'alert-dialog',
+  'tooltip',
+  'tags-input',
+  'combobox',
+  'number-input',
+] as const;
+
+/** Collect local component styles, including shared field styles and CSS imports. */
+function componentFiles(name: string): string[] {
+  const seen = new Set<string>();
+  const visit = (file: string): void => {
+    if (seen.has(file)) return;
+    seen.add(file);
+    const source = readFileSync(resolve(repoRoot, file), 'utf8');
+    const imports = file.endsWith('.css')
+      ? [...stripComments(source, false).matchAll(/@import\s*['"]([^'"]+)['"]/g)].map(
+          (match) => match[1] as string,
+        )
+      : ts.preProcessFile(source, true).importedFiles.map((imported) => imported.fileName);
+    for (const imported of imports.filter((path) => path.startsWith('.'))) {
+      const base = resolve(repoRoot, dirname(file), imported);
+      const target = [base.replace(/\.js$/, '.ts'), base.replace(/\.js$/, '.tsx'), base].find(
+        (path) => existsSync(path),
+      );
+      if (!target) throw new Error(`${file}: unresolved local import ${imported}`);
+      const rel = relative(repoRoot, target).replaceAll('\\', '/');
+      if (rel.startsWith('packages/core/src/components/') || rel.startsWith('packages/react/src/'))
+        visit(rel);
+    }
+  };
+  visit(`packages/core/src/components/${name}/lab-${name}.ts`);
+  const react = `packages/react/src/${name}.tsx`;
+  if (existsSync(resolve(repoRoot, react))) visit(react);
+  return [...seen].sort();
+}
+
+export const MIGRATED: Readonly<Record<string, readonly string[]>> = Object.fromEntries(
+  MIGRATED_COMPONENTS.map((name) => [name, componentFiles(name)]),
+);
 
 /** Одна находка; форма зеркалит цветовые гарды — один репортер на всех. */
 export interface DimensionViolation {
@@ -123,19 +107,6 @@ export function normalizeLit(source: string): string {
     .replace(/\$\{litVar\('(--lab-[a-z0-9-]+)',\s*'([^']+)'\)\}/g, 'var($1, $2)')
     .replace(/\$\{litVar\('(--lab-[a-z0-9-]+)'\)\}/g, 'var($1)')
     .replace(/\$\{litConcentricRadius\(([^)]*)\)\}/g, 'max(calc($1))');
-}
-
-/**
- * Срез комментариев (с сохранением переносов строк), чтобы проза никогда не
- * спотыкала сканер. Строчные `//` существуют только в TS (в CSS — только
- * блочные; то же обоснование url(//…), что у цветового гарда). Экспортирована:
- * сканер потребляемой поверхности (consumed-contract.ts) переиспользует её под
- * тот же закон — проза не является потреблением.
- */
-export function stripComments(source: string, isTs: boolean): string {
-  let out = source.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
-  if (isTs) out = out.replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
-  return out;
 }
 
 /** Парсинг `<число><единица>` → px при корне 16px; null, если не длина. */
@@ -212,7 +183,12 @@ function consumeVarGroups(
         replaced = true;
         // Пустой (после растворения вложенной var()-группы) фолбэк — ссылка на
         // другой токен, а не литеральный кеш: дрейф-проверке не подлежит.
-        if (fallback !== undefined && fallback.trim().length > 0 && name.startsWith('--lab-')) {
+        if (
+          fallback !== undefined &&
+          fallback.trim().length > 0 &&
+          name.startsWith('--lab-') &&
+          classify(name) !== 'local-or-gap'
+        ) {
           const canonValue = canon.get(name);
           if (canonValue === undefined) {
             out.push({
@@ -247,7 +223,7 @@ export function scanDimensionSource(
   canon: Map<string, string> = canonicalTokens(),
 ): DimensionViolation[] {
   const out: DimensionViolation[] = [];
-  const isTs = relPath.endsWith('.ts');
+  const isTs = /\.tsx?$/.test(relPath);
   const text = stripComments(isTs ? normalizeLit(source) : source, isTs);
   const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
 
@@ -331,7 +307,7 @@ export function scanFallbackDrift(): DimensionViolation[] {
   const canon = canonicalTokens();
   const out: DimensionViolation[] = [];
   for (const rel of fallbackSurfaceFiles()) {
-    const isTs = rel.endsWith('.ts');
+    const isTs = /\.tsx?$/.test(rel);
     const source = readFileSync(resolve(repoRoot, rel), 'utf8');
     const text = stripComments(isTs ? normalizeLit(source) : source, isTs);
     const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
@@ -346,11 +322,9 @@ export function scanFallbackDrift(): DimensionViolation[] {
 export function scanMigrated(): DimensionViolation[] {
   const canon = canonicalTokens();
   const out: DimensionViolation[] = [];
-  for (const files of Object.values(MIGRATED)) {
-    for (const rel of files) {
-      const source = readFileSync(resolve(repoRoot, rel), 'utf8');
-      out.push(...scanDimensionSource(rel, source, canon));
-    }
+  for (const rel of new Set(Object.values(MIGRATED).flat())) {
+    const source = readFileSync(resolve(repoRoot, rel), 'utf8');
+    out.push(...scanDimensionSource(rel, source, canon));
   }
   return out;
 }

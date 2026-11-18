@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import * as generated from '../src/generated/index.js';
 import * as adapter from '../src/index.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -24,7 +25,7 @@ describe('полнота Vue-адаптера', () => {
     expect(missing, `нет обёрток: ${missing.join(', ')}`).toEqual([]);
   });
 
-  it('в манифесте 27 компонентов', () => {
-    expect(manifest.components).toHaveLength(27);
+  it('сгенерированные экспорты точно соответствуют манифесту ядра', () => {
+    expect(Object.keys(generated).sort()).toEqual(manifest.components.map((c) => c.pascal).sort());
   });
 });

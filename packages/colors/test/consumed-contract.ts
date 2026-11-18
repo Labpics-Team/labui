@@ -26,7 +26,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { stripComments } from './no-magic-dimension.js';
+import { stripComments } from './css-source.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 /** Repo root — from `test/` inside `packages/colors`, three levels up. */
@@ -81,6 +81,17 @@ export const LOCAL_OR_GAP_PREFIXES = [
   '--lab-surface-stroke-width', // exact: local inside-stroke geometry
   '--lab-surface-stroke-color', // exact: local paint input, normally bound to a semantic role
 ] as const;
+
+// The material profile compiler declares its public CSS inputs. Derive those
+// names from the producer, so a new composition does not need another catalogue.
+const materialProfileProperties = new Set(
+  [
+    ...stripComments(
+      readFileSync(resolve(repoRoot, 'packages/materials/scripts/profile-css.ts'), 'utf8'),
+      true,
+    ).matchAll(/(--lab-[a-z0-9-]+)\s*:/g),
+  ].map((match) => match[1]),
+);
 
 export type Bucket = 'colour-contract' | 'dimension' | 'local-or-gap' | 'unclassified';
 
@@ -228,6 +239,12 @@ export function classify(name: string): Bucket {
   if (colourContractRoles().has(name)) return 'colour-contract';
   if (DIMENSION_PREFIXES.some((p) => name.startsWith(p))) return 'dimension';
   if (LOCAL_OR_GAP_PREFIXES.some((p) => (p.endsWith('-') ? name.startsWith(p) : name === p))) {
+    return 'local-or-gap';
+  }
+  if (
+    materialProfileProperties.has(name) &&
+    !SEMANTIC_ROLE_PREFIXES.some((p) => name.startsWith(p))
+  ) {
     return 'local-or-gap';
   }
   return 'unclassified';

@@ -2,8 +2,10 @@
  * Сканер no-magic-zindex — z-шкала как самоисполняемый контракт.
  *
  * docs/dimension-contract.md §7 — закон, который исполняет этот гард. Компонент
- * НИКОГДА не пишет голое число z-index: каждый глобальный слой едет на именованном
- * токене `--lab-z-*` (15 уровней SSOT @labpics/ui-tokens). Так закрывается КЛАСС
+ * использует `--lab-z-*` для глобального слоя. Целые локальные слои разрешены
+ * только у потомков явно изолированной поверхности (`isolation: isolate`).
+ * Локальность стека: https://www.w3.org/TR/compositing-1/#isolation.
+ * Так закрывается КЛАСС
  * «войн z-index»: перекрытие нельзя выиграть, вписав 9999, — только сдвинувшись по
  * шкале. Сосед no-magic-dimension ловит длины px/rem/em, но z-index безразмерный и
  * в его поле не попадает; этот гард закрывает ровно эту дыру.
@@ -26,6 +28,7 @@
  */
 import { globSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { cssBlocks } from './css-source.js';
 import { repoRoot } from './no-literal-colour-fallback.js';
 import {
   canonicalTokens,
@@ -161,7 +164,38 @@ export function scanZIndexSource(
   const text = stripComments(isTs ? normalizeLit(source) : source, isTs);
   const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
 
+  const blocks = cssBlocks(text);
+  const isolatedSelectors = blocks
+    // An unconditional isolation declaration establishes a local coordinate
+    // system. Conditional isolation cannot prove the default painting order.
+    .filter(
+      (block) =>
+        !block.parent &&
+        /(?:^|;)\s*isolation\s*:\s*isolate\s*(?:;|$)/.test(text.slice(block.start, block.end)),
+    )
+    .flatMap((block) => block.header.split(',').map((selector) => selector.trim()));
+  const isLocal = (index: number): boolean => {
+    const block = blocks.find(
+      (item) =>
+        index >= item.start && index < item.end && !text.slice(item.start, item.end).includes('{'),
+    );
+    return (
+      block?.header
+        .split(',')
+        .every((selector) =>
+          isolatedSelectors.some(
+            (root) =>
+              selector.trim().startsWith(root) &&
+              /^(?:\s*>\s*|\s+)(?![+~\s])/.test(selector.trim().slice(root.length)),
+          ),
+        ) ?? false
+    );
+  };
+
   for (const m of text.matchAll(ZINDEX_DECL)) {
+    // Only integer layers of proven descendants are local. Root placement and
+    // arithmetic over global --lab-z-* levels still obey the global scale.
+    if (/^-?\d+$/.test((m[1] as string).trim()) && isLocal(m.index ?? 0)) continue;
     analyzeZValue((m[1] as string).trim(), relPath, lineAt(m.index ?? 0), zLevels, out);
   }
   // camelCase существует только в JS/TS-объекте стилей; в CSS такой формы нет.

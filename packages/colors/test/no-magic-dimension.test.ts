@@ -81,6 +81,19 @@ describe('no magic dimensions in migrated components (dimension contract)', () =
     ).toMatchObject([{ rule: 'fallback-drift' }]);
   });
 
+  it('runtime contour properties are not caches of generated dimension tokens', () => {
+    expect(
+      scanDimensionSource(
+        'p.css',
+        '.x { inset: var(--lab-contour-inset, 0px); clip-path: var(--lab-contour-clip, none); }',
+        canon,
+      ),
+    ).toEqual([]);
+    expect(
+      scanDimensionSource('p.css', '.x { width: var(--lab-contour-typo, 1rem); }', canon),
+    ).toMatchObject([{ rule: 'fallback-drift' }]);
+  });
+
   it('DETECTS violations through the Lit litVar() form (normalizeLit)', () => {
     const lit = "a: ${litVar('--lab-space-md', '0.75rem')};";
     expect(normalizeLit(lit)).toBe('a: var(--lab-space-md, 0.75rem);');
@@ -156,14 +169,16 @@ describe('no magic dimensions in migrated components (dimension contract)', () =
 
   // ── (5) Доказательство скоупа — гард правит ТОЛЬКО списком мигрированных;
   // немигрированный компонент с легаси-литералами здесь покраснеть не может.
-  it('scopes to MIGRATED components only (radio-group is the first entry)', () => {
-    expect(Object.keys(MIGRATED)).toContain('radio-group');
+  it('follows migrated component imports including shared styles without obsolete twin paths', () => {
     const governed = Object.values(MIGRATED).flat();
     // Честный скоуп (аудит 2026-07-09): мигрированы 22 компонента;
     // menu / select / pagination НЕ мигрированы — гард их не трогает.
     expect(governed).not.toContain('packages/core/src/components/menu/lab-menu.ts');
-    expect(Object.keys(MIGRATED)).toHaveLength(22);
-    expect(governed.length).toBeGreaterThanOrEqual(40); // 45 файлов на 2026-07-09
+    expect(MIGRATED.card).toContain('packages/core/src/components/card/styles.ts');
+    expect(MIGRATED.input).toContain('packages/core/src/components/input/styles.ts');
+    expect(MIGRATED.textarea).toContain('packages/core/src/components/field/field-styles.ts');
+    expect(MIGRATED['radio-group']).toContain('packages/react/src/radio-group.css');
+    expect(governed).not.toContain('packages/react/src/card.css');
   });
 
   // ── (6) RED-proof (диверсия): прогон сканера по ДО-миграционному блоку
