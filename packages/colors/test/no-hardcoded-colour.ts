@@ -27,7 +27,8 @@
  *      after a `:` (a declaration value), never as a substring of a property
  *      name (`white-space`) or identifier (`Fieldset`).
  *   4. Functional colour forms (`rgb()`/`hsl()`/`oklch()`/`color-mix()`/…) and
- *      hex are matched anywhere (they cannot occur innocently).
+ *      hex are matched anywhere. Complete mask declarations allow only literal
+ *      black/white coverage; visible paints remain governed by colour roles.
  *
  * It REUSES the fallback scanner's `NAMED_COLOURS` / `SYSTEM_COLOURS` so the two
  * guards never disagree on "what is a colour", and it does NOT touch the fallback

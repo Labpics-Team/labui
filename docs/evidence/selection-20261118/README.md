@@ -44,6 +44,12 @@ docs production build и catalog check прошли (46 семейств, 103 so
 Compose `SelectionRenderTest`: **9/9**, включая Motion/reduced motion,
 масштаб текста 2, RTL и произвольный `BoxWithConstraints` в содержимом.
 
+Интеграционная проверка `ba5f4c1`: Selection и Kbd прошли **96/96**
+Chromium/WebKit за 44 s после выноса масок и forced-colors в статические правила.
+Типографика, расстояния и круговые радиусы используют общие tokens;
+авторские размеры и responsive-порог Choicebox остаются в профиле.
+Colors CSS/dimension проверки: **138/138**. Независимое ревью diff — CLEAR.
+
 ## Осознанные отличия от исходника
 
 Согласованное исправление: non-tiny selected/mixed neutral Check использует
