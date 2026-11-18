@@ -43,6 +43,7 @@ export default libraryPreset({
     'src/components/switch/runtime.ts',
     'src/components/selection/runtime.ts',
     'src/components/progress/runtime.ts',
+    'src/components/textarea/runtime.ts',
     'src/motion/sheet.ts',
     ...componentEntries,
   ],

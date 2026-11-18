@@ -1846,6 +1846,21 @@
           "name": "name",
           "attr": "name",
           "kind": "string"
+        },
+        {
+          "name": "autocomplete",
+          "attr": "autocomplete",
+          "kind": "string"
+        },
+        {
+          "name": "maxLength",
+          "attr": "maxlength",
+          "kind": "string"
+        },
+        {
+          "name": "minLength",
+          "attr": "minlength",
+          "kind": "string"
         }
       ],
       "events": [

@@ -97,7 +97,12 @@
       "import": "./dist/components/progress/runtime.js",
       "require": "./dist/components/progress/runtime.cjs"
     },
-    "./progress.css": "./dist/progress.css"
+    "./progress.css": "./dist/progress.css",
+    "./textarea/runtime": {
+      "types": "./dist/components/textarea/runtime.d.ts",
+      "import": "./dist/components/textarea/runtime.js",
+      "require": "./dist/components/textarea/runtime.cjs"
+    }
   },
   "files": ["dist"],
   "sideEffects": [

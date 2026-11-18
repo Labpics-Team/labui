@@ -1,20 +1,4 @@
-/**
- * <Textarea> — the native-React twin of the Lit `<lab-textarea>` (ADR-0001).
- *
- * Same axes, same form-field a11y wiring computed by the SAME shared `field-a11y`
- * helper from @labpics/ui-core — so the label/helper/error association is ONE
- * source of truth across both renderers. The only structural difference from
- * `<Input>` is the control (`<textarea>` vs `<input>`) and the multi-line extras
- * (`rows`, optional `autoResize`).
- *
- * Auto-resize honesty: when `autoResize` is set, the control grows to fit its
- * content — LOCAL view state computed from `scrollHeight` on input, the same way
- * the Lit element does it. Not a faked machine.
- *
- * Presentational Client Component (see <Input>): it renders as a leaf under a
- * Server Component shell, never a `'use client'` page (dive-next P1). Parity is
- * CSS: it paints the SAME --lab-* roles as the Lit element via `textarea.css`.
- */
+/** Native React textarea with the shared authored outline, ARIA and size fallback. */
 'use client';
 
 import {
@@ -26,14 +10,24 @@ import {
   fieldPartIds,
 } from '@labpics/ui-core';
 import {
+  TextareaResize,
+  normalizeTextareaValue,
+  textareaRows,
+} from '@labpics/ui-core/textarea/runtime';
+import {
+  type CSSProperties,
   type ChangeEvent,
   type ReactNode,
   type TextareaHTMLAttributes,
   forwardRef,
   useCallback,
+  useEffect,
   useId,
+  useLayoutEffect,
+  useRef,
+  useState,
 } from 'react';
-import './textarea.css';
+import '@labpics/ui-core/input.css';
 
 export type { LabFieldSize as LabTextareaSize, LabFieldType as LabTextareaType };
 
@@ -94,11 +88,7 @@ export interface TextareaProps extends ForwardedTextareaAttrs {
   onValueChange?: (value: string) => void;
 }
 
-/** Grow a textarea to fit its content: reset, then track scrollHeight. */
-function fitToContent(control: HTMLTextAreaElement): void {
-  control.style.height = 'auto';
-  control.style.height = `${control.scrollHeight}px`;
-}
+const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
   {
@@ -129,60 +119,132 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
   const hasError = error != null && error !== '';
   const a11y = fieldControlAria({ id: baseId, invalid, required, hasHelper, hasError });
   const showError = fieldErrorIsActive({ invalid, hasError });
+  const root = useRef<HTMLDivElement>(null);
+  const controlRef = useRef<HTMLTextAreaElement | null>(null);
+  const resizeRef = useRef<TextareaResize>();
+  const [filled, setFilled] = useState(!!(value ?? defaultValue));
+  const resolvedRows = textareaRows(rows);
+  // React 18 restores textarea.textContent on hydration even if the person has
+  // already edited it. Capture the native dirty value before that commit.
+  const [initialEdit] = useState(() => {
+    if (typeof document === 'undefined' || typeof HTMLTextAreaElement === 'undefined') return;
+    const control = document.getElementById(ids.control);
+    if (!(control instanceof HTMLTextAreaElement) || control.value === control.defaultValue) return;
+    return {
+      value: control.value,
+      start: control.selectionStart,
+      end: control.selectionEnd,
+      direction: control.selectionDirection,
+    };
+  });
+  const pendingEdit = useRef(initialEdit);
 
-  // Merge the forwarded ref with the auto-resize ref so the control fits to its
-  // initial content on mount (e.g. a defaultValue) without clobbering the caller's ref.
+  // Share the native control with the caller without replacing its ref.
   const setControlRef = useCallback(
     (control: HTMLTextAreaElement | null): void => {
+      controlRef.current = control;
       if (typeof ref === 'function') ref(control);
       else if (ref) ref.current = control;
-      if (control && autoResize) fitToContent(control);
     },
-    [ref, autoResize],
+    [ref],
   );
 
+  useClientLayoutEffect(() => {
+    const edit = pendingEdit.current;
+    const control = controlRef.current;
+    if (!edit || !control) return;
+    pendingEdit.current = undefined;
+    control.value = edit.value;
+    control.setSelectionRange(edit.start, edit.end, edit.direction);
+    setFilled(!!edit.value);
+    if (value !== undefined) onValueChange?.(edit.value);
+  }, [onValueChange, value]);
+
+  useClientLayoutEffect(() => {
+    const control = controlRef.current;
+    if (!control) return;
+    const resize = new TextareaResize(control);
+    resizeRef.current = resize;
+    resize.setEnabled(autoResize);
+    const onReset = (event: Event) =>
+      queueMicrotask(() => {
+        if (event.defaultPrevented) return;
+        setFilled(!!control.value);
+        resize.update();
+      });
+    const form = control.form;
+    form?.addEventListener('reset', onReset);
+    return () => {
+      resize.disconnect();
+      form?.removeEventListener('reset', onReset);
+    };
+  }, [autoResize, rest.form]);
+
+  useClientLayoutEffect(() => {
+    const control = controlRef.current;
+    control?.setCustomValidity(
+      showError ? (root.current?.querySelector('.lab-field-error')?.textContent ?? '') : '',
+    );
+    resizeRef.current?.update();
+  }, [showError, error, value, defaultValue, resolvedRows, size]);
+
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>): void => {
-    if (autoResize) fitToContent(event.target);
+    setFilled(!!event.target.value);
+    resizeRef.current?.update();
     onValueChange?.(event.target.value);
   };
 
   return (
     <div
+      ref={root}
       className="lab-field"
       data-lab-textarea=""
       data-type={type}
       data-size={size}
       data-label-hidden={labelHidden || undefined}
+      data-unlabelled={!label || undefined}
+      data-filled={(value === undefined ? filled : !!value) || undefined}
+      style={{ '--_textarea-rows': resolvedRows } as CSSProperties}
       data-auto-resize={autoResize || undefined}
       data-readonly={readOnly || undefined}
       data-disabled={disabled || undefined}
       data-required={required || undefined}
       data-invalid={invalid || undefined}
     >
-      <label id={ids.label} className="lab-field-label" htmlFor={ids.control}>
-        <span className="lab-field-label-text">{label}</span>
-        {required ? (
-          <span className="lab-field-required-mark" aria-hidden="true">
-            {' *'}
-          </span>
-        ) : null}
-      </label>
-      <textarea
-        {...rest}
-        {...fieldControlAriaProps(a11y)}
-        ref={setControlRef}
-        id={ids.control}
-        className="lab-field-control"
-        value={value}
-        defaultValue={defaultValue}
-        name={name}
-        rows={rows}
-        placeholder={placeholder}
-        disabled={disabled}
-        readOnly={readOnly}
-        required={required}
-        onChange={handleChange}
-      />
+      <div className="lab-input-frame">
+        <label id={ids.label} className="lab-field-label" htmlFor={ids.control}>
+          <span className="lab-field-label-text">{label}</span>
+          {required ? (
+            <span className="lab-field-required-mark" aria-hidden="true">
+              {' *'}
+            </span>
+          ) : null}
+        </label>
+        <textarea
+          {...rest}
+          {...fieldControlAriaProps(a11y)}
+          ref={setControlRef}
+          id={ids.control}
+          className="lab-field-control"
+          value={value === undefined ? undefined : normalizeTextareaValue(value)}
+          defaultValue={
+            defaultValue === undefined ? undefined : normalizeTextareaValue(defaultValue)
+          }
+          name={name}
+          rows={resolvedRows}
+          placeholder={placeholder}
+          disabled={disabled}
+          readOnly={readOnly}
+          required={required}
+          onChange={handleChange}
+        />
+        <fieldset className="lab-input-outline" aria-hidden="true">
+          <legend>
+            {label}
+            {required ? ' *' : ''}
+          </legend>
+        </fieldset>
+      </div>
       {hasHelper ? (
         <span id={ids.helper} className="lab-field-helper">
           {helper}

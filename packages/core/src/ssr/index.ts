@@ -1,4 +1,4 @@
-import { render } from '@lit-labs/ssr';
+import { LitElementRenderer, render } from '@lit-labs/ssr';
 /**
  * Lit SSR shim — the ~10-line per-stack wiring the spike (spike-FINDINGS.md)
  * identified as the cost of WC deep-SSR on Vue/Svelte/Solid/Astro.
@@ -24,6 +24,7 @@ import { collectResultSync } from '@lit-labs/ssr/lib/render-result.js';
 import { type TemplateResult, html, noChange } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { TextareaElementRenderer } from './textarea-renderer.js';
 
 // The upstream install-global entry awaits its optional CSS import hook. Static
 // sibling component imports can then execute before customElements exists and
@@ -43,7 +44,9 @@ installWindowOnGlobal(typeof customElements === 'undefined' ? {} : { customEleme
  * raw-HTML slot.
  */
 export function renderToString(template: TemplateResult): string {
-  return collectResultSync(render(template));
+  return collectResultSync(
+    render(template, { elementRenderers: [TextareaElementRenderer, LitElementRenderer] }),
+  );
 }
 
 /**

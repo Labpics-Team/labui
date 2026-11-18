@@ -1,18 +1,5 @@
-/**
- * `field-styles` — the shared scoped styles for `<lab-input>` and `<lab-textarea>`.
- *
- * Both fields paint the SAME surface: a bordered control over a base background,
- * a label above it, helper text and an error message below. Only the control tag
- * differs (`<input>` vs `<textarea>`), so the visual contract lives here ONCE and
- * each element splices it into its `static styles`. This keeps the two fields from
- * drifting and keeps the token contract in one auditable place.
- *
- * Token contract (core-CONTRACT §2): consumes ONLY semantic --lab-* roles +
- * dimension tokens via `litVar`. Colour roles carry NO literal fallback (a missing
- * role is a loud bug, never papered over); only dimension tokens take a literal
- * fallback so the field is usable before tokens load. The sentiment `type` axis
- * re-points the border + label to the matching --lab-*-{danger|warning|success}
- * role; `--lab-border-focus` is the focus ring.
+/** Legacy filled field shell used by NumberInput, PinInput, TagsInput and Combobox.
+ * Input and Textarea use the authored outlined-styles shell.
  */
 import { type CSSResult, css } from 'lit';
 import { litVar } from '../../css.js';

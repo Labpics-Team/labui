@@ -1,0 +1,82 @@
+{
+  "archives": [
+    {
+      "name": "@labpics/ui-tokens",
+      "sha256": "085815c8a3956605db59823cd89b118b6264550565a221bc2f9d6e3f5f29a492"
+    },
+    {
+      "name": "@labpics/ui-shadow",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "@labpics/ui-materials",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "@labpics/fonts",
+      "sha256": "d88c7478b94becc1ddbf77f92c4af2fb00ec882cb456847a38c2ee3bd6b35fd9"
+    },
+    {
+      "name": "@labui/colors",
+      "sha256": "24f2e25bb90ca478855929263f5440cb444156a8a4d78495389acfb2c1530082"
+    },
+    {
+      "name": "@labpics/ui-core",
+      "sha256": "eab433f5ef3c99e945c3c13bf4d4ff0fee44a2b00850604854090f20f4a62a96"
+    },
+    {
+      "name": "@labpics/ui-react",
+      "sha256": "9c7e9a5727ef9ca09d2a1ad7e8980f47b5d83414eb524747a0819f83f976089f"
+    },
+    {
+      "name": "@labpics/ui-vue",
+      "sha256": "7fea54c9283e91c48dc63fd3af8ba9e253bd1b637cb91db58a60845398a49098"
+    },
+    {
+      "name": "@labpics/ui-solid",
+      "sha256": "810d77a4055c47f85512f4df7ba8f70c219a86174465896e0a118413d027df86"
+    },
+    {
+      "name": "@labpics/ui-svelte",
+      "sha256": "d0f2131b0e5147237b50d69e9578d5b9323f4d9c178509563ffb6e931a0e283d"
+    },
+    {
+      "name": "@labpics/ui-astro",
+      "sha256": "6371106692d325ff245919117075fc0af60ef7771a0bf2dee9812ebebc7a8d6e"
+    }
+  ],
+  "records": [
+    {
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "adapters": 4,
+      "nativeReact": true,
+      "firstPaintValue": true,
+      "escapedMarkup": true,
+      "lineBreaksMatchNativeSetter": true,
+      "shiftedServerIds": true,
+      "inputAndTextareaAriaTargets": true,
+      "sameNodeAfterHydration": true,
+      "preHydrationEditPreserved": true,
+      "selectionPreserved": true,
+      "formEditAndReset": true,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "browser": "26.0",
+      "adapters": 4,
+      "nativeReact": true,
+      "firstPaintValue": true,
+      "escapedMarkup": true,
+      "lineBreaksMatchNativeSetter": true,
+      "shiftedServerIds": true,
+      "inputAndTextareaAriaTargets": true,
+      "sameNodeAfterHydration": true,
+      "preHydrationEditPreserved": true,
+      "selectionPreserved": true,
+      "formEditAndReset": true,
+      "errors": []
+    }
+  ]
+}

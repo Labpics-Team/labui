@@ -82,7 +82,11 @@
       "web": {
         "subpath": "textarea",
         "reactExport": "Textarea"
-      }
+      },
+      "native": {
+        "symbol": "LabInput"
+      },
+      "profile": "textarea"
     },
     {
       "slug": "checkbox",
@@ -1326,7 +1330,11 @@
           "family": "textarea",
           "role": "root",
           "web": {
-            "scope": "Публичный API семейства; все авторские варианты ещё не сверены."
+            "scope": "Общая рамка Input/Textarea, базовая геометрия и 13 авторских состояний; rows и size=s/l расширяют исходный многострочный вариант."
+          },
+          "native": {
+            "props": { "singleLine": false },
+            "scope": "LabInput в многострочном режиме: профиль Textarea, перенос подписи и состояния default/filled/focused/error/readonly/disabled."
           }
         }
       ]

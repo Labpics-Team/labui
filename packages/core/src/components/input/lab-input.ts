@@ -99,7 +99,7 @@ export class LabInput extends LabElement {
   private resetValue: string | undefined;
 
   /** Stable per-instance base id, so the part ids never collide across fields. */
-  private readonly fieldId = `lab-input-${++inputSeq}`;
+  private fieldId = `lab-input-${++inputSeq}`;
 
   constructor() {
     super();
@@ -185,6 +185,14 @@ export class LabInput extends LabElement {
   }
   reportValidity(): boolean {
     return this.internals?.reportValidity() ?? true;
+  }
+
+  override connectedCallback(): void {
+    // Retain SSR identity regardless of how many fields the server rendered
+    // before this document; every later ARIA update must target these parts.
+    const existing = this.shadowRoot?.querySelector<HTMLInputElement>('input.lab-field-control');
+    if (!this.hasUpdated && existing?.id) this.fieldId = existing.id;
+    super.connectedCallback();
   }
 
   override updated(_changed: PropertyValues): void {

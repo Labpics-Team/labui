@@ -16,10 +16,9 @@
         Two renderers, one design system. A multi-line text field: a real
         <code>&lt;textarea&gt;</code> wired to a label, an optional helper, and an
         optional error via the SAME genuine ARIA as Input, plus the multi-line extras
-        (<code>rows</code>, optional <code>auto-resize</code>). Presentational —
-        <code>@zag-js</code> has no text-input machine; auto-resize is local view state
-        computed from <code>scrollHeight</code>, not a machine. The label/helper/error
-        wiring is the SAME shared <code>field-a11y</code> helper on both renderers.
+        (<code>rows</code>, optional <code>auto-resize</code>). The persistent label
+        sits in a transparent gap in the outline. Both renderers support native
+        forms, validation, reset and content-based sizing.
       </p>
 
       <div class="row">

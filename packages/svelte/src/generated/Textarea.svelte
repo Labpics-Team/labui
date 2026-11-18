@@ -26,13 +26,16 @@
     required?: LabTextarea['required'];
     invalid?: LabTextarea['invalid'];
     name?: LabTextarea['name'];
+    autocomplete?: LabTextarea['autocomplete'];
+    maxLength?: LabTextarea['maxLength'];
+    minLength?: LabTextarea['minLength'];
     onLabChange?: (event: CustomEvent) => void;
     onLabInput?: (event: CustomEvent) => void;
     children?: Snippet;
     [key: string]: unknown;
   }
 
-  let { type, size, label, labelHidden, helper, error, value, placeholder, rows, autoResize, readonly, disabled, required, invalid, name, onLabChange, onLabInput, children, ...rest }: Props = $props();
+  let { type, size, label, labelHidden, helper, error, value, placeholder, rows, autoResize, readonly, disabled, required, invalid, name, autocomplete, maxLength, minLength, onLabChange, onLabInput, children, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -50,12 +53,15 @@
     { name: 'required', attr: 'required', kind: 'boolean' },
     { name: 'invalid', attr: 'invalid', kind: 'boolean' },
     { name: 'name', attr: 'name', kind: 'string' },
+    { name: 'autocomplete', attr: 'autocomplete', kind: 'string' },
+    { name: 'maxLength', attr: 'maxlength', kind: 'string' },
+    { name: 'minLength', attr: 'minlength', kind: 'string' },
   ];
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
-    forwardDeclared(el, specs, { type, size, label, labelHidden, helper, error, value, placeholder, rows, autoResize, readonly, disabled, required, invalid, name });
+    forwardDeclared(el, specs, { type, size, label, labelHidden, helper, error, value, placeholder, rows, autoResize, readonly, disabled, required, invalid, name, autocomplete, maxLength, minLength });
   });
   $effect(() => forwardEvents(el, { 'lab-change': onLabChange, 'lab-input': onLabInput }));
 </script>
