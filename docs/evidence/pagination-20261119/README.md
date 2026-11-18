@@ -38,6 +38,10 @@ absolute position when React imports it after the component stylesheet.
 The focus fixture advances a controlled acceptance by 100 ms with the browser
 clock. It verifies accepted window replacement, continued arrow navigation,
 refusal, leaving with Tab before acceptance and unrelated progress updates.
+The same fixture also mounts React in a real open Shadow DOM: delayed
+acceptance retains its selected control, while leaving navigation or the
+entire shadow tree preserves the user's new focus destination. This regression
+failed when focus was inspected through `document.activeElement`.
 Temporal progress changes the fill's width, keeping its 8 px height and round
 ends untransformed in both LTR and RTL. The initial three review regressions
 failed before their respective fixes; final Chromium and WebKit checks passed.

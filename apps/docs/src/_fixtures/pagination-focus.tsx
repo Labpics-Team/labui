@@ -20,7 +20,7 @@ lit.addEventListener('page-change', (event) => {
 required('[data-testid="lit-outside"]').addEventListener('click', () => {
   lit.progress = (lit.progress ?? 0) + 0.1;
 });
-function ReactFixture() {
+function ReactFixture({ prefix = 'react' }: { prefix?: string }) {
   const [page, setPage] = useState(3);
   const [progress, setProgress] = useState(0.6);
   const [acceptance, setAcceptance] = useState('delayed');
@@ -29,7 +29,7 @@ function ReactFixture() {
       <label>
         React acceptance{' '}
         <select
-          data-testid="react-acceptance"
+          data-testid={`${prefix}-acceptance`}
           onChange={(event) => setAcceptance(event.target.value)}
         >
           <option value="delayed">Delayed</option>
@@ -37,7 +37,7 @@ function ReactFixture() {
         </select>
       </label>
       <Pagination
-        data-testid="react-focus"
+        data-testid={`${prefix}-focus`}
         count={20}
         pageSize={1}
         page={page}
@@ -48,7 +48,7 @@ function ReactFixture() {
         }}
       />
       <button
-        data-testid="react-outside"
+        data-testid={`${prefix}-outside`}
         type="button"
         onClick={() => setProgress((value) => value + 0.1)}
       >
@@ -60,5 +60,15 @@ function ReactFixture() {
 createRoot(required('#react-root')).render(
   <StrictMode>
     <ReactFixture />
+  </StrictMode>,
+);
+const shadow = required('#react-shadow-root').attachShadow({ mode: 'open' });
+for (const sheet of document.querySelectorAll('link[rel="stylesheet"]'))
+  shadow.append(sheet.cloneNode());
+const shadowMount = document.createElement('div');
+shadow.append(shadowMount);
+createRoot(shadowMount).render(
+  <StrictMode>
+    <ReactFixture prefix="react-shadow" />
   </StrictMode>,
 );

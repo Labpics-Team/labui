@@ -54,6 +54,8 @@ Vue/Solid/Svelte/Astro SSR and Lit hydration.
 React's small navigation wrapper uses
 [`getSnapshotBeforeUpdate`](https://react.dev/reference/react/Component#getsnapshotbeforeupdate)
 to read actual focus immediately before page-window DOM replacement.
+The navigation checks `:focus-within` locally, so the same focus behavior works
+when a consumer mounts React inside its own Shadow DOM.
 
 Source: [Lab UI v2.1](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1),
 Pagination / Page-button / Chevron-button / Compact Pagination.

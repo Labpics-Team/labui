@@ -167,7 +167,7 @@ test('compact delayed acceptance follows the page only while focus stays inside'
   page,
 }) => {
   await page.clock.install();
-  for (const prefix of ['lit', 'react']) {
+  for (const prefix of ['lit', 'react', 'react-shadow']) {
     await page.goto('/_fixtures/pagination-focus.html');
     const host = page.getByTestId(`${prefix}-focus`);
     const outside = page.getByTestId(`${prefix}-outside`);
@@ -184,16 +184,21 @@ test('compact delayed acceptance follows the page only while focus stays inside'
     await page.keyboard.press('Home');
     await page.keyboard.press('Tab');
     await expect(outside).toBeFocused();
+    const destination = prefix === 'react-shadow' ? page.getByTestId('outside-shadow') : outside;
+    if (prefix === 'react-shadow') {
+      await page.keyboard.press('Tab');
+      await expect(destination).toBeFocused();
+    }
     await page.clock.runFor(100);
     await expect(host.locator('[aria-current]')).toHaveAttribute('data-page', '1');
-    await expect(outside).toBeFocused();
+    await expect(destination).toBeFocused();
   }
 });
 
 test('compact refusal and unrelated progress updates preserve the user focus destination', async ({
   page,
 }) => {
-  for (const prefix of ['lit', 'react']) {
+  for (const prefix of ['lit', 'react', 'react-shadow']) {
     await page.goto('/_fixtures/pagination-focus.html');
     const host = page.getByTestId(`${prefix}-focus`);
     const outside = page.getByTestId(`${prefix}-outside`);

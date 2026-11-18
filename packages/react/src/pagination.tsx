@@ -70,7 +70,7 @@ class PaginationNavigation extends Component<NavigationProps, object, boolean> {
     return !!(
       followPageFocus &&
       previous.selectedPage !== selectedPage &&
-      nav?.contains(nav.ownerDocument.activeElement)
+      nav?.matches(':focus-within')
     );
   }
   override componentDidUpdate(_previous: NavigationProps, _state: object, focused: boolean): void {
