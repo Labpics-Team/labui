@@ -15,6 +15,7 @@
       "require": "./dist/index.cjs"
     },
     "./shadow.css": "./dist/shadow.css",
+    "./profile.json": "./dist/profile.json",
     "./package.json": "./package.json"
   },
   "files": ["dist"],

@@ -1,39 +1,11 @@
 import {
-  ACRYLIC_LUMINOSITY_OPACITY,
-  FULL_BACKDROP,
-  acrylicCorridor,
-  bandOverCorridor,
-  compositeOver,
-  luminosityBlend,
+  type MaterialPaints,
+  materialBlendMode,
+  materialPaintOver,
+  materialProfile,
 } from '@labpics/ui-materials';
 import { type Locator, type Page, expect, test } from '@playwright/test';
-import { normalizeCssColor, relativeLuminance } from './support/color.js';
-
-/*
- * Acrylic v2 LIVE — браузерный дифференциал luminosity-зажима (ADR-0009).
- *
- * Полигон (`_fixtures/acrylic-live.html`): два экстремальных поля фона (чистый чёрный /
- * чистый белый — углы коридора гарантии) и SOFT-панель над каждым; рантайм
- * смонтирован. Спек доказывает НА РЕАЛЬНЫХ ПИКСЕЛЯХ композитора:
- *   1. Движок держит поверхность: computed backdrop-filter = url(#lab-acrylic-…).
- *   2. Дифференциал вывода: WCAG-люминанс фактических пикселей обеих панелей
- *      лежит в полосе, ВЫЧИСЛЕННОЙ из живого тинт-токена страницы через
- *      acrylicCorridor/bandOverCorridor — симуляция и композитор сходятся.
- *   3. Зажим сужает: разброс |Y_white − Y_black| под движком строго уже, чем
- *      у CSS-фолбэка (A/B на одной странице через window.__labAcrylicLive).
- *   4. Тема живая: flood-color фильтра — var() контракта, флип data-theme
- *      перекрашивает без пере-монтирования.
- *   5. Честная деградация: forced-colors гасит движок (инлайн снят сам).
- * WebKit-ветка закрепляет фолбэк-истину (v1: blur+saturate, никакого url()).
- *
- * Цвет токена нормализует БРАУЗЕР (support/color, oklch-safe); пиксели читаются
- * скриншотом панели → canvas.getImageData с усреднением центрального патча
- * (24×24: гасит зерно ~2% и обходит рим/текст). Допуск полосы 0.03 по Y —
- * зерно (±0.005 после усреднения) + байт-раунды браузера; полоса сама по себе
- * на порядок шире допуска.
- */
-
-const BAND_EPS = 0.03;
+import { normalizeCssColor } from './support/color.js';
 
 function readBackdropFilter(page: Page, testId: string): Promise<string> {
   return page.getByTestId(testId).evaluate((el) => {
@@ -82,228 +54,128 @@ async function patchColor(
   }, b64);
 }
 
-async function patchLuminance(page: Page, panel: Locator): Promise<number> {
-  const c = await patchColor(page, panel);
-  return relativeLuminance({ r: c.r, g: c.g, b: c.b, a: 1 });
-}
-
-/** Евклидова дистанция средних каналов, в байтах. */
-function channelDistance(
-  a: { r: number; g: number; b: number },
-  b: { r: number; g: number; b: number },
-): number {
-  return Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b);
-}
-
-/** Живой SOFT-тинт страницы (тот же токен, что ест flood фильтра). */
-async function readSoftTint(page: Page): Promise<{ r: number; g: number; b: number; a: number }> {
-  const raw = await page
-    .getByTestId('surface-on-black')
-    .evaluate((el) => getComputedStyle(el).getPropertyValue('--lab-bg-material-soft-01').trim());
-  const tint = await normalizeCssColor(page, raw);
-  expect(tint, `--lab-bg-material-soft-01 "${raw}" must normalise to sRGB`).not.toBeNull();
-  if (!tint) throw new Error('unreachable');
-  return tint;
+async function readPaints(page: Page): Promise<MaterialPaints> {
+  const values = await page.getByTestId('surface-on-black').evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return [
+      cs.getPropertyValue('--_tint'),
+      cs.getPropertyValue('--_blend'),
+      el.getAttribute('data-lab-material-theme'),
+    ];
+  });
+  const normal = await normalizeCssColor(page, values[0] ?? '');
+  const blend = await normalizeCssColor(page, values[1] ?? '');
+  if (!normal || !blend) throw new Error('Missing material paint roles');
+  return { normal, blend, blendMode: materialBlendMode(values[2] === 'dark' ? 'dark' : 'light') };
 }
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/_fixtures/acrylic-live.html');
-  await page.addStyleTag({
-    content: '*,*::before,*::after{transition:none!important;animation:none!important}',
-  });
   await expect(page.getByTestId('live-status')).toContainText('runtime: mounted');
 });
 
-test.describe('acrylic v2 — движок (Chromium)', () => {
+test.describe('author paints in the backdrop renderer', () => {
   test.skip(
     ({ browserName }) => browserName !== 'chromium',
-    'luminosity-конвейер рисует только Chromium; WebKit-истина — фолбэк-ветка ниже',
+    'SVG backdrop transfer is currently supported by Chromium',
   );
 
-  test('движок держит обе панели url()-конвейером, зерно остаётся', async ({ page }) => {
-    for (const id of ['surface-on-black', 'surface-on-white']) {
-      await expect
-        .poll(() => readBackdropFilter(page, id), { message: `${id}: инлайн-конвейер движка` })
-        .toContain('lab-acrylic-');
-      const bg = await page.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundImage);
-      expect(bg, `${id}: слой зерна не тронут движком`).toContain('data:image/png');
-    }
-  });
-
-  test('per-surface фильтр НЕ течёт: счётчик <filter> стабилен через N mode-флипов', async ({
-    page,
-  }) => {
-    // Класс-замок утечки. Прежняя модель (5 статичных tier-фильтров) делала
-    // leak структурно невозможным; per-surface модель полагается на
-    // destroy()→filter.remove(). Если detach пропустит удаление, узлы копятся —
-    // этот тест ловит класс. RED-proof: без filter.remove() в destroy счётчик
-    // растёт с каждым флипом и тест падает.
-    const filterCount = (): Promise<number> =>
-      page.evaluate(() => document.querySelectorAll('svg.lab-acrylic-defs filter').length);
-
-    await expect.poll(() => readBackdropFilter(page, 'surface-on-black')).toContain('lab-acrylic-');
-    const baseline = await filterCount();
-    expect(baseline, 'по одному фильтру на acrylic-панель фикстуры').toBeGreaterThan(0);
-
-    for (let i = 0; i < 8; i++) {
-      await page.evaluate(() => document.documentElement.setAttribute('data-material', 'solid'));
-      await expect
-        .poll(() => readBackdropFilter(page, 'surface-on-black'))
-        .not.toContain('lab-acrylic');
-      await page.evaluate(() => document.documentElement.setAttribute('data-material', 'acrylic'));
-      await expect
-        .poll(() => readBackdropFilter(page, 'surface-on-black'))
-        .toContain('lab-acrylic-');
-    }
-
-    // detach удалил старые фильтры перед каждым новым attach → счётчик вернулся
-    // к базовому, а не вырос на 8× панелей.
-    expect(await filterCount(), 'узлы <filter> не копятся через флипы').toBe(baseline);
-  });
-
-  test('дифференциал: пиксели в выведенной полосе; зажим уже фолбэка', async ({ page }) => {
-    const tint = await readSoftTint(page);
-    const engineBand = bandOverCorridor(tint, acrylicCorridor(tint, ACRYLIC_LUMINOSITY_OPACITY));
-    const fallbackBand = bandOverCorridor(tint, FULL_BACKDROP);
-
-    const onBlack = page.getByTestId('surface-on-black');
-    const onWhite = page.getByTestId('surface-on-white');
-
-    const yBlackEngine = await patchLuminance(page, onBlack);
-    const yWhiteEngine = await patchLuminance(page, onWhite);
-    const yBlueEngine = await patchLuminance(page, page.getByTestId('surface-on-blue'));
-
-    for (const [name, y] of [
-      ['black', yBlackEngine],
-      ['white', yWhiteEngine],
-      ['blue', yBlueEngine],
-    ] as const) {
-      expect(y, `движок/${name}: Y внутри выведенной полосы`).toBeGreaterThanOrEqual(
-        engineBand.effLow - BAND_EPS,
+  for (const theme of ['light', 'dark'] as const) {
+    test(`${theme}: rendered RGB follows both author paints over black, blue and white`, async ({
+      page,
+    }) => {
+      await page
+        .locator('html')
+        .evaluate((el, theme) => el.setAttribute('data-theme', theme), theme);
+      await expect(page.getByTestId('surface-on-black')).toHaveAttribute(
+        'data-lab-material-theme',
+        theme,
       );
-      expect(y, `движок/${name}: Y внутри выведенной полосы`).toBeLessThanOrEqual(
-        engineBand.effHigh + BAND_EPS,
-      );
-    }
-
-    // A/B: снять рантайм → CSS-фолбэк v1 на тех же панелях.
-    await page.evaluate(() =>
-      (window as { __labAcrylicLive?: { dispose(): void } }).__labAcrylicLive?.dispose(),
-    );
-    await expect
-      .poll(() => readBackdropFilter(page, 'surface-on-black'))
-      .not.toContain('lab-acrylic');
-
-    const yBlackFallback = await patchLuminance(page, onBlack);
-    const yWhiteFallback = await patchLuminance(page, onWhite);
-
-    for (const [name, y] of [
-      ['black', yBlackFallback],
-      ['white', yWhiteFallback],
-    ] as const) {
-      expect(y, `фолбэк/${name}: Y внутри полной полосы`).toBeGreaterThanOrEqual(
-        fallbackBand.effLow - BAND_EPS,
-      );
-      expect(y, `фолбэк/${name}: Y внутри полной полосы`).toBeLessThanOrEqual(
-        fallbackBand.effHigh + BAND_EPS,
-      );
-    }
-
-    const engineSpread = Math.abs(yWhiteEngine - yBlackEngine);
-    const fallbackSpread = Math.abs(yWhiteFallback - yBlackFallback);
-    expect(
-      engineSpread,
-      `зажим сужает разброс: движок ${engineSpread.toFixed(4)} vs фолбэк ${fallbackSpread.toFixed(4)}`,
-    ).toBeLessThan(fallbackSpread * 0.75);
-  });
-
-  test('режим смеси — именно luminosity: канальный дифференциал на синем поле', async ({
-    page,
-  }) => {
-    /*
-     * Детектор ПОДМЕНЫ РЕЖИМА (класс Д — тест, который кусается там, где
-     * яркостный дифференциал слеп): по Y luminosity почти неотличим от
-     * normal-композита того же flood, но на НАСЫЩЕННОМ синем поле каналы
-     * расходятся радикально — luminosity сохраняет оттенок фона (результат
-     * синеет), normal смывает его к тинту. Реальный пиксель обязан лечь к
-     * симуляции luminosity и НЕ лечь к симуляции normal.
-     */
-    const tint = await readSoftTint(page);
-    const alpha = Math.min(1, Math.max(0, tint.a * ACRYLIC_LUMINOSITY_OPACITY));
-    // Поле под панелью: чистый синий; блюр над сплошным полем — то же поле,
-    // saturate(1.8) на максимально насыщенном синем клампится в него же.
-    const blue = { r: 0, g: 0, b: 255, a: 1 };
-
-    // Симуляция v2: luminosity-зажим → тинт сверху (straight alpha).
-    const simLum = compositeOver(tint, luminosityBlend(blue, tint, ACRYLIC_LUMINOSITY_OPACITY));
-    // Симуляция подмены: тот же flood обычным normal-композитом → тинт сверху.
-    const simNormal = compositeOver(tint, {
-      r: alpha * tint.r + (1 - alpha) * blue.r,
-      g: alpha * tint.g + (1 - alpha) * blue.g,
-      b: alpha * tint.b + (1 - alpha) * blue.b,
-      a: 1,
+      const paints = await readPaints(page);
+      const noise = {
+        r: materialProfile.noise.color[0] ?? 0,
+        g: materialProfile.noise.color[1] ?? 0,
+        b: materialProfile.noise.color[2] ?? 0,
+        a: materialProfile.noise.opacity,
+      };
+      for (const [name, backdrop] of [
+        ['black', { r: 0, g: 0, b: 0, a: 1 }],
+        ['blue', { r: 0, g: 0, b: 255, a: 1 }],
+        ['white', { r: 255, g: 255, b: 255, a: 1 }],
+      ] as const) {
+        await expect
+          .poll(() => readBackdropFilter(page, `surface-on-${name}`))
+          .toContain('lab-material-paint-');
+        const pixel = await patchColor(page, page.getByTestId(`surface-on-${name}`));
+        const endpoints = [
+          materialPaintOver(paints, backdrop),
+          materialPaintOver(paints, {
+            r: backdrop.r + ((255 - backdrop.r) * noise.r * noise.a) / 255,
+            g: backdrop.g + ((255 - backdrop.g) * noise.g * noise.a) / 255,
+            b: backdrop.b + ((255 - backdrop.b) * noise.b * noise.a) / 255,
+            a: 1,
+          }),
+        ];
+        for (const key of ['r', 'g', 'b'] as const) {
+          const low = Math.min(...endpoints.map((value) => value[key]));
+          const high = Math.max(...endpoints.map((value) => value[key]));
+          // This uniform-field pixel test includes baked grain and compositor
+          // quantisation. It does not claim a maximum full-image Figma error.
+          expect(pixel[key], `${name}/${key}`).toBeGreaterThanOrEqual(low - 2);
+          expect(pixel[key], `${name}/${key}`).toBeLessThanOrEqual(high + 2);
+        }
+      }
     });
+  }
 
-    const px = await patchColor(page, page.getByTestId('surface-on-blue'));
-    const toLum = channelDistance(px, simLum);
-    const toNormal = channelDistance(px, simNormal);
-    // RED-proof (2026-07-09): на мутанте mode="normal" реальный пиксель лёг в
-    // 1.6 байта от simNormal и тест упал; на честном luminosity — 3.9 байта от
-    // simLum (зерно+байт-раунды) и далеко от normal. Детектор различает режим.
-
-    expect(
-      toLum,
-      `пиксель обязан сойтись с симуляцией luminosity (Δ=${toLum.toFixed(1)} байт)`,
-    ).toBeLessThan(14);
-    expect(
-      toLum,
-      `и лежать СТРОГО ближе к luminosity, чем к normal-подмене (${toLum.toFixed(1)} vs ${toNormal.toFixed(1)})`,
-    ).toBeLessThan(toNormal * 0.5);
-  });
-
-  test('flood живёт на var() контракта: флип темы перекрашивает без ре-маунта', async ({
-    page,
-  }) => {
-    const before = await patchLuminance(page, page.getByTestId('surface-on-black'));
-    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
-    await expect
-      .poll(() => patchLuminance(page, page.getByTestId('surface-on-black')))
-      .not.toBeCloseTo(before, 1);
-  });
-
-  test('forced-colors гасит движок сам (инлайн сильнее листа — снятие в JS)', async ({ page }) => {
-    await expect.poll(() => readBackdropFilter(page, 'surface-on-black')).toContain('lab-acrylic-');
+  test('mode flips, media changes and final disposal release paint filters', async ({ page }) => {
+    const count = () => page.locator('.lab-material-paint-defs filter').count();
+    await expect.poll(count).toBe(1);
+    for (let i = 0; i < 8; i++) {
+      await page.locator('html').evaluate((el) => el.setAttribute('data-material', 'solid'));
+      await expect.poll(count).toBe(0);
+      await page.locator('html').evaluate((el) => el.setAttribute('data-material', 'acrylic'));
+      await expect.poll(count).toBe(1);
+    }
     await page.emulateMedia({ forcedColors: 'active' });
-    await expect
-      .poll(() => readBackdropFilter(page, 'surface-on-black'), {
-        message: 'движок обязан снять инлайн под forced-colors',
-      })
-      .not.toContain('lab-acrylic');
-    await page.emulateMedia({ forcedColors: null });
-    await expect
-      .poll(() => readBackdropFilter(page, 'surface-on-black'), {
-        message: 'возврат режима возвращает движок',
-      })
-      .toContain('lab-acrylic-');
+    await expect.poll(count).toBe(0);
+    await expect(page.getByTestId('surface-on-black')).toHaveCSS('backdrop-filter', 'none');
+    await page.emulateMedia({ forcedColors: 'none' });
+    await expect.poll(count).toBe(1);
+    await page.evaluate(() => window.__labAcrylicLive?.dispose());
+    await expect(page.locator('.lab-material-paint-defs')).toHaveCount(0);
   });
-});
 
-test.describe('acrylic v2 — фолбэк-истина (WebKit)', () => {
-  test.skip(
-    ({ browserName }) => browserName === 'chromium',
-    'ветка закрепляет НЕ-движковую истину: v1-рецепт без url()',
-  );
-
-  test('WebKit остаётся на честном v1: blur+saturate, никакого url()-конвейера', async ({
+  test('theme changes replace the shared transfer and update the actual pixels', async ({
     page,
   }) => {
-    const filter = await readBackdropFilter(page, 'surface-on-black');
-    expect(filter).toContain('blur(');
-    expect(filter).toContain('saturate(');
-    expect(filter).not.toContain('url(');
-    const bg = await page
-      .getByTestId('surface-on-black')
-      .evaluate((el) => getComputedStyle(el).backgroundImage);
-    expect(bg).toContain('data:image/png');
+    const panel = page.getByTestId('surface-on-black');
+    const before = await patchColor(page, panel);
+    const ids = await page
+      .locator('.lab-material-paint-defs filter')
+      .evaluateAll((els) => els.map((el) => el.id));
+    await page.locator('html').evaluate((el) => el.setAttribute('data-theme', 'dark'));
+    await expect.poll(async () => (await patchColor(page, panel)).r).toBeLessThan(before.r - 50);
+    expect(
+      await page
+        .locator('.lab-material-paint-defs filter')
+        .evaluateAll((els) => els.map((el) => el.id)),
+    ).not.toEqual(ids);
+    await expect(page.locator('.lab-material-paint-defs filter')).toHaveCount(1);
+  });
+
+  test('Screen grain does not darken a white backdrop', async ({ page }) => {
+    const panel = page.getByTestId('surface-on-white');
+    const paintFilter = () =>
+      panel.evaluate((el) => el.style.getPropertyValue('--_material-paint-filter'));
+    const before = await paintFilter();
+    await panel.evaluate((el) => {
+      el.style.setProperty('--_tint', 'rgb(0 0 0 / 0)');
+      el.style.setProperty('--_blend', 'rgb(0 0 0 / 0)');
+    });
+    await expect.poll(paintFilter).not.toBe(before);
+    await expect
+      .poll(async () => Math.min(...Object.values(await patchColor(page, panel))))
+      .toBeGreaterThanOrEqual(254.5);
   });
 });

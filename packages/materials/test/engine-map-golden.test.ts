@@ -10,15 +10,16 @@
  * (a rounding drift, a mis-mirrored quadrant, an over-eager skip that drops a rim
  * pixel) flips a hash and fails here.
  *
- * PROVENANCE: the frozen hashes were captured from the PRE-rim-skip arithmetic
- * (the original ¼-symmetric double loop) via an offline harness that hashed a
- * faithful copy of those exact loops; the optimised engine was then proven to
- * reproduce them across the whole corpus. So a match here means the optimisation
- * changed nothing an eye could ever see.
+ * PROVENANCE: refreshed 2026-11-18 for the accepted depth-bounded Snell profile
+ * (base 0.4, index 2.8). This intentional optical change passed independent
+ * Effects/Dock image review; the retained atlas remains byte-identical to each
+ * bounded field. Evidence: docs/evidence/materials-20261117/glass-optics-refinement.md.
+ * Independent ray/ellipse checks live in glass-optics.test.ts. These hashes
+ * guard later implementation changes; they do not establish Figma fidelity.
  *
  * ⚠️ REGENERATING these constants is a DELIBERATE act — do it ONLY when the lens
  * LOOK is intentionally changed (a falloff/encoding/geometry change signed off by
- * the surface owner), never as a reflex to make a red test green. A surprise red
+ * the surface implementation), never as a reflex to make a red test green. A surprise red
  * here on a "pure refactor" or "just perf" change means the change is NOT
  * byte-identical — fix the code, do not rebless the hashes.
  */
@@ -36,98 +37,98 @@ interface Golden {
 // name → frozen {sha256(rgba), feDisplacementMap unit, device W×H}
 const GOLDEN: Record<string, Golden> = {
   'small-square-dpr1': {
-    hash: '1060c94260336865ae6018f8cdcf21ccde90848c4f70f8f9cdee6e66e0192cd7',
-    unit: 7.049998376460712,
+    hash: 'a8d8ccfd7989e10c4c4ae762c9cf4d1a305b447d1e8dda82f2318743483f82ae',
+    unit: 47,
     W: 48,
     H: 48,
   },
   'small-square-dpr2': {
-    hash: 'a7df5cb366a0b6b95053a6d45931ec7756438e094ae671f8fe3963ea4df6bb71',
-    unit: 7.1249999989713855,
+    hash: '80c9f9eb036b4657e49dd70902096f563134ac2cc2ceee6b77a88e42c7234660',
+    unit: 47.5,
     W: 96,
     H: 96,
   },
   'small-radius0': {
-    hash: 'c036fd8d99ec04fd458cd2915f8b5126911a2529c63d549a41f969f1ad999d71',
-    unit: 7.049965160836309,
+    hash: 'a37743cf555254144c8368666e8c875a973e9c961ed43f56f45036ada2b7e6ce',
+    unit: 47,
     W: 48,
     H: 48,
   },
   'small-radius-over-half': {
-    hash: '23de2743539c930d111b1ff019e6832578c7044470ada4a451585e9023503a6a',
-    unit: 7.049999983748691,
+    hash: 'c4f4b5effccf0fe661c9b2069d2f579cdc6e62d09751d70c08724c1e58d6c250',
+    unit: 47,
     W: 48,
     H: 48,
   },
   'medium-card': {
-    hash: '1b1014042f4dc6818ca0438bba2cf0cbf30afb1b715c8d14eb4e423c0a51b9ba',
-    unit: 47.84999983680274,
+    hash: '1a409f74d4ba886cc800888d15d40552fc63b75c3affff66e80d8588de377895',
+    unit: 79,
     W: 320,
     H: 200,
   },
   'medium-card-dpr2': {
-    hash: 'e79765dc8474e1e706337fe891b8e0548baddbce814a74cd3e74c3065c0b455d',
-    unit: 47.92499999331617,
+    hash: '51450aebfe5e8eb145d6c3b0fd315cacb027cc8d690208ea182264c7a0afcc06',
+    unit: 79.5,
     W: 640,
     H: 400,
   },
   'medium-radius0': {
-    hash: '447298ab53ecf617c1145a2f002a76fff8d3aa4ad0bfc560f76dbae345aa3ff6',
-    unit: 47.84996899136978,
+    hash: '8fd1bb626e2c9f2c260fa99b56c0b0d6d333b717396a805bd57121f758d06687',
+    unit: 79,
     W: 320,
     H: 200,
   },
   'medium-circleish': {
-    hash: 'c3197691b00445a06d68bfbecafeae00916132e61d3120dff556f47c5d040ca2',
-    unit: 47.84999999999278,
+    hash: '5b92ca145c091a010afed1872a596019aa579b552214ccddc1eacfe0adee170c',
+    unit: 79.7336433423158,
     W: 320,
     H: 320,
   },
   'medium-deep-band': {
-    hash: '94b4ca6da8af6c413eef95170691916b1930866f11184529d6290926f5b2f8d4',
-    unit: 47.84999999936035,
+    hash: 'b2438d79b3179dc5a745d6b1dba89c102f9a83ef88c61896d41f5e2d5bd6d46d',
+    unit: 319,
     W: 320,
     H: 320,
   },
   'large-panel': {
-    hash: '69b3af69f1076220f857dba21db5b1fe88b886835d29b33de4c594a415bd3ee5',
-    unit: 153.44999947664326,
+    hash: '7bd0774f7eb5b3da58bf05b2243d1022ff0508ec7aaae94ad2af4ebd1afe9487',
+    unit: 79,
     W: 1024,
     H: 1024,
   },
   'large-panel-dpr2': {
-    hash: '9820635c438175e549e5d79c9bba6ab1318ce9f9cfea44d7d102a08ef76616d4',
-    unit: 153.52499997858874,
+    hash: '11f092e88ea6d38da057fe3aa785d803e085a32fe253fd3453ba3bbcdee407c7',
+    unit: 79.5,
     W: 2048,
     H: 1536,
   },
   'large-radius0': {
-    hash: '1ddb2d40b4dc7131328023e89294e07f30fadbd6b8bbdda6c812456e4095a54f',
-    unit: 153.44990055853066,
+    hash: '40d5b5571b1046ca8ce494a79bc67a4223fca2bbb407876dfe8070fb134e4f3e',
+    unit: 79,
     W: 1024,
     H: 1024,
   },
   'large-circle': {
-    hash: 'bc0e9ab1228b330b885a625b79f1cdd233128d4dea0261cce0ba1cec7b6e77dd',
-    unit: 153.44999999999865,
+    hash: 'd705cf26c0b53867e258550f828c46531621dabf3f9a9d5dca046898fc7d19dd',
+    unit: 79.91198156107235,
     W: 1024,
     H: 1024,
   },
   'large-thin-band': {
-    hash: '8066e52946b9a181f6e2386828e3c4ee3c77d9e8370a7f62b018d12faa7938c8',
-    unit: 153.44967891562598,
+    hash: '67652c4b9adb919bebd99caa7fc43cf7fa596ec1e7e7ca7439ca23f3664c8592',
+    unit: 15.525016684090016,
     W: 1024,
     H: 1024,
   },
   'wide-thin': {
-    hash: '12b4045b94cef4458a68991ab1c680ed74929447c711df543b6635a4d5ee1eed',
-    unit: 153.44999872372202,
+    hash: '9edb0be32d262001a0448f209badc9b849f69d2a1107cc8a4d2de9c9c3890cda',
+    unit: 63,
     W: 1024,
     H: 64,
   },
   'tall-thin': {
-    hash: 'eabb3e68e0685d07946fe78de2c2997caa09b66c7b867e1ef121cd1a979a1e72',
-    unit: 153.44999872372202,
+    hash: 'c9ec6cee373dabd3c1a626732c31ebd7aba37096d76d9959bc378bcdaeb5b31d',
+    unit: 63,
     W: 64,
     H: 1024,
   },
@@ -139,19 +140,19 @@ const GOLDEN: Record<string, Golden> = {
   },
   'degenerate-2px': {
     hash: '1ae9f9e9fcf6f8009922ce078009828da7b755b53fd88640c08adb2e4d9c2a48',
-    unit: 0.14854186737926495,
+    unit: 0.9036036289687418,
     W: 2,
     H: 2,
   },
   'odd-dims': {
-    hash: '81c64deb6336344e6d35261799b12b0765da6e517d5b7b2c04a187d1881834ff',
-    unit: 47.999999946887485,
+    hash: '440bb33ee5a52cbbab12d26ee12be2626372ab6d56f99f21969cbb2732a942c2',
+    unit: 65,
     W: 321,
     H: 201,
   },
   'dpr3-clamped': {
-    hash: '2b101889d472be94a3543dcb269067a09abe80af9553bcc23e58562039c27b88',
-    unit: 47.92499999331617,
+    hash: 'c5bdcc272438cab82807995987c48ef4745974649a6d141fc99790947e5994a2',
+    unit: 79.5,
     W: 640,
     H: 640,
   },
@@ -167,10 +168,12 @@ describe('displacement map — byte-identity golden lock', () => {
       const g = GOLDEN[c.name];
       expect(g, `no golden entry for ${c.name}`).toBeDefined();
       const out = __computeDisplacementField(c.w, c.h, c.corner, c.depth, c.dpr);
-      // Device dimensions and the reconstruction scale must match exactly…
+      // Device dimensions and every encoded byte match exactly. Math.pow's last
+      // Float64 bit differs across V8/platform versions; 1e-10 CSS px is far
+      // below the displacement bitmap's 8-bit quantization, without hiding drift.
       expect(out.W).toBe((g as Golden).W);
       expect(out.H).toBe((g as Golden).H);
-      expect(out.unit).toBe((g as Golden).unit);
+      expect(out.unit).toBeCloseTo((g as Golden).unit, 10);
       // …and every RGBA byte of the map (the exact bitmap that becomes the PNG /
       // feDisplacementMap atlas).
       expect(hashBytes(out.data)).toBe((g as Golden).hash);

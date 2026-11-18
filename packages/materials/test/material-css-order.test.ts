@@ -3,13 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { materialsDir, readMaterialCss } from '../scripts/material-css';
 import { MATERIAL_CSS_ORDER } from '../src/materials/order';
 
-/*
- * Закон порядка файлов-материалов (ADR-0009). Разрез material.css на файлы —
- * находимость, а не смена каскада: solid-оверрайд обязан стоять ПОСЛЕ мод,
- * engine-held — после мод, деградации — после всего материального, veil —
- * последним. Равная специфичность решается источником, поэтому перестановка
- * строк в order.ts МЕНЯЕТ рендер — этот замок делает перестановку громкой.
- */
+/* Mode boundaries precede accessibility overrides. */
 
 describe('файлы-материалы: закон порядка склейки', () => {
   const css = readMaterialCss();
@@ -24,10 +18,9 @@ describe('файлы-материалы: закон порядка склейк�
   it('каскадные вехи идут строго в порядке закона', () => {
     const landmarks = [
       '.lab-material {', // base: переменные + единое paint-правило
-      '[data-material="glass"] .lab-material', // мода glass
-      '[data-material="acrylic"] .lab-material', // мода acrylic
-      '.lab-material--lensed', // engine-held: после мод, до solid
-      '[data-material="solid"] .lab-material', // solid-оверрайд бьёт моды
+      '[data-material="glass"],',
+      '[data-material="acrylic"],',
+      '[data-material="solid"],',
       'DETERMINISTIC DEGRADATIONS', // деградации бьют всё материальное
       'LAB-VEIL', // veil — отдельная эффект-поверхность, последним
     ];
@@ -40,12 +33,11 @@ describe('файлы-материалы: закон порядка склейк�
     }
   });
 
-  it('порядок мод в законе — glass, acrylic, engine-held, solid, degradations, veil', () => {
+  it('порядок мод в законе — glass, acrylic, solid, degradations, veil', () => {
     expect(MATERIAL_CSS_ORDER).toEqual([
       'base.css',
       'glass.css',
       'acrylic.css',
-      'engine-held.css',
       'solid.css',
       'degradations.css',
       'veil.css',

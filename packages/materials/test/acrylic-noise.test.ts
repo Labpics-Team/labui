@@ -9,6 +9,7 @@ import {
   acrylicNoiseDataUri,
   acrylicNoisePng,
 } from '../scripts/build-acrylic-noise';
+import { materialProfile } from '../src/profile';
 
 /*
  * Ассет acrylic-шума (ADR-0004 Решение 1 §4). Тестируем САМ АРТЕФАКТ, не только
@@ -87,38 +88,33 @@ describe('acrylic-noise PNG — валидный, детерминированн
     expect([...png.slice(0, 8)]).toEqual(PNG_SIGNATURE);
   });
 
-  it('IHDR: тайл NOISE_SIZE², 8 бит, цветовой тип 4 (grayscale+alpha)', () => {
+  it('IHDR: тайл NOISE_SIZE², 8 бит, цветовой тип 6 (RGBA)', () => {
     const ihdr = readIhdr(png);
     expect(ihdr.width).toBe(NOISE_SIZE);
     expect(ihdr.height).toBe(NOISE_SIZE);
     expect(ihdr.bitDepth).toBe(8);
-    expect(ihdr.colourType).toBe(4);
+    expect(ihdr.colourType).toBe(6);
   });
 
   it('детерминирован — два прогона байт-в-байт равны', () => {
     expect([...acrylicNoisePng()]).toEqual([...acrylicNoisePng()]);
   });
 
-  it('~2% запечены в АЛЬФУ (все alpha = NOISE_ALPHA), а gray реально шумит', () => {
-    const rows = readIdat(png);
-    const stride = NOISE_SIZE * 2 + 1; // filter-byte + (gray,alpha)×width
-    const grays = new Set<number>();
+  it('preserves the author RGB and varies coverage within its maximum opacity', () => {
+    const raw = readIdat(png);
+    const alphas = new Set<number>();
+    const stride = NOISE_SIZE * 4 + 1;
     for (let y = 0; y < NOISE_SIZE; y++) {
-      const rowStart = y * stride;
-      expect(rows[rowStart]).toBe(0); // filter: none
       for (let x = 0; x < NOISE_SIZE; x++) {
-        const i = rowStart + 1 + x * 2;
-        grays.add(rows[i] ?? -1);
-        expect(rows[i + 1]).toBe(NOISE_ALPHA); // альфа — константа ~2%
+        const start = y * stride + 1 + x * 4;
+        expect(Array.from(raw.slice(start, start + 3))).toEqual(materialProfile.noise.color);
+        const alpha = raw[start + 3] ?? 0;
+        expect(alpha).toBeLessThanOrEqual(NOISE_ALPHA);
+        alphas.add(alpha);
       }
     }
-    // Настоящий шум: много различных уровней серого (не плоская заливка).
-    expect(grays.size).toBeGreaterThan(64);
-  });
-
-  it('NOISE_ALPHA ≈ 2% (провенанс ADR-0002 §1: 5/255 ≈ 1.96%)', () => {
-    expect(NOISE_ALPHA / 255).toBeGreaterThan(0.015);
-    expect(NOISE_ALPHA / 255).toBeLessThan(0.025);
+    expect(alphas.size).toBeGreaterThan(2);
+    expect(NOISE_ALPHA).toBe(Math.round(255 * materialProfile.noise.opacity));
   });
 });
 
@@ -127,26 +123,11 @@ describe('inline-seal — acrylic.css несёт РОВНО выход гене�
   const css = readFileSync(resolve(here, '..', 'src', 'materials', 'acrylic.css'), 'utf8');
 
   it('сентинел-регион содержит именно текущий data-URI (ассет не протух)', () => {
-    expect(css).toContain(`--_acrylic-noise: ${acrylicNoiseDataUri()};`);
+    expect(css).toContain(`--_acrylic-noise-source: ${acrylicNoiseDataUri()};`);
+    expect(css).toContain('--_acrylic-noise: var(--_acrylic-noise-source);');
   });
 
   it('в CSS нет забытой заглушки `--_acrylic-noise: none` (генератор отработал)', () => {
     expect(css).not.toContain('--_acrylic-noise: none');
-  });
-
-  it('image-set: ТОТ ЖЕ ассет на 1x/2x/3x под @supports-гейтом (зерно в 1 физический пиксель)', () => {
-    const uri = acrylicNoiseDataUri();
-    // Формат-канон принадлежит biome (генератор прогоняет свой выход через
-    // репо-форматтер) — сверяем СОДЕРЖИМОЕ без чувствительности к переносам:
-    // CSS внутри функциональной нотации whitespace-нейтрален.
-    const flat = css.replace(/\s+/g, ' ');
-    // Одна генерация — три плотности: на DPR≥2 интринзик-тайл 24/16 CSS-px,
-    // зерно per-device-pixel (как у Fluent), новых ассетов ноль.
-    expect(flat).toContain(`image-set( ${uri} 1x, ${uri} 2x, ${uri} 3x )`);
-    // @supports обязателен: невалидное значение уронило бы ВСЮ multi-bg
-    // декларацию (включая тинт) на браузерах без image-set.
-    expect(flat).toContain(`@supports ( background-image: image-set( ${uri} 1x ) )`);
-    // url()-фолбэк объявлен ДО image-set-оверрайда (каскад: поздний выигрывает).
-    expect(css.indexOf(`--_acrylic-noise: ${uri};`)).toBeLessThan(css.indexOf('image-set('));
   });
 });

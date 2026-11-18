@@ -23,7 +23,7 @@ export function createThemeScope(root, options = {}) {
   const view = root.ownerDocument.defaultView;
   const scopeId = view.crypto.getRandomValues(new Uint32Array(4)).join('-');
   let originalScopeId;
-  const sheet = root.ownerDocument.createElement('style');
+  const sheet = root.ownerDocument.createElementNS(root.namespaceURI, 'style');
   const attributes = ['data-theme', 'data-contrast'];
   let originalAttributes;
   let disposed = false;

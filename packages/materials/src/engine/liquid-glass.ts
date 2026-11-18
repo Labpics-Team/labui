@@ -1,74 +1,29 @@
-/*
- * @labpics/ui-materials/engine — the refraction engine (Liquid Glass).
- *
- * Landed from `prototypes/liquid-glass/liquid-glass.js` per ADR-0003
- * (glass-effects ch-02). PACKAGE-BOUNDARY CHANGES vs the prototype — everything
- * else is a faithful port (same algorithm, same caches, same byte-identical
- * filter guarantees):
- *
- *   · Tokens renamed at the boundary (ADR-0003 §2): the engine reads PRIVATE
- *     `--_lg-refraction / --_lg-depth / --_lg-dispersion` (unitless numbers).
- *     `--lg-radius`/`--lg-saturate` did NOT land as new tokens — the inline
- *     backdrop-filter references the EXISTING mechanics `var(--_blur)` /
- *     `var(--_saturate)` directly, plus `var(--_lg-brightness)` /
- *     `var(--_lg-contrast)`; mode/tier/theme re-binds apply live with no
- *     re-render. `--lg-tint*` never reached JS (colour is the `--lab-*`
- *     contract's); corner still comes from computed `border-radius`.
- *   · The host class is `lab-material--lensed` (not `lab-liquid-glass`): a
- *     package-private state class that re-binds `--_blur` to the
- *     lens-calibrated radius in material.css while the engine holds the
- *     surface.
- *   · A non-refracting / disabled / reduced-transparency surface gets NO
- *     inline style at all — material.css owns the fallback stack (the
- *     prototype's own CSS class used to declare the tail; here the package
- *     stylesheet is the single source of the frost fallback).
- *   · NOT exported from the package index (ADR-0003 §3): the only consumer is
- *     the declarative runtime in `./runtime.ts`.
- *
- * ── The algorithm (unchanged) ───────────────────────────────────────────────
- * `backdrop-filter` blurs a backdrop but cannot bend it. The bend — what makes
- * Liquid Glass a LENS rather than frosted glass — comes from an SVG
- * <feDisplacementMap> whose map encodes, per pixel, WHERE to resample the
- * backdrop: Red = horizontal sample shift, Green = vertical (0.5 = no shift).
- *
- * The map is a continuous magnification: every pixel samples its own position
- * pulled toward the centre by a smooth factor that is strongest at the rounded
- * rim and eases to zero in the flat interior. So the whole surface bends the
- * backdrop like a thick convex lens (strong at the edge, clear in the middle) —
- * NOT a thin band at the border. This is the algorithm proven by
- * github.com/shuding/liquid-glass (the position-warp lens) with the
- * edge-confined chromatic aberration of github.com/rdev/liquid-glass-react.
- *
- * The rim highlight is pure CSS — like both references, we do NOT use
- * feSpecularLighting (a single SVG point-light only lights one corner). The
- * filter is referenced from CSS as `backdrop-filter: url(#id)`, so it must live
- * in the DOM and track the element's size.
- *
- * PERFORMANCE MODEL (what is, and is NOT, optimisable without touching the look):
- *   · Per DRAG frame there is ZERO JS — the element moves on left/top and the
- *     filter region travels with it; the cost is pure GPU compositing of the
- *     (quality-locked) filter, which we deliberately never cheapen.
- *   · The map is geometry-only (size/corner/depth/dpr). It is therefore built
- *     ONCE per geometry, shared across every instance of that geometry through a
- *     refcounted module-level cache (the panel and a same-sized pane build it
- *     once), and never rebuilt on drag / theme / strength / dispersion changes.
- *     Resize storms collapse to a single trailing-edge build. Scratch buffers
- *     are reused across builds to keep GC pressure flat. The PNG encode — the
- *     heaviest chunk of a build — runs OFF the main thread (canvas.toBlob);
- *     only the ¼-symmetric field loop stays synchronous.
- *   · A same-structure re-stamp (strength/dispersion tuning) updates only the
- *     feDisplacementMap scale attributes — no markup re-parse, no feImage href
- *     re-attach, no node churn. The emitted filter is byte-identical.
- *
- * Zero dependencies, browser-native ES module. Pairs with material.css.
- */
-
-// The DOM-free math heart (SDF, falloff, lens constant) lives in a sibling pure
-// module so a bare test runner can import and assert it directly. The browser
-// engine simply re-imports those exact symbols — the runtime is byte-identical;
-// only the definition site moved.
-import { MAX_PULL, clamp01, sdRoundRect, smoothstep } from './lg-math';
-import { ensureHiddenDefs, supportsBackdropFilterUrl } from './mount';
+/** Shape-aware refraction. Frost, paints and directional light belong to the
+ * shared author profile; this engine owns only the retained displacement map. */
+import { materialProfile } from '../profile';
+import { readBorderBox } from './border-box';
+import { type MaterialContour, contourGeometry, materialContour } from './contour';
+import {
+  type GlassAtlas,
+  type GlassAtlasPlan,
+  buildGlassAtlas,
+  glassAtlasMarkup,
+  glassAtlasPlan,
+  resizeGlassAtlas,
+} from './glass-atlas';
+import { NEUTRAL_VECTOR_RGBA } from './glass-field-format';
+import { lensBand, lensDisplacement } from './glass-optics';
+// Geometry, optical profile and displacement encoding remain DOM-free.
+import { sdRoundRect } from './lg-math';
+import { ensureHiddenDefs, removeFilter, supportsBackdropFilterUrl } from './mount';
+import {
+  type CornerRadii,
+  type RoundedShape,
+  normalizeCornerRadii,
+  resolveCornerRadii,
+  roundedShapeGeometry,
+  shapeKey,
+} from './rounded-shape';
 
 export interface LiquidGlassParams {
   refraction?: number;
@@ -101,6 +56,7 @@ export interface LiquidGlassHandle {
 }
 
 interface MapEntry {
+  atlas?: GlassAtlas;
   href: string | null;
   ready: Promise<string> | null;
   unit: number;
@@ -111,7 +67,7 @@ interface MapEntry {
 }
 
 interface StampedShape {
-  href: string | null;
+  map: MapEntry;
   w: number;
   h: number;
   dispersed: boolean;
@@ -121,7 +77,7 @@ interface StampedShape {
 interface RenderParams {
   w: number;
   h: number;
-  corner: number;
+  corner: RoundedShape;
   refraction: number;
   depth: number;
   dispersion: number;
@@ -146,6 +102,7 @@ interface EngineState extends LiquidGlassHandle {
   stamped: StampedShape | null;
   /** live feDisplacementMap nodes of the current structure */
   dispNodes: Element[] | null;
+  mapNodes: Element[] | null;
   /** last backdrop-filter string we wrote (skip repeats) */
   lastBackdrop: string | undefined;
   onPerf: ((report: PerfReport) => void) | null;
@@ -157,30 +114,14 @@ let uid = 0;
 
 /** Скрытый defs-хост линзы — общий примитив (./mount), делится с acrylic-движком
  *  (тот же паттерн, разные className). Раньше — локальная копия `ensureDefs`. */
-const ensureDefs = (): SVGDefsElement => ensureHiddenDefs('lab-lg-defs');
+const ensureDefs = (el: HTMLElement): SVGDefsElement => ensureHiddenDefs('lab-lg-defs', el);
 
-/** The package-private state class: while the engine holds a surface,
- *  material.css re-binds `--_blur` to the lens-calibrated radius under it. */
 export const LENSED_CLASS = 'lab-material--lensed';
-
-/** The frost tail rides the package mechanics tokens as LIVE var() references —
- *  a mode/tier/theme re-bind changes the rendered stack with no JS re-render.
- *  Fallbacks mirror the material.css engine-knob defaults. */
-const FROST_TAIL =
-  'blur(var(--_blur, 4px)) saturate(var(--_saturate, 130%)) brightness(var(--_lg-brightness, 1.05)) contrast(var(--_lg-contrast, 1.2))';
-
-/** Single source of truth for numeric defaults. CSS custom properties override
- *  these per-instance; nothing else hard-codes a fallback. */
-const DEFAULTS = {
-  refraction: 1, // 0..1+ — Figma: refraction. Linear lens strength.
-  depth: 40, // px    — Figma: depth. Thickness of the magnified rim band.
-  dispersion: 0.4, // 0..1 — Figma: dispersion. Rim chromatic fringe.
-  corner: 28, // px   — fallback when border-radius can't be read.
-};
+const DEFAULTS = { ...materialProfile.tiers.base.glass, corner: 0 };
 
 /** Whether this engine REFRACTS the backdrop. The requirement is the browser's
  *  ability to render a url()-referenced SVG filter on a backdrop — the shared
- *  capability probe (./mount), the SAME one acrylic's luminosity chain needs.
+ *  capability probe (./mount). Author paints have separate Gecko/WebKit adapters.
  *  The name stays glass-specific (its public semantics = "does the lens bend the
  *  backdrop"); the probe underneath is neutral. Everyone else keeps the honest
  *  blur fallback. */
@@ -208,7 +149,7 @@ const SCRATCH_IDLE_MS = 2000;
 /* ── SDF distance-field cache (separable field: geometry × depth) ────────────
  * The signed distance `inside = -sdRoundRect(px,py,w,h,r)` is a pure function of
  * GEOMETRY (w,h,corner,sc) — it does NOT depend on `depth`. Only `band` (=depth)
- * and the double-smoothstep profile applied to `inside/band` do. So the SDF is
+ * and the Snell profile applied to `inside/band` do. So the SDF is
  * SEPARABLE: cache the raw distance field per geometry, and a depth change reuses
  * it with ZERO sdRoundRect recomputes — the sqrt-heavy 43% of the field loop
  * (measured: 894µs→510µs on a 360×220@dpr2 panel) is skipped, only the cheap
@@ -235,12 +176,22 @@ const SCRATCH_IDLE_MS = 2000;
  * and cleared with the scratch on idle, so steady state retains nothing. */
 interface SdfEntry {
   inside: Float64Array; // quarter distance field, indexed [Y*halfW + X]
+  normals?: Float64Array;
   covered: Int32Array; // per top-half row: how many columns have been computed
   halfW: number;
   halfH: number;
 }
 const SDF_CACHE_CAP = 4;
 const sdfCache = new Map<string, SdfEntry>(); // geometry (no depth) → distance field
+const asymmetricSdfCache = new Map<
+  string,
+  {
+    distances: Float64Array;
+    normals: Float32Array;
+    left: Int32Array;
+    right: Int32Array;
+  }
+>();
 let sdfComputeCount = 0; // cumulative sdRoundRect calls (the counter-assert reads this)
 
 function releaseScratch(): void {
@@ -254,6 +205,7 @@ function releaseScratch(): void {
   sCanvas = null;
   sCtx = null;
   sdfCache.clear(); // the distance fields are scratch too — no steady-state retention
+  asymmetricSdfCache.clear();
 }
 
 function armScratchRelease(): void {
@@ -270,10 +222,10 @@ function armScratchRelease(): void {
  * DEVICE-pixel resolution, plus the feDisplacementMap `scale` unit.
  *   R = x sample-shift, G = y sample-shift (no shift → the neutral byte 128)
  *
- * For each interior pixel the sample position is pulled toward the centre by a
- * factor ~1 at the rim, easing (double-smoothstep) to 0 over a `depth`-px band —
- * a continuous magnifying lens with a clear middle. The pull is always inward,
- * so the lens never samples outside the element.
+ * Rays follow the inward boundary normal, through a convex optical section
+ * with a clear interior. Depth sets thickness and bezel; the available local
+ * size limits both on small controls. Straight edges do not pull diagonally
+ * toward the centre of a long panel.
  *
  * Geometry-only (no strength baked in): the displacement is encoded normalised,
  * and `unit` is the feDisplacementMap `scale` that reconstructs the true pixel
@@ -288,17 +240,31 @@ function armScratchRelease(): void {
 export function __computeDisplacementField(
   w: number,
   h: number,
-  corner: number,
+  shape: RoundedShape,
   depth: number,
   dpr: number,
 ): { data: Uint8ClampedArray; W: number; H: number; unit: number } {
-  const r = Math.max(0, Math.min(corner, Math.min(w, h) / 2));
-  const band = Math.max(2, Math.min(depth, Math.min(w, h) / 2)); // rim lens thickness
+  const usedShape =
+    typeof shape !== 'number' && !('radii' in shape) ? normalizeCornerRadii(w, h, shape) : shape;
+  const corner =
+    typeof usedShape !== 'number' &&
+    'radii' in usedShape &&
+    (usedShape.width !== w || usedShape.height !== h)
+      ? materialContour(w, h, usedShape.radii, usedShape.smoothing)
+      : usedShape;
+  const contour =
+    typeof corner !== 'number' &&
+    'radii' in corner &&
+    corner.radii.every((r) => r === corner.radii[0])
+      ? corner
+      : null;
+  if (typeof corner !== 'number' && !contour) return asymmetricField(w, h, corner, depth, dpr);
+  const r = Math.max(0, Math.min(contour?.radii[0] ?? (corner as number), Math.min(w, h) / 2));
+  const band = lensBand(depth, w, h);
+  const halfSize = Math.min(w, h) / 2;
   const sc = Math.max(1, Math.min(dpr || 1, 2)); // device-pixel scale, capped at 2
   const W = Math.max(1, Math.round(w * sc));
   const H = Math.max(1, Math.round(h * sc));
-  const cx = w / 2;
-  const cy = h / 2;
   const N = W * H;
 
   if (!sDx || sDx.length < 2 * N) {
@@ -314,7 +280,7 @@ export function __computeDisplacementField(
   // Separable SDF field: `inside` depends only on geometry (w,h,corner,sc), not
   // on `depth`. Fetch (or lazily create) the per-geometry distance-field cache
   // so a depth change reads the sqrt-heavy `inside` back with 0 recomputes.
-  const sdfKey = `${w}x${h}x${corner}x${sc}`;
+  const sdfKey = `${w}x${h}x${shapeKey(corner)}x${sc}`;
   let sdf = sdfCache.get(sdfKey);
   // Dims guard: the key ⇒ (halfW,halfH) deterministically today, so this never
   // fires — but if a future key edit ever let a mis-sized field answer a key, an
@@ -328,6 +294,7 @@ export function __computeDisplacementField(
   } else {
     sdf = {
       inside: new Float64Array(halfW * halfH),
+      ...(contour ? { normals: new Float64Array(2 * halfW * halfH) } : {}),
       covered: new Int32Array(halfH),
       halfW,
       halfH,
@@ -340,28 +307,25 @@ export function __computeDisplacementField(
   }
   const sInside = sdf.inside;
   const sCovered = sdf.covered;
+  const normals = sdf.normals;
+  const normal = contour ? new Float64Array(2) : null;
 
-  // 4-way symmetry: the map is mirror-symmetric about both centre axes. The SDF
-  // sdRoundRect is symmetric in px↔(w−px) and py↔(h−py); the pull magnitude m
-  // depends only on `inside` (symmetric); dx=(cx−px)·pull flips sign across the
-  // vertical axis and dy across the horizontal. So we compute ONLY the rows in
-  // the top half and mirror each into its bottom twin (dx same, dy negated about
-  // its row's value). Within a row we also mirror left↔right (dx negated). This
-  // collapses the expensive SDF/sqrt/double-smoothstep work to ~1/4 of pixels.
-  // Output bytes are bit-identical to the full double loop.
-  const invSc = 1 / sc;
-  const invBand = 1 / band;
+  // Distance, normal magnitude and optical section share four-way symmetry.
+  // Only the normal's signs change, so one quarter supplies all four quadrants.
+  // feImage stretches the rounded bitmap to the exact CSS box. Sample that
+  // image's pixel centres; a fractional size/DPR gives each axis its own step.
+  const stepX = w / W;
+  const stepY = h / H;
   for (let Y = 0; Y < H; Y++) {
     const Ym = H - 1 - Y;
     if (Ym < Y) break; // bottom half already filled by its top twin
     const rowT = Y * W;
     const rowB = Ym * W;
-    const py = (Y + 0.5) * invSc;
-    const cyPy = cy - py; // dy magnitude factor for this row
+    const py = (Y + 0.5) * stepY;
     const rowBase = Y * halfW; // this row's slice of the cached distance field
     const covered = sCovered[Y] as number; // columns already computed for this row
     // RIM-SKIP. A pixel is a no-op (dx=dy=0) once inside ≥ band — the
-    // double-smoothstep bottoms out — and, because `inside` RISES monotonically
+    // convex section becomes flat — and, because `inside` RISES monotonically
     // across the left half (distance to a convex-body boundary is concave, so it
     // only climbs toward the centre; verified with a zero-violation monotonicity
     // probe over the whole geometry corpus incl. the r = half circle), every
@@ -372,7 +336,7 @@ export function __computeDisplacementField(
     // skip most of the work.
     let end = halfW; // no interior crossing ⇒ the whole left half is rim
     for (let X = 0; X < halfW; X++) {
-      const px = (X + 0.5) * invSc;
+      const px = (X + 0.5) * stepX;
       // Cached distance (the exact float64 sdRoundRect returned → byte-identical)
       // or a fresh compute past the covered edge. Depth-free, so a depth change
       // reads it back with 0 sqrt recomputes; a larger band computes only the
@@ -381,7 +345,14 @@ export function __computeDisplacementField(
       if (X < covered) {
         inside = sInside[rowBase + X] as number;
       } else {
-        inside = -sdRoundRect(px, py, w, h, r); // >0 inside, 0 at the edge
+        inside =
+          contour && normal
+            ? contourGeometry(contour, px, py, normal)
+            : -sdRoundRect(px, py, w, h, r);
+        if (normals && normal) {
+          normals[2 * (rowBase + X)] = normal[0] ?? 0;
+          normals[2 * (rowBase + X) + 1] = normal[1] ?? 0;
+        }
         sInside[rowBase + X] = inside;
         sdfComputeCount++; // the counter-assert: 0 on a same-geometry depth reuse
       }
@@ -392,12 +363,26 @@ export function __computeDisplacementField(
       let dx = 0;
       let dy = 0;
       if (inside > 0) {
-        // 1 at the rim → 0 `band` px inward; double-smoothstep for a gentle,
-        // seamless falloff (the shape that reads as thick glass, not an outline).
-        const m = smoothstep(smoothstep(clamp01(1 - inside * invBand)));
-        const pull = MAX_PULL * m;
-        dx = (cx - px) * pull; // inward pull = magnification
-        dy = cyPy * pull;
+        const qx = r - px;
+        const qy = r - py;
+        const corner = qx > 0 && qy > 0;
+        const nx = normals
+          ? (normals[2 * (rowBase + X)] ?? 0)
+          : corner
+            ? qx / (r - inside)
+            : qx > qy
+              ? 1
+              : 0;
+        const ny = normals
+          ? (normals[2 * (rowBase + X) + 1] ?? 0)
+          : corner
+            ? qy / (r - inside)
+            : qx > qy
+              ? 0
+              : 1;
+        const magnitude = lensDisplacement(inside, band, halfSize);
+        dx = nx * magnitude;
+        dy = ny * magnitude;
       }
       const adx = dx < 0 ? -dx : dx;
       const ady = dy < 0 ? -dy : dy;
@@ -444,7 +429,7 @@ export function __computeDisplacementField(
   // displacement → 0·norm255+127.5 → Uint8Clamped 128), so the rim loop below
   // only has to overwrite R/G on the ring. (The old fill was 0xff800000 with a
   // full-map R/G rewrite; the interior R/G are now the fill — byte-identical.)
-  u32.fill(0xff808080); // little-endian RGBA: R=128 G=128 B=128 A=255
+  u32.fill(NEUTRAL_VECTOR_RGBA); // little-endian RGBA: R=128 G=128 B=128 A=255
   // Encode with the SAME 4-way symmetry used to compute the field, so the
   // per-pixel Float32 read + multiply-add runs for ~N/4 pixels instead of N, and
   // for a mirror twin dx→−dx (dy→−dy) we recompute −dx·norm255+127.5 directly (no
@@ -484,6 +469,111 @@ export function __computeDisplacementField(
   return { data, W, H, unit: 2 * maxAbs };
 }
 
+/** General CSS shape path. Ordinary circular symmetric panels retain the
+ * quarter-field fast path above; asymmetric/elliptical shapes cache their full
+ * distances once, so depth/refraction changes do not rerun the ellipse solver.
+ */
+function asymmetricField(
+  w: number,
+  h: number,
+  radii: CornerRadii | MaterialContour,
+  depth: number,
+  dpr: number,
+) {
+  const sc = Math.max(1, Math.min(dpr || 1, 2));
+  const W = Math.max(1, Math.round(w * sc));
+  const H = Math.max(1, Math.round(h * sc));
+  const N = W * H;
+  const band = lensBand(depth, w, h);
+  const halfSize = Math.min(w, h) / 2;
+  const key = `${w}x${h}x${shapeKey(radii)}x${sc}`;
+  let field = asymmetricSdfCache.get(key);
+  if (!field) {
+    field = {
+      distances: new Float64Array(N),
+      normals: new Float32Array(2 * N),
+      left: new Int32Array(H),
+      right: new Int32Array(H).fill(W),
+    };
+    asymmetricSdfCache.set(key, field);
+    while (asymmetricSdfCache.size > SDF_CACHE_CAP) {
+      const oldest = asymmetricSdfCache.keys().next().value;
+      if (oldest !== undefined) asymmetricSdfCache.delete(oldest);
+    }
+  } else {
+    asymmetricSdfCache.delete(key);
+    asymmetricSdfCache.set(key, field);
+  }
+  if (!sDx || sDx.length < 2 * N) sDx = new Float32Array(2 * N);
+  if (!sRGBA || sRGBA.length < 4 * N) sRGBA = new Uint8ClampedArray(4 * N);
+  if (!sRowEnd || sRowEnd.length < 2 * H) sRowEnd = new Int32Array(2 * H);
+  const data = sRGBA.length === 4 * N ? sRGBA : sRGBA.subarray(0, 4 * N);
+  const normal = new Float64Array(2);
+  const stepX = w / W;
+  const stepY = h / H;
+  let maxAbs = 1e-6;
+  // A convex outline has a convex eroded interior. Once either side reaches
+  // distance >= band, skip that interior interval; do not assume symmetry or
+  // that its maximum is at the box centre. Coverage grows independently on
+  // both sides, so a later wider lens computes only the newly exposed pixels.
+  for (let y = 0; y < H; y++) {
+    const row = y * W;
+    let leftEnd = W;
+    let rightStart = W;
+    for (let side = 0; side < 2; side++) {
+      let x = side ? W - 1 : 0;
+      for (; side ? x >= leftEnd : x < W; x += side ? -1 : 1) {
+        const i = row + x;
+        let distance = field.distances[i] ?? 0;
+        if (x >= (field.left[y] ?? 0) && x < (field.right[y] ?? W)) {
+          const px = (x + 0.5) * stepX;
+          const py = (y + 0.5) * stepY;
+          distance =
+            'radii' in radii
+              ? contourGeometry(radii, px, py, normal)
+              : roundedShapeGeometry(px, py, w, h, radii, normal);
+          field.distances[i] = distance;
+          field.normals[2 * i] = normal[0] ?? 0;
+          field.normals[2 * i + 1] = normal[1] ?? 0;
+          sdfComputeCount++;
+        }
+        if (distance >= band) {
+          if (side) rightStart = x + 1;
+          else leftEnd = x;
+          break;
+        }
+        if (distance <= 0) continue;
+        const magnitude = lensDisplacement(distance, band, halfSize);
+        const dx = (field.normals[2 * i] ?? 0) * magnitude;
+        const dy = (field.normals[2 * i + 1] ?? 0) * magnitude;
+        sDx[2 * i] = dx;
+        sDx[2 * i + 1] = dy;
+        maxAbs = Math.max(maxAbs, Math.abs(dx), Math.abs(dy));
+      }
+      if (side) field.right[y] = Math.min(field.right[y] ?? W, Math.max(leftEnd, x));
+      else field.left[y] = Math.max(field.left[y] ?? 0, Math.min(W, x + 1));
+    }
+    sRowEnd[2 * y] = leftEnd;
+    sRowEnd[2 * y + 1] = rightStart;
+  }
+  const gain = 255 / (2 * maxAbs);
+  new Uint32Array(data.buffer, data.byteOffset, N).fill(NEUTRAL_VECTOR_RGBA);
+  for (let y = 0; y < H; y++) {
+    const row = y * W;
+    const leftEnd = sRowEnd[2 * y] ?? 0;
+    const rightStart = sRowEnd[2 * y + 1] ?? W;
+    for (let x = 0; x < W; x++) {
+      if (x === leftEnd) x = rightStart;
+      if (x >= W) break;
+      const i = row + x;
+      if ((field.distances[i] ?? 0) <= 0) continue;
+      data[4 * i] = (sDx[2 * i] ?? 0) * gain + 127.5;
+      data[4 * i + 1] = (sDx[2 * i + 1] ?? 0) * gain + 127.5;
+    }
+  }
+  return { data, W, H, unit: 2 * maxAbs };
+}
+
 /**
  * Build ONE displacement map (PNG data-URI) at DEVICE-pixel resolution and wrap
  * it for the browser: the DOM-free field core rasterised onto a reused canvas,
@@ -492,11 +582,16 @@ export function __computeDisplacementField(
 function buildMap(
   w: number,
   h: number,
-  corner: number,
+  corner: RoundedShape,
   depth: number,
   dpr: number,
+  atlasPlan?: GlassAtlasPlan | null,
 ): Omit<MapEntry, 'refs' | 'evicted'> {
-  const { data, W, H, unit } = __computeDisplacementField(w, h, corner, depth, dpr);
+  const used =
+    typeof corner !== 'number' && 'radii' in corner
+      ? materialContour(w, h, corner.radii, corner.smoothing)
+      : corner;
+  const { data, W, H, unit } = __computeDisplacementField(w, h, used, depth, dpr);
   if (!sCanvas) {
     sCanvas = document.createElement('canvas');
     sCtx = sCanvas.getContext('2d');
@@ -505,6 +600,21 @@ function buildMap(
   sCanvas.width = W;
   sCanvas.height = H;
   sCtx.putImageData(new ImageData(data, W, H), 0, 0);
+  if (atlasPlan) {
+    const atlas = buildGlassAtlas(sCanvas, atlasPlan, dpr);
+    const ready = Promise.all(
+      atlas.tiles.map(
+        (href) =>
+          new Promise<void>((resolve) => {
+            const im = new Image();
+            im.onload = im.onerror = () => resolve();
+            im.src = href;
+          }),
+      ),
+    ).then(() => atlas.tiles[0] ?? '');
+    armScratchRelease();
+    return { atlas, href: null, ready, unit, mapW: W, mapH: H };
+  }
   // The PNG encode was the LAST big synchronous chunk of a build (heavier than
   // the ¼-symmetric field loop). toBlob snapshots the canvas bitmap AT CALL
   // TIME (spec: a synchronous copy) and encodes off the main thread; the href
@@ -586,9 +696,10 @@ function acquireMap(
   geoKey: string,
   w: number,
   h: number,
-  corner: number,
+  corner: RoundedShape,
   depth: number,
   dpr: number,
+  atlasPlan?: GlassAtlasPlan | null,
 ): MapEntry {
   const hit = mapCache.get(geoKey);
   if (hit) {
@@ -596,7 +707,11 @@ function acquireMap(
     if (hit.refs === 1) touchLru(geoKey, hit); // revived a zombie → mark MRU
     return hit;
   }
-  const entry: MapEntry = { ...buildMap(w, h, corner, depth, dpr), refs: 1, evicted: false };
+  const entry: MapEntry = {
+    ...buildMap(w, h, corner, depth, dpr, atlasPlan),
+    refs: 1,
+    evicted: false,
+  };
   if (entry.ready) {
     // Cache-layer resolver registers FIRST, so by the time any render-layer
     // consumer sees the href, entry.href is already settled.
@@ -651,8 +766,11 @@ function filterMarkup(
   h: number,
   scale: number,
   dispersion: number,
+  tiles?: GlassAtlas,
 ): string {
-  const atlas = `<feImage href="${escAttr(href)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="map"/>`;
+  const atlas = tiles
+    ? glassAtlasMarkup(tiles, w, h)
+    : `<feImage href="${escAttr(href)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="map"/>`;
   const dm = (s: number) =>
     `<feDisplacementMap in="SourceGraphic" in2="map" scale="${fmtScale(s)}" xChannelSelector="R" yChannelSelector="G"`;
 
@@ -682,7 +800,17 @@ function applyLens(state: EngineState, map: MapEntry, p: RenderParams, scale: nu
     ? [fmtScale(scale * (1 + k)), fmtScale(scale), fmtScale(scale * (1 - k))]
     : [fmtScale(scale)];
   const s = state.stamped;
-  if (s && s.href === map.href && s.w === p.w && s.h === p.h && s.dispersed === dispersed) {
+  const sameMap = s && s.map === map;
+  if (sameMap && (map.atlas || (s.w === p.w && s.h === p.h)) && s.dispersed === dispersed) {
+    if (s.w !== p.w || s.h !== p.h) {
+      // Resize is scalar writes, no field loop, image encode/decode, or
+      // replacement SVG nodes. All four physical edges remain present.
+      filter.setAttribute('width', String(p.w));
+      filter.setAttribute('height', String(p.h));
+      if (map.atlas) resizeGlassAtlas(state.mapNodes ?? [], map.atlas.padding, p.w, p.h);
+      s.w = p.w;
+      s.h = p.h;
+    }
     const nodes = state.dispNodes ?? [];
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i] as Element;
@@ -696,14 +824,15 @@ function applyLens(state: EngineState, map: MapEntry, p: RenderParams, scale: nu
   }
   // Region == element box in element-LOCAL px (filterUnits=userSpaceOnUse) →
   // travels with the element on left/top; the lens stays aligned when dragged
-  // (shuding's anti-seam rule). Do NOT CSS-transform a glass element.
+  // in its own local coordinates; ordinary transforms do not rebuild it.
   filter.setAttribute('x', '0');
   filter.setAttribute('y', '0');
   filter.setAttribute('width', String(p.w));
   filter.setAttribute('height', String(p.h));
-  filter.innerHTML = filterMarkup(map.href ?? '', p.w, p.h, scale, p.dispersion);
+  filter.innerHTML = filterMarkup(map.href ?? '', p.w, p.h, scale, p.dispersion, map.atlas);
   state.dispNodes = Array.from(filter.querySelectorAll('feDisplacementMap'));
-  state.stamped = { href: map.href, w: p.w, h: p.h, dispersed, scales };
+  state.mapNodes = Array.from(filter.querySelectorAll('feImage'));
+  state.stamped = { map, w: p.w, h: p.h, dispersed, scales };
 }
 
 function readParams(el: HTMLElement, state: EngineState): RenderParams {
@@ -713,15 +842,20 @@ function readParams(el: HTMLElement, state: EngineState): RenderParams {
     return Number.isFinite(v) ? v : fb;
   };
   const p = state.params;
-  const rect = el.getBoundingClientRect(); // one reflow read, used for both dims
+  // SVG userSpaceOnUse is local CSS space. A transformed boundingClientRect
+  // would apply scale twice and rebuild the map during an ordinary sheet move.
+  const rect = readBorderBox(el, cs);
+  const radii = resolveCornerRadii(rect.width, rect.height, [
+    cs.borderTopLeftRadius,
+    cs.borderTopRightRadius,
+    cs.borderBottomRightRadius,
+    cs.borderBottomLeftRadius,
+  ]);
+  const smoothing = num('--lab-corner-smoothing', 0);
   return {
-    w: Math.max(1, Math.round(rect.width)),
-    h: Math.max(1, Math.round(rect.height)),
-    // Number.isFinite, NOT `||`: an explicit `border-radius: 0` is a real
-    // author choice (sharp lens), not an invitation to the default corner.
-    corner: ((r: number): number => Math.round(Number.isFinite(r) ? r : DEFAULTS.corner))(
-      Number.parseFloat(cs.borderTopLeftRadius),
-    ),
+    w: Math.max(1, rect.width),
+    h: Math.max(1, rect.height),
+    corner: smoothing > 0 ? materialContour(rect.width, rect.height, radii, smoothing) : radii,
     refraction: p.refraction ?? num('--_lg-refraction', DEFAULTS.refraction),
     depth: Math.round(p.depth ?? num('--_lg-depth', DEFAULTS.depth)),
     dispersion: p.dispersion ?? num('--_lg-dispersion', DEFAULTS.dispersion),
@@ -739,8 +873,8 @@ function setBackdrop(el: HTMLElement, value: string, state: EngineState | null):
     if (state.lastBackdrop === value) return;
     state.lastBackdrop = value;
   }
-  el.style.setProperty('backdrop-filter', value);
-  el.style.setProperty('-webkit-backdrop-filter', value);
+  if (value) el.style.setProperty('--_material-lens-filter', value);
+  else el.style.removeProperty('--_material-lens-filter');
 }
 
 /** Drop this instance's hold on its cached map (if any).
@@ -758,6 +892,7 @@ function dropMap(state: EngineState): void {
   // but the stamp bookkeeping must reset so a later re-enable rebuilds structure.
   state.stamped = null;
   state.dispNodes = null;
+  state.mapNodes = null;
 }
 
 function render(state: EngineState): void {
@@ -777,9 +912,9 @@ function render(state: EngineState): void {
     return;
   }
   // refraction ≈ 0 → plain frost, no displacement (opt-out of the lens). The
-  // tail still adds the engine's brightness/contrast over the CSS stack.
+  // shared CSS keeps author frost and paints active.
   if (p.refraction <= 0.01) {
-    setBackdrop(el, FROST_TAIL, state);
+    setBackdrop(el, '', state);
     dropMap(state);
     return;
   }
@@ -792,7 +927,10 @@ function render(state: EngineState): void {
   // The map depends ONLY on geometry (size/corner/depth/dpr) — not on position,
   // strength, or dispersion. So a DRAG or a refraction/dispersion change never
   // rebuilds it (cheap re-stamp); only resize/corner/depth does.
-  const geoKey = `${p.w}x${p.h}x${p.corner}x${p.depth}x${dpr.toFixed(2)}`;
+  const atlasPlan = glassAtlasPlan(p.w, p.h, p.corner, p.depth, dpr);
+  const mapW = atlasPlan?.side ?? p.w;
+  const mapH = atlasPlan?.side ?? p.h;
+  const geoKey = `${atlasPlan ? 'atlas:' : ''}${mapW}x${mapH}x${shapeKey(p.corner)}x${p.depth}x${dpr.toFixed(2)}`;
   const t0 = state.onPerf ? performance.now() : 0;
 
   const stamp = (map: MapEntry, mapMs: number): void => {
@@ -803,11 +941,7 @@ function render(state: EngineState): void {
     // Frost FIRST, then the lens: blurring the backdrop before the displacement
     // means the lens bends already-soft content (clean refraction) instead of
     // smearing sharp high-contrast edges into streaks.
-    setBackdrop(
-      el,
-      `blur(var(--_blur, 4px)) url(#${id}) saturate(var(--_saturate, 130%)) brightness(var(--_lg-brightness, 1.05)) contrast(var(--_lg-contrast, 1.2))`,
-      state,
-    );
+    setBackdrop(el, `url(#${id})`, state);
     if (state.onPerf) {
       state.onPerf({
         reason: mapMs > 0 ? 'rebuild' : 'restamp',
@@ -856,7 +990,10 @@ function render(state: EngineState): void {
   const prevHeld = state.heldKey;
   const tMap = state.onPerf ? performance.now() : 0;
 
-  const map = acquireMap(geoKey, p.w, p.h, p.corner, p.depth, dpr);
+  const map = acquireMap(geoKey, mapW, mapH, p.corner, p.depth, dpr, atlasPlan);
+  // A second render while the new image is decoding must re-arm THIS map,
+  // never stamp the previous geometry under the newly acquired key.
+  state.map = null;
   state.heldKey = geoKey; // we now hold a ref for this geometry (decode aside)
   state.pendingMap = map; // so a same-geometry re-render mid-decode can re-arm a stamp
   if (prevHeld && prevHeld !== geoKey) releaseMap(prevHeld);
@@ -874,9 +1011,9 @@ function render(state: EngineState): void {
  */
 export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHandle {
   registry.get(el)?.destroy();
-  ensureDefs();
+  const defs = ensureDefs(el);
   const id = `lab-lg-${++uid}`;
-  const filter = document.createElementNS(SVGNS, 'filter');
+  const filter = el.ownerDocument.createElementNS(SVGNS, 'filter');
   filter.id = id;
   filter.setAttribute('color-interpolation-filters', 'sRGB');
   // userSpaceOnUse with the region set to the element box (0,0,w,h) in stamp():
@@ -885,7 +1022,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
   // (primitiveUnits is intentionally NOT set: no primitive here carries a
   // primitiveUnits-sensitive length, so it would be a no-op.)
   filter.setAttribute('filterUnits', 'userSpaceOnUse');
-  ensureDefs().appendChild(filter);
+  defs.appendChild(filter);
 
   const { onPerf, ...params } = opts;
   const state: EngineState = {
@@ -902,6 +1039,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
     pendingMap: null,
     stamped: null,
     dispNodes: null,
+    mapNodes: null,
     lastBackdrop: undefined,
     onPerf: typeof onPerf === 'function' ? onPerf : null,
     update: () => {},
@@ -925,7 +1063,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
     });
   };
   const ro = new ResizeObserver(debouncedUpdate);
-  ro.observe(el);
+  ro.observe(el, { box: 'border-box' });
   window.addEventListener('resize', debouncedUpdate);
   const mq =
     typeof matchMedia !== 'undefined' ? matchMedia('(prefers-reduced-transparency: reduce)') : null;
@@ -947,7 +1085,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
     window.removeEventListener('resize', debouncedUpdate);
     mq?.removeEventListener('change', update);
     dropMap(state); // release our hold on the shared cached map
-    filter.remove();
+    removeFilter(filter);
     setBackdrop(el, '', state);
     el.classList.remove(LENSED_CLASS);
     if (registry.get(el) === state) registry.delete(el);
@@ -983,6 +1121,24 @@ export function __fieldStats(): {
   sdfComputes: number;
   sdfEntries: number;
   sdfCacheCap: number;
+  asymmetricEntries: number;
+  retainedBytes: number;
 } {
-  return { sdfComputes: sdfComputeCount, sdfEntries: sdfCache.size, sdfCacheCap: SDF_CACHE_CAP };
+  let retainedBytes = 0;
+  for (const field of sdfCache.values())
+    retainedBytes +=
+      field.inside.byteLength + field.covered.byteLength + (field.normals?.byteLength ?? 0);
+  for (const field of asymmetricSdfCache.values())
+    retainedBytes +=
+      field.distances.byteLength +
+      field.normals.byteLength +
+      field.left.byteLength +
+      field.right.byteLength;
+  return {
+    sdfComputes: sdfComputeCount,
+    sdfEntries: sdfCache.size,
+    sdfCacheCap: SDF_CACHE_CAP,
+    asymmetricEntries: asymmetricSdfCache.size,
+    retainedBytes,
+  };
 }

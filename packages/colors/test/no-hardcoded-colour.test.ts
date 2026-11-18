@@ -31,9 +31,32 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
     expect(scanSource('p.css', '.x{color:#fff}')).toHaveLength(1);
   });
 
+  it('allows only the contour mask and SourceAlpha values, while retaining paint detection', () => {
+    const path = 'packages/materials/src/engine/contour-surface.ts';
+    const alphaSources =
+      "rimPath.setAttribute('stroke', 'white');\ndrawing.setAttribute('fill', 'black');";
+    expect(scanSource(path, alphaSources)).toEqual([]);
+    expect(scanSource('component.ts', alphaSources)).toHaveLength(2);
+    expect(scanSource(path, `${alphaSources}\nface.style.background = 'red';`)).toMatchObject([
+      { token: 'red' },
+    ]);
+    expect(scanSource(path, "rimPath.setAttribute('stroke', 'red');")).toHaveLength(1);
+    expect(scanSource(path, "drawing.setAttribute('fill', 'white');")).toHaveLength(1);
+  });
+
   it('DETECTS rgb() / rgba() literals', () => {
     expect(scanSource('p.css', 'background: rgb(0 0 0);')).toHaveLength(1);
     expect(scanSource('p.css', 'background: rgba(0, 0, 0, 0.5);')).toHaveLength(1);
+  });
+
+  it('distinguishes numeric colour serialization and property access from hardcoded paints', () => {
+    expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / ${c.a})`;')).toEqual([]);
+    expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} 0 / ${c.a})`;')).toHaveLength(1);
+    expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / .5)`;')).toHaveLength(1);
+    expect(scanSource('p.ts', 'const fill = `rgb(${0} ${0} ${0})`;')).toHaveLength(1);
+    expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / ${.5})`;')).toHaveLength(1);
+    expect(scanSource('p.ts', 'const fill = `rgb(${0xff} ${c.g} ${c.b})`;')).toHaveLength(1);
+    expect(scanSource('p.ts', 'const fill = { r: black.r / alpha, g: white[key] };')).toEqual([]);
   });
 
   it('DETECTS hsl() / oklch() / color-mix() / light-dark() literals', () => {

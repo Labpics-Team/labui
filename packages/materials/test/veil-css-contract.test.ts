@@ -114,14 +114,7 @@ describe('honest degradation backstops (CSS doubles the runtime gates)', () => {
 });
 
 describe('declarative token surface (--lab-veil-*)', () => {
-  const DOCUMENTED = [
-    '--lab-veil-strength',
-    '--lab-veil-stops',
-    '--lab-veil-from',
-    '--lab-veil-to',
-    '--lab-veil-levels',
-    '--lab-veil-feather',
-  ];
+  const DOCUMENTED = [...css.matchAll(/^\s*\*\s+(--lab-veil-[\w-]+)\s/gm)].map((match) => match[1]);
 
   it('the tokens the runtime reads are exactly the documented set', () => {
     const reads = new Set(
@@ -138,7 +131,8 @@ describe('declarative token surface (--lab-veil-*)', () => {
 describe('runtime integration (mountMaterialRuntime scans [data-veil])', () => {
   it('scans the attribute with the same observer mechanics as data-material', () => {
     expect(runtimeSrc).toContain("const VEIL = '[data-veil]'");
-    expect(runtimeSrc).toContain("attributeFilter: ['data-material', 'class', 'data-veil']");
+    expect(runtimeSrc).toContain("'data-veil'");
+    expect(runtimeSrc).toContain('attributeFilter: attributes');
   });
 });
 

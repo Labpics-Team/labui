@@ -1,5 +1,51 @@
 import { expect, test } from '@playwright/test';
 
+test('theme scopes paint and dispose inside a real SVG document', async ({ page }) => {
+  await page.route('**/theme-scope.svg', (route) =>
+    route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60"><text x="8" y="24" style="fill:var(--lab-label-primary)">SVG scope</text></svg>',
+    }),
+  );
+  await page.goto('/_fixtures/colors-scope.html');
+  await page.waitForFunction(() => !!window.colorsProof);
+  const result = await page.evaluate(async () => {
+    const frame = document.createElement('iframe');
+    const loaded = new Promise<void>((resolve) => {
+      frame.onload = () => resolve();
+    });
+    frame.src = '/theme-scope.svg';
+    document.body.append(frame);
+    await loaded;
+    const doc = frame.contentDocument;
+    if (!doc?.defaultView) throw new Error('SVG document did not load');
+    const view = doc.defaultView;
+    const root = doc.documentElement as unknown as SVGSVGElement;
+    const label = root.querySelector('text');
+    if (!label) throw new Error('SVG text is missing');
+    const scope = window.colorsProof.create(root);
+    try {
+      if (!scope.update({ theme: 'light' }).ok) throw new Error('SVG theme did not initialize');
+      const read = () => view.getComputedStyle(label).fill;
+      const light = read();
+      scope.update({ theme: 'dark' });
+      const dark = read();
+      const namespace = root.querySelector('style')?.namespaceURI;
+      scope.dispose();
+      return { light, dark, namespace, styles: root.querySelectorAll('style').length };
+    } finally {
+      scope.dispose();
+      frame.remove();
+    }
+  });
+  expect(result).toEqual({
+    light: 'rgb(16, 16, 18)',
+    dark: 'rgb(246, 248, 250)',
+    namespace: 'http://www.w3.org/2000/svg',
+    styles: 0,
+  });
+});
+
 test('authored first frame works without JavaScript', async ({ browser, baseURL }) => {
   const context = await browser.newContext({ javaScriptEnabled: false, baseURL });
   try {

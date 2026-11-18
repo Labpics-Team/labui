@@ -20,6 +20,7 @@ export const DEFAULT_LIGHT_ANGLE_DEG = 0;
  */
 export const SHADOW_COLOR_FALLBACK_LIGHT = '#101012';
 export const SHADOW_COLOR_FALLBACK_DARK = '#101012';
+export const SHADOW_COLOR_ROLE = 'bg-static-dark';
 
 /**
  * Default per-surface tint strength = 0 → the shadow is fully neutral until a

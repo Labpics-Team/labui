@@ -3,21 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LabUI — Acrylic live (движок v2, luminosity-конвейер)</title>
+    <title>LabUI — Авторский Acrylic — живой рендер</title>
     <link rel="stylesheet" href="./acrylic-live.css" />
   </head>
   <body>
     <!-- Углы коридора гарантии как живые поля фона; синее поле — детектор
-         РЕЖИМА смеси (luminosity сохраняет оттенок фона, normal-подмена — нет). -->
+         двух author paints на насыщенном фоне. -->
     <div class="zone zone--black" data-testid="zone-black" aria-hidden="true"></div>
     <div class="zone zone--blue" data-testid="zone-blue" aria-hidden="true"></div>
     <div class="zone zone--white" data-testid="zone-white" aria-hidden="true"></div>
 
     <main>
-      <h1 class="sr-only">Acrylic live — измерительный полигон движка v2</h1>
+      <h1 class="sr-only">Acrylic — измерительный полигон авторского материала</h1>
 
-      <!-- SOFT tier: самый показательный для зажима (прозрачный тинт → широкая
-           полоса на фолбэке, узкая под luminosity-конвейером). -->
+      <!-- SOFT tier: заметное влияние обоих paints на живой фон. -->
       <section
         class="lab-material lab-material--soft panel panel--on-black"
         data-testid="surface-on-black"

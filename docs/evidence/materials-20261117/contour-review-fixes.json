@@ -1,0 +1,657 @@
+{
+  "date": "2026-11-17T19:25:39.640Z",
+  "sourceHead": "b18a753f3eb378cc33fa29faa132088c092a948f",
+  "runtimeSha256": "c55995721fadd41c3f52b26cba9a737d92d660ecce6921ff9214d202fdf89232",
+  "platform": "win32",
+  "capture": "headless-snapshot",
+  "unit": {
+    "materials": 174,
+    "colors": {
+      "count": 181,
+      "sourceHead": "cda0453",
+      "repeated": false
+    }
+  },
+  "build": "pass",
+  "typecheck": "pass",
+  "biome": "pass",
+  "browsers": [
+    {
+      "browser": "chromium",
+      "version": "140.0.7339.186",
+      "paintRows": 34,
+      "scrollRows": 120,
+      "scrollDisposals": [
+        {
+          "browser": "chromium",
+          "layout": "block",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "chromium",
+          "layout": "flex-column",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "chromium",
+          "layout": "flex-row",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "chromium",
+          "layout": "grid",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "chromium",
+          "layout": "rtl",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "chromium",
+          "layout": "row-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "chromium",
+          "layout": "column-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "chromium",
+          "layout": "vertical-rl",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "chromium",
+          "layout": "vertical-lr",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "chromium",
+          "layout": "rtl-row-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "chromium",
+          "layout": "vertical-rl-column-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "chromium",
+          "layout": "wrap-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        }
+      ],
+      "shape": {
+        "browser": "chromium",
+        "retained": true,
+        "hostUnclipped": true,
+        "overflowInteractive": true,
+        "foregroundStroke": [255, 0, 0],
+        "shadowStack": 2,
+        "borderBox": {
+          "host": [275.3125, 225.3125],
+          "contour": [0, 0, 275.3125, 225.3125],
+          "stroke": [0, 0, 275.3125, 225.3125],
+          "image": [0, 0, 275.3125, 225.3125],
+          "localSvg": [220.25, 180.25]
+        },
+        "borderOnlyResize": true,
+        "shadowLifecycle": {
+          "states": [
+            {
+              "before": ["blue 0px 0px 0px 7px", ""],
+              "during": "none",
+              "after": ["blue 0px 0px 0px 7px", ""]
+            },
+            {
+              "before": ["blue 0px 0px 0px 7px", "important"],
+              "during": "none",
+              "after": ["blue 0px 0px 0px 7px", "important"]
+            },
+            {
+              "before": ["red 0px 0px 0px 9px", ""],
+              "after": ["red 0px 0px 0px 9px", ""]
+            },
+            {
+              "before": ["red 0px 0px 0px 9px", "important"],
+              "after": ["red 0px 0px 0px 9px", "important"]
+            }
+          ],
+          "stylesheet": {
+            "before": "rgb(0, 128, 0) 0px 0px 0px 5px",
+            "during": "none",
+            "after": "rgb(0, 128, 0) 0px 0px 0px 5px"
+          },
+          "inline": ["", ""]
+        },
+        "shadowPixels": [
+          {
+            "name": "outer-spread",
+            "reference": "native-css-shadow",
+            "checked": 234164,
+            "painted": 5008,
+            "mismatches": 0
+          },
+          {
+            "name": "outer-negative-offset",
+            "reference": "native-css-shadow",
+            "checked": 236923,
+            "painted": 1002,
+            "mismatches": 0
+          },
+          {
+            "name": "inner-spread",
+            "reference": "native-css-shadow",
+            "checked": 234568,
+            "painted": 4592,
+            "mismatches": 0
+          },
+          {
+            "name": "inner-negative-offset",
+            "reference": "native-css-shadow",
+            "checked": 236146,
+            "painted": 3873,
+            "mismatches": 0
+          },
+          {
+            "name": "inner-border",
+            "reference": "native-css-shadow",
+            "checked": 235813,
+            "painted": 3409,
+            "mismatches": 0
+          },
+          {
+            "name": "parallel-layers",
+            "reference": "native-css-shadow",
+            "checked": 232980,
+            "painted": 9838,
+            "mismatches": 0
+          },
+          {
+            "name": "asymmetric-inner-spread",
+            "reference": "independent-css-geometry",
+            "checked": 236201,
+            "painted": 5973,
+            "mismatches": 0
+          },
+          {
+            "name": "asymmetric-inner-contract",
+            "reference": "independent-css-geometry",
+            "checked": 236284,
+            "painted": 10004,
+            "mismatches": 0
+          }
+        ],
+        "disposed": {
+          "observers": 0,
+          "defs": 0,
+          "position": "",
+          "clip": ""
+        }
+      }
+    },
+    {
+      "browser": "firefox",
+      "version": "141.0",
+      "paintRows": 34,
+      "scrollRows": 120,
+      "scrollDisposals": [
+        {
+          "browser": "firefox",
+          "layout": "block",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "firefox",
+          "layout": "flex-column",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "firefox",
+          "layout": "flex-row",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "firefox",
+          "layout": "grid",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "firefox",
+          "layout": "rtl",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "firefox",
+          "layout": "row-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "firefox",
+          "layout": "column-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "firefox",
+          "layout": "vertical-rl",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "firefox",
+          "layout": "vertical-lr",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "firefox",
+          "layout": "rtl-row-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "firefox",
+          "layout": "vertical-rl-column-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "firefox",
+          "layout": "wrap-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        }
+      ],
+      "shape": {
+        "browser": "firefox",
+        "retained": true,
+        "hostUnclipped": true,
+        "overflowInteractive": true,
+        "foregroundStroke": [255, 0, 0],
+        "shadowStack": 2,
+        "borderBox": {
+          "host": [275.3166809082031, 225.31668090820312],
+          "contour": [0, 0, 275.3166809082031, 225.31668090820312],
+          "stroke": [0, 0, 275.3166809082031, 225.31668090820312],
+          "image": [0, 0, 275.3166809082031, 225.31668090820312],
+          "localSvg": [220.25, 180.25]
+        },
+        "borderOnlyResize": true,
+        "shadowLifecycle": {
+          "states": [
+            {
+              "before": ["blue 0px 0px 0px 7px", ""],
+              "during": "none",
+              "after": ["blue 0px 0px 0px 7px", ""]
+            },
+            {
+              "before": ["blue 0px 0px 0px 7px", "important"],
+              "during": "none",
+              "after": ["blue 0px 0px 0px 7px", "important"]
+            },
+            {
+              "before": ["red 0px 0px 0px 9px", ""],
+              "after": ["red 0px 0px 0px 9px", ""]
+            },
+            {
+              "before": ["red 0px 0px 0px 9px", "important"],
+              "after": ["red 0px 0px 0px 9px", "important"]
+            }
+          ],
+          "stylesheet": {
+            "before": "rgb(0, 128, 0) 0px 0px 0px 5px",
+            "during": "none",
+            "after": "rgb(0, 128, 0) 0px 0px 0px 5px"
+          },
+          "inline": ["", ""]
+        },
+        "shadowPixels": [
+          {
+            "name": "outer-spread",
+            "reference": "native-css-shadow",
+            "checked": 234141,
+            "painted": 4987,
+            "mismatches": 0
+          },
+          {
+            "name": "outer-negative-offset",
+            "reference": "native-css-shadow",
+            "checked": 236919,
+            "painted": 1002,
+            "mismatches": 0
+          },
+          {
+            "name": "inner-spread",
+            "reference": "native-css-shadow",
+            "checked": 234607,
+            "painted": 4595,
+            "mismatches": 0
+          },
+          {
+            "name": "inner-negative-offset",
+            "reference": "native-css-shadow",
+            "checked": 236178,
+            "painted": 3875,
+            "mismatches": 0
+          },
+          {
+            "name": "inner-border",
+            "reference": "native-css-shadow",
+            "checked": 236081,
+            "painted": 3659,
+            "mismatches": 0
+          },
+          {
+            "name": "parallel-layers",
+            "reference": "native-css-shadow",
+            "checked": 232933,
+            "painted": 9796,
+            "mismatches": 0
+          },
+          {
+            "name": "asymmetric-inner-spread",
+            "reference": "independent-css-geometry",
+            "checked": 236222,
+            "painted": 5969,
+            "mismatches": 0
+          },
+          {
+            "name": "asymmetric-inner-contract",
+            "reference": "independent-css-geometry",
+            "checked": 236309,
+            "painted": 9990,
+            "mismatches": 0
+          }
+        ],
+        "disposed": {
+          "observers": 0,
+          "defs": 0,
+          "position": "",
+          "clip": ""
+        }
+      }
+    },
+    {
+      "browser": "webkit",
+      "version": "26.0",
+      "paintRows": 34,
+      "scrollRows": 120,
+      "scrollDisposals": [
+        {
+          "browser": "webkit",
+          "layout": "block",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "webkit",
+          "layout": "flex-column",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "webkit",
+          "layout": "flex-row",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "webkit",
+          "layout": "grid",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "webkit",
+          "layout": "rtl",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "webkit",
+          "layout": "row-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "webkit",
+          "layout": "column-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "webkit",
+          "layout": "vertical-rl",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "webkit",
+          "layout": "vertical-lr",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "webkit",
+          "layout": "rtl-row-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "webkit",
+          "layout": "vertical-rl-column-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        },
+        {
+          "browser": "webkit",
+          "layout": "wrap-reverse",
+          "stage": "disposed",
+          "scrollMutations": 0,
+          "observations": 0,
+          "nodes": 0
+        }
+      ],
+      "shape": {
+        "browser": "webkit",
+        "retained": true,
+        "hostUnclipped": true,
+        "overflowInteractive": true,
+        "foregroundStroke": [255, 0, 0],
+        "shadowStack": 2,
+        "borderBox": {
+          "host": [275.3125, 225.3125],
+          "contour": [0, 0, 275.3125, 225.3125],
+          "stroke": [0, 0, 275.3125, 225.3125],
+          "image": [0, 0, 275.3125, 225.3125],
+          "localSvg": [220.25, 180.25]
+        },
+        "borderOnlyResize": true,
+        "shadowLifecycle": {
+          "states": [
+            {
+              "before": ["blue 0px 0px 0px 7px", ""],
+              "during": "none",
+              "after": ["blue 0px 0px 0px 7px", ""]
+            },
+            {
+              "before": ["blue 0px 0px 0px 7px", "important"],
+              "during": "none",
+              "after": ["blue 0px 0px 0px 7px", "important"]
+            },
+            {
+              "before": ["red 0px 0px 0px 9px", ""],
+              "after": ["red 0px 0px 0px 9px", ""]
+            },
+            {
+              "before": ["red 0px 0px 0px 9px", "important"],
+              "after": ["red 0px 0px 0px 9px", "important"]
+            }
+          ],
+          "stylesheet": {
+            "before": "rgb(0, 128, 0) 0px 0px 0px 5px",
+            "during": "none",
+            "after": "rgb(0, 128, 0) 0px 0px 0px 5px"
+          },
+          "inline": ["", ""]
+        },
+        "shadowPixels": [
+          {
+            "name": "outer-spread",
+            "reference": "native-css-shadow",
+            "checked": 234148,
+            "painted": 5007,
+            "mismatches": 0
+          },
+          {
+            "name": "outer-negative-offset",
+            "reference": "native-css-shadow",
+            "checked": 236915,
+            "painted": 995,
+            "mismatches": 0
+          },
+          {
+            "name": "inner-spread",
+            "reference": "native-css-shadow",
+            "checked": 234589,
+            "painted": 4581,
+            "mismatches": 0
+          },
+          {
+            "name": "inner-negative-offset",
+            "reference": "native-css-shadow",
+            "checked": 236174,
+            "painted": 3866,
+            "mismatches": 0
+          },
+          {
+            "name": "inner-border",
+            "reference": "native-css-shadow",
+            "checked": 236071,
+            "painted": 3649,
+            "mismatches": 0
+          },
+          {
+            "name": "parallel-layers",
+            "reference": "native-css-shadow",
+            "checked": 232929,
+            "painted": 9805,
+            "mismatches": 0
+          },
+          {
+            "name": "asymmetric-inner-spread",
+            "reference": "independent-css-geometry",
+            "checked": 236217,
+            "painted": 5963,
+            "mismatches": 0
+          },
+          {
+            "name": "asymmetric-inner-contract",
+            "reference": "independent-css-geometry",
+            "checked": 236305,
+            "painted": 9978,
+            "mismatches": 0
+          }
+        ],
+        "disposed": {
+          "observers": 0,
+          "defs": 0,
+          "position": "",
+          "clip": ""
+        }
+      }
+    }
+  ],
+  "qualification": "Pixels compare flat 3x3 reference interiors, threshold 5 RGB, zero mismatches. Six shadow references use native CSS; two asymmetric inset references use independent CSS geometry in all browsers (shadow-reference.md). Runtime native box-shadow must be none. Actual display is separately qualified by isolated Linux/macOS CI. Dock optics retains the thin-rim and dispersion limits in dock-optics.md."
+}

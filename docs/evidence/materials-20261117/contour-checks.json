@@ -1,0 +1,72 @@
+{
+  "date": "2026-11-17T17:42:19.306Z",
+  "sourceBase": "ec9a968",
+  "runtimeSha256": "2817f0ddaaadc10dc583a62f1363507ff42b2df3109867b9201400d90e34f442",
+  "unitTests": 169,
+  "scroll": {
+    "checks": 360,
+    "browsers": ["chromium", "firefox", "webkit"],
+    "layouts": [
+      "block",
+      "flex-column",
+      "flex-row",
+      "grid",
+      "rtl",
+      "row-reverse",
+      "column-reverse",
+      "vertical-rl",
+      "vertical-lr",
+      "rtl-row-reverse",
+      "vertical-rl-column-reverse",
+      "wrap-reverse"
+    ],
+    "scrollMutations": 0,
+    "remainingObservations": 0,
+    "remainingNodes": 0
+  },
+  "publicPort": [
+    {
+      "browser": "chromium",
+      "retained": true,
+      "hostUnclipped": true,
+      "overflowInteractive": true,
+      "foregroundStroke": [255, 0, 0],
+      "shadowStack": 2,
+      "disposed": {
+        "observers": 0,
+        "defs": 0,
+        "position": "",
+        "clip": ""
+      }
+    },
+    {
+      "browser": "firefox",
+      "retained": true,
+      "hostUnclipped": true,
+      "overflowInteractive": true,
+      "foregroundStroke": [255, 0, 0],
+      "shadowStack": 2,
+      "disposed": {
+        "observers": 0,
+        "defs": 0,
+        "position": "",
+        "clip": ""
+      }
+    },
+    {
+      "browser": "webkit",
+      "retained": true,
+      "hostUnclipped": true,
+      "overflowInteractive": true,
+      "foregroundStroke": [255, 0, 0],
+      "shadowStack": 2,
+      "disposed": {
+        "observers": 0,
+        "defs": 0,
+        "position": "",
+        "clip": ""
+      }
+    }
+  ],
+  "visualBoundary": "Foreground stroke pixels are verified in all three snapshot renderers. Translucent backdrop accuracy in Firefox/WebKit requires actual-display CI. Glass Dock lighting and dispersion are still under independent evaluation."
+}

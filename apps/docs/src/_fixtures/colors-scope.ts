@@ -12,6 +12,7 @@ declare global {
       errors: unknown[];
       update: (input?: ThemeInput) => boolean;
       setTheme: (theme: 'light' | 'dark') => void;
+      create: typeof createThemeScope;
     };
   }
 }
@@ -30,6 +31,7 @@ initializeColors().then(() => {
     errors,
     update: (input) => scope.update(input).ok,
     setTheme: (theme) => setTheme(root, theme),
+    create: createThemeScope,
   };
 });
 import { setTheme } from '@labpics/ui-core';

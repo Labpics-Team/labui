@@ -22,7 +22,7 @@ corepack enable
 pnpm install --frozen-lockfile
 if [ "$#" -eq 0 ]; then
   pnpm build
-  pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
+  pnpm --filter @labpics/ui-docs exec playwright install chromium webkit firefox
   pnpm --filter @labui/colors fx:render
   pnpm test:e2e
 else

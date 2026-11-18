@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-18",
+  "runtime": "v24.15.0",
+  "platform": "win32",
+  "arch": "x64",
+  "baseline": "7e27bf4 before finite-boundary geometry changes",
+  "method": "geometry-field.bench.ts; 4 warmups; median of 9 cold samples after LRU eviction; median of 9 batches of 100 retained depth updates; DPR 2",
+  "unit": "milliseconds per displacement field",
+  "rows": [
+    {
+      "name": "circular",
+      "beforeCold": 1.2315,
+      "afterCold": 1.2044,
+      "beforeRetained": 0.305589,
+      "afterRetained": 0.282918,
+      "retainedFieldBytes": 529720
+    },
+    {
+      "name": "elliptical",
+      "beforeCold": 3.7478,
+      "afterCold": 4.6468,
+      "beforeRetained": 0.612861,
+      "afterRetained": 0.59854,
+      "retainedFieldBytes": 1936224
+    },
+    {
+      "name": "asymmetric",
+      "beforeCold": 10.2927,
+      "afterCold": 10.6925,
+      "beforeRetained": 1.087456,
+      "afterRetained": 0.961048,
+      "retainedFieldBytes": 4113024
+    },
+    {
+      "name": "smooth",
+      "beforeCold": 55.2515,
+      "afterCold": 23.7692,
+      "beforeRetained": 1.087378,
+      "afterRetained": 0.932783,
+      "retainedFieldBytes": 4113024
+    }
+  ]
+}

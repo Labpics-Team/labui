@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-17T06:45:19.164Z",
+  "node": "v24.15.0",
+  "platform": "win32",
+  "arch": "x64",
+  "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+  "dimensions": "360x220, DPR2, changing depth, milliseconds per map",
+  "rows": [
+    {
+      "name": "card",
+      "before": 0.47843099999999994,
+      "after": 0.5948039999999992
+    },
+    {
+      "name": "sheet",
+      "before": 2.125205999999998,
+      "after": 1.9314009999999961
+    },
+    {
+      "name": "ellipse",
+      "before": 1.9552449999999952,
+      "after": 1.8817239999999946
+    }
+  ],
+  "coldGeometry": {
+    "description": "Median of 9 previously unseen geometries (361..377 x220), depth60, warmed JIT",
+    "rows": [
+      {
+        "name": "card",
+        "before": 2.7554000000000087,
+        "after": 2.269800000000032
+      },
+      {
+        "name": "sheet",
+        "before": 12.05580000000009,
+        "after": 8.648400000000038
+      },
+      {
+        "name": "ellipse",
+        "before": 11.476599999999962,
+        "after": 9.584800000000541
+      }
+    ]
+  }
+}

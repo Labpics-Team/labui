@@ -261,6 +261,9 @@ importers:
 
   packages/materials:
     devDependencies:
+      '@labui/colors':
+        specifier: workspace:*
+        version: link:../colors
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
