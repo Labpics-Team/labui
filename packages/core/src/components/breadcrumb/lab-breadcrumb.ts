@@ -1,11 +1,14 @@
 import { type TemplateResult, css, html, nothing, unsafeCSS } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import { LabElement } from '../../lit/lab-element.js';
 import {
   type LabBreadcrumbItem,
   type LabBreadcrumbSize,
   breadcrumbIndices,
+  breadcrumbKeys,
   breadcrumbLimit,
   breadcrumbSize,
+  parseBreadcrumbItems,
 } from './contract.js';
 import { breadcrumbCss } from './styles.js';
 
@@ -16,7 +19,12 @@ export class LabBreadcrumb extends LabElement {
   static override properties = {
     size: { reflect: true, useDefault: true },
     separator: { reflect: true, useDefault: true },
-    items: { attribute: false },
+    items: {
+      type: Array,
+      reflect: true,
+      useDefault: true,
+      converter: { fromAttribute: parseBreadcrumbItems },
+    },
     maxItems: { type: Number, attribute: 'max-items', reflect: true, useDefault: true },
     label: { reflect: true, useDefault: true },
     expandLabel: { attribute: 'expand-label', useDefault: true },
@@ -59,11 +67,15 @@ export class LabBreadcrumb extends LabElement {
   override render(): TemplateResult {
     const items = this.items ?? [];
     const indices = breadcrumbIndices(items.length, breadcrumbLimit(this.maxItems), this.expanded);
+    const keys = breadcrumbKeys(items);
     return html`<nav aria-label=${this.label} data-lab-breadcrumb data-size=${breadcrumbSize(this.size)} part="nav">
-      <ol class="lab-breadcrumb-list" part="list">${indices.map((index, position) => {
-        const current = index === items.length - 1;
-        const item = items[index];
-        return html`<li class="lab-breadcrumb-item" part="item" data-breadcrumb-index=${index}>
+      <ol class="lab-breadcrumb-list" part="list">${repeat(
+        indices,
+        (index) => (index === -1 ? 'disclosure' : keys[index]),
+        (index, position) => {
+          const current = index === items.length - 1;
+          const item = items[index];
+          return html`<li class="lab-breadcrumb-item" part="item" data-breadcrumb-index=${index}>
           ${
             index === -1
               ? html`<button class="lab-breadcrumb-expand" type="button" aria-label=${this.expandLabel} @click=${this.expand}><span class="lab-breadcrumb-ellipsis" aria-hidden="true"></span></button>`
@@ -75,7 +87,8 @@ export class LabBreadcrumb extends LabElement {
           }
           ${position === indices.length - 1 ? nothing : html`<span class="lab-breadcrumb-separator separator" part="separator" aria-hidden="true">${this.separator || html`<span class="lab-breadcrumb-chevron"></span>`}</span>`}
         </li>`;
-      })}</ol>
+        },
+      )}</ol>
     </nav>`;
   }
 }

@@ -4,6 +4,7 @@ import {
   type LabBreadcrumbItem,
   type LabBreadcrumbSize,
   breadcrumbIndices,
+  breadcrumbKeys,
   breadcrumbLimit,
   breadcrumbSize,
 } from '@labpics/ui-core/breadcrumb/contract';
@@ -51,6 +52,7 @@ export const Breadcrumb = forwardRef<HTMLElement, BreadcrumbProps>(function Brea
       ?.focus();
   }, [expanded]);
   const indices = breadcrumbIndices(items.length, breadcrumbLimit(maxItems), expanded);
+  const keys = breadcrumbKeys(items);
   return (
     <nav
       {...rest}
@@ -68,7 +70,11 @@ export const Breadcrumb = forwardRef<HTMLElement, BreadcrumbProps>(function Brea
           const current = index === items.length - 1;
           const item = items[index];
           return (
-            <li key={index} className="lab-breadcrumb-item" data-breadcrumb-index={index}>
+            <li
+              key={index === -1 ? 'disclosure' : keys[index]}
+              className="lab-breadcrumb-item"
+              data-breadcrumb-index={index}
+            >
               {index === -1 ? (
                 <button
                   className="lab-breadcrumb-expand"

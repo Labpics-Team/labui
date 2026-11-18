@@ -111,7 +111,6 @@ try {
     import { hydrateRoot } from 'react-dom/client';
     import props from './props.json';
     window.hydrateTrail = async () => {
-      for (const element of document.querySelectorAll('lab-breadcrumb')) element.items = props.items;
       await import('@labpics/ui-core/breadcrumb');
       await Promise.all([...document.querySelectorAll('lab-breadcrumb')].map(el => el.updateComplete));
       const { Breadcrumb } = await import('@labpics/ui-react/breadcrumb');
@@ -231,7 +230,7 @@ try {
     }
   }
   await writeFile(
-    join(output, 'packed.json'),
+    join(output, 'packed.generated.json'),
     `${JSON.stringify({ archives, records }, null, 2)}\n`,
   );
   process.stdout.write('Packed Breadcrumb: 4 SSR adapters + React; Chromium/WebKit passed\n');

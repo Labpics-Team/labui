@@ -22,11 +22,11 @@
     },
     {
       "name": "@labpics/ui-core",
-      "sha256": "97f6cbbf34c8177a1f03ce9d8f289a8f120f76af086e5eda6c5b124a724c5ce6"
+      "sha256": "2a60099c05c3b11c031a59862bcfbc7cb6516fc96636a790bee8a593828cd3b8"
     },
     {
       "name": "@labpics/ui-react",
-      "sha256": "cb7ab1b5ecbd9b1c6d893c8f1bfe9912bbccf37288a3799ae1c5491dd1b0ae7e"
+      "sha256": "f9dfabc2e03e69291be3ff035cc03e086a821efe5774986ee6ce53f2bee22e50"
     },
     {
       "name": "@labpics/ui-vue",
@@ -49,7 +49,13 @@
     {
       "engine": "chromium",
       "browser": "140.0.7339.186",
-      "renderers": ["vue", "solid", "svelte", "astro", "react"],
+      "renderers": [
+        "vue",
+        "solid",
+        "svelte",
+        "astro",
+        "react"
+      ],
       "styledSSR": true,
       "sameNodeAfterHydration": true,
       "groupingLabelFocus": true,
@@ -61,7 +67,13 @@
     {
       "engine": "webkit",
       "browser": "26.0",
-      "renderers": ["vue", "solid", "svelte", "astro", "react"],
+      "renderers": [
+        "vue",
+        "solid",
+        "svelte",
+        "astro",
+        "react"
+      ],
       "styledSSR": true,
       "sameNodeAfterHydration": true,
       "groupingLabelFocus": true,

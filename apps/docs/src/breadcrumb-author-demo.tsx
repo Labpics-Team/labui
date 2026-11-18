@@ -34,8 +34,17 @@ if (lit) {
 }
 const mount = document.querySelector('#react-author');
 if (!mount) throw new Error('Missing Breadcrumb mount');
-createRoot(mount).render(
-  <StrictMode>
-    <Breadcrumb items={items} size={size} maxItems={maxItems} />
-  </StrictMode>,
-);
+const root = createRoot(mount);
+const render = (next: LabBreadcrumbItem[]) =>
+  root.render(
+    <StrictMode>
+      <Breadcrumb items={next} size={size} maxItems={maxItems} />
+    </StrictMode>,
+  );
+render(items);
+Object.assign(window, {
+  updateBreadcrumb(next: LabBreadcrumbItem[]) {
+    if (lit) lit.items = next;
+    render(next);
+  },
+});

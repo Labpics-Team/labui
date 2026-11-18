@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFontFamilyResolver
@@ -40,6 +43,37 @@ class BreadcrumbRenderTest {
             Thread.sleep(10)
         }
         error("Breadcrumb scene did not settle")
+    }
+
+    @Test fun ancestorUpdatesKeepTheFocusedAction() {
+        val theme = LabThemeState(initialLabColors(LabPreferences()))
+        val ready = AtomicBoolean(false)
+        val visits = mutableListOf<String>()
+        val original = listOf("Home", "Team", "Services", "Design")
+            .map { name -> LabBreadcrumbItem(name, id = name) { visits += name } }
+        var items by mutableStateOf(original)
+        val scene = ImageComposeScene(640, 200, Density(1f)) {
+            val font = labFontFamily()
+            val resolver = LocalFontFamilyResolver.current
+            LaunchedEffect(font) { resolver.preload(font); ready.set(true) }
+            LabTheme(theme, font) { LabBreadcrumb(items, maxItems = 0) }
+        }
+        try {
+            settle(scene, ready)
+            fun service() = nodes(scene).single { it.config.getOrNull(SemanticsProperties.Text)?.singleOrNull()?.text == "Services" }
+            assertTrue(service().config[SemanticsActions.RequestFocus].action!!.invoke())
+            settle(scene, ready)
+            items = listOf(original[0], LabBreadcrumbItem("Organisation") {}) + original.drop(1)
+            settle(scene, ready)
+            assertEquals(true, service().config.getOrNull(SemanticsProperties.Focused))
+            service().config[SemanticsActions.OnClick].action!!.invoke()
+            assertEquals(listOf("Services"), visits)
+            items = original.drop(1)
+            settle(scene, ready)
+            assertEquals(true, service().config.getOrNull(SemanticsProperties.Focused))
+            service().config[SemanticsActions.OnClick].action!!.invoke()
+            assertEquals(listOf("Services", "Services"), visits)
+        } finally { scene.close() }
     }
 
     @Test fun disclosureKeepsEveryAncestorAndFocusInBothDirections() {

@@ -1,6 +1,6 @@
 # Breadcrumb: источник и проверка
 
-Проверено 18 ноября 2026. Источник — Breadcrumb `6109:7452` в неизменённой
+Проверено 18–19 ноября 2026. Источник — Breadcrumb `6109:7452` в неизменённой
 [Lab UI v2.1](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1).
 Read-only REST вернул полное дерево компонента и PNG 4×; Figma не изменялась.
 В исходнике один компонент, а не набор вариантов Size × Separator.
@@ -33,20 +33,23 @@ Figma округляет ширину текстовых блоков до 39/58
 
 Проверки:
 
-- Chromium + WebKit: 37 passed, 3 skipped. Раскрытие, Enter, фокус, переход,
+- Chromium + WebKit: 41 passed, 3 skipped. Раскрытие, Enter, фокус, переход,
   группирующие пункты, размеры/цвета, длинные подписи, RTL, неверные свойства,
-  снятие Lit-атрибутов. Forced colors проверены в Chromium; два соответствующих
+  снятие Lit-атрибутов, вставка/удаление предка с сохранением сфокусированной
+  ссылки и адреса перехода. Forced colors проверены в Chromium; два соответствующих
   WebKit-case пропущены. Ещё один старый WebKit-case зависит от системного Tab.
 - React SSR ESM/CJS: 2 passed, включая экранирование текста и override имени.
 - `breadcrumb-packed.mjs`: изолированные tarball-пакеты, четыре SSR-адаптера
   и React в Chromium/WebKit; styled first paint без JS, сохранение DOM при
-  hydration, экранирование, фокус группирующего текста и настоящий переход.
-  Версии браузеров и SHA256 архивов — `packed.json`.
-- `BreadcrumbRenderTest`: 2 passed, light/dark × 100/125/200% × LTR/RTL,
+  hydration без ручной передачи массива клиенту, экранирование, фокус
+  группирующего текста и настоящий переход. Версии браузеров и SHA256 архивов
+  — `packed.generated.json`.
+- `BreadcrumbRenderTest`: 3 passed, light/dark × 100/125/200% × LTR/RTL,
   раскрытие/фокус/переход и длинные подписи 320 px/200% без обрезания.
+  Отдельная регрессия сохраняет действие и фокус при изменении предков.
 - `BreadcrumbConsumerTest`: 1 passed, 12 сочетаний темы/масштаба/направления.
   Самостоятельный consumer установлен из локальных Maven-артефактов
-  `0.1.0-breadcrumb-20261118.1`, без `uiSource` и includeBuild для LabUI.
+  `0.1.0-breadcrumb-20261118.2`, без `uiSource` и includeBuild для LabUI.
   Переход меняет маршрут приложения и текущий пункт. Это проверка поставляемых
   байтов, не свидетельство публичного выпуска.
 - Build и typecheck core/React/Vue/Solid/Svelte/Astro прошли. Colors: 255 tests.
@@ -65,15 +68,15 @@ node --test packages/react/test/breadcrumb-ssr.test.mjs
 Для native нужен JDK 21. Из корня репозитория в PowerShell:
 
 ```powershell
-./native/compose/gradlew.bat -p native/compose desktopTest --tests pics.lab.ui.BreadcrumbRenderTest
-$env:ORG_GRADLE_PROJECT_publicationVersion = '0.1.0-breadcrumb-20261118.1'
+./native/compose/gradlew.bat -p native/compose :desktopTest --tests pics.lab.ui.BreadcrumbRenderTest
+$env:ORG_GRADLE_PROJECT_publicationVersion = '0.1.0-breadcrumb-20261118.2'
 $env:ORG_GRADLE_PROJECT_publicationRepository = "$PWD/native/compose/build/breadcrumb-repository"
 ./native/compose/gradlew.bat -p native/compose publishDesktopPublicationToDistributionRepository publishKotlinMultiplatformPublicationToDistributionRepository :ui-colors:publishDesktopPublicationToDistributionRepository :ui-colors:publishKotlinMultiplatformPublicationToDistributionRepository
 $env:ORG_GRADLE_PROJECT_uiVersion = $env:ORG_GRADLE_PROJECT_publicationVersion
 $env:ORG_GRADLE_PROJECT_uiRepository = $env:ORG_GRADLE_PROJECT_publicationRepository
 $env:ORG_GRADLE_PROJECT_iconsVersion = '0.4.0-semantic.6'
 $env:ORG_GRADLE_PROJECT_iconsRepository = '<icons-checkout>/native/compose/build/repository'
-./native/compose/gradlew.bat -p native/compose/consumer desktopTest --tests pics.lab.ui.sample.BreadcrumbConsumerTest
+./native/compose/gradlew.bat -p native/compose/consumer :desktopTest --tests pics.lab.ui.sample.BreadcrumbConsumerTest
 ```
 
 `ORG_GRADLE_PROJECT_uiSource` при проверке Maven не должен быть задан.

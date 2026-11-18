@@ -2,6 +2,34 @@ import { expect, test } from '@playwright/test';
 
 for (const renderer of ['lit', 'react'] as const) {
   const selector = renderer === 'lit' ? '[data-testid="lit-author"]' : '#react-author';
+  test(`${renderer}: inserted and removed ancestors keep the focused destination`, async ({
+    page,
+  }) => {
+    await page.goto('/_fixtures/breadcrumb.html?maxItems=0');
+    const host = page.locator(selector);
+    const target = host.getByRole('link', { name: 'Services', exact: true });
+    await target.focus();
+    const original = [
+      { label: 'Home', href: '#home' },
+      { label: 'Team', href: '#team' },
+      { label: 'Projects', href: '#projects' },
+      { label: 'Services', href: '#services' },
+      { label: 'Design' },
+    ];
+    for (const items of [
+      [original[0], { label: 'Organisation', href: '#organisation' }, ...original.slice(1)],
+      original.slice(1),
+    ]) {
+      await page.evaluate(
+        (next) =>
+          (window as unknown as { updateBreadcrumb(items: unknown): void }).updateBreadcrumb(next),
+        items,
+      );
+      await expect(target).toBeFocused();
+      await page.keyboard.press('Enter');
+      await expect(page).toHaveURL(/#services$/);
+    }
+  });
   test(`${renderer}: disclosure reveals real ancestor links and retains keyboard focus`, async ({
     page,
   }) => {
