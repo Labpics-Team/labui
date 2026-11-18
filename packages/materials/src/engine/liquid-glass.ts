@@ -19,11 +19,10 @@ import { ensureHiddenDefs, removeFilter, supportsBackdropFilterUrl } from './mou
 import {
   type CornerRadii,
   type RoundedShape,
+  normalizeCornerRadii,
   resolveCornerRadii,
   roundedShapeGeometry,
-  roundedShapeInside,
   shapeKey,
-  writeStraightNormal,
 } from './rounded-shape';
 
 export interface LiquidGlassParams {
@@ -184,7 +183,15 @@ interface SdfEntry {
 }
 const SDF_CACHE_CAP = 4;
 const sdfCache = new Map<string, SdfEntry>(); // geometry (no depth) → distance field
-const asymmetricSdfCache = new Map<string, { distances: Float64Array; normals: Float32Array }>();
+const asymmetricSdfCache = new Map<
+  string,
+  {
+    distances: Float64Array;
+    normals: Float32Array;
+    left: Int32Array;
+    right: Int32Array;
+  }
+>();
 let sdfComputeCount = 0; // cumulative sdRoundRect calls (the counter-assert reads this)
 
 function releaseScratch(): void {
@@ -237,10 +244,14 @@ export function __computeDisplacementField(
   depth: number,
   dpr: number,
 ): { data: Uint8ClampedArray; W: number; H: number; unit: number } {
+  const usedShape =
+    typeof shape !== 'number' && !('radii' in shape) ? normalizeCornerRadii(w, h, shape) : shape;
   const corner =
-    typeof shape !== 'number' && 'radii' in shape && (shape.width !== w || shape.height !== h)
-      ? materialContour(w, h, shape.radii, shape.smoothing)
-      : shape;
+    typeof usedShape !== 'number' &&
+    'radii' in usedShape &&
+    (usedShape.width !== w || usedShape.height !== h)
+      ? materialContour(w, h, usedShape.radii, usedShape.smoothing)
+      : usedShape;
   const contour =
     typeof corner !== 'number' &&
     'radii' in corner &&
@@ -301,13 +312,16 @@ export function __computeDisplacementField(
 
   // Distance, normal magnitude and optical section share four-way symmetry.
   // Only the normal's signs change, so one quarter supplies all four quadrants.
-  const invSc = 1 / sc;
+  // feImage stretches the rounded bitmap to the exact CSS box. Sample that
+  // image's pixel centres; a fractional size/DPR gives each axis its own step.
+  const stepX = w / W;
+  const stepY = h / H;
   for (let Y = 0; Y < H; Y++) {
     const Ym = H - 1 - Y;
     if (Ym < Y) break; // bottom half already filled by its top twin
     const rowT = Y * W;
     const rowB = Ym * W;
-    const py = (Y + 0.5) * invSc;
+    const py = (Y + 0.5) * stepY;
     const rowBase = Y * halfW; // this row's slice of the cached distance field
     const covered = sCovered[Y] as number; // columns already computed for this row
     // RIM-SKIP. A pixel is a no-op (dx=dy=0) once inside ≥ band — the
@@ -322,7 +336,7 @@ export function __computeDisplacementField(
     // skip most of the work.
     let end = halfW; // no interior crossing ⇒ the whole left half is rim
     for (let X = 0; X < halfW; X++) {
-      const px = (X + 0.5) * invSc;
+      const px = (X + 0.5) * stepX;
       // Cached distance (the exact float64 sdRoundRect returned → byte-identical)
       // or a fresh compute past the covered edge. Depth-free, so a depth change
       // reads it back with 0 sqrt recomputes; a larger band computes only the
@@ -475,27 +489,12 @@ function asymmetricField(
   const key = `${w}x${h}x${shapeKey(radii)}x${sc}`;
   let field = asymmetricSdfCache.get(key);
   if (!field) {
-    field = { distances: new Float64Array(N), normals: new Float32Array(2 * N) };
-    const normal = new Float64Array(2);
-    for (let y = 0; y < H; y++)
-      for (let x = 0; x < W; x++) {
-        const i = y * W + x;
-        const px = (x + 0.5) / sc;
-        const py = (y + 0.5) / sc;
-        const distance =
-          'radii' in radii
-            ? contourGeometry(radii, px, py, normal)
-            : roundedShapeInside(px, py, w, h, radii);
-        field.distances[i] = distance;
-        // Straight edges dominate ordinary cards/sheets. Their exact normal
-        // follows directly from the distance, without four normal candidates.
-        if (distance <= 0) continue;
-        if (!('radii' in radii) && !writeStraightNormal(px, py, w, h, distance, normal)) {
-          roundedShapeGeometry(px, py, w, h, radii, normal);
-        }
-        field.normals[2 * i] = normal[0] ?? 0;
-        field.normals[2 * i + 1] = normal[1] ?? 0;
-      }
+    field = {
+      distances: new Float64Array(N),
+      normals: new Float32Array(2 * N),
+      left: new Int32Array(H),
+      right: new Int32Array(H).fill(W),
+    };
     asymmetricSdfCache.set(key, field);
     while (asymmetricSdfCache.size > SDF_CACHE_CAP) {
       const oldest = asymmetricSdfCache.keys().next().value;
@@ -507,29 +506,70 @@ function asymmetricField(
   }
   if (!sDx || sDx.length < 2 * N) sDx = new Float32Array(2 * N);
   if (!sRGBA || sRGBA.length < 4 * N) sRGBA = new Uint8ClampedArray(4 * N);
+  if (!sRowEnd || sRowEnd.length < 2 * H) sRowEnd = new Int32Array(2 * H);
   const data = sRGBA.length === 4 * N ? sRGBA : sRGBA.subarray(0, 4 * N);
+  const normal = new Float64Array(2);
+  const stepX = w / W;
+  const stepY = h / H;
   let maxAbs = 1e-6;
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      const i = y * W + x;
-      const inside = field.distances[i] ?? 0;
-      if (inside <= 0 || inside >= band) continue;
-      const nx = field.normals[2 * i] ?? 0;
-      const ny = field.normals[2 * i + 1] ?? 0;
-      const magnitude = lensDisplacement(inside, band, halfSize);
-      const dx = nx * magnitude;
-      const dy = ny * magnitude;
-      sDx[2 * i] = dx;
-      sDx[2 * i + 1] = dy;
-      maxAbs = Math.max(maxAbs, Math.abs(dx), Math.abs(dy));
+  // A convex outline has a convex eroded interior. Once either side reaches
+  // distance >= band, skip that interior interval; do not assume symmetry or
+  // that its maximum is at the box centre. Coverage grows independently on
+  // both sides, so a later wider lens computes only the newly exposed pixels.
+  for (let y = 0; y < H; y++) {
+    const row = y * W;
+    let leftEnd = W;
+    let rightStart = W;
+    for (let side = 0; side < 2; side++) {
+      let x = side ? W - 1 : 0;
+      for (; side ? x >= leftEnd : x < W; x += side ? -1 : 1) {
+        const i = row + x;
+        let distance = field.distances[i] ?? 0;
+        if (x >= (field.left[y] ?? 0) && x < (field.right[y] ?? W)) {
+          const px = (x + 0.5) * stepX;
+          const py = (y + 0.5) * stepY;
+          distance =
+            'radii' in radii
+              ? contourGeometry(radii, px, py, normal)
+              : roundedShapeGeometry(px, py, w, h, radii, normal);
+          field.distances[i] = distance;
+          field.normals[2 * i] = normal[0] ?? 0;
+          field.normals[2 * i + 1] = normal[1] ?? 0;
+          sdfComputeCount++;
+        }
+        if (distance >= band) {
+          if (side) rightStart = x + 1;
+          else leftEnd = x;
+          break;
+        }
+        if (distance <= 0) continue;
+        const magnitude = lensDisplacement(distance, band, halfSize);
+        const dx = (field.normals[2 * i] ?? 0) * magnitude;
+        const dy = (field.normals[2 * i + 1] ?? 0) * magnitude;
+        sDx[2 * i] = dx;
+        sDx[2 * i + 1] = dy;
+        maxAbs = Math.max(maxAbs, Math.abs(dx), Math.abs(dy));
+      }
+      if (side) field.right[y] = Math.min(field.right[y] ?? W, Math.max(leftEnd, x));
+      else field.left[y] = Math.max(field.left[y] ?? 0, Math.min(W, x + 1));
     }
+    sRowEnd[2 * y] = leftEnd;
+    sRowEnd[2 * y + 1] = rightStart;
+  }
   const gain = 255 / (2 * maxAbs);
   new Uint32Array(data.buffer, data.byteOffset, N).fill(NEUTRAL_VECTOR_RGBA);
-  for (let i = 0; i < N; i++) {
-    const inside = field.distances[i] ?? 0;
-    if (inside <= 0 || inside >= band) continue;
-    data[4 * i] = (sDx[2 * i] ?? 0) * gain + 127.5;
-    data[4 * i + 1] = (sDx[2 * i + 1] ?? 0) * gain + 127.5;
+  for (let y = 0; y < H; y++) {
+    const row = y * W;
+    const leftEnd = sRowEnd[2 * y] ?? 0;
+    const rightStart = sRowEnd[2 * y + 1] ?? W;
+    for (let x = 0; x < W; x++) {
+      if (x === leftEnd) x = rightStart;
+      if (x >= W) break;
+      const i = row + x;
+      if ((field.distances[i] ?? 0) <= 0) continue;
+      data[4 * i] = (sDx[2 * i] ?? 0) * gain + 127.5;
+      data[4 * i + 1] = (sDx[2 * i + 1] ?? 0) * gain + 127.5;
+    }
   }
   return { data, W, H, unit: 2 * maxAbs };
 }
@@ -1081,6 +1121,24 @@ export function __fieldStats(): {
   sdfComputes: number;
   sdfEntries: number;
   sdfCacheCap: number;
+  asymmetricEntries: number;
+  retainedBytes: number;
 } {
-  return { sdfComputes: sdfComputeCount, sdfEntries: sdfCache.size, sdfCacheCap: SDF_CACHE_CAP };
+  let retainedBytes = 0;
+  for (const field of sdfCache.values())
+    retainedBytes +=
+      field.inside.byteLength + field.covered.byteLength + (field.normals?.byteLength ?? 0);
+  for (const field of asymmetricSdfCache.values())
+    retainedBytes +=
+      field.distances.byteLength +
+      field.normals.byteLength +
+      field.left.byteLength +
+      field.right.byteLength;
+  return {
+    sdfComputes: sdfComputeCount,
+    sdfEntries: sdfCache.size,
+    sdfCacheCap: SDF_CACHE_CAP,
+    asymmetricEntries: asymmetricSdfCache.size,
+    retainedBytes,
+  };
 }

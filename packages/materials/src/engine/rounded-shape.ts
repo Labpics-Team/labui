@@ -89,95 +89,156 @@ export function resolveCornerRadii(w: number, h: number, values: readonly string
   return normalized.every((r) => r === first) ? first : normalized;
 }
 
-/** Distance inside a quarter-ellipse joined tangentially to two straight rays.
- * Outside values only mark clipping; the lens never samples those pixels.
+/** Distance to the four FINITE straight parts, including their endpoints.
+ * The caller compares the arcs against this upper bound. Vertical wins ties,
+ * matching the circular field's deterministic medial-axis convention.
  */
-function cornerDistance(
-  x: number,
-  y: number,
-  rx: number,
-  ry: number,
-  normal?: Float64Array,
-  limit = Number.POSITIVE_INFINITY,
-  sx = 1,
-  sy = 1,
-): number {
-  if (rx === 0 || ry === 0 || x >= rx || y >= ry) {
-    const distance = Math.min(x, y);
-    if (normal && distance < limit) {
-      normal[0] = x < y ? sx : 0;
-      normal[1] = x < y ? 0 : sy;
-    }
-    return distance;
-  }
-  const qx = rx - x;
-  const qy = ry - y;
-  if (rx === ry) {
-    const d = Math.hypot(qx, qy);
-    if (normal && rx - d < limit) {
-      normal[0] = (sx * qx) / d;
-      normal[1] = (sy * qy) / d;
-    }
-    return rx - d;
-  }
-  if ((qx / rx) ** 2 + (qy / ry) ** 2 >= 1) {
-    if (normal && 0 < limit) {
-      normal[0] = 0;
-      normal[1] = 0;
-    }
-    return 0;
-  }
-  // Nearest point on the ellipse is (a² qx/(t+a²), b² qy/(t+b²)).
-  // Both coordinates are positive here. Its unique root lies between
-  // max(a*qx-a²,b*qy-b²) and zero, without the singularities at -a²/-b².
-  const a2 = rx * rx;
-  const b2 = ry * ry;
-  let lo = Math.max(rx * qx - a2, ry * qy - b2);
-  let hi = 0;
-  for (let i = 0; i < 32; i++) {
-    const t = (lo + hi) / 2;
-    const u = (rx * qx) / (t + a2);
-    const v = (ry * qy) / (t + b2);
-    if (u * u + v * v > 1) lo = t;
-    else hi = t;
-  }
-  const t = (lo + hi) / 2;
-  const nx = (a2 * qx) / (t + a2) - qx;
-  const ny = (b2 * qy) / (t + b2) - qy;
-  const distance = Math.hypot(nx, ny);
-  if (normal && distance < limit) {
-    normal[0] = (sx * nx) / distance;
-    normal[1] = (sy * ny) / distance;
-  }
-  return distance;
-}
-
-/** Return distance and write the inward unit normal at the closest boundary.
- * Caller retains one two-number scratch; the ellipse solver allocates nothing.
- */
-export function writeStraightNormal(
+export function straightGeometry(
   x: number,
   y: number,
   w: number,
   h: number,
-  distance: number,
+  r: CornerRadii,
   normal: Float64Array,
-): boolean {
-  // On a medial tie, both field paths choose the vertical normal. The optical
-  // result must not change when an imperceptible corner edit selects another path.
-  if (distance === y || distance === h - y) {
-    normal[0] = 0;
-    normal[1] = distance === y ? 1 : -1;
-    return true;
+): number {
+  const tlx = r[1] ? r[0] : 0;
+  const tly = r[0] ? r[1] : 0;
+  const trx = r[3] ? r[2] : 0;
+  const try_ = r[2] ? r[3] : 0;
+  const brx = r[5] ? r[4] : 0;
+  const bry = r[4] ? r[5] : 0;
+  const blx = r[7] ? r[6] : 0;
+  const bly = r[6] ? r[7] : 0;
+  let nx = x < tlx ? x - tlx : x > w - trx ? x - w + trx : 0;
+  let ny = y;
+  let squared = nx * nx + ny * ny;
+  let zeroX = 0;
+  let zeroY = 1;
+  let dx = x < blx ? x - blx : x > w - brx ? x - w + brx : 0;
+  let dy = y - h;
+  let next = dx * dx + dy * dy;
+  if (next < squared) {
+    squared = next;
+    nx = dx;
+    ny = dy;
+    zeroY = -1;
   }
-  if (distance === x || distance === w - x) {
-    normal[0] = distance === x ? 1 : -1;
-    normal[1] = 0;
-    return true;
+  dx = x;
+  dy = y < tly ? y - tly : y > h - bly ? y - h + bly : 0;
+  next = dx * dx + dy * dy;
+  if (next < squared) {
+    squared = next;
+    nx = dx;
+    ny = dy;
+    zeroX = 1;
+    zeroY = 0;
   }
-  return false;
+  dx = x - w;
+  dy = y < try_ ? y - try_ : y > h - bry ? y - h + bry : 0;
+  next = dx * dx + dy * dy;
+  if (next < squared) {
+    squared = next;
+    nx = dx;
+    ny = dy;
+    zeroX = -1;
+    zeroY = 0;
+  }
+  const distance = Math.sqrt(squared);
+  normal[0] = distance ? nx / distance : zeroX;
+  normal[1] = distance ? ny / distance : zeroY;
+  return distance;
 }
 
+/** Closest point on a quarter ellipse, not on a reflected full ellipse.
+ * Put the major axis first. For qx > 0, the distance derivative divided by cos(t)
+ * is F(s) = (b²-a²)s + a*qx*s/sqrt(1-s²) - b*qy, s=sin(t).
+ * F' changes sign at most once; its increasing branch contains the only possible
+ * interior minimum. The two endpoints are already covered by straightGeometry.
+ * Unlike unconstrained Newton iteration, this bracket cannot find a maximum or
+ * cross into the other three quadrants. No allocation in the pixel loop.
+ */
+function ellipseGeometry(
+  x: number,
+  y: number,
+  rx: number,
+  ry: number,
+  normal: Float64Array,
+  limit: number,
+  sx: number,
+  sy: number,
+): number {
+  if (!rx || !ry) return limit;
+  // The convex arc lies in the triangle of its endpoints and the box corner.
+  // Its diagonal supporting half-plane is a stronger bound than the AABB.
+  const diagonal = ry * x + rx * y - rx * ry;
+  if (diagonal > 0 && diagonal * diagonal >= limit * limit * (rx * rx + ry * ry)) return limit;
+  const bx = Math.max(0, -x, x - rx);
+  const by = Math.max(0, -y, y - ry);
+  if (bx * bx + by * by >= limit * limit) return limit;
+  const swap = ry > rx;
+  const a = swap ? ry : rx;
+  const b = swap ? rx : ry;
+  const qx = a - (swap ? y : x);
+  const qy = b - (swap ? x : y);
+  if (qx <= 0) return limit;
+  let u: number;
+  let v: number;
+  if (a === b) {
+    if (qy <= 0) return limit;
+    const length = Math.hypot(qx, qy);
+    u = (a * qx) / length;
+    v = (a * qy) / length;
+  } else {
+    const delta = a * a - b * b;
+    const ax = a * qx;
+    const by = b * qy;
+    const turningCos = Math.min(1, Math.cbrt(ax / delta));
+    let lo = Math.sqrt(Math.max(0, 1 - turningCos * turningCos));
+    let hi = 1;
+    if (-delta * lo + (ax * lo) / turningCos - by >= 0) return limit;
+    let s = (lo + hi) / 2;
+    for (let i = 0; i < 48; i++) {
+      const cos = Math.sqrt((1 - s) * (1 + s));
+      const value = -delta * s + (ax * s) / cos - by;
+      if (value < 0) lo = s;
+      else hi = s;
+      const slope = -delta + ax / (cos * cos * cos);
+      const step = value / slope;
+      // Newton stays on the increasing branch; fall back to its retained
+      // bracket near the turning point or when a step would cross an endpoint.
+      const next = s - step;
+      if ((Math.abs(step) * a) / Math.max(cos, Number.EPSILON) < 1e-10) break;
+      const bounded = next > lo && next < hi ? next : (lo + hi) / 2;
+      if (bounded === s) break;
+      s = bounded;
+    }
+    u = a * Math.sqrt((1 - s) * (1 + s));
+    v = b * s;
+  }
+  const dx = u - qx;
+  const dy = v - qy;
+  const distance = Math.hypot(dx, dy);
+  if (distance < limit) {
+    // Near the boundary, subtracting two nearly equal points destroys the
+    // direction. The implicit ellipse gradient remains well conditioned.
+    const nearBoundary = distance <= 1e-8 * Math.max(1, a);
+    const orientation = nearBoundary && outsideCorner(x, y, rx, ry) ? -1 : 1;
+    const gx = nearBoundary ? (orientation * u) / (a * a) : dx / distance;
+    const gy = nearBoundary ? (orientation * v) / (b * b) : dy / distance;
+    const scale = nearBoundary ? Math.hypot(gx, gy) : 1;
+    normal[0] = (sx * (swap ? gy : gx)) / scale;
+    normal[1] = (sy * (swap ? gx : gy)) / scale;
+    return distance;
+  }
+  return limit;
+}
+
+/** Exact CSS arc clipping, independent of which boundary feature is nearest. */
+function outsideCorner(x: number, y: number, rx: number, ry: number): boolean {
+  return rx > 0 && ry > 0 && x < rx && y < ry && ((rx - x) / rx) ** 2 + ((ry - y) / ry) ** 2 > 1;
+}
+
+/** Signed inside distance and inward normal for CSS USED (overlap-scaled) radii. */
 export function roundedShapeGeometry(
   x: number,
   y: number,
@@ -188,28 +249,29 @@ export function roundedShapeGeometry(
 ): number {
   const right = w - x;
   const bottom = h - y;
-  let distance = Math.min(x, y, right, bottom);
-  writeStraightNormal(x, y, w, h, distance, normal);
-  // Most pixels meet a straight edge. Enter the ellipse solver only in an
-  // actual corner region; unusually large CSS corners may overlap, so examine
-  // every applicable corner instead of assuming a quadrant partition.
-  if (x < r[0] && y < r[1])
-    distance = Math.min(distance, cornerDistance(x, y, r[0], r[1], normal, distance));
-  if (right < r[2] && y < r[3])
-    distance = Math.min(distance, cornerDistance(right, y, r[2], r[3], normal, distance, -1, 1));
-  if (right < r[4] && bottom < r[5])
-    distance = Math.min(
-      distance,
-      cornerDistance(right, bottom, r[4], r[5], normal, distance, -1, -1),
-    );
-  if (x < r[6] && bottom < r[7])
-    distance = Math.min(distance, cornerDistance(x, bottom, r[6], r[7], normal, distance, 1, -1));
-  return distance;
+  let distance = straightGeometry(x, y, w, h, r, normal);
+  distance = ellipseGeometry(x, y, r[0], r[1], normal, distance, 1, 1);
+  distance = ellipseGeometry(right, y, r[2], r[3], normal, distance, -1, 1);
+  distance = ellipseGeometry(right, bottom, r[4], r[5], normal, distance, -1, -1);
+  distance = ellipseGeometry(x, bottom, r[6], r[7], normal, distance, 1, -1);
+  const outside =
+    x < 0 ||
+    y < 0 ||
+    right < 0 ||
+    bottom < 0 ||
+    outsideCorner(x, y, r[0], r[1]) ||
+    outsideCorner(right, y, r[2], r[3]) ||
+    outsideCorner(right, bottom, r[4], r[5]) ||
+    outsideCorner(x, bottom, r[6], r[7]);
+  if (outside) {
+    normal[0] = -(normal[0] ?? 0);
+    normal[1] = -(normal[1] ?? 0);
+  }
+  return outside ? -distance : distance;
 }
 
-/** A CSS rounded box is the intersection of its four rounded corner regions.
- * For an interior point, distance to the boundary is their minimum distance.
- */
+/** Distance-only convenience; the retained field calls the combined operation once. */
+const distanceNormal = new Float64Array(2);
 export function roundedShapeInside(
   x: number,
   y: number,
@@ -217,16 +279,7 @@ export function roundedShapeInside(
   h: number,
   r: CornerRadii,
 ): number {
-  const right = w - x;
-  const bottom = h - y;
-  let distance = Math.min(x, y, right, bottom);
-  if (x < r[0] && y < r[1]) distance = Math.min(distance, cornerDistance(x, y, r[0], r[1]));
-  if (right < r[2] && y < r[3]) distance = Math.min(distance, cornerDistance(right, y, r[2], r[3]));
-  if (right < r[4] && bottom < r[5])
-    distance = Math.min(distance, cornerDistance(right, bottom, r[4], r[5]));
-  if (x < r[6] && bottom < r[7])
-    distance = Math.min(distance, cornerDistance(x, bottom, r[6], r[7]));
-  return distance;
+  return roundedShapeGeometry(x, y, w, h, r, distanceNormal);
 }
 
 export const shapeKey = (shape: RoundedShape): string =>

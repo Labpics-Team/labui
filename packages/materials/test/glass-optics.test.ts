@@ -1,9 +1,56 @@
 import { describe, expect, it } from 'vitest';
+import { materialContour } from '../src/engine/contour';
 import { lensBand, lensDisplacement } from '../src/engine/glass-optics';
 import { __computeDisplacementField } from '../src/engine/liquid-glass';
 import { type CornerRadii, roundedShapeGeometry } from '../src/engine/rounded-shape';
 
 describe('shape-normal glass optics', () => {
+  it('samples the same CSS pixel centres through fractional DPR and an asymmetric corner edit', () => {
+    for (const [w, h, dpr] of [
+      [101, 81, 1.25],
+      [101, 81, 1.5],
+      [100.25, 80.75, 2],
+    ] as const) {
+      for (const smoothing of [0, 0.6]) {
+        const radii: CornerRadii = [24, 24, 24, 24, 24, 24, 24, 24 + 1e-9];
+        const symmetric = __computeDisplacementField(
+          w,
+          h,
+          smoothing ? materialContour(w, h, 24, smoothing) : 24,
+          18,
+          dpr,
+        );
+        const bytes = symmetric.data.slice();
+        const almost = __computeDisplacementField(
+          w,
+          h,
+          smoothing ? materialContour(w, h, radii, smoothing) : radii,
+          18,
+          dpr,
+        );
+        const tolerance = (symmetric.unit + almost.unit) / 255;
+        let error = 0;
+        for (let i = 0; i < bytes.length; i += 4) {
+          for (let channel = 0; channel < 2; channel++) {
+            const a = ((bytes[i + channel] ?? 128) / 255 - 0.5) * symmetric.unit;
+            const b = ((almost.data[i + channel] ?? 128) / 255 - 0.5) * almost.unit;
+            error = Math.max(error, Math.abs(a - b));
+          }
+        }
+        expect(error, `${w}/${h}/${dpr}/${smoothing}`).toBeLessThanOrEqual(tolerance);
+      }
+    }
+    const field = __computeDisplacementField(
+      101,
+      81,
+      [24, 24, 24, 24, 24, 24, 24, 24 + 1e-9],
+      18,
+      1.25,
+    );
+    // feImage pixel (24,0) is inside the circular edge, at CSS
+    // (19.638888889,.400990099). Dividing by DPR instead clipped it entirely.
+    expect(((field.data[24 * 4 + 1] ?? 128) / 255 - 0.5) * field.unit).toBeCloseTo(17.698912, 1);
+  });
   it('does not change the optical model when one corner differs by a subpixel amount', () => {
     for (const [w, h, r, depth] of [
       [200, 100, 20, 60],
