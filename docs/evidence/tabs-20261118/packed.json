@@ -2,7 +2,7 @@
   "archives": [
     {
       "name": "@labpics/ui-tokens",
-      "sha256": "1d098575d29a0887d83a5cb5011fe3d9ac78509990c52b80e99771e5f3390d71"
+      "sha256": "205ed2fc80b478d3569cc60456c24b03b43b16660cbd63c30c3e153dd7eee196"
     },
     {
       "name": "@labpics/ui-shadow",
@@ -22,27 +22,27 @@
     },
     {
       "name": "@labpics/ui-core",
-      "sha256": "7be600c097d2fc59a585f1979792018a501050b115bce63f3b832a33142f03bb"
+      "sha256": "9c6dbb399034d56500ae2508cda9b63f6117d8a3d0ed7fcaf7e8a50f4db7c735"
     },
     {
       "name": "@labpics/ui-react",
-      "sha256": "f73d7b1400be0cd1ffdc246232f1e67b1fc86d422ef38b41d3ea287fd04617c5"
+      "sha256": "fb4684c01f31e3f7cd59bcadf3c85b35ffee5d05e176fdb1286e7456a5c08089"
     },
     {
       "name": "@labpics/ui-vue",
-      "sha256": "ba7d6a7315225b648f7120fada5bb060ef8d11a27cab1231bd69e656f5cc04f6"
+      "sha256": "1245f2c076e29d585999d6d39c5b869bf84c9c06fff4809ac39257a56667e78b"
     },
     {
       "name": "@labpics/ui-solid",
-      "sha256": "0449513849138d2b470165a2147f42542d41bf54b9b924dd473811252f70dc19"
+      "sha256": "f8e382afdd09a41c2d89abc5ea328a4506a9557f96d5828a6c46d9917ea37e2a"
     },
     {
       "name": "@labpics/ui-svelte",
-      "sha256": "58e71d171831ab29836215cc208e39221455f33e33e78f2ddb7f9bafb88c83cf"
+      "sha256": "31eb919a866ee5ef886458f4159346b1d3f0a8f30c849ca25baabaac64e97fa7"
     },
     {
       "name": "@labpics/ui-astro",
-      "sha256": "914a5fea9e94acc0cb59e96111d35f35f3781c5c360bfcf79ab54afbe48432e6"
+      "sha256": "d397e9d4e8e19e0b06b63d1ae038eeb3ddde958066c6080462acd0888ceead00"
     }
   ],
   "declarations": true,
@@ -53,6 +53,7 @@
       "adapters": 4,
       "nativeReact": true,
       "noJsFirstPaint": true,
+      "itemsRestoredFromHtml": true,
       "shiftedServerIds": true,
       "controlledNullAndRefusal": true,
       "sameNodesAfterHydration": true,
@@ -66,6 +67,7 @@
       "adapters": 4,
       "nativeReact": true,
       "noJsFirstPaint": true,
+      "itemsRestoredFromHtml": true,
       "shiftedServerIds": true,
       "controlledNullAndRefusal": true,
       "sameNodesAfterHydration": true,

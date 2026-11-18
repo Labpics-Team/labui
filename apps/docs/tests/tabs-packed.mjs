@@ -114,9 +114,7 @@ try {
     import '@labpics/ui-core/input.css';
     import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
     import { hydrateRoot } from 'react-dom/client';
-    const items = [{value:'draft',label:'Draft'},{value:'history',label:'History'}];
     window.hydrateTabs=async()=>{
-      for(const host of document.querySelectorAll('lab-tabs')) host.items=items;
       await import('@labpics/ui-core/tabs');
       await Promise.all([...document.querySelectorAll('lab-tabs')].map(el=>el.updateComplete));
       const {tree} = await import('./shared.mjs');
@@ -263,6 +261,7 @@ try {
         adapters: 4,
         nativeReact: true,
         noJsFirstPaint: true,
+        itemsRestoredFromHtml: true,
         shiftedServerIds: true,
         controlledNullAndRefusal: true,
         sameNodesAfterHydration: true,

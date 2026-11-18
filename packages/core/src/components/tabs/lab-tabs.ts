@@ -25,6 +25,30 @@ export interface LabTabItem {
   readonly iconOnly?: boolean;
 }
 
+/** Carry the tab model through server HTML without a second client-side data source. */
+function parseTabItems(value: string | null): ReadonlyArray<LabTabItem> {
+  if (value === null) return [];
+  try {
+    const items: unknown = JSON.parse(value);
+    return Array.isArray(items) &&
+      items.every(
+        (item) =>
+          item !== null &&
+          typeof item === 'object' &&
+          typeof item.value === 'string' &&
+          typeof item.label === 'string' &&
+          (item.disabled === undefined || typeof item.disabled === 'boolean') &&
+          (item.icon === undefined || typeof item.icon === 'string') &&
+          (item.iconEnd === undefined || typeof item.iconEnd === 'string') &&
+          (item.iconOnly === undefined || typeof item.iconOnly === 'boolean'),
+      )
+      ? items
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 type TabsSchema = SchemaOf<tabsMachine.Service>;
 type TabsApi = tabsMachine.Api;
 const tabsModule: MachineModule<TabsSchema, TabsApi> = tabsMachine;
@@ -42,7 +66,12 @@ export class LabTabs extends LabElement {
     defaultValue: { attribute: 'default-value' },
     label: {},
     dir: { reflect: true },
-    items: { attribute: false },
+    items: {
+      type: Array,
+      reflect: true,
+      useDefault: true,
+      converter: { fromAttribute: parseTabItems },
+    },
   };
 
   declare variant: LabTabsVariant;

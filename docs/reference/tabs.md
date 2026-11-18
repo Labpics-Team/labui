@@ -22,7 +22,7 @@ Automatic activation selects when a tab receives focus. Manual activation moves 
 
 ## Rendering and effects
 
-Server output includes roles, one tab stop, unique ARIA relationships and hidden non-selected panels before JavaScript. Lit hydration adopts the server identity even when the server has rendered earlier requests. Generated adapters preserve nullable controlled `value` as a property. Consumers provide the same `items` when hydrating.
+Server output includes roles, one tab stop, unique ARIA relationships and hidden non-selected panels before JavaScript. Lit hydration adopts the server identity even when the server has rendered earlier requests. Generated adapters preserve nullable controlled `value` as a property. The reflected JSON `items` attribute carries the tab model through HTML, so a generated Astro page can hydrate without assigning the data again in a client script. Malformed attribute data produces an empty tab list. Live frameworks can still update the `items` property.
 
 Selection and visibility change immediately. `@labpics/motion` animates the selected decoration, stops an interrupted pose and honours reduced motion; it does not remount or fade the editor. Both appearances consume semantic roles within Solid, Glass or Acrylic surroundings without inventing a new material for the control.
 
