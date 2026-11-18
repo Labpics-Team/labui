@@ -4,6 +4,7 @@ package pics.lab.ui
 internal data class LabButtonMetrics(val height: Float, val radius: Float, val paddingX: Float, val paddingY: Float, val icon: Float, val fontSize: Float, val lineHeight: Float, val letterSpacing: Float, val descriptionFontWeight: Float, val descriptionLetterSpacing: Float, val descriptionAccentPlainOpacity: Float)
 internal data class LabInputMetrics(val height: Float, val radius: Float, val paddingX: Float, val paddingY: Float, val contentHeight: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float)
 internal data class LabSwitchMetrics(val trackWidth: Float, val trackHeight: Float, val controlHeight: Float, val labelGap: Float, val fontSize: Float, val lineHeight: Float, val letterSpacing: Float, val fontWeight: Float)
+internal data class LabSelectionMetrics(val controlSize: Float, val controlHeight: Float, val labelGap: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float, val checkboxRadius: Float, val glyphSize: Float, val mixedHeight: Float, val mixedY: Float, val radioStroke: Float, val radioFocusStroke: Float, val tinyDot: Float)
 
 public enum class LabBadgeColor(internal val role: String) { Neutral("neutral"), Gray("gray"), Blue("blue"), Red("red"), Orange("orange"), Green("green"), Yellow("yellow"), Teal("teal"), Mint("mint"), Indigo("indigo"), Purple("purple"), Pink("pink"), StaticDark("static-dark"), StaticLight("static-light"), Brand("brand") }
 
@@ -165,4 +166,57 @@ internal object LabComponents {
     const val BadgeDisabledFillRole = "badge-base-disabled-fill"
     const val BadgeDisabledLabelRole = "badge-base-disabled-label"
     val BadgeDefaultColor = LabBadgeColor.Blue
+    val SelectionTINY = LabSelectionMetrics(16f, 24f, 8f, 16f, 24f, 400f, -0.25f, 4f, 8f, 1.5f, 7f, 0f, 0f, 4f)
+    val SelectionS = LabSelectionMetrics(12f, 24f, 8f, 16f, 24f, 400f, -0.25f, 4f, 6f, 1.5f, 5f, 3f, 3f, 0f)
+    val SelectionM = LabSelectionMetrics(16f, 24f, 8f, 16f, 24f, 400f, -0.25f, 4f, 8f, 1.5f, 7f, 4f, 4f, 0f)
+    val SelectionL = LabSelectionMetrics(20f, 20f, 12f, 20f, 20f, 500f, -0.33f, 6f, 10f, 2f, 9f, 6f, 5f, 0f)
+    const val SelectionRolesLabel = "label-primary"
+    const val SelectionRolesDisabledLabel = "label-quaternary"
+    const val SelectionRolesUncheckedFill = "fill-secondary"
+    const val SelectionRolesUncheckedHoverFill = "fill-primary"
+    const val SelectionRolesUncheckedStroke = "border-base"
+    const val SelectionRolesDisabledFill = "fill-tertiary"
+    const val SelectionRolesAccent = "fill-accent"
+    const val SelectionRolesNeutral = "bg-inverted"
+    const val SelectionRolesDanger = "fill-danger"
+    const val SelectionRolesGlyph = "label-static-light-primary"
+    const val SelectionRolesDisabledGlyph = "control-bg"
+    const val SelectionRolesFocusAccent = "fx-focus-ring-brand"
+    const val SelectionRolesFocusNeutral = "fx-focus-ring-neutral"
+    const val SelectionRolesFocusDanger = "fx-focus-ring-danger"
+    const val SelectionRolesNeutralGlyph = "label-inverted-primary"
+    const val SelectionFillHighlight = 0.2f
+    const val SelectionFillHoverHighlight = 0.32f
+    const val SelectionFocusWidth = 2f
+    const val SelectionFocusOffset = 2f
+    const val SelectionFocusTinyCheckboxOffset = 0f
+    const val SelectionFocusTinyRadioOffset = -2f
+    const val SelectionCheckboxInnerShadowX = 0f
+    const val SelectionCheckboxInnerShadowY = -1f
+    const val SelectionCheckboxInnerShadowBlur = 1f
+    const val SelectionCheckboxInnerShadowColorRole = "fx-control-inner"
+    const val SelectionCheckboxGlyphViewBox = 8f
+    const val SelectionCheckboxGlyphWindingRule = "EVENODD"
+    const val SelectionCheckboxGlyphData = "M 7.635610517625218 0.09004448477756646 C 7.983656103329632 0.2757832909707034 8.10328593643757 0.6877623968927002 7.902811901013137 1.0102255870284567 L 3.799476721347746 7.610456581436975 C 3.4971543396331435 8.09674358769225 2.755387473545853 8.135316874720674 2.396231818043499 7.683424404152019 L 0.14168859926511418 4.84674109766281 C -0.09647133042804071 4.54708645671381 -0.027348674390513195 4.125292176841569 0.2960784184531714 3.9046376557352764 C 0.6195054679489442 3.6839828133348624 1.0747617100265714 3.7480247640656943 1.3129216397197263 4.047679405014694 L 3.0091021078268905 6.181826769133788 L 6.64242871067445 0.33760590255856143 C 6.842902746098884 0.015142692341922448 7.287565625487393 -0.09569428125380533 7.635610517625218 0.09004448477756646 Z"
+    const val SelectionCheckboxTinyDisabledNeutralGlyphRole = "label-static-dark-quaternary"
+    const val SelectionChoiceboxPreferredWidth = 283.5f
+    const val SelectionChoiceboxRadius = 12f
+    const val SelectionChoiceboxPadding = 16f
+    const val SelectionChoiceboxCardHeight = 104f
+    const val SelectionChoiceboxRowHeight = 56f
+    const val SelectionChoiceboxIconSize = 24f
+    const val SelectionChoiceboxCardContentGap = 24f
+    const val SelectionChoiceboxRowContentGap = 8f
+    const val SelectionChoiceboxHeaderGap = 24f
+    const val SelectionChoiceboxFontSize = 16f
+    const val SelectionChoiceboxLineHeight = 24f
+    const val SelectionChoiceboxFontWeight = 500f
+    const val SelectionChoiceboxLetterSpacing = 0f
+    const val SelectionChoiceboxStrokeWidth = 1f
+    const val SelectionChoiceboxSelectedStrokeWidth = 2f
+    const val SelectionChoiceboxStrokeRole = "border-base"
+    const val SelectionChoiceboxSelectedStrokeRole = "label-brand-primary"
+    const val SelectionChoiceboxHoverFillRole = "fill-quaternary"
+    const val SelectionChoiceboxIconRole = "label-brand-primary"
+    const val SelectionChoiceboxDescriptionRole = "label-secondary"
 }
