@@ -251,6 +251,7 @@ export default defineConfig({
         'fixture-card-content': resolve(__dirname, 'src/_fixtures/card-content.html'),
         'fixture-selection': resolve(__dirname, 'src/_fixtures/selection.html'),
         'fixture-progress-author': resolve(__dirname, 'src/_fixtures/progress-author.html'),
+        'fixture-breadcrumb': resolve(__dirname, 'src/_fixtures/breadcrumb.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
         // config; ?component=<slug> selects which one).
         components: resolve(__dirname, 'src/components.html'),

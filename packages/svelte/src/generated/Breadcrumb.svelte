@@ -14,22 +14,28 @@
     size?: LabBreadcrumb['size'];
     separator?: LabBreadcrumb['separator'];
     items?: LabBreadcrumb['items'];
+    maxItems?: LabBreadcrumb['maxItems'];
+    label?: LabBreadcrumb['label'];
+    expandLabel?: LabBreadcrumb['expandLabel'];
     children?: Snippet;
     [key: string]: unknown;
   }
 
-  let { size, separator, items, children, ...rest }: Props = $props();
+  let { size, separator, items, maxItems, label, expandLabel, children, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
     { name: 'separator', attr: 'separator', kind: 'string' },
     { name: 'items', attr: 'items', kind: 'prop' },
+    { name: 'maxItems', attr: 'max-items', kind: 'string' },
+    { name: 'label', attr: 'label', kind: 'string' },
+    { name: 'expandLabel', attr: 'expand-label', kind: 'string' },
   ];
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
-    forwardDeclared(el, specs, { size, separator, items });
+    forwardDeclared(el, specs, { size, separator, items, maxItems, label, expandLabel });
   });
   $effect(() => forwardEvents(el, {  }));
 </script>

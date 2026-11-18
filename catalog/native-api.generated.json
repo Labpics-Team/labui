@@ -1,10 +1,14 @@
 {
-  "revision": "c27afdb491841a3adad6dccc6affc9ae36d137ff",
-  "sourceDigest": "sha256:2d2c46a67a6bfe136494f449f6017566130e56dd9062662693d3bb5c8e8e3b6f",
+  "revision": "5e4d95f9c3b2fb6795c13c180741a49bb6649cdc",
+  "sourceDigest": "sha256:78cb7b9b46007df8d372b0309adad40a40c123a6d2c3a973f9f0c12c556ef79c",
   "symbols": [
     {
       "name": "LabBadge",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabBadge.kt"
+    },
+    {
+      "name": "LabBreadcrumb",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabBreadcrumb.kt"
     },
     {
       "name": "LabButton",

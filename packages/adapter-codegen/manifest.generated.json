@@ -192,6 +192,21 @@
           "name": "items",
           "attr": "items",
           "kind": "prop"
+        },
+        {
+          "name": "maxItems",
+          "attr": "max-items",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "expandLabel",
+          "attr": "expand-label",
+          "kind": "string"
         }
       ],
       "events": [],

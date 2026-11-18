@@ -214,6 +214,17 @@
         "types": "./dist/components/tabs/runtime.d.cts",
         "default": "./dist/components/tabs/runtime.cjs"
       }
+    },
+    "./breadcrumb.css": "./dist/breadcrumb.css",
+    "./breadcrumb/contract": {
+      "import": {
+        "types": "./dist/components/breadcrumb/contract.d.ts",
+        "default": "./dist/components/breadcrumb/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/breadcrumb/contract.d.cts",
+        "default": "./dist/components/breadcrumb/contract.cjs"
+      }
     }
   },
   "files": ["dist"],
@@ -238,7 +249,8 @@
     "./dist/kbd.css",
     "./dist/progress.css",
     "./dist/chip.css",
-    "./dist/tabs.css"
+    "./dist/tabs.css",
+    "./dist/breadcrumb.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

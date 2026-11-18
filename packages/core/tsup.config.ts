@@ -35,6 +35,7 @@ export default libraryPreset({
     'src/components/badge/contract.ts',
     'src/components/kbd/contract.ts',
     'src/components/chip/contract.ts',
+    'src/components/breadcrumb/contract.ts',
     'src/ssr/index.ts',
     'src/proof/lab-proof.ts',
     'src/components/dialog/shared.ts',
