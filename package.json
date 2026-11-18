@@ -11,6 +11,8 @@
   },
   "packageManager": "pnpm@10.30.3",
   "scripts": {
+    "catalog:generate": "pnpm --filter @labpics/adapter-codegen exec tsx src/catalog.ts",
+    "catalog:check": "pnpm catalog:generate --check",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r --workspace-concurrency=1 --no-bail --if-present test",

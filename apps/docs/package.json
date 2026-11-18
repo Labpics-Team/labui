@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "pnpm -w catalog:check && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4321 --strictPort",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",

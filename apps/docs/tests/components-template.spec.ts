@@ -1,4 +1,9 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+
+const catalog = JSON.parse(
+  readFileSync(new URL('../../../catalog/registry.json', import.meta.url), 'utf8'),
+) as { families: { kind: string }[] };
 
 /**
  * Component-doc TEMPLATE smoke — proves the reusable docs scaffold renders all
@@ -8,11 +13,11 @@ import { expect, test } from '@playwright/test';
  *
  * The template is closed for modification; these checks guard the seam:
  *   1. Page renders from config — header (honest "Proof" status), all sections.
- *   2. States matrix is LIVE — it builds real <lab-proof> elements in every cell.
- *   3. Live example is interactive — a control flips a real attribute.
+ *   2. Состояния is LIVE — it builds real <lab-proof> elements in every cell.
+ *   3. Живой пример is interactive — a control flips a real attribute.
  *   4. Theme switch re-skins the documented element with zero element edits.
- *   5. Navigation is honest — the planned (Input) entry is not a clickable link.
- *   6. Unknown ?component= falls back to the first documented component (Button).
+ *   5. Navigation is honest — unimplemented families have their own source detail.
+ *   6. Unknown addresses preserve the requested identity.
  */
 
 test('renders all six sections from the proof config with an honest status', async ({ page }) => {
@@ -26,10 +31,10 @@ test('renders all six sections from the proof config with an honest status', asy
 
   // All six section headings are present and in order.
   const headings = page.locator('.doc-section > h2, .doc-header');
-  await expect(page.getByRole('heading', { name: 'States matrix' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Anatomy' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Meaning & usage' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Live example' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Состояния' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Анатомия' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Применение' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Живой пример' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Props / API' })).toBeVisible();
   // Sanity: the section container count matches the five doc sections.
   await expect(page.locator('.doc-section')).toHaveCount(5);
@@ -89,28 +94,79 @@ test('theme switch re-skins the documented element with zero element edits', asy
     .not.toBe(darkBorder);
 });
 
-test('navigation is honest: the planned component is not a clickable link', async ({ page }) => {
-  await page.goto('/components.html?component=proof');
-
-  // Real components are links; the planned (Date Picker) one is a disabled marker.
-  await expect(page.getByRole('link', { name: 'Proof' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Button' })).toBeVisible();
-  // Input is now a real, documented component — it must be a clickable link, not a
-  // planned marker (its doc shipped in the forms batch).
-  await expect(page.getByRole('link', { name: 'Input', exact: true })).toBeVisible();
-  // Slider and NumberInput shipped in the numeric batch — both must be clickable links
-  // now (Slider replaced the old planned marker), not planned markers.
-  await expect(page.getByRole('link', { name: 'Slider', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Number Input', exact: true })).toBeVisible();
-  // Combobox shipped in this batch (it replaced the old planned marker) — a clickable
-  // link now; Date Picker is the new planned marker.
-  await expect(page.getByRole('link', { name: 'Combobox', exact: true })).toBeVisible();
-  await expect(page.locator('.nav-planned')).toHaveAttribute('aria-disabled', 'true');
-  await expect(page.getByRole('link', { name: /planned/i })).toHaveCount(0);
+test('catalog navigation resolves an unimplemented family without substituting Button', async ({
+  page,
+}) => {
+  await page.goto('/components.html');
+  await expect(page.locator('#doc-title')).toHaveText('Каталог компонентов');
+  expect(await page.evaluate(() => customElements.get('lab-button') === undefined)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath('catalog-desktop.png') });
+  await page
+    .locator('.catalog-grid')
+    .getByRole('link', { name: /^Calendar/ })
+    .click();
+  await expect(page.locator('#doc-title')).toHaveText('Calendar');
+  await expect(page.getByRole('heading', { name: 'Реализация ещё не добавлена' })).toBeVisible();
+  await expect(page.locator('main .catalog-capabilities')).toContainText('Web · нет API');
+  await expect(page.locator('main lab-button')).toHaveCount(0);
+  await page.getByText('Состав семейства и соответствие Figma', { exact: true }).click();
+  await expect(page.getByRole('rowheader', { name: 'Calendar Calendar/Mini' })).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath('catalog-calendar.png') });
 });
 
-test('unknown ?component= falls back to the first documented component', async ({ page }) => {
-  await page.goto('/components.html?component=does-not-exist');
-  // No crash, no blank shell — the first documented component (Button) renders.
+test('available API keeps its live example and does not claim all authored variants are ready', async ({
+  page,
+}) => {
+  await page.goto('/components.html?component=button');
   await expect(page.locator('#doc-title')).toContainText('lab-button');
+  await expect(page.locator('.live-stage lab-button')).toBeVisible();
+  await expect(page.locator('.doc-header .catalog-capabilities')).toContainText('Web · есть API');
+  await expect(page.locator('.doc-header .catalog-capabilities')).toContainText(
+    'Compose · есть API',
+  );
+  await expect(page.locator('.status-badge')).toHaveCount(0);
+  await page.screenshot({ path: test.info().outputPath('catalog-button.png') });
+});
+
+test('partly mapped family distinguishes circular progress from its linear API', async ({
+  page,
+}) => {
+  await page.goto('/components.html?component=progress');
+  await expect(page.locator('.live-stage lab-progress')).toBeVisible();
+  await page.getByText('Состав семейства и соответствие Figma', { exact: true }).click();
+  const circular = page.getByRole('row').filter({ hasText: 'Circular progress' });
+  await expect(circular).toContainText('Не сопоставлено');
+  const linear = page.getByRole('row').filter({ hasText: 'Linear progress' });
+  await expect(linear).toContainText('Линейное представление progress.');
+  await page.screenshot({ path: test.info().outputPath('catalog-progress.png') });
+});
+
+test('unknown component preserves its identity and provides a route back to the catalog', async ({
+  page,
+}) => {
+  await page.goto('/components.html?component=does-not-exist');
+  await expect(page.locator('#doc-title')).toHaveText('Компонент не найден');
+  await expect(page.locator('main')).toContainText('does-not-exist');
+  await expect(page.locator('main lab-button')).toHaveCount(0);
+  await page.getByRole('link', { name: 'Открыть каталог компонентов' }).click();
+  await expect(page.locator('#doc-title')).toHaveText('Каталог компонентов');
+});
+
+test('catalog fits a narrow viewport and every public family is reachable', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/components.html');
+  await expect(page.locator('#doc-title')).toBeVisible();
+  await expect(page.locator('.catalog-item')).toHaveCount(
+    catalog.families.filter((family) => family.kind !== 'internal').length,
+  );
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > window.innerWidth,
+  );
+  expect(overflow).toBe(false);
+  await page.screenshot({ path: test.info().outputPath('catalog-mobile.png') });
+  await page
+    .locator('.catalog-grid')
+    .getByRole('link', { name: /^Chip / })
+    .click();
+  await expect(page.locator('#doc-title')).toHaveText('Chip');
 });

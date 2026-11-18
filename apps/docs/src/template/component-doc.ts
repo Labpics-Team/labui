@@ -1,18 +1,7 @@
-/*
- * Component-doc CONTRACT — the ubiquitous language of a LabUI docs page.
- *
- * This is the single type every component's documentation is expressed in. The
- * template renderer (`render-page.ts`) is CLOSED for modification: it consumes a
- * `ComponentDoc` and emits the page. Documenting a NEW component is OPEN — you
- * add one `ComponentDoc` object to the registry and a route entry, and touch no
- * renderer code (craft-arch / OCP).
- *
- * A `ComponentDoc` is data, never behavior: it has no methods, no DOM, no
- * framework. It names WHAT a component's page says (its states, anatomy,
- * meanings, props, live example) — the renderer owns HOW that becomes DOM. This
- * keeps the contract framework-agnostic: the same object could feed a Vite page
- * today and a Starlight/React page tomorrow without rewriting a component's
- * documentation.
+/**
+ * Authored component documentation: content, anatomy, state matrices and live factories.
+ * Modules are discovered by filename and joined to catalog/registry.json by slug.
+ * The semantic catalog owns navigation and capability; modules own the examples.
  */
 
 /** A documentation page for one LabUI component, identified by its route slug. */
@@ -20,12 +9,8 @@ export interface ComponentDoc {
   /** URL slug + registry key. One per component. e.g. "proof". */
   readonly slug: string;
   /**
-   * Optional nav sort weight. The registry is auto-discovered (every
-   * `*.doc.ts` is found by glob), so ordering can no longer come from an
-   * import sequence. Lower sorts first; ties and omissions fall back to
-   * alphabetical-by-slug. A component sets this in its OWN doc file to claim a
-   * place in the curated narrative — no shared file is edited, so parallel
-   * component batches never collide on ordering.
+   * Legacy editorial order retained for existing doc modules. Catalog navigation
+   * follows catalog/registry.json; this field does not define a second ordering.
    */
   readonly order?: number;
   /** The custom-element tag this page documents. e.g. "lab-proof". */
@@ -35,8 +20,9 @@ export interface ComponentDoc {
   /** One-sentence summary under the title. Plain text, no markup. */
   readonly summary: string;
   /**
-   * Honest status badge. A page for a not-yet-real component (a proof, a stub)
-   * MUST say so here — never dress a proof up as a finished primitive.
+   * Authored example status, retained for existing modules and internal proofs.
+   * Catalog capability and source coverage are derived independently; this field
+   * never proves that all authored variants are implemented.
    */
   readonly status: ComponentStatus;
 

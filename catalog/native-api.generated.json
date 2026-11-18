@@ -1,0 +1,53 @@
+{
+  "revision": "85c39c51a01050446e8dc6d47d1a08a065c7ed8c",
+  "symbols": [
+    {
+      "name": "LabButton",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabButton.kt"
+    },
+    {
+      "name": "LabInput",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabInput.kt"
+    },
+    {
+      "name": "LabMaterials",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt"
+    },
+    {
+      "name": "LabShadows",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt"
+    },
+    {
+      "name": "LabVeils",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt"
+    },
+    {
+      "name": "LabSheetHost",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSheet.kt"
+    },
+    {
+      "name": "LabSnackbarDefaults",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSnackbar.kt"
+    },
+    {
+      "name": "LabSnackbar",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSnackbar.kt"
+    },
+    {
+      "name": "LabScene",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSurface.kt"
+    },
+    {
+      "name": "LabCard",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSurface.kt"
+    },
+    {
+      "name": "LabSwitch",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSwitch.kt"
+    },
+    {
+      "name": "LabTheme",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabTheme.kt"
+    }
+  ]
+}

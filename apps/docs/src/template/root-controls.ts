@@ -16,8 +16,8 @@ import { el } from './dom.js';
 /** Closed option sets — the single source of truth for the union + guard. */
 const CONTROLS = {
   'data-theme': [
-    { value: 'dark', label: 'Dark' },
-    { value: 'light', label: 'Light' },
+    { value: 'dark', label: 'Тёмная' },
+    { value: 'light', label: 'Светлая' },
   ],
   // Канон оси материала — packages/materials/src/materials/*.css (файл на
   // материал, порядок = order.ts; ADR-0008/0009):
@@ -32,9 +32,9 @@ const CONTROLS = {
 
 /** Render both switchers as a labelled toolbar and wire them to the root. */
 export function renderRootControls(): HTMLElement {
-  return el('div', { class: 'root-controls', role: 'group', 'aria-label': 'Theme and material' }, [
-    buildSwitch('Theme', 'data-theme'),
-    buildSwitch('Material', 'data-material'),
+  return el('div', { class: 'root-controls', role: 'group', 'aria-label': 'Тема и материал' }, [
+    buildSwitch('Тема', 'data-theme'),
+    buildSwitch('Материал', 'data-material'),
   ]);
 }
 
