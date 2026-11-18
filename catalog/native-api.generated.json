@@ -1,6 +1,10 @@
 {
-  "revision": "466e986698309cb49d33a1f32d9df2e086d20afd",
+  "revision": "ebaaae81837ed266564bdaaf0f36db188f392452",
   "symbols": [
+    {
+      "name": "LabBadge",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabBadge.kt"
+    },
     {
       "name": "LabButton",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabButton.kt"
