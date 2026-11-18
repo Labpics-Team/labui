@@ -17,6 +17,8 @@ final class SettingsExperienceTests: XCTestCase {
         let name = app.textViews["Название"]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         let previousName = try XCTUnwrap(name.value as? String)
+        let changedName = previousName == "Нативная лаборатория 東京"
+            ? "Новая лаборатория 東京" : "Нативная лаборатория 東京"
         name.tap()
         let keyboardIntroduction = app.otherElements["UIContinuousPathIntroductionView"]
         if keyboardIntroduction.waitForExistence(timeout: 2) {
@@ -33,20 +35,20 @@ final class SettingsExperienceTests: XCTestCase {
         reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
         reveal(message("Введите название", in: app), in: app, towardBottom: false)
         name.tap()
-        name.typeText("Нативная лаборатория 東京")
-        expectValue("Нативная лаборатория 東京", in: name)
+        name.typeText(changedName)
+        expectValue(changedName, in: name)
         reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
         // A slow XCTest snapshot can outlive the automatic Snackbar. The save contract
         // is the committed workspace, then the same data after a fresh process launch.
-        XCTAssertTrue(app.staticTexts["Нативная лаборатория 東京"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts[changedName].waitForExistence(timeout: 15))
         XCTAssertTrue(open.exists)
         captureSettledFrame("Settings saved", in: app)
         app.terminate()
         app.launch()
-        XCTAssertTrue(app.staticTexts["Нативная лаборатория 東京"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts[changedName].waitForExistence(timeout: 15))
         open.tap()
         XCTAssertTrue(name.waitForExistence(timeout: 5))
-        XCTAssertEqual(name.value as? String, "Нативная лаборатория 東京")
+        XCTAssertEqual(name.value as? String, changedName)
         captureSettledFrame("Restored settings", in: app)
     }
 
