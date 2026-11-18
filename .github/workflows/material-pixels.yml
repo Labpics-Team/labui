@@ -17,6 +17,7 @@ on:
       - 'packages/materials/tsconfig*.json'
       - 'packages/materials/tsup.config.ts'
       - 'packages/colors/contract.css'
+      - 'packages/colors/test/fx-render/fx-render.mjs'
       - 'packages/colors/package.json'
       - 'apps/docs/package.json'
       - 'package.json'
