@@ -20,6 +20,26 @@ afterEach(() => {
 });
 
 describe('Svelte mount (проброс на <lab-*>)', () => {
+  it('withdrawing defaulted Chip attributes restores its defaults and preserves explicit empty values', async () => {
+    host = document.createElement('div');
+    document.body.append(host);
+    const component = mount(ChipHarness, { target: host, props: {} });
+    instance = component;
+    component.variant('s', 'action', '');
+    flushSync();
+    const chip = host.querySelector('lab-chip') as LabChip;
+    await chip.updateComplete;
+    expect([chip.size, chip.mode, chip.value]).toEqual(['s', 'action', '']);
+    component.variant(undefined, undefined, '');
+    flushSync();
+    await chip.updateComplete;
+    expect([chip.size, chip.mode, chip.value, chip.selected]).toEqual(['m', 'filter', '', true]);
+    expect(chip.shadowRoot?.querySelector('button')?.getAttribute('aria-pressed')).toBe('true');
+    component.variant(undefined, undefined, undefined);
+    flushSync();
+    await chip.updateComplete;
+    expect(chip.value).toBe('on');
+  });
   it('reactive updates retain omitted defaults and selection; withdrawn inputs are removed once', async () => {
     host = document.createElement('div');
     document.body.append(host);

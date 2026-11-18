@@ -1,4 +1,5 @@
 {
+  "frameworks": ["Solid", "Svelte"],
   "before": [
     {
       "mode": "filter",
@@ -8,6 +9,7 @@
       "loading": false,
       "name": "filter",
       "active": true,
+      "pressed": "true",
       "height": 40,
       "width": 124.890625
     },
@@ -19,6 +21,85 @@
       "loading": false,
       "name": "filter",
       "active": true,
+      "pressed": "true",
+      "height": 40,
+      "width": 131.09375
+    }
+  ],
+  "action": [
+    {
+      "mode": "action",
+      "size": "s",
+      "value": "",
+      "selected": true,
+      "loading": false,
+      "name": "filter",
+      "active": true,
+      "pressed": null,
+      "height": 28,
+      "width": 92.28125
+    },
+    {
+      "mode": "action",
+      "size": "s",
+      "value": "",
+      "selected": true,
+      "loading": false,
+      "name": "filter",
+      "active": true,
+      "pressed": null,
+      "height": 28,
+      "width": 97.703125
+    }
+  ],
+  "defaults": [
+    {
+      "mode": "filter",
+      "size": "m",
+      "value": "",
+      "selected": true,
+      "loading": false,
+      "name": "filter",
+      "active": true,
+      "pressed": "true",
+      "height": 40,
+      "width": 124.890625
+    },
+    {
+      "mode": "filter",
+      "size": "m",
+      "value": "",
+      "selected": true,
+      "loading": false,
+      "name": "filter",
+      "active": true,
+      "pressed": "true",
+      "height": 40,
+      "width": 131.09375
+    }
+  ],
+  "resetValue": [
+    {
+      "mode": "filter",
+      "size": "m",
+      "value": "on",
+      "selected": true,
+      "loading": false,
+      "name": "filter",
+      "active": true,
+      "pressed": "true",
+      "height": 40,
+      "width": 124.890625
+    },
+    {
+      "mode": "filter",
+      "size": "m",
+      "value": "on",
+      "selected": true,
+      "loading": false,
+      "name": "filter",
+      "active": true,
+      "pressed": "true",
       "height": 40,
       "width": 131.09375
     }
@@ -32,6 +113,7 @@
       "loading": true,
       "name": "filter",
       "active": true,
+      "pressed": "true",
       "height": 40,
       "width": 124.890625
     },
@@ -43,6 +125,7 @@
       "loading": true,
       "name": "filter",
       "active": true,
+      "pressed": "true",
       "height": 40,
       "width": 131.09375
     }
@@ -56,6 +139,7 @@
       "loading": false,
       "name": "filter",
       "active": true,
+      "pressed": "false",
       "height": 40,
       "width": 92.890625
     },
@@ -67,6 +151,7 @@
       "loading": false,
       "name": "filter",
       "active": true,
+      "pressed": "false",
       "height": 40,
       "width": 99.09375
     }
@@ -78,8 +163,9 @@
       "value": "on",
       "selected": false,
       "loading": false,
-      "name": null,
+      "name": "",
       "active": false,
+      "pressed": "false",
       "height": 40,
       "width": 92.890625
     },
@@ -89,8 +175,9 @@
       "value": "on",
       "selected": false,
       "loading": false,
-      "name": null,
+      "name": "",
       "active": false,
+      "pressed": "false",
       "height": 40,
       "width": 99.09375
     }
@@ -104,6 +191,7 @@
       "loading": true,
       "name": "element state",
       "active": true,
+      "pressed": "false",
       "height": 40,
       "width": 92.890625
     },
@@ -115,6 +203,7 @@
       "loading": true,
       "name": "element state",
       "active": true,
+      "pressed": "false",
       "height": 40,
       "width": 99.09375
     }

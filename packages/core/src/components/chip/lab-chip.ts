@@ -9,8 +9,8 @@ export type { LabChipMode, LabChipSize } from './contract.js';
 export class LabChip extends LabElement {
   static formAssociated = true;
   static override properties = {
-    mode: { reflect: true },
-    size: { reflect: true },
+    mode: { reflect: true, useDefault: true },
+    size: { reflect: true, useDefault: true },
     sharp: { type: Boolean, reflect: true },
     active: { type: Boolean, reflect: true },
     selected: { type: Boolean, reflect: true },
@@ -20,8 +20,8 @@ export class LabChip extends LabElement {
     loading: { type: Boolean, reflect: true },
     showLeading: { type: Boolean, attribute: 'show-leading', reflect: true },
     ariaLabel: { attribute: 'aria-label', reflect: true },
-    name: { reflect: true },
-    value: { reflect: true },
+    name: { reflect: true, useDefault: true },
+    value: { reflect: true, useDefault: true },
     disabledByForm: { state: true },
   };
   declare mode: LabChipMode;

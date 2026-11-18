@@ -28,6 +28,37 @@ afterEach(() => {
 });
 
 describe('Solid mount (проброс на <lab-*>)', () => {
+  it('withdrawing defaulted Chip attributes restores its defaults and preserves explicit empty values', async () => {
+    const [size, setSize] = createSignal<LabChip['size'] | undefined>('s');
+    const [mode, setMode] = createSignal<LabChip['mode'] | undefined>('action');
+    const [value, setValue] = createSignal<string | undefined>('');
+    const host = mount(() =>
+      createComponent(Chip, {
+        defaultSelected: true,
+        get size() {
+          return size();
+        },
+        get mode() {
+          return mode();
+        },
+        get value() {
+          return value();
+        },
+        children: 'Filter',
+      }),
+    );
+    const chip = host.querySelector('lab-chip') as LabChip;
+    await chip.updateComplete;
+    expect([chip.size, chip.mode, chip.value]).toEqual(['s', 'action', '']);
+    setSize(undefined);
+    setMode(undefined);
+    await chip.updateComplete;
+    expect([chip.size, chip.mode, chip.value, chip.selected]).toEqual(['m', 'filter', '', true]);
+    expect(chip.shadowRoot?.querySelector('button')?.getAttribute('aria-pressed')).toBe('true');
+    setValue(undefined);
+    await chip.updateComplete;
+    expect(chip.value).toBe('on');
+  });
   it('reactive updates retain omitted defaults and selection; withdrawn inputs are removed once', async () => {
     const [loading, setLoading] = createSignal(false);
     const [name, setName] = createSignal<string | undefined>('filter');

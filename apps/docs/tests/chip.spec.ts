@@ -69,6 +69,43 @@ test('pending preserves width, accessible name and focus while rejecting repeat 
   ).toBe('0');
 });
 
+test('attribute withdrawal restores defaults while empty form strings stay empty', async ({
+  page,
+}) => {
+  const chip = page.locator('#lit-form lab-chip').first();
+  await chip.evaluate(async (node) => {
+    node.setAttribute('mode', 'action');
+    node.setAttribute('size', 's');
+    node.setAttribute('value', '');
+    await (node as HTMLElement & { updateComplete: Promise<boolean> }).updateComplete;
+  });
+  expect((await chip.getByRole('button').boundingBox())?.height).toBe(28);
+  await expect(chip.getByRole('button')).not.toHaveAttribute('aria-pressed');
+  await chip.evaluate((node) => {
+    node.removeAttribute('mode');
+    node.removeAttribute('size');
+  });
+  await expect(chip.getByRole('button')).toHaveAttribute('aria-pressed', 'true');
+  expect((await chip.getByRole('button').boundingBox())?.height).toBe(40);
+  expect(
+    await page
+      .locator('#lit-form')
+      .evaluate((node) => new FormData(node as HTMLFormElement).get('filter')),
+  ).toBe('');
+  await chip.evaluate((node) => node.removeAttribute('value'));
+  expect(
+    await page
+      .locator('#lit-form')
+      .evaluate((node) => new FormData(node as HTMLFormElement).get('filter')),
+  ).toBe('on');
+  await chip.evaluate((node) => node.setAttribute('name', ''));
+  expect(
+    await page
+      .locator('#lit-form')
+      .evaluate((node) => new FormData(node as HTMLFormElement).has('filter')),
+  ).toBe(false);
+});
+
 test('one semantic target; actions dispatch once; disabled and cancelable selection', async ({
   page,
 }) => {

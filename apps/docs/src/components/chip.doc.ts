@@ -172,7 +172,8 @@ export const chipDoc: ComponentDoc = {
       {
         name: 'name / value / form',
         type: 'string',
-        description: 'Выбранный filter участвует в FormData. Сброс не отправляет selected-change.',
+        description:
+          'Выбранный filter участвует в FormData. Пустой value допустим; снятие value возвращает on. Сброс не отправляет selected-change.',
       },
       {
         name: 'aria-label',

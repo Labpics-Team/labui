@@ -74,6 +74,14 @@ Solid/Svelte используют общий `core/adapter-runtime`: несвя�
 pending сохраняет ширину, после click меняется выбор, defaults и внутреннее
 состояние не теряются. Программный `host.click()` теперь даёт один bubbling click.
 
+Chip задаёт `useDefault:true` для строковых mode/size/name/value. После снятия
+атрибута Lit восстанавливает значение конструктора: filter/m/пустое имя/on.
+Это проверено отдельно от первоначального отсутствия props: action/s → undefined
+в обоих установленных адаптерах возвращает высоту 40 и aria-pressed без потери
+selected. Явное `value=""` остаётся пустым значением формы; его снятие возвращает on.
+Адаптеры не содержат перечня defaults. Основание:
+[Lit: useDefault и отражённые атрибуты](https://lit.dev/docs/components/properties/#enabling-attribute-reflection).
+
 Точный React-пример из how-to с `import '@labpics/ui-core/chip.css'` собран из
 установленного архива и проверен без JavaScript: height 40, radius 12 и выбранная
 поверхность доступны до hydration (`packed-react-ssr.png`).
@@ -92,12 +100,12 @@ Sharp Small без/с выбором, Sharp Medium без/с выбором. `we
 
 Проверки:
 
-- Chromium + WebKit: 16 прошли; две проверки forced colors пропущены в WebKit,
+- Chromium + WebKit: 18 прошли; две проверки forced colors пропущены в WebKit,
   системные палитры проверены Chromium. Space/Enter, controlled отказ, FormData/reset и отмена
   reset; pending name/focus/width; одно действие, disabled; 56 сочетаний и равенство
   Lit/React; baseline; RTL/200%/reduced motion; одинаковая SSR/hydrated geometry;
   доступное имя generated SSR до JS и внешняя форма после hydration.
-- Solid: 10/10; Svelte: 9/9, включая реальные reactive mount и withdrawal props.
+- Solid: 11/11; Svelte: 10/10, включая реальные reactive mount и withdrawal props.
 - Colors: 255/255. Общие роли, generated CSS/native contract, отсутствие inline
   paint literals, непредусмотренных размеров, motion и неименованных z-index.
 - Typecheck всех workspace packages и docs прошёл; Biome и source verification чисты.
