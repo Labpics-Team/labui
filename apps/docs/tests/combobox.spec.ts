@@ -95,7 +95,7 @@ test('disclosure and text reserve follow the field adornment independently of Sw
   for (const [testid, inputClass, triggerClass] of [
     ['lit-combobox', '.input', '.trigger'],
     ['react-combobox', '.lab-combobox-input', '.lab-combobox-trigger'],
-  ]) {
+  ] as const) {
     const host = page.getByTestId(testid);
     const input = host.locator(inputClass);
     const trigger = host.locator(triggerClass);

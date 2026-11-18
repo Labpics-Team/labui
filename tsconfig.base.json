@@ -39,6 +39,7 @@
       "@labpics/ui-vue/*": ["./packages/vue/src/*.ts"],
       "@labpics/ui-materials": ["./packages/materials/src/index.ts"],
       "@labpics/ui-materials/css": ["./packages/materials/src/css.d.ts"],
+      "@labpics/ui-shadow": ["./packages/shadow/src/index.ts"],
       "@labpics/ui-tokens": ["./packages/tokens/src/index.ts"]
     }
   }
