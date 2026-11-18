@@ -236,9 +236,17 @@
         "types": "./dist/components/pagination/contract.d.cts",
         "default": "./dist/components/pagination/contract.cjs"
       }
+    },
+    "./accordion.css": "./dist/accordion.css",
+    "./accordion/runtime": {
+      "types": "./dist/components/accordion/runtime.d.ts",
+      "import": "./dist/components/accordion/runtime.js",
+      "require": "./dist/components/accordion/runtime.cjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": [
     "./src/components/*/index.ts",
     "./dist/theme.css",
@@ -262,7 +270,8 @@
     "./dist/chip.css",
     "./dist/tabs.css",
     "./dist/breadcrumb.css",
-    "./dist/pagination.css"
+    "./dist/pagination.css",
+    "./dist/accordion.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

@@ -50,11 +50,51 @@ for (const testid of ['lit-accordion-multiple', 'lit-accordion-collapsible']) {
   if (host) host.items = AXIS_ITEMS;
 }
 
+for (const expanded of [false, true]) {
+  const host = document.createElement('lab-accordion');
+  host.items = [{ value: 'source', label: 'Is it accessible?' }];
+  host.defaultValue = expanded ? ['source'] : [];
+  host.dataset.testid = `lit-source-${expanded}`;
+  host.style.width = '503px';
+  const panel = document.createElement('span');
+  panel.slot = 'source';
+  panel.textContent = 'Yes. It adheres to the WAI-ARIA design pattern.';
+  host.append(panel);
+  document.querySelector('main')?.append(host);
+}
+
+const controlled = document.createElement('lab-accordion');
+controlled.items = AXIS_ITEMS;
+controlled.value = ['one'];
+controlled.dataset.testid = 'lit-controlled';
+controlled.innerHTML =
+  '<textarea slot="one" aria-label="Draft">Original</textarea><span slot="two">Second</span>';
+document.querySelector('main')?.append(controlled);
+
 const mount = document.querySelector<HTMLElement>('#react-root');
 if (!mount) throw new Error('Missing #react-root mount node in accordion.html');
 
 createRoot(mount).render(
   <StrictMode>
+    {[false, true].map((expanded) => (
+      <div key={String(expanded)} data-testid={`react-source-${expanded}`} style={{ width: 503 }}>
+        <Accordion defaultValue={expanded ? ['source'] : []}>
+          <AccordionItem value="source" label="Is it accessible?">
+            Yes. It adheres to the WAI-ARIA design pattern.
+          </AccordionItem>
+        </Accordion>
+      </div>
+    ))}
+    <div data-testid="react-controlled">
+      <Accordion value={['one']}>
+        <AccordionItem value="one" label="Panel one">
+          <textarea aria-label="Draft" defaultValue="Original" />
+        </AccordionItem>
+        <AccordionItem value="two" label="Panel two">
+          Second
+        </AccordionItem>
+      </Accordion>
+    </div>
     <span data-testid="react-accordion">
       <Accordion defaultValue={['what']}>
         <AccordionItem value="what" label="What is LabUI?">

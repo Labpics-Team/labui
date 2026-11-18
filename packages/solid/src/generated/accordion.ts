@@ -10,7 +10,7 @@ import type { LabAccordion } from '@labpics/ui-core/accordion';
 import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-accordion>, взятые прямо из класса ядра (LabAccordion). */
-export type AccordionProps = Pick<LabAccordion, 'orientation' | 'size' | 'multiple' | 'collapsible' | 'disabled' | 'value' | 'defaultValue' | 'items'>;
+export type AccordionProps = Pick<LabAccordion, 'orientation' | 'size' | 'multiple' | 'collapsible' | 'disabled' | 'headingLevel' | 'value' | 'defaultValue' | 'items'>;
 
 /** <Accordion> — тонкая Solid-обёртка над <lab-accordion>. */
 export const Accordion: LabSolidComponent<AccordionProps, 'value-change'> = createLabComponent<
@@ -23,6 +23,7 @@ export const Accordion: LabSolidComponent<AccordionProps, 'value-change'> = crea
     { name: 'multiple', attr: 'multiple', kind: 'boolean' },
     { name: 'collapsible', attr: 'collapsible', kind: 'boolean' },
     { name: 'disabled', attr: 'disabled', kind: 'boolean' },
+    { name: 'headingLevel', attr: 'heading-level', kind: 'string' },
     { name: 'value', attr: 'value', kind: 'prop' },
     { name: 'defaultValue', attr: 'default-value', kind: 'prop' },
     { name: 'items', attr: 'items', kind: 'prop' },

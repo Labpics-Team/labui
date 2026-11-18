@@ -222,12 +222,12 @@ test('visual parity: Lit and React resolve the same open-header label colour', a
   expect(await reactOpen.evaluate(labelColor)).toBe(await litOpen.evaluate(labelColor));
 });
 
-test('tokens: re-pointing --lab-label-accent re-skins BOTH open headers', async ({ page }) => {
+test('tokens: the authored primary label applies to both open headers', async ({ page }) => {
   const litOpen = litTriggers(page, 'lit-accordion').nth(0);
   const reactOpen = reactTriggers(page, 'react-accordion').nth(0);
 
   await page.evaluate(() => {
-    document.documentElement.style.setProperty('--lab-label-accent', 'rgb(1, 2, 3)');
+    document.documentElement.style.setProperty('--lab-label-primary', 'rgb(1, 2, 3)');
   });
   await expect.poll(() => litOpen.evaluate(labelColor)).toBe('rgb(1, 2, 3)');
   await expect.poll(() => reactOpen.evaluate(labelColor)).toBe('rgb(1, 2, 3)');
@@ -244,4 +244,73 @@ test('theme: flipping [data-theme] re-skins both renderers with zero edits', asy
 
   await expect.poll(() => litOpen.evaluate(labelColor)).not.toBe(litDark);
   await expect.poll(() => reactOpen.evaluate(labelColor)).not.toBe(reactDark);
+});
+
+test('author geometry: the medium source is 503×56 closed and 503×88 open', async ({ page }) => {
+  for (const renderer of ['lit', 'react']) {
+    for (const expanded of [false, true]) {
+      const item = page
+        .getByTestId(`${renderer}-source-${expanded}`)
+        .locator('.lab-accordion-item');
+      const box = await item.boundingBox();
+      expect(box?.width).toBe(503);
+      expect(box?.height).toBe(expanded ? 88 : 56);
+      await expect(item.locator('.lab-accordion-trigger')).toHaveCSS('font-weight', '500');
+      await expect(item.locator('.lab-accordion-trigger')).toHaveCSS('font-size', '16px');
+      await expect(item.locator('.lab-accordion-body')).toHaveCSS('letter-spacing', '-0.25px');
+    }
+  }
+});
+
+test('controlled refusal preserves the open panel and draft on both renderers', async ({
+  page,
+}) => {
+  for (const renderer of ['lit', 'react']) {
+    const host = page.getByTestId(`${renderer}-controlled`);
+    await host.getByRole('textbox').fill('Unfinished draft');
+    await host.getByRole('button', { name: 'Panel two' }).click();
+    await expect(host.getByRole('button', { name: 'Panel one' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    await expect(host.getByRole('textbox')).toHaveValue('Unfinished draft');
+  }
+});
+
+test('motion retains content, excludes closed controls immediately and settles after reversal', async ({
+  page,
+}) => {
+  for (const renderer of ['lit', 'react']) {
+    const host = page.getByTestId(`${renderer}-source-true`);
+    const item = host.locator('.lab-accordion-item');
+    const frames = await item.evaluate(async (node) => {
+      const trigger = node.querySelector<HTMLButtonElement>('button');
+      if (!trigger) throw new Error('Missing disclosure trigger');
+      trigger.click();
+      const values: number[] = [];
+      for (let index = 0; index < 3; index++) {
+        await new Promise(requestAnimationFrame);
+        values.push(node.getBoundingClientRect().height);
+      }
+      const panel = node.querySelector<HTMLElement>('.lab-accordion-content');
+      if (!panel) throw new Error('Missing retained panel');
+      const excluded = panel.inert && panel.getAttribute('aria-hidden') === 'true';
+      trigger.click();
+      return { values, excluded };
+    });
+    expect(frames.excluded).toBe(true);
+    expect(frames.values.some((height) => height > 56 && height < 88)).toBe(true);
+    await expect(item).not.toHaveAttribute('data-disclosing');
+    await expect.poll(async () => (await item.boundingBox())?.height).toBe(88);
+  }
+});
+
+test('reduced motion settles without a running disclosure', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  for (const renderer of ['lit', 'react']) {
+    const host = page.getByTestId(`${renderer}-source-true`);
+    await host.getByRole('button').click();
+    await expect(host.locator('.lab-accordion-item')).not.toHaveAttribute('data-disclosing');
+    await expect(host.locator('.lab-accordion-content')).toBeHidden();
+  }
 });

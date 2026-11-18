@@ -33,6 +33,11 @@
           "kind": "boolean"
         },
         {
+          "name": "headingLevel",
+          "attr": "heading-level",
+          "kind": "string"
+        },
+        {
           "name": "value",
           "attr": "value",
           "kind": "prop"

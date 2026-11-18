@@ -49,6 +49,7 @@ export default libraryPreset({
     'src/components/progress/runtime.ts',
     'src/components/textarea/runtime.ts',
     'src/components/tabs/runtime.ts',
+    'src/components/accordion/runtime.ts',
     'src/motion/sheet.ts',
     ...componentEntries,
   ],

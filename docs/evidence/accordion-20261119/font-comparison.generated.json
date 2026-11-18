@@ -1,0 +1,21 @@
+{
+  "text": "Yes. It adheres to the WAI-ARIA design pattern.",
+  "fontSize": 16,
+  "lineHeight": 24,
+  "tracking": -0.25,
+  "figmaTextWidth": 329,
+  "browser": "Chromium 140",
+  "measurements": [
+    {
+      "fontVersion": "1.400",
+      "renderedTextRangeWidth": 334.203125,
+      "fileSha256": "46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d"
+    },
+    {
+      "fontVersion": "1.800",
+      "renderedTextRangeWidth": 328,
+      "fileSha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1"
+    }
+  ],
+  "status": "Open typography discrepancy; no component-specific font substitution or geometry compensation."
+}

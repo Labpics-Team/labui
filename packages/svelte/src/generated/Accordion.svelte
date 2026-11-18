@@ -16,6 +16,7 @@
     multiple?: LabAccordion['multiple'];
     collapsible?: LabAccordion['collapsible'];
     disabled?: LabAccordion['disabled'];
+    headingLevel?: LabAccordion['headingLevel'];
     value?: LabAccordion['value'];
     defaultValue?: LabAccordion['defaultValue'];
     items?: LabAccordion['items'];
@@ -24,7 +25,7 @@
     [key: string]: unknown;
   }
 
-  let { orientation, size, multiple, collapsible, disabled, value, defaultValue, items, onValueChange, children, ...rest }: Props = $props();
+  let { orientation, size, multiple, collapsible, disabled, headingLevel, value, defaultValue, items, onValueChange, children, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'orientation', attr: 'orientation', kind: 'string' },
@@ -32,6 +33,7 @@
     { name: 'multiple', attr: 'multiple', kind: 'boolean' },
     { name: 'collapsible', attr: 'collapsible', kind: 'boolean' },
     { name: 'disabled', attr: 'disabled', kind: 'boolean' },
+    { name: 'headingLevel', attr: 'heading-level', kind: 'string' },
     { name: 'value', attr: 'value', kind: 'prop' },
     { name: 'defaultValue', attr: 'default-value', kind: 'prop' },
     { name: 'items', attr: 'items', kind: 'prop' },
@@ -40,7 +42,7 @@
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
-    forwardDeclared(el, specs, { orientation, size, multiple, collapsible, disabled, value, defaultValue, items });
+    forwardDeclared(el, specs, { orientation, size, multiple, collapsible, disabled, headingLevel, value, defaultValue, items });
   });
   $effect(() => forwardEvents(el, { 'value-change': onValueChange }));
 </script>

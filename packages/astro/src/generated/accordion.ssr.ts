@@ -10,7 +10,7 @@ import '@labpics/ui-core/accordion';
 import type { LabAccordion } from '@labpics/ui-core/accordion';
 
 /** SSR-пропы <lab-accordion> (атрибуты/свойства), взяты из класса ядра (LabAccordion). */
-export type AccordionSsrProps = Partial<Pick<LabAccordion, 'orientation' | 'size' | 'multiple' | 'collapsible' | 'disabled' | 'value' | 'defaultValue' | 'items'>> & { 'aria-label'?: string; 'form'?: string };
+export type AccordionSsrProps = Partial<Pick<LabAccordion, 'orientation' | 'size' | 'multiple' | 'collapsible' | 'disabled' | 'headingLevel' | 'value' | 'defaultValue' | 'items'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-accordion> — предрендеренные строки контента. */
 export type AccordionSsrSlots = { default?: string; dynamic?: Readonly<Record<string, string>> };
 
@@ -29,6 +29,7 @@ export function renderAccordion(
       .multiple=${props.multiple === undefined ? noChange : props.multiple}
       .collapsible=${props.collapsible === undefined ? noChange : props.collapsible}
       .disabled=${props.disabled === undefined ? noChange : props.disabled}
+      heading-level=${ifDefined(props.headingLevel)}
       .value=${props.value === undefined ? noChange : props.value}
       .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
       .items=${props.items === undefined ? noChange : props.items}

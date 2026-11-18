@@ -17,6 +17,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { badgeCss } from '../src/components/badge/styles.js';
 import { breadcrumbCss } from '../src/components/breadcrumb/styles.js';
+import { accordionCss } from '../src/components/accordion/styles.js';
 import { cardCss } from '../src/components/card/styles.js';
 import { chipCss } from '../src/components/chip/styles.js';
 import { inputCss } from '../src/components/input/styles.js';
@@ -58,6 +59,7 @@ function main(): void {
   writeFileSync(join(dist, 'card.css'), cardCss);
   writeFileSync(join(dist, 'chip.css'), chipCss);
   writeFileSync(join(dist, 'breadcrumb.css'), breadcrumbCss);
+  writeFileSync(join(dist, 'accordion.css'), accordionCss);
   writeFileSync(join(dist, 'switch.css'), switchCss);
   writeFileSync(join(dist, 'tabs.css'), tabsCss);
   writeFileSync(join(dist, 'selection-controls.css'), selectionCss);

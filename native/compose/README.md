@@ -421,6 +421,19 @@ Figma `Show Left-icon=false`, а не исчезновение всей боко
 узлы сохранены в `evidence/input-empty-adornments-source.json`.
 Card в сценарии настроек использует Elevated из master `6225:42443`.
 
+## Accordion
+
+`LabAccordion` раскрывает контролируемый набор разделов, а `LabAccordionText`
+применяет авторский набор к обычному содержимому. M использует общий профиль:
+радиус и отступ 16 dp, шеврон 16 dp, интервал содержимого 8 dp. S/L и горизонталь
+расширяют исходный вертикальный вариант. Закрытая композиция сохраняет `remember`,
+сразу исключает semantics и возвращает фокус заголовку. Движение общей величиной
+связывает высоту панели, отступ и шеврон.
+
+[Контракт](../../docs/reference/accordion.md) · [offscreen и установленный Maven consumer](evidence/accordion-20261119/README.md).
+В evidence открыто отмечено различие версий Geist в исходных текстовых ролях;
+покомпонентной подмены шрифта нет.
+
 ## Источники
 
 - [Lab UI — исходная Figma](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1)
