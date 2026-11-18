@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/progress';
 import type { LabProgress } from '@labpics/ui-core/progress';
 
@@ -24,7 +24,7 @@ export function renderProgress(
 ): string {
   return renderToString(html`<lab-progress
       size=${ifDefined(props.size)}
-      .value=${props.value}
+      .value=${props.value === undefined ? noChange : props.value}
       min=${ifDefined(props.min)}
       max=${ifDefined(props.max)}
       label=${ifDefined(props.label)}

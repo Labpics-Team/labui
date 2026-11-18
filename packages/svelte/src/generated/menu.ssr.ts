@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/menu';
 import type { LabMenu } from '@labpics/ui-core/menu';
 
@@ -27,6 +27,6 @@ export function renderMenu(
       placement=${ifDefined(props.placement)}
       ?disabled=${Boolean(props.disabled)}
       label=${ifDefined(props.label)}
-      .items=${props.items}
+      .items=${props.items === undefined ? noChange : props.items}
     ></lab-menu>`);
 }

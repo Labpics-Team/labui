@@ -340,6 +340,11 @@
           "kind": "string"
         },
         {
+          "name": "variant",
+          "attr": "variant",
+          "kind": "string"
+        },
+        {
           "name": "checked",
           "attr": "checked",
           "kind": "boolean"
@@ -360,13 +365,28 @@
           "kind": "boolean"
         },
         {
+          "name": "controlled",
+          "attr": "controlled",
+          "kind": "boolean"
+        },
+        {
           "name": "disabled",
           "attr": "disabled",
           "kind": "boolean"
         },
         {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
           "name": "name",
           "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
           "kind": "string"
         }
       ],
@@ -375,8 +395,78 @@
       ],
       "slots": {
         "default": true,
-        "named": [],
+        "named": [
+          "description",
+          "icon",
+          "label-start"
+        ],
         "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-choicebox",
+      "subpath": "choicebox",
+      "pascal": "Choicebox",
+      "className": "LabChoicebox",
+      "props": [
+        {
+          "name": "layout",
+          "attr": "layout",
+          "kind": "string"
+        },
+        {
+          "name": "multiple",
+          "attr": "multiple",
+          "kind": "boolean"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultValue",
+          "attr": "default-value",
+          "kind": "prop"
+        },
+        {
+          "name": "controlled",
+          "attr": "controlled",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "items",
+          "attr": "items",
+          "kind": "prop"
+        }
+      ],
+      "events": [
+        "value-change"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": true
       }
     },
     {
@@ -1100,6 +1190,11 @@
           "kind": "string"
         },
         {
+          "name": "variant",
+          "attr": "variant",
+          "kind": "string"
+        },
+        {
           "name": "orientation",
           "attr": "orientation",
           "kind": "string"
@@ -1115,8 +1210,18 @@
           "kind": "string"
         },
         {
+          "name": "controlled",
+          "attr": "controlled",
+          "kind": "boolean"
+        },
+        {
           "name": "disabled",
           "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "required",
+          "attr": "required",
           "kind": "boolean"
         },
         {
@@ -1141,7 +1246,7 @@
       "slots": {
         "default": false,
         "named": [],
-        "dynamic": false
+        "dynamic": true
       }
     },
     {

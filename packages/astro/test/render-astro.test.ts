@@ -7,6 +7,7 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { describe, expect, it } from 'vitest';
 import manifest from '../../adapter-codegen/manifest.generated.json';
 import Button from '../src/astro/Button.astro';
+import Choicebox from '../src/astro/Choicebox.astro';
 import Dialog from '../src/astro/Dialog.astro';
 import Input from '../src/astro/Input.astro';
 
@@ -38,6 +39,18 @@ describe('Astro .astro-компоненты (Container API)', () => {
     const html = await container.renderToString(Input, { props: { label: 'Имя' } });
     expect(html).toContain('shadowrootmode');
     expect(html).toContain('<input');
+  });
+
+  it('Choicebox.astro forwards item-specific rich slots into the server frame', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(Choicebox, {
+      props: { items: [{ value: 'a', label: 'Fallback' }] },
+      slots: { 'label-a': '<strong>Подпись</strong>', 'description-a': '<em>Описание</em>' },
+    });
+    expect(html).toContain('slot="label-a"');
+    expect(html).toContain('<strong>Подпись</strong>');
+    expect(html).toContain('slot="description-a"');
+    expect(html).toContain('<em>Описание</em>');
   });
 
   it('Dialog.astro: DSD с заголовком', async () => {

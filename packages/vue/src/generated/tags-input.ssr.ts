@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/tags-input';
 import type { LabTagsInput } from '@labpics/ui-core/tags-input';
 
@@ -35,8 +35,8 @@ export function renderTagsInput(
       ?editable=${Boolean(props.editable)}
       ?add-on-paste=${Boolean(props.addOnPaste)}
       ?allow-duplicates=${Boolean(props.allowDuplicates)}
-      .value=${props.value}
-      .defaultValue=${props.defaultValue}
+      .value=${props.value === undefined ? noChange : props.value}
+      .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
       ?readonly=${Boolean(props.readonly)}
       ?disabled=${Boolean(props.disabled)}
       ?required=${Boolean(props.required)}

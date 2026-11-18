@@ -1,388 +1,222 @@
-import * as radioGroupMachine from '@zag-js/radio-group';
-/**
- * `<lab-radio-group>` — the FIRST COMPOUND LabUI component, consuming the
- * `@zag-js/radio-group` machine through the Behaviors seam (core-CONTRACT §1).
- *
- * Compound shape (the CANON for Select / Tabs / Menu / Accordion that follow):
- *   A Zag *group* machine is ONE instance that owns N parts. Its `connect()`
- *   returns group-level getters (`getRootProps`, `getLabelProps`) AND per-item
- *   getters keyed by value (`getItemProps(value)`, `getItemControlProps(value)`,
- *   `getItemTextProps(value)`, `getItemHiddenInputProps(value)`). The machine
- *   queries the DOM through `getRootNode`, which the `ZagController` points at
- *   THIS element's shadow root — so every part the machine drives MUST live in
- *   ONE shadow scope. A radio whose items were slotted light-DOM children would
- *   put those parts OUTSIDE the machine's query root and break focus/roving.
- *
- *   Therefore the Web-Component compound is ONE custom element that renders all
- *   parts in its own shadow DOM from a declarative `items` config (value/label/
- *   disabled) — NOT a parent element plus N child custom elements. The element
- *   spreads each per-item getter onto its matching shadow node in `updated()`.
- *   (The React twin uses the renderer-native shape — a context-provider parent
- *   plus `<Radio>` leaf children — because React composition is functions, not a
- *   shared DOM query root. Same machine, two idiomatic compositions.)
- *
- * Axes (the Figma model — Type × Size × Orientation × State × Disabled):
- *   - type:        accent | neutral | danger   (intent of the SELECTED dot)
- *   - size:        s | m | l                   (каноническая ось размера: Figma
- *                  Check и Radio биндят Size/S,M,L = 12/16/20px; ось tiny в
- *                  Figma не определена — см. docs/dimension-contract.md §2)
- *   - orientation: horizontal | vertical       (machine-owned; reflected for CSS)
- *   - value:       controlled selected value (reflected for CSS + SSR)
- *   - defaultValue: uncontrolled initial value (read once by the machine at init)
- *   - disabled:    group-level non-interactive; an item may also be disabled
- *
- * a11y is the machine's, not hand-rolled: `role="radiogroup"`, roving tabindex,
- * Arrow-key selection, `aria-checked`, focus management, and a hidden native
- * radio input per item all come from `@zag-js/radio-group` (DIP — injected
- * `MachineModule`, no hand-written roving logic).
- *
- * Token contract (core-CONTRACT §2): ONLY semantic --lab-* roles. The unchecked
- * ring is `--lab-border-base`; the checked ring is `--lab-border-{type}`; the
- * dot is `--lab-fill-{type}`; the label is `--lab-label-primary`. No hex, no
- * primitive, no invented role.
- */
-import { type TemplateResult, css, html, nothing } from 'lit';
-import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
-import { litVar } from '../../css.js';
+﻿import { type PropertyValues, type TemplateResult, css, html, nothing, unsafeCSS } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import { LabElement } from '../../lit/lab-element.js';
-import type { ZagController } from '../../lit/zag-controller.js';
+import {
+  type LabSelectionItem,
+  type LabSelectionSize,
+  type LabSelectionType,
+  type LabSelectionVariant,
+  navigateRadio,
+  parseSelectionItems,
+} from '../selection/contract.js';
+import { type SelectionMotion, mountSelectionMotion } from '../selection/runtime.js';
+import { selectionCss } from '../selection/styles.js';
 
-/** Semantic intent of the selected radio's dot + ring. */
-export type LabRadioGroupType = 'accent' | 'neutral' | 'danger';
-/**
- * Размер контрола — каноническая ось размерного контракта (--lab-size-control-*).
- * Чекбокс-близнец ещё не мигрирован и несёт pre-contract локальные числа —
- * его волна миграции приземлит его на эту же шкалу.
- */
-export type LabRadioGroupSize = 's' | 'm' | 'l';
-/** Layout direction of the radio list (machine-owned, drives roving keys). */
+export type LabRadioGroupType = LabSelectionType;
+export type LabRadioGroupSize = LabSelectionSize;
 export type LabRadioGroupOrientation = 'horizontal' | 'vertical';
+export type LabRadioItem = LabSelectionItem;
 
-/**
- * One radio option. The COMPOUND unit: the group renders one item per entry and
- * spreads the machine's per-value getters onto its parts. Shared with the React
- * twin so both renderers describe an item the same way and cannot drift.
- */
-export interface LabRadioItem {
-  /** The value submitted/selected when this radio is chosen. Unique in the group. */
-  readonly value: string;
-  /** The visible label text next to the dot. */
-  readonly label: string;
-  /** Whether THIS item is non-interactive (independent of group `disabled`). */
-  readonly disabled?: boolean;
-}
-
-type RadioGroupSchema = SchemaOf<radioGroupMachine.Service>;
-type RadioGroupApi = radioGroupMachine.Api;
-
-/**
- * The `@zag-js/radio-group` package seen through the renderer-agnostic seam — the
- * SAME `MachineModule` shape the Lit base binds for switch/checkbox, no casts.
- */
-const radioGroupModule: MachineModule<RadioGroupSchema, RadioGroupApi> = radioGroupMachine;
-
+/** One native radio group, one form value; rich labels retain stable item identity. */
 export class LabRadioGroup extends LabElement {
+  static formAssociated = true;
   static override properties = {
     type: { reflect: true },
     size: { reflect: true },
-    /** Reflected so `:host([orientation])` lays the list out before JS upgrades. */
+    variant: { reflect: true },
     orientation: { reflect: true },
-    /** Controlled selected value. When the attribute is present, consumer owns it. */
     value: { reflect: true },
-    /** Uncontrolled initial value — read once by the machine at init. */
     defaultValue: { attribute: 'default-value', reflect: true },
-    /** Group-level disable — every item becomes non-interactive. */
+    controlled: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
-    /** Native form field name for the hidden radio inputs. */
-    name: {},
-    /** Optional group label text; rendered as the machine's label part. */
-    label: {},
-    /**
-     * The radio options. A custom element can't carry an array in a plain
-     * attribute, so this is primarily a JS PROPERTY; a JSON string attribute
-     * (`items='[{"value":"a","label":"A"}]'`) is parsed for pure-HTML/SSR use.
-     */
+    required: { type: Boolean, reflect: true },
+    name: { reflect: true },
+    label: { reflect: true },
+    ariaLabel: { attribute: 'aria-label', reflect: true },
     items: {
-      attribute: 'items',
-      converter: {
-        fromAttribute: (raw: string | null): LabRadioItem[] => parseItems(raw),
-      },
+      reflect: true,
+      converter: { fromAttribute: parseSelectionItems, toAttribute: JSON.stringify },
     },
+    disabledByForm: { state: true },
   };
-
   declare type: LabRadioGroupType;
   declare size: LabRadioGroupSize;
+  declare variant: LabSelectionVariant;
   declare orientation: LabRadioGroupOrientation;
-  declare value: string;
-  declare defaultValue: string;
+  declare value: string | null;
+  declare defaultValue: string | null;
+  declare controlled: boolean;
   declare disabled: boolean;
+  declare required: boolean;
   declare name: string;
   declare label: string;
+  declare ariaLabel: string | null;
   declare items: LabRadioItem[];
-
-  private readonly group: ZagController<RadioGroupSchema, RadioGroupApi>;
+  private declare disabledByForm: boolean;
+  private readonly internals?: ElementInternals;
+  private resetValue?: string | null;
+  private motions = new Map<HTMLInputElement, SelectionMotion>();
 
   constructor() {
     super();
     this.type = 'accent';
     this.size = 'm';
+    this.variant = 'plain';
     this.orientation = 'horizontal';
-    this.value = '';
-    this.defaultValue = '';
+    this.value = null;
+    this.defaultValue = null;
+    this.controlled = false;
     this.disabled = false;
+    this.required = false;
     this.name = '';
     this.label = '';
+    this.ariaLabel = null;
     this.items = [];
-    // Wire the Zag radio-group behaviour. `value` is passed only when the
-    // consumer set the attribute (controlled); otherwise the machine owns it from
-    // `defaultValue` (uncontrolled) — the same honest two-mode contract as switch.
-    this.group = this.runMachine(radioGroupModule, () => ({
-      value: this.hasAttribute('value') ? this.value : undefined,
-      defaultValue: this.defaultValue || undefined,
-      disabled: this.disabled,
-      orientation: this.orientation,
-      name: this.name || undefined,
-      onValueChange: (details: radioGroupMachine.ValueChangeDetails) => {
-        this.value = details.value ?? '';
-        this.dispatchEvent(
-          new CustomEvent<radioGroupMachine.ValueChangeDetails>('value-change', {
-            detail: details,
-            bubbles: true,
-            composed: true,
-          }),
-        );
-      },
-    }));
+    this.disabledByForm = false;
+    if (typeof ElementInternals !== 'undefined') this.internals = this.attachInternals();
   }
-
-  static override styles = css`
-    :host {
-      /* Ручки размера, на которые ложится ось size, — размерный контракт, а не
-         локальные числа: кольцо едет на --lab-size-control-* (каноническая шкала
-         контрол-бокса, заземлена привязками Figma Size/S,M,L = 12/16/20px), а
-         точка ВЫВОДИТСЯ (ring/2 — закон, измеренный на small и medium; large в
-         Figma сегодня выбивается — открытое наблюдение, см.
-         docs/dimension-contract.md §2), поэтому шаг размера не может развести
-         кольцо и точку. Размерный токен может нести литеральный фолбэк, чтобы
-         контрол жил до загрузки токенов (фолбэк обязан равняться канону токена
-         — под гардом); цветовые роли фолбэков не несут (правило css.ts). */
-      --_ring: ${litVar('--lab-size-control-m', '1rem')};
-      --_dot: calc(var(--_ring) / 2);
-      --_row-gap: ${litVar('--lab-space-sm', '0.5rem')};
-      --_list-gap: ${litVar('--lab-space-md', '1rem')};
-      --_font: ${litVar('--lab-font-size-md', '1rem')};
-
-      display: block;
-    }
-
-    :host([size='s']) {
-      --_ring: ${litVar('--lab-size-control-s', '0.75rem')};
-      --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
-    }
-    :host([size='l']) {
-      --_ring: ${litVar('--lab-size-control-l', '1.25rem')};
-      --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
-    }
-
-    /* Root is the Zag radiogroup element (role + roving focus spread in updated). */
-    .root {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: var(--_list-gap);
-      font: inherit;
-      font-size: var(--_font);
-      line-height: ${litVar('--lab-line-height-md', '1.5')};
-      color: ${litVar('--lab-label-primary')};
-    }
-    :host([orientation='vertical']) .root {
-      flex-direction: column;
-      flex-wrap: nowrap;
-      align-items: flex-start;
-    }
-
-    .group-label {
-      flex: 1 0 100%;
-      font-size: var(--_font);
-      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
-      color: ${litVar('--lab-label-primary')};
-    }
-
-    /* One radio row — the Zag item element (a <label> wrapping ring + text). */
-    .item {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--_row-gap);
-      cursor: pointer;
-    }
-    .item[data-disabled] {
-      cursor: not-allowed;
-      opacity: 0.45;
-    }
-
-    /* The ring — the Zag item-control element. Unchecked = bordered, transparent. */
-    .control {
-      box-sizing: border-box;
-      position: relative;
-      flex: 0 0 auto;
-      display: inline-grid;
-      place-items: center;
-      width: var(--_ring);
-      height: var(--_ring);
-      border-radius: ${litVar('--lab-radius-circle', '9999px')};
-      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
-      background-color: transparent;
-      transition:
-        border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
-        background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
-    }
-
-    /* Checked ring colour per type, driven by the machine's data-state on the
-       control. The longhand is set DIRECTLY (no var()->var() across the shadow
-       boundary, which can go stale in Chromium on theme swap — proto-A note). */
-    :host([type='accent']) .control[data-state='checked'] {
-      border-color: ${litVar('--lab-border-accent')};
-    }
-    :host([type='neutral']) .control[data-state='checked'] {
-      border-color: ${litVar('--lab-border-base')};
-    }
-    :host([type='danger']) .control[data-state='checked'] {
-      border-color: ${litVar('--lab-border-danger')};
-    }
-
-    /* The dot — scales in only when the machine reports this item checked. */
-    .dot {
-      width: var(--_dot);
-      height: var(--_dot);
-      border-radius: ${litVar('--lab-radius-circle', '9999px')};
-      background-color: currentColor;
-      transform: scale(0);
-      transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
-    }
-    :host([type='accent']) .control[data-state='checked'] .dot {
-      color: ${litVar('--lab-fill-accent')};
-      transform: scale(1);
-    }
-    :host([type='neutral']) .control[data-state='checked'] .dot {
-      color: ${litVar('--lab-fill-neutral')};
-      transform: scale(1);
-    }
-    :host([type='danger']) .control[data-state='checked'] .dot {
-      color: ${litVar('--lab-fill-danger')};
-      transform: scale(1);
-    }
-
-    .text {
-      color: ${litVar('--lab-label-primary')};
-    }
-
-    /* Focus is delegated to the per-item hidden input; draw the ring on the
-       visible control when that input is focus-visible. */
-    .control:has(input:focus-visible) {
-      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
-      outline-offset: ${litVar('--lab-focus-ring-offset')};
-    }
-
-    /* The machine sets the hidden input's visually-hidden inline style after
-       upgrade; this keeps it hidden at first paint (SSR) too, before that lands. */
-    input {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      margin: -1px;
-      padding: 0;
-      border: 0;
-      clip: rect(0 0 0 0);
-      clip-path: inset(50%);
-      overflow: hidden;
-      white-space: nowrap;
-    }
-  `;
-
-  override updated(): void {
-    // Apply the machine's connect props onto the real shadow nodes: group-level
-    // (role=radiogroup, roving focus) and the per-item getters for every option.
-    // Clear prior spreads first to avoid stacking listeners across renders.
-    this.group.clearSpreads();
-    const api = this.group.api;
-
-    const root = this.renderRoot.querySelector<HTMLElement>('.root');
-    if (root) this.group.spread(root, api.getRootProps());
-
-    const labelEl = this.renderRoot.querySelector<HTMLElement>('.group-label');
-    if (labelEl) this.group.spread(labelEl, api.getLabelProps());
-
-    // Map each item's getters onto its node by the STABLE key `value`, not the
-    // positional index. The machine already keys its per-item getters by value;
-    // honouring that here means a node never receives another item's props if the
-    // render order and the `items` array ever diverge (reorder/virtualise/nest) —
-    // the canon Select/Tabs/Menu/Accordion need this guarantee. `value` rides a
-    // `data-value` attribute on each `.item` node; `CSS.escape` neutralises any
-    // quote/bracket so the attribute selector can't be broken by item content.
-    for (const item of this.items ?? []) {
-      const selector = `.item[data-value="${CSS.escape(item.value)}"]`;
-      const itemEl = this.renderRoot.querySelector<HTMLElement>(selector);
-      if (!itemEl) continue;
-      const itemProps = { value: item.value, disabled: item.disabled };
-      this.group.spread(itemEl, api.getItemProps(itemProps));
-
-      const control = itemEl.querySelector<HTMLElement>('.control');
-      if (control) this.group.spread(control, api.getItemControlProps(itemProps));
-
-      const text = itemEl.querySelector<HTMLElement>('.text');
-      if (text) this.group.spread(text, api.getItemTextProps(itemProps));
-
-      const input = itemEl.querySelector<HTMLElement>('input');
-      if (input) this.group.spread(input, api.getItemHiddenInputProps(itemProps));
-    }
+  static override styles = [
+    unsafeCSS(selectionCss),
+    css`
+    :host { display: block; min-inline-size: 0; max-inline-size: 100%; }
+    ::slotted([slot^='icon-']) { inline-size: 100%; block-size: 100%; }
+    .lab-selection-description { display: block; }
+  `,
+  ];
+  protected override willUpdate(changed: PropertyValues): void {
+    if (this.resetValue === undefined) {
+      this.resetValue = this.controlled ? this.value : (this.value ?? this.defaultValue);
+      this.value = this.resetValue;
+    } else if (changed.has('defaultValue')) this.resetValue = this.defaultValue;
   }
-
-  override render(): TemplateResult {
-    // Structure only; behaviour (role, roving focus, aria-checked, keyboard) is
-    // spread in `updated()` from the machine. SSR emits this real markup so first
-    // paint is a meaningful, styled radio list before any JS upgrades it.
-    return html`
-      <div class="root">
-        ${this.label ? html`<span class="group-label">${this.label}</span>` : nothing}
-        ${(this.items ?? []).map(
-          (item) => html`
-            <label class="item" data-value="${item.value}">
-              <span class="control"><span class="dot"></span></span>
-              <span class="text">${item.label}</span>
-              <input type="radio" />
-            </label>
-          `,
-        )}
-      </div>
-    `;
+  private get inputs(): HTMLInputElement[] {
+    return Array.from(this.renderRoot.querySelectorAll('input'));
   }
-}
-
-/** Parse the JSON `items` attribute into a typed list; malformed input is empty. */
-function parseItems(raw: string | null): LabRadioItem[] {
-  if (!raw) return [];
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (entry): entry is LabRadioItem =>
-        typeof entry === 'object' &&
-        entry !== null &&
-        typeof (entry as LabRadioItem).value === 'string' &&
-        typeof (entry as LabRadioItem).label === 'string',
+  private syncForm(): void {
+    const inputs = this.inputs;
+    for (const input of inputs) input.checked = input.value === this.value;
+    const selected = inputs.find((input) => input.checked && !input.disabled);
+    this.internals?.setFormValue(selected?.value ?? null, JSON.stringify(this.value));
+    const anchor = inputs.find((input) => !input.disabled);
+    const missing = this.required && !selected && !!anchor;
+    this.internals?.setValidity(
+      missing ? { valueMissing: true } : {},
+      missing ? 'Выберите один вариант.' : '',
+      anchor,
     );
-  } catch {
-    return [];
+  }
+  private readonly onChange = (event: Event): void => {
+    const input = event.target as HTMLInputElement;
+    if (!input.checked || input.disabled) return;
+    if (!this.controlled) this.value = input.value;
+    this.dispatchEvent(
+      new CustomEvent<{ value: string }>('value-change', {
+        detail: { value: input.value },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    this.syncForm();
+    this.requestUpdate();
+  };
+  private readonly onKeyDown = (event: KeyboardEvent): void => navigateRadio(event, this.inputs);
+  formDisabledCallback(disabled: boolean): void {
+    this.disabledByForm = disabled;
+  }
+  formResetCallback(): void {
+    if (!this.controlled) {
+      this.value = this.resetValue ?? null;
+      this.syncForm();
+    }
+  }
+  formStateRestoreCallback(state: string | File | FormData): void {
+    if (!this.controlled && typeof state === 'string') {
+      try {
+        const value: unknown = JSON.parse(state);
+        this.value = typeof value === 'string' ? value : null;
+      } catch {
+        this.value = state;
+      }
+      this.syncForm();
+    }
+  }
+  get form(): HTMLFormElement | null {
+    return this.internals?.form ?? null;
+  }
+  get validity(): ValidityState | undefined {
+    return this.internals?.validity;
+  }
+  get validationMessage(): string {
+    return this.internals?.validationMessage ?? '';
+  }
+  checkValidity(): boolean {
+    return this.internals?.checkValidity() ?? true;
+  }
+  reportValidity(): boolean {
+    return this.internals?.reportValidity() ?? true;
+  }
+  override updated(): void {
+    this.syncForm();
+    const inputs = this.inputs;
+    for (const [input, motion] of this.motions)
+      if (!inputs.includes(input)) {
+        motion.dispose();
+        this.motions.delete(input);
+      }
+    for (const input of inputs) {
+      if (!this.motions.has(input))
+        this.motions.set(
+          input,
+          mountSelectionMotion(input.closest('label') as HTMLLabelElement, input),
+        );
+      this.motions.get(input)?.update();
+    }
+  }
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (this.hasUpdated) this.requestUpdate();
+  }
+  override disconnectedCallback(): void {
+    for (const motion of this.motions.values()) motion.dispose();
+    this.motions.clear();
+    super.disconnectedCallback();
+  }
+  override render(): TemplateResult {
+    const value = this.value ?? (!this.controlled && !this.hasUpdated ? this.defaultValue : null);
+    const disabled = this.disabled || this.disabledByForm;
+    const selected = this.items.find((item) => item.value === value && !item.disabled);
+    const tabValue = (selected ?? this.items.find((item) => !item.disabled))?.value;
+    return html`<div class="root" data-lab-radio-group data-type=${this.type} data-size=${this.size} data-orientation=${this.orientation}
+      role="radiogroup" aria-required=${String(this.required)} aria-labelledby=${this.label ? `${this.uid}-label` : nothing} aria-label=${this.label ? nothing : this.ariaLabel || nothing}
+      ?data-disabled=${disabled} @keydown=${this.onKeyDown}>
+      ${this.label ? html`<span class="group-label lab-selection-group-label" id=${`${this.uid}-label`}>${this.label}</span>` : nothing}
+      ${repeat(
+        this.items,
+        (item) => item.value,
+        (item) => {
+          const checked = item.value === value;
+          const itemDisabled = disabled || !!item.disabled;
+          const id = `${this.uid}-${encodeURIComponent(item.value)}`;
+          return html`<label class="item lab-radio-item" part="item" data-lab-selection data-kind="radio" data-type=${this.type}
+          data-size=${this.variant === 'plain' ? this.size : 'l'} data-variant=${this.variant} data-value=${item.value} ?data-selected=${checked} ?data-disabled=${itemDisabled}>
+          <span class="lab-selection-label-start" id=${`${id}-start`}><slot name=${`label-start-${item.value}`}>${item.labelStart ?? nothing}</slot></span>
+          <span class="lab-selection-icon" aria-hidden="true"><slot name=${`icon-${item.value}`}></slot></span>
+          <span class="lab-selection-control control lab-radio-control" part="control" aria-hidden="true" data-state=${checked ? 'checked' : 'unchecked'} ?data-disabled=${itemDisabled}><span class="lab-selection-mark dot lab-radio-dot"></span></span>
+          <span class="lab-selection-label text lab-radio-text" part="label"><span id=${`${id}-label`}><slot name=${`label-${item.value}`}>${item.label}</slot></span>
+            <span class="lab-selection-description" id=${`${id}-description`}><slot name=${`description-${item.value}`}>${item.description ?? nothing}</slot></span></span>
+          <input id=${id} type="radio" name=${this.name || this.uid} value=${item.value} ?checked=${checked} ?disabled=${itemDisabled}
+            ?required=${this.required} tabindex=${item.value === tabValue && !disabled ? 0 : -1}
+            aria-labelledby=${`${id}-start ${id}-label`} aria-describedby=${`${id}-description`} @change=${this.onChange} />
+        </label>`;
+        },
+      )}
+    </div>`;
   }
 }
-
 declare global {
   interface HTMLElementTagNameMap {
     'lab-radio-group': LabRadioGroup;
   }
 }
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-radio-group')) {
+if (typeof customElements !== 'undefined' && !customElements.get('lab-radio-group'))
   customElements.define('lab-radio-group', LabRadioGroup);
-}

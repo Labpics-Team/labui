@@ -13,6 +13,7 @@ export { default as Breadcrumb } from './Breadcrumb.svelte';
 export { default as Button } from './Button.svelte';
 export { default as Card } from './Card.svelte';
 export { default as Checkbox } from './Checkbox.svelte';
+export { default as Choicebox } from './Choicebox.svelte';
 export { default as Combobox } from './Combobox.svelte';
 export { default as Dialog } from './Dialog.svelte';
 export { default as Input } from './Input.svelte';

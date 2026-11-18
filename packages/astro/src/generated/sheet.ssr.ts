@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/sheet';
 import type { LabSheet } from '@labpics/ui-core/sheet';
 
@@ -26,7 +26,7 @@ export function renderSheet(
   return renderToString(html`<lab-sheet
       ?open=${Boolean(props.open)}
       position=${ifDefined(props.position)}
-      .modal=${props.modal}
+      .modal=${props.modal === undefined ? noChange : props.modal}
       ?closable=${Boolean(props.closable)}
       heading=${ifDefined(props.heading)}
       description=${ifDefined(props.description)}

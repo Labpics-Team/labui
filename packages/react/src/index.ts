@@ -25,10 +25,10 @@ export { LabProofReact, type LabProofReactProps } from './proof.js';
 // PRODUCTION Button — the native-React twin of the Lit `<lab-button>`.
 export { Button, type ButtonProps } from './button.js';
 
-// PRODUCTION machine-driven form controls — native-React twins of the Lit
-// `<lab-switch>` / `<lab-checkbox>`, running the SAME Zag machines via `useZag`.
+// Native form controls share the authored profile and browser behavior with Lit.
 export { Switch, type SwitchProps } from './switch.js';
 export { Checkbox, type CheckboxProps } from './checkbox.js';
+export { Choicebox, type ChoiceboxProps, type ChoiceboxItem } from './choicebox.js';
 
 // PRODUCTION text fields — native-React twins of the Lit `<lab-input>` /
 // `<lab-textarea>`. PRESENTATIONAL (no machine: the native control owns
@@ -61,8 +61,7 @@ export {
   type LabSliderSize,
 } from './slider.js';
 
-// PRODUCTION compound form control — `<RadioGroup>` + `<Radio>` over the SAME
-// `@zag-js/radio-group` machine as the Lit `<lab-radio-group>`.
+// Compound native radio group, sharing keyboard and paint with the Lit renderer.
 export { RadioGroup, type RadioGroupProps, Radio, type RadioProps } from './radio-group.js';
 
 // PRESENTATIONAL primitives — native-React twins of the Lit elements.

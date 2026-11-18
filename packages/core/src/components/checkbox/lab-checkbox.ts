@@ -1,340 +1,249 @@
-import * as checkboxMachine from '@zag-js/checkbox';
-/**
- * `<lab-checkbox>` — the production checkbox, CONSUMING the `@zag-js/checkbox`
- * machine through the Behaviors seam (core-CONTRACT §1, the inverse of Button).
- *
- * Axes (the Figma model — Type × Toggle(true/false/MIXED) × Size × State):
- *   - type:  accent | neutral | danger   (semantic intent of the CHECKED box)
- *   - size:  tiny | s | m | l
- *   - checked: machine-owned (reflected for CSS + SSR)
- *   - indeterminate: the HONEST third machine state (aria-checked="mixed") — NOT
- *     a faked visual; the machine carries `"indeterminate"` as a real value
- *   - defaultChecked: uncontrolled initial state (boolean | "indeterminate")
- *   - disabled: non-interactive
- *
- * Why a machine here, when Button opted out: a checkbox has THREE-state checked
- * lifecycle (`true` / `false` / `"indeterminate"`), `role` + `aria-checked`
- * (including `"mixed"`), Space activation, focus, and a hidden form input whose
- * `.indeterminate` DOM property the machine sets. Hand-rolling tri-state ARIA is
- * exactly the machinery Zag ships. So this element runs `@zag-js/checkbox`
- * through `ZagController` (DIP — injected `MachineModule`, no hand-written logic).
- *
- * Token contract (core-CONTRACT §2): ONLY semantic --lab-* roles. The checked /
- * mixed box fill is `--lab-fill-{accent|neutral|danger}`; the unchecked border is
- * `--lab-border-base`; the glyph is `--lab-label-on-{accent|neutral|danger}`.
- * No hex, no primitive, no invented role.
- */
-import { type TemplateResult, css, html, svg } from 'lit';
-import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
-import { litVar } from '../../css.js';
+﻿import { type PropertyValues, type TemplateResult, css, html, nothing, unsafeCSS } from 'lit';
 import { LabElement } from '../../lit/lab-element.js';
-import type { ZagController } from '../../lit/zag-controller.js';
+import type {
+  LabSelectionChecked,
+  LabSelectionSize,
+  LabSelectionType,
+  LabSelectionVariant,
+} from '../selection/contract.js';
+import { type SelectionMotion, mountSelectionMotion } from '../selection/runtime.js';
+import { selectionCss } from '../selection/styles.js';
 
-/** Semantic intent of the checked box. */
-export type LabCheckboxType = 'accent' | 'neutral' | 'danger';
-/** Control size. */
-export type LabCheckboxSize = 'tiny' | 's' | 'm' | 'l';
-/** The honest tri-state value the machine carries. */
-export type LabCheckboxChecked = boolean | 'indeterminate';
+export type LabCheckboxType = LabSelectionType;
+export type LabCheckboxSize = LabSelectionSize;
+export type LabCheckboxChecked = LabSelectionChecked;
 
-type CheckboxSchema = SchemaOf<checkboxMachine.Service>;
-type CheckboxApi = checkboxMachine.Api;
-
-/**
- * The `@zag-js/checkbox` package seen through the renderer-agnostic seam — the
- * SAME `MachineModule` shape the proof bound for `@zag-js/toggle`, with no casts.
- */
-const checkboxModule: MachineModule<CheckboxSchema, CheckboxApi> = checkboxMachine;
-
+/** Native tri-state checkbox; FACE submits the shadow input's value to its form. */
 export class LabCheckbox extends LabElement {
+  static formAssociated = true;
   static override properties = {
     type: { reflect: true },
     size: { reflect: true },
-    /** Controlled checked state. When the attribute is present, consumer owns it. */
+    variant: { reflect: true },
     checked: { type: Boolean, reflect: true },
-    /**
-     * The honest third state. Reflected so `:host([indeterminate])` styling and
-     * the SSR attribute follow the machine. When set, the machine's checked value
-     * is `"indeterminate"` (aria-checked="mixed").
-     */
     indeterminate: { type: Boolean, reflect: true },
-    /** Uncontrolled initial state — read once by the machine at init. */
     defaultChecked: { type: Boolean, attribute: 'default-checked', reflect: true },
-    /** Uncontrolled initial indeterminate — read once at init. */
-    defaultIndeterminate: {
-      type: Boolean,
-      attribute: 'default-indeterminate',
-      reflect: true,
-    },
+    defaultIndeterminate: { type: Boolean, attribute: 'default-indeterminate', reflect: true },
+    controlled: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
-    /**
-     * Accessible name for the no-visible-label case. When set, it names the
-     * hidden input directly; a visible slotted label is preferred over it via the
-     * machine's `aria-labelledby` when present.
-     */
-    ariaLabel: { attribute: 'aria-label', reflect: true },
-    /** Native form field name for the hidden input (form participation). */
+    required: { type: Boolean, reflect: true },
     name: { reflect: true },
+    value: { reflect: true },
+    ariaLabel: { attribute: 'aria-label', reflect: true },
+    disabledByForm: { state: true },
+    hasStart: { state: true },
+    hasEnd: { state: true },
+    hasDescription: { state: true },
   };
-
   declare type: LabCheckboxType;
   declare size: LabCheckboxSize;
+  declare variant: LabSelectionVariant;
   declare checked: boolean;
   declare indeterminate: boolean;
   declare defaultChecked: boolean;
   declare defaultIndeterminate: boolean;
+  declare controlled: boolean;
   declare disabled: boolean;
+  declare required: boolean;
+  declare name: string;
+  declare value: string;
   declare ariaLabel: string | null;
-  declare name: string | null;
-
-  private readonly checkbox: ZagController<CheckboxSchema, CheckboxApi>;
+  private declare disabledByForm: boolean;
+  private declare hasStart: boolean;
+  private declare hasEnd: boolean;
+  private declare hasDescription: boolean;
+  private readonly internals?: ElementInternals;
+  private motion?: SelectionMotion;
+  private resetState?: LabCheckboxChecked;
+  private labelObserver?: MutationObserver;
+  private observedLabels: Node[] = [];
 
   constructor() {
     super();
     this.type = 'accent';
     this.size = 'm';
+    this.variant = 'plain';
     this.checked = false;
     this.indeterminate = false;
     this.defaultChecked = false;
     this.defaultIndeterminate = false;
+    this.controlled = false;
     this.disabled = false;
+    this.required = false;
+    this.name = '';
+    this.value = 'on';
     this.ariaLabel = null;
-    this.name = null;
-    // Wire the Zag checkbox behavior. The tri-state value is folded into one
-    // `CheckedState`: indeterminate wins, else the boolean. Controlled only when
-    // a `checked`/`indeterminate` attribute is present; otherwise the machine
-    // owns it from the defaults (uncontrolled). Honest two-mode contract.
-    // `id` is a stable per-instance value (mirrors React's `useId`) so the
-    // machine's scoped ids — including the label id the input references — are
-    // unique and real, never the colliding `checkbox:undefined:*`.
-    this.checkbox = this.runMachine(checkboxModule, () => ({
-      id: this.uid,
-      name: this.name ?? undefined,
-      defaultChecked: this.resolveDefault(),
-      checked: this.resolveControlled(),
-      disabled: this.disabled,
-      onCheckedChange: (details: checkboxMachine.CheckedChangeDetails) => {
-        this.indeterminate = details.checked === 'indeterminate';
-        this.checked = details.checked === true;
-        this.dispatchEvent(
-          new CustomEvent<checkboxMachine.CheckedChangeDetails>('checked-change', {
-            detail: details,
-            bubbles: true,
-            composed: true,
-          }),
-        );
-      },
-    }));
+    this.disabledByForm = false;
+    this.hasStart = false;
+    this.hasEnd = false;
+    this.hasDescription = false;
+    if (typeof ElementInternals !== 'undefined') this.internals = this.attachInternals();
+    this.addEventListener('click', (event) => {
+      if (event.composedPath()[0] === this && !event.defaultPrevented) this.input?.click();
+    });
   }
-
-  /** The uncontrolled initial state, folded into the machine's tri-state value. */
-  private resolveDefault(): LabCheckboxChecked {
-    if (this.defaultIndeterminate) return 'indeterminate';
-    return this.defaultChecked;
+  static override styles = [
+    unsafeCSS(selectionCss),
+    css`
+    :host { display: inline-flex; min-inline-size: 0; max-inline-size: 100%; vertical-align: middle; }
+    :host([variant='card']), :host([variant='row']) { display: flex; }
+    ::slotted([slot='label-start']) { min-inline-size: 0; overflow-wrap: anywhere; }
+    ::slotted([slot='icon']) { inline-size: 100%; block-size: 100%; }
+    .lab-selection-label-start:has(slot:empty) { display: contents; }
+  `,
+  ];
+  private get input(): HTMLInputElement | null {
+    return this.renderRoot.querySelector('input');
   }
-
-  /** The controlled state, or undefined when this checkbox is uncontrolled. */
-  private resolveControlled(): LabCheckboxChecked | undefined {
-    if (this.hasAttribute('indeterminate') && this.indeterminate) return 'indeterminate';
-    if (this.hasAttribute('checked')) return this.checked;
-    return undefined;
+  private get state(): LabCheckboxChecked {
+    return this.indeterminate ? 'indeterminate' : this.checked;
   }
-
-  static override styles = css`
-    :host {
-      /* Size knobs the size axis maps onto. */
-      --_box: ${litVar('--lab-size-control-l', '1.25rem')};
-      --_radius: ${litVar('--lab-radius-xs', '0.25rem')};
-      --_gap: ${litVar('--lab-space-sm', '0.5rem')};
-      --_font: ${litVar('--lab-font-size-md', '1rem')};
-
-      display: inline-flex;
-      vertical-align: middle;
+  protected override willUpdate(changed: PropertyValues): void {
+    if (this.resetState === undefined) {
+      this.resetState = this.controlled
+        ? this.state
+        : this.indeterminate || this.defaultIndeterminate
+          ? 'indeterminate'
+          : this.checked || this.defaultChecked;
+      this.setState(this.resetState);
+    } else if (changed.has('defaultChecked') || changed.has('defaultIndeterminate')) {
+      this.resetState = this.defaultIndeterminate ? 'indeterminate' : this.defaultChecked;
     }
-
-    :host([size='tiny']) {
-      --_box: ${litVar('--lab-size-checkbox-tiny', '0.875rem')};
-      --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
+  }
+  private setState(value: LabCheckboxChecked): void {
+    this.indeterminate = value === 'indeterminate';
+    this.checked = value === true;
+  }
+  private syncForm(): void {
+    const input = this.input;
+    if (!input) return;
+    input.checked = this.checked && !this.indeterminate;
+    input.indeterminate = this.indeterminate;
+    this.internals?.setFormValue(
+      input.disabled || !input.checked || input.indeterminate ? null : this.value,
+      String(this.state),
+    );
+    this.internals?.setValidity(input.validity, input.validationMessage, input);
+    this.motion?.update();
+  }
+  private readonly onChange = (event: Event): void => {
+    const checked = (event.target as HTMLInputElement).checked;
+    if (!this.controlled) this.setState(checked);
+    this.dispatchEvent(
+      new CustomEvent<{ checked: LabCheckboxChecked }>('checked-change', {
+        detail: { checked },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    this.syncForm();
+    this.requestUpdate();
+  };
+  private readonly onSlotChange = (event: Event): void => {
+    const slot = event.target as HTMLSlotElement;
+    const present = slot
+      .assignedNodes()
+      .some((node) => node.nodeType === 1 || node.textContent?.trim());
+    if (slot.name === 'label-start') this.hasStart = present;
+    else if (slot.name === 'description') this.hasDescription = present;
+    else if (!slot.name) this.hasEnd = present;
+  };
+  formDisabledCallback(disabled: boolean): void {
+    this.disabledByForm = disabled;
+  }
+  formResetCallback(): void {
+    if (!this.controlled) {
+      this.setState(this.resetState ?? false);
+      this.syncForm();
     }
-    :host([size='s']) {
-      --_box: ${litVar('--lab-size-control-m', '1rem')};
-      --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
+  }
+  formStateRestoreCallback(state: string | File | FormData): void {
+    if (!this.controlled && typeof state === 'string') {
+      this.setState(state === 'indeterminate' ? state : state === 'true');
+      this.syncForm();
     }
-    :host([size='l']) {
-      --_box: ${litVar('--lab-size-control-xl', '1.5rem')};
-      --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
-    }
-
-    .root {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--_gap);
-      font: inherit;
-      font-size: var(--_font);
-      line-height: ${litVar('--lab-line-height-md', '1.5')};
-      color: ${litVar('--lab-label-primary')};
-      cursor: pointer;
-    }
-
-    /* The box — the Zag control element. Unchecked = bordered, transparent. */
-    .control {
-      box-sizing: border-box;
-      position: relative;
-      flex: 0 0 auto;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: var(--_box);
-      height: var(--_box);
-      border-radius: var(--_radius);
-      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
-      background-color: transparent;
-      color: transparent;
-      transition:
-        background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
-        border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
-        color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
-    }
-
-    /* Checked OR mixed fills the box per type and reveals the glyph. The longhand
-       is set directly (no var()->var() across the shadow boundary — proto-A). */
-    :host([checked][type='accent']) .control,
-    :host([indeterminate][type='accent']) .control {
-      background-color: ${litVar('--lab-fill-accent')};
-      border-color: ${litVar('--lab-border-accent')};
-      color: ${litVar('--lab-label-on-accent')};
-    }
-    :host([checked][type='neutral']) .control,
-    :host([indeterminate][type='neutral']) .control {
-      background-color: ${litVar('--lab-fill-neutral')};
-      border-color: ${litVar('--lab-border-base')};
-      color: ${litVar('--lab-label-on-neutral')};
-    }
-    :host([checked][type='danger']) .control,
-    :host([indeterminate][type='danger']) .control {
-      background-color: ${litVar('--lab-fill-danger')};
-      border-color: ${litVar('--lab-border-danger')};
-      color: ${litVar('--lab-label-on-danger')};
-    }
-
-    /* Two glyphs, mutually exclusive — the machine's state picks which shows. The
-       check shows only when fully checked; the dash shows only when mixed. */
-    .glyph {
-      width: 80%;
-      height: 80%;
-      display: none;
-      color: currentColor;
-    }
-    :host([checked]:not([indeterminate])) .glyph-check {
-      display: block;
-    }
-    :host([indeterminate]) .glyph-mixed {
-      display: block;
-    }
-    /* Indeterminate visually outranks checked when both attributes coexist. */
-    :host([indeterminate]) .glyph-check {
-      display: none;
-    }
-
-    /* The input is now a SIBLING of the (aria-hidden) control so it stays in the
-       a11y tree; match focus-visible from the shared root, not as a descendant. */
-    .root:has(input:focus-visible) .control {
-      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
-      outline-offset: ${litVar('--lab-focus-ring-offset')};
-    }
-
-    :host([disabled]) .root {
-      cursor: not-allowed;
-      opacity: 0.45;
-    }
-
-    input {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      margin: -1px;
-      padding: 0;
-      border: 0;
-      clip: rect(0 0 0 0);
-      clip-path: inset(50%);
-      overflow: hidden;
-      white-space: nowrap;
-    }
-  `;
-
+  }
+  get form(): HTMLFormElement | null {
+    return this.internals?.form ?? null;
+  }
+  get validity(): ValidityState | undefined {
+    return this.internals?.validity;
+  }
+  get validationMessage(): string {
+    return this.internals?.validationMessage ?? '';
+  }
+  checkValidity(): boolean {
+    return this.internals?.checkValidity() ?? true;
+  }
+  reportValidity(): boolean {
+    return this.internals?.reportValidity() ?? true;
+  }
   override updated(): void {
-    // Apply the machine's connect props onto the real shadow nodes (role,
-    // aria-checked incl. "mixed", keyboard, focus, the hidden input whose
-    // `.indeterminate` DOM property the machine sets). Clear prior spreads first.
-    this.checkbox.clearSpreads();
-    const api = this.checkbox.api;
-    const root = this.renderRoot.querySelector<HTMLElement>('.root');
-    const control = this.renderRoot.querySelector<HTMLElement>('.control');
-    const label = this.renderRoot.querySelector<HTMLElement>('.label');
-    const input = this.renderRoot.querySelector<HTMLInputElement>('input');
-    if (root) this.checkbox.spread(root, api.getRootProps());
-    if (control) this.checkbox.spread(control, api.getControlProps());
-    // Spread the label part so the id the machine's `aria-labelledby` targets
-    // actually exists — without this the reference dangles and the name is lost.
-    if (label) this.checkbox.spread(label, api.getLabelProps());
-    if (input) {
-      this.checkbox.spread(input, api.getHiddenInputProps());
-      this.nameHiddenInput(input);
-      // `indeterminate` is a DOM PROPERTY (no attribute) — it is what AT reads as
-      // aria-checked="mixed". The machine's own sync effect can run before Lit has
-      // painted the input, so set it here from the connected api too, keeping the
-      // native control's mixed state in lockstep with the machine on every render.
-      input.indeterminate = api.indeterminate;
+    const input = this.input;
+    const root = this.renderRoot.querySelector<HTMLElement>('[data-lab-selection]');
+    if (!input || !root) return;
+    const labels = Array.from(this.internals?.labels ?? []);
+    if (
+      labels.length !== this.observedLabels.length ||
+      labels.some((label, i) => label !== this.observedLabels[i])
+    ) {
+      this.labelObserver?.disconnect();
+      this.observedLabels = labels;
+      if (labels.length) {
+        this.labelObserver ??= new MutationObserver(() => this.requestUpdate());
+        for (const label of labels)
+          this.labelObserver.observe(label, {
+            childList: true,
+            characterData: true,
+            subtree: true,
+          });
+      }
     }
+    this.syncForm();
+    this.motion ??= mountSelectionMotion(root, input);
+    this.motion.update();
   }
-
-  /**
-   * Reconcile the input's accessible name. With a visible label the machine's
-   * `aria-labelledby` (→ the `.label` part) names it. With NO visible label, that
-   * reference would resolve to empty and (per ARIA) outrank `aria-label`, leaving
-   * the control unnamed — so drop the dangling reference and apply `aria-label`.
-   */
-  private nameHiddenInput(input: HTMLInputElement): void {
-    if (this.hasDefaultSlotContent()) {
-      input.removeAttribute('aria-label');
-      return;
-    }
-    input.removeAttribute('aria-labelledby');
-    if (this.ariaLabel) input.setAttribute('aria-label', this.ariaLabel);
-    else input.removeAttribute('aria-label');
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (this.hasUpdated) this.requestUpdate();
   }
-
+  override disconnectedCallback(): void {
+    this.labelObserver?.disconnect();
+    this.observedLabels = [];
+    this.motion?.dispose();
+    this.motion = undefined;
+    super.disconnectedCallback();
+  }
   override render(): TemplateResult {
-    // Structure only; behaviour (role, aria-checked incl. "mixed", keyboard,
-    // focus) is spread in `updated()` from the machine. SSR emits real markup. The
-    // hidden input is a SIBLING of the (aria-hidden) control — NOT a descendant —
-    // so it stays in the accessibility tree (an aria-hidden ancestor would erase
-    // it, removing the checkbox role entirely).
-    return html`
-      <label class="root">
-        <span class="control">
-          ${svg`<svg class="glyph glyph-check" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="M3.5 8.5l3 3 6-6.5" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" />
-          </svg>`}
-          ${svg`<svg class="glyph glyph-mixed" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="M3.5 8h9" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-          </svg>`}
-        </span>
-        <input type="checkbox" />
-        <span class="label"><slot></slot></span>
-      </label>
-    `;
+    const mixed =
+      this.indeterminate || (!this.controlled && !this.hasUpdated && this.defaultIndeterminate);
+    const checked =
+      !mixed && (this.checked || (!this.controlled && !this.hasUpdated && this.defaultChecked));
+    const disabled = this.disabled || this.disabledByForm;
+    const external = Array.from(this.internals?.labels ?? [])
+      .map((label) => label.textContent ?? '')
+      .join(' ')
+      .trim();
+    const accessibleName = this.ariaLabel || external;
+    const labels =
+      this.hasStart || this.hasEnd || !accessibleName ? `${this.uid}-start ${this.uid}-label` : '';
+    return html`<label part="root" data-lab-checkbox data-lab-selection data-kind="checkbox" data-type=${this.type} data-size=${this.variant === 'plain' ? this.size : 'l'} data-variant=${this.variant}
+      ?data-checked=${checked} ?data-selected=${checked || mixed} ?data-indeterminate=${mixed} ?data-disabled=${disabled}>
+      <span class="lab-selection-label-start" id=${`${this.uid}-start`}><slot name="label-start" @slotchange=${this.onSlotChange}></slot></span>
+      <span class="lab-selection-icon" aria-hidden="true"><slot name="icon"></slot></span>
+      <span class="lab-selection-control control lab-checkbox-control" part="control" aria-hidden="true" data-state=${mixed ? 'indeterminate' : checked ? 'checked' : 'unchecked'}><span class="lab-selection-mark"></span></span>
+      <input id=${`${this.uid}-input`} type="checkbox" ?checked=${checked} aria-checked=${mixed ? 'mixed' : String(checked)} ?disabled=${disabled} ?required=${this.required}
+        name=${this.name || nothing} value=${this.value} aria-labelledby=${labels || nothing} aria-label=${labels ? nothing : accessibleName || nothing}
+        aria-describedby=${this.hasDescription ? `${this.uid}-description` : nothing} @change=${this.onChange} />
+      <span class="lab-selection-label lab-checkbox-label" part="label"><span id=${`${this.uid}-label`}><slot @slotchange=${this.onSlotChange}></slot></span>
+        <span class="lab-selection-description" id=${`${this.uid}-description`}><slot name="description" @slotchange=${this.onSlotChange}></slot></span></span>
+    </label>`;
   }
 }
-
 declare global {
   interface HTMLElementTagNameMap {
     'lab-checkbox': LabCheckbox;
   }
 }
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-checkbox')) {
+if (typeof customElements !== 'undefined' && !customElements.get('lab-checkbox'))
   customElements.define('lab-checkbox', LabCheckbox);
-}

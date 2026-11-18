@@ -194,9 +194,6 @@ importers:
       '@zag-js/accordion':
         specifier: 1.41.2
         version: 1.41.2
-      '@zag-js/checkbox':
-        specifier: 1.41.2
-        version: 1.41.2
       '@zag-js/combobox':
         specifier: 1.41.2
         version: 1.41.2
@@ -225,9 +222,6 @@ importers:
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/progress':
-        specifier: 1.41.2
-        version: 1.41.2
-      '@zag-js/radio-group':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/select':
@@ -321,9 +315,6 @@ importers:
       '@zag-js/accordion':
         specifier: 1.41.2
         version: 1.41.2
-      '@zag-js/checkbox':
-        specifier: 1.41.2
-        version: 1.41.2
       '@zag-js/combobox':
         specifier: 1.41.2
         version: 1.41.2
@@ -346,9 +337,6 @@ importers:
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/progress':
-        specifier: 1.41.2
-        version: 1.41.2
-      '@zag-js/radio-group':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/react':
@@ -1854,9 +1842,6 @@ packages:
   '@zag-js/auto-resize@1.41.2':
     resolution: {integrity: sha512-CYq+JQ1TTkEiK7OcNcMTS0f4wFvtmManvUltije5o50gDQ7vFYA81oQh4A9pAB1keUi9Zv06CNefFARaTcne5w==}
 
-  '@zag-js/checkbox@1.41.2':
-    resolution: {integrity: sha512-aQ5dZWHUHRIw4cbLtzrR+dc8M0N6wSiiCml/zbU3ciHOTBXSrs2rKnp/L99xhi97Lj2uCEhpIZ704Ou/MjGuCg==}
-
   '@zag-js/collection@1.41.2':
     resolution: {integrity: sha512-ZZWuvfPZI8ccWd4aLpuU47k1jSc9eO+F3FM3iBJuvgegCH6g3+HDEwGN6wdePHnYfv7zyIKCGKr816zXcIWQbw==}
 
@@ -1907,9 +1892,6 @@ packages:
 
   '@zag-js/progress@1.41.2':
     resolution: {integrity: sha512-SnzrqN+Z568NoO4rrgjrIc/S4EXMEne5CDgWwt2kQ8yq9VysdH8TtHAjyciFRIio7cdgEZNHKw9jSccpMWgRwA==}
-
-  '@zag-js/radio-group@1.41.2':
-    resolution: {integrity: sha512-EZjos61jKHZlNw8ez80vG2T9gUwpooxcVpYOKS2hyhuEXn3wEoefS5v1WFbmpoA/8TUpUQnYxisAeNuQfEQCuQ==}
 
   '@zag-js/react@1.41.2':
     resolution: {integrity: sha512-5Bx7mQAron4LFWI8Hhs/uw5kwQ19s2Tn30HhctozLqmCu4nnJSTSh7GRvX+uwRZnztGXBXoOrgBWIepU4RXFGg==}
@@ -4626,15 +4608,6 @@ snapshots:
     dependencies:
       '@zag-js/dom-query': 1.41.2
 
-  '@zag-js/checkbox@1.41.2':
-    dependencies:
-      '@zag-js/anatomy': 1.41.2
-      '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
-      '@zag-js/focus-visible': 1.41.2
-      '@zag-js/types': 1.41.2
-      '@zag-js/utils': 1.41.2
-
   '@zag-js/collection@1.41.2':
     dependencies:
       '@zag-js/utils': 1.41.2
@@ -4755,15 +4728,6 @@ snapshots:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/core': 1.41.2
       '@zag-js/dom-query': 1.41.2
-      '@zag-js/types': 1.41.2
-      '@zag-js/utils': 1.41.2
-
-  '@zag-js/radio-group@1.41.2':
-    dependencies:
-      '@zag-js/anatomy': 1.41.2
-      '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
-      '@zag-js/focus-visible': 1.41.2
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 

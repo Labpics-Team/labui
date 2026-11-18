@@ -77,9 +77,10 @@ export type {
 } from './components/avatar/lab-avatar.js';
 export type { LabCardPadding, LabCardVariant } from './components/card/lab-card.js';
 
-// Form control axes. Switch uses native HTML; Checkbox retains its Zag behavior.
+// Native form control axes. Selection components share their authored profile.
 // Type-only: no Lit runtime is pulled into the React renderer.
 export type { LabSwitchSize, LabSwitchType } from './components/switch/lab-switch.js';
+export type { LabChoiceboxLayout, LabChoiceboxItem } from './components/choicebox/lab-choicebox.js';
 export type {
   LabCheckboxChecked,
   LabCheckboxSize,

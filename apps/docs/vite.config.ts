@@ -84,11 +84,53 @@ function cardSsrPlugin(): Plugin {
   };
 }
 
+function selectionSsrPlugin(): Plugin {
+  return {
+    name: 'labui-selection-ssr',
+    transformIndexHtml: {
+      order: 'pre',
+      async handler(html, ctx) {
+        if (!ctx.path.endsWith('/selection.html')) return html;
+        const { renderToString } = await import('@labpics/ui-core/ssr');
+        await import('@labpics/ui-core/checkbox');
+        await import('@labpics/ui-core/radio-group');
+        await import('@labpics/ui-core/choicebox');
+        const { html: staticHtml, unsafeStatic } = await import('lit/static-html.js');
+        let output = html.replace(
+          /<lab-(checkbox|radio-group|choicebox)\b[^>]*>[\s\S]*?<\/lab-\1>/g,
+          (markup) => renderToString(staticHtml`${unsafeStatic(markup)}`),
+        );
+        const { html: litHtml } = await import('@labpics/ui-core/ssr');
+        // Property bindings are how generated SSR adapters pass arrays. Their
+        // attributes must survive hydration without reassigning client props.
+        output = output.replace(
+          '<!-- @@ADAPTER_SELECTION@@ -->',
+          renderToString(
+            litHtml`<lab-choicebox name="adapter" label="Серверный план" .items=${[
+              { value: 'a', label: 'Первый' },
+              { value: 'b', label: 'Второй' },
+            ]} .defaultValue=${['b']}><strong slot="label-b">Выбор сервера</strong></lab-choicebox>`,
+          ),
+        );
+        const { Checkbox } = await import('@labpics/ui-react/checkbox');
+        const { createElement } = await import('react');
+        const { renderToString: renderReact } = await import('react-dom/server');
+        return output.replace(
+          '<!-- @@REACT_SELECTION@@ -->',
+          renderReact(
+            createElement(Checkbox, { name: 'ssr', defaultChecked: true }, 'Серверный выбор'),
+          ),
+        );
+      },
+    },
+  };
+}
+
 export default defineConfig({
   root: 'src',
   // wasm-bindgen resolves its binary beside the original module, not a Vite prebundle.
   optimizeDeps: { exclude: ['@labpics/colors'] },
-  plugins: [ssrProofPlugin(), colorsSsrPlugin(), cardSsrPlugin()],
+  plugins: [ssrProofPlugin(), colorsSsrPlugin(), cardSsrPlugin(), selectionSsrPlugin()],
   // The Button parity page mounts a native-React island (button-demo.tsx). Vite's
   // built-in esbuild handles the automatic JSX transform — no plugin-react /
   // Fast-Refresh needed for these static build+preview fixtures.
@@ -115,6 +157,7 @@ export default defineConfig({
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
         'fixture-colors-scope': resolve(__dirname, 'src/_fixtures/colors-scope.html'),
         'fixture-card-content': resolve(__dirname, 'src/_fixtures/card-content.html'),
+        'fixture-selection': resolve(__dirname, 'src/_fixtures/selection.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
         // config; ?component=<slug> selects which one).
         components: resolve(__dirname, 'src/components.html'),
@@ -128,7 +171,7 @@ export default defineConfig({
         loader: resolve(__dirname, 'src/loader.html'),
         avatar: resolve(__dirname, 'src/avatar.html'),
         // Machine-driven form controls: Lit element + native-React twin side by
-        // side, running the SAME Zag machine, for the parity + behaviour suite.
+        // side for the parity + behaviour suite. Checkbox uses native input state.
         switch: resolve(__dirname, 'src/switch.html'),
         checkbox: resolve(__dirname, 'src/checkbox.html'),
         // Text fields: Lit element + native-React twin side by side. PRESENTATIONAL
@@ -163,8 +206,8 @@ export default defineConfig({
         breadcrumb: resolve(__dirname, 'src/breadcrumb.html'),
         pagination: resolve(__dirname, 'src/pagination.html'),
         // Compound control: Lit `<lab-radio-group>` (all parts in one shadow
-        // scope) + native-React `<RadioGroup>`/`<Radio>` side by side, running the
-        // SAME Zag group machine, for the parity + behaviour suite.
+        // scope) + native-React `<RadioGroup>`/`<Radio>` side by side, sharing
+        // native radio behavior and deterministic keyboard navigation.
         'radio-group': resolve(__dirname, 'src/radio-group.html'),
         // Disclosure batch: Accordion (compound, @zag-js/accordion), Card
         // (presentational opt-out), Progress (@zag-js/progress) — each mounts the

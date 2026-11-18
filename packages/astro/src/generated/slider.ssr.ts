@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/slider';
 import type { LabSlider } from '@labpics/ui-core/slider';
 
@@ -29,12 +29,12 @@ export function renderSlider(
       ?label-hidden=${Boolean(props.labelHidden)}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
-      .value=${props.value}
-      .defaultValue=${props.defaultValue}
+      .value=${props.value === undefined ? noChange : props.value}
+      .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
       min=${ifDefined(props.min)}
       max=${ifDefined(props.max)}
       step=${ifDefined(props.step)}
-      .marks=${props.marks}
+      .marks=${props.marks === undefined ? noChange : props.marks}
       ?show-value=${Boolean(props.showValue)}
       ?readonly=${Boolean(props.readonly)}
       ?disabled=${Boolean(props.disabled)}

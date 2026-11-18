@@ -5,14 +5,14 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/accordion';
 import type { LabAccordion } from '@labpics/ui-core/accordion';
 
 /** SSR-пропы <lab-accordion> (атрибуты/свойства), взяты из класса ядра (LabAccordion). */
 export type AccordionSsrProps = Partial<Pick<LabAccordion, 'orientation' | 'size' | 'multiple' | 'collapsible' | 'disabled' | 'value' | 'defaultValue' | 'items'>>;
 /** SSR-слоты <lab-accordion> — предрендеренные строки контента. */
-export type AccordionSsrSlots = Record<never, never>;
+export type AccordionSsrSlots = { default?: string; dynamic?: Readonly<Record<string, string>> };
 
 /**
  * Рендерит <lab-accordion> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
@@ -21,6 +21,7 @@ export type AccordionSsrSlots = Record<never, never>;
  */
 export function renderAccordion(
   props: AccordionSsrProps = {},
+  slots: AccordionSsrSlots = {},
 ): string {
   return renderToString(html`<lab-accordion
       orientation=${ifDefined(props.orientation)}
@@ -28,8 +29,8 @@ export function renderAccordion(
       ?multiple=${Boolean(props.multiple)}
       ?collapsible=${Boolean(props.collapsible)}
       ?disabled=${Boolean(props.disabled)}
-      .value=${props.value}
-      .defaultValue=${props.defaultValue}
-      .items=${props.items}
-    ></lab-accordion>`);
+      .value=${props.value === undefined ? noChange : props.value}
+      .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
+      .items=${props.items === undefined ? noChange : props.items}
+    >${Object.entries(slots.dynamic ?? {}).map(([name, content]) => html`<span slot=${name}>${unsafeHTML(content)}</span>`)}${unsafeHTML(slots.default ?? '')}</lab-accordion>`);
 }

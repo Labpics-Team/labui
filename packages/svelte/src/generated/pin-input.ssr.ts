@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/pin-input';
 import type { LabPinInput } from '@labpics/ui-core/pin-input';
 
@@ -34,8 +34,8 @@ export function renderPinInput(
       ?mask=${Boolean(props.mask)}
       ?otp=${Boolean(props.otp)}
       placeholder=${ifDefined(props.placeholder)}
-      .value=${props.value}
-      .defaultValue=${props.defaultValue}
+      .value=${props.value === undefined ? noChange : props.value}
+      .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
       ?readonly=${Boolean(props.readonly)}
       ?disabled=${Boolean(props.disabled)}
       ?required=${Boolean(props.required)}

@@ -40,6 +40,7 @@ export default libraryPreset({
     'src/components/snackbar/runtime.ts',
     'src/components/card/runtime.ts',
     'src/components/switch/runtime.ts',
+    'src/components/selection/runtime.ts',
     'src/motion/sheet.ts',
     ...componentEntries,
   ],

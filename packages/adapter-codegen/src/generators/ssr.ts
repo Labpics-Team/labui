@@ -25,7 +25,8 @@ function camelSlot(name: string): string {
 
 /** Привязка одного пропа в Lit-шаблоне по его виду. */
 function bindingLine(name: string, attr: string, kind: string): string {
-  if (kind === 'prop') return `      .${name}=\${props.${name}}`;
+  if (kind === 'prop')
+    return `      .${name}=\${props.${name} === undefined ? noChange : props.${name}}`;
   if (kind === 'boolean') return `      ?${attr}=\${Boolean(props.${name})}`;
   return `      ${attr}=\${ifDefined(props.${name})}`;
 }
@@ -38,34 +39,41 @@ function ssrFile(c: ComponentMeta): string {
   const bindings = c.props.map((p) => bindingLine(p.name, p.attr, p.kind)).join('\n');
 
   const slotKeys = [
-    ...(c.slots.default ? ['default'] : []),
+    ...(c.slots.default || c.slots.dynamic ? ['default'] : []),
     ...c.slots.named.map((s) => camelSlot(s)),
   ];
-  const slotsType =
-    slotKeys.length > 0
-      ? `{ ${slotKeys.map((k) => `${k}?: string`).join('; ')} }`
-      : 'Record<never, never>';
+  const slotFields = [
+    ...slotKeys.map((k) => `${k}?: string`),
+    ...(c.slots.dynamic ? ['dynamic?: Readonly<Record<string, string>>'] : []),
+  ];
+  const slotsType = slotFields.length > 0 ? `{ ${slotFields.join('; ')} }` : 'Record<never, never>';
 
-  const hasSlots = slotKeys.length > 0;
+  const hasSlots = slotFields.length > 0;
   const namedSlotParts = c.slots.named
     .map(
       (s) =>
         `\${slots.${camelSlot(s)} ? html\`<span slot="${s}">\${unsafeHTML(slots.${camelSlot(s)})}</span>\` : ''}`,
     )
     .join('');
-  const defaultSlotPart = c.slots.default ? "${unsafeHTML(slots.default ?? '')}" : '';
-  const children = `${namedSlotParts}${defaultSlotPart}`;
+  const defaultSlotPart =
+    c.slots.default || c.slots.dynamic ? "${unsafeHTML(slots.default ?? '')}" : '';
+  const dynamicSlotPart = c.slots.dynamic
+    ? '${Object.entries(slots.dynamic ?? {}).map(([name, content]) => html`<span slot=${name}>${unsafeHTML(content)}</span>`)}'
+    : '';
+  const children = `${namedSlotParts}${dynamicSlotPart}${defaultSlotPart}`;
   // Параметр slots — только когда есть слоты (иначе noUnusedParameters).
   const slotsParam = hasSlots ? `\n  slots: ${c.pascal}SsrSlots = {},` : '';
 
   // Условные импорты из единой SSR-поверхности ядра (адаптер зависит только от core,
   // не от lit напрямую). Базовый tsconfig включает noUnusedLocals — берём лишь нужное.
   const usesIfDefined = c.props.some((p) => p.kind === 'string');
-  const usesUnsafeHtml = c.slots.default || c.slots.named.length > 0;
+  const usesNoChange = c.props.some((p) => p.kind === 'prop');
+  const usesUnsafeHtml = hasSlots;
   const coreImports = [
     'html',
     'renderToString',
     usesIfDefined ? 'ifDefined' : '',
+    usesNoChange ? 'noChange' : '',
     usesUnsafeHtml ? 'unsafeHTML' : '',
   ].filter(Boolean);
 

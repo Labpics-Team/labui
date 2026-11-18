@@ -13,6 +13,7 @@ export { Breadcrumb, type BreadcrumbProps } from './breadcrumb.js';
 export { Button, type ButtonProps } from './button.js';
 export { Card, type CardProps } from './card.js';
 export { Checkbox, type CheckboxProps } from './checkbox.js';
+export { Choicebox, type ChoiceboxProps } from './choicebox.js';
 export { Combobox, type ComboboxProps } from './combobox.js';
 export { Dialog, type DialogProps } from './dialog.js';
 export { Input, type InputProps } from './input.js';

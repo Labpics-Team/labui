@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/breadcrumb';
 import type { LabBreadcrumb } from '@labpics/ui-core/breadcrumb';
 
@@ -25,6 +25,6 @@ export function renderBreadcrumb(
   return renderToString(html`<lab-breadcrumb
       size=${ifDefined(props.size)}
       separator=${ifDefined(props.separator)}
-      .items=${props.items}
+      .items=${props.items === undefined ? noChange : props.items}
     ></lab-breadcrumb>`);
 }

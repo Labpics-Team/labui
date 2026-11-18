@@ -14,6 +14,7 @@ const SMOKE_SPECS = [
   'button.spec.ts',
   'input.spec.ts',
   'checkbox.spec.ts',
+  'selection.spec.ts',
   'pin-input.spec.ts',
 ];
 

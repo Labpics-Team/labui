@@ -1,6 +1,6 @@
 {
-  "revision": "ebaaae81837ed266564bdaaf0f36db188f392452",
-  "sourceDigest": "sha256:db4b9d2e9a9f937e0ce0f933909173eb9e11b3a46e9a76e9edf3b04d3d8684d6",
+  "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7",
+  "sourceDigest": "sha256:0fbf89450a01c7dc7f59ed35ee7d738b7f2364b2ad206fe21fa48789aebf53d2",
   "symbols": [
     {
       "name": "LabBadge",
@@ -9,6 +9,18 @@
     {
       "name": "LabButton",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabButton.kt"
+    },
+    {
+      "name": "LabCheckbox",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabCheckbox.kt"
+    },
+    {
+      "name": "LabChoicebox",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChoicebox.kt"
+    },
+    {
+      "name": "LabChoicebox",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChoicebox.kt"
     },
     {
       "name": "LabInput",
@@ -25,6 +37,10 @@
     {
       "name": "LabVeils",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt"
+    },
+    {
+      "name": "LabRadioGroup",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabRadioGroup.kt"
     },
     {
       "name": "LabSheetHost",

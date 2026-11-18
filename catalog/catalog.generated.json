@@ -58,7 +58,7 @@
         "native": {
           "symbol": "LabButton",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabButton.kt",
-          "revision": "ebaaae81837ed266564bdaaf0f36db188f392452"
+          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
         }
       },
       "sources": [
@@ -121,7 +121,7 @@
         "native": {
           "symbol": "LabInput",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabInput.kt",
-          "revision": "ebaaae81837ed266564bdaaf0f36db188f392452"
+          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
         }
       },
       "sources": [
@@ -223,13 +223,21 @@
         "subpath": "checkbox",
         "reactExport": "Checkbox"
       },
+      "profile": "selection",
+      "native": {
+        "symbol": "LabCheckbox"
+      },
       "documentation": "checkbox.doc.ts",
       "capabilities": {
         "web": {
           "tag": "lab-checkbox",
           "reactExport": "Checkbox"
         },
-        "native": null
+        "native": {
+          "symbol": "LabCheckbox",
+          "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabCheckbox.kt",
+          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
+        }
       },
       "sources": [
         {
@@ -239,7 +247,10 @@
           "family": "checkbox",
           "role": "root",
           "web": {
-            "scope": "Публичный API семейства; все авторские варианты ещё не сверены."
+            "scope": "Authored selection profile, native form controls and rich labels."
+          },
+          "native": {
+            "scope": "Shared authored selection profile and native Compose actions."
           }
         }
       ]
@@ -254,13 +265,21 @@
         "subpath": "radio-group",
         "reactExport": "RadioGroup"
       },
+      "profile": "selection",
+      "native": {
+        "symbol": "LabRadioGroup"
+      },
       "documentation": "radio-group.doc.ts",
       "capabilities": {
         "web": {
           "tag": "lab-radio-group",
           "reactExport": "RadioGroup"
         },
-        "native": null
+        "native": {
+          "symbol": "LabRadioGroup",
+          "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabRadioGroup.kt",
+          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
+        }
       },
       "sources": [
         {
@@ -270,7 +289,10 @@
           "family": "radio-group",
           "role": "root",
           "web": {
-            "scope": "Публичный API семейства; все авторские варианты ещё не сверены."
+            "scope": "Authored selection profile, native form controls and rich labels."
+          },
+          "native": {
+            "scope": "Shared authored selection profile and native Compose actions."
           }
         }
       ]
@@ -298,7 +320,7 @@
         "native": {
           "symbol": "LabSwitch",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSwitch.kt",
-          "revision": "ebaaae81837ed266564bdaaf0f36db188f392452"
+          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
         }
       },
       "sources": [
@@ -534,10 +556,25 @@
       "group": "input",
       "kind": "composition",
       "summary": "Выбор в карточках с развёрнутым содержанием.",
-      "documentation": null,
+      "profile": "selection",
+      "native": {
+        "symbol": "LabChoicebox"
+      },
+      "web": {
+        "subpath": "choicebox",
+        "reactExport": "Choicebox"
+      },
+      "documentation": "choicebox.doc.ts",
       "capabilities": {
-        "web": null,
-        "native": null
+        "web": {
+          "tag": "lab-choicebox",
+          "reactExport": "Choicebox"
+        },
+        "native": {
+          "symbol": "LabChoicebox",
+          "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChoicebox.kt",
+          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
+        }
       },
       "sources": [
         {
@@ -545,7 +582,13 @@
           "name": "Choicebox",
           "type": "component-set",
           "family": "choicebox",
-          "role": "root"
+          "role": "root",
+          "web": {
+            "scope": "Authored selection profile, native form controls and rich labels."
+          },
+          "native": {
+            "scope": "Shared authored selection profile and native Compose actions."
+          }
         }
       ]
     },
@@ -980,7 +1023,7 @@
         "native": {
           "symbol": "LabSnackbar",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSnackbar.kt",
-          "revision": "ebaaae81837ed266564bdaaf0f36db188f392452"
+          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
         }
       },
       "sources": [
@@ -1142,7 +1185,7 @@
         "native": {
           "symbol": "LabBadge",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabBadge.kt",
-          "revision": "ebaaae81837ed266564bdaaf0f36db188f392452"
+          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
         }
       },
       "sources": [
@@ -1591,7 +1634,7 @@
         "native": {
           "symbol": "LabCard",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSurface.kt",
-          "revision": "ebaaae81837ed266564bdaaf0f36db188f392452"
+          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
         }
       },
       "sources": [
@@ -1633,7 +1676,7 @@
         "native": {
           "symbol": "LabSheetHost",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSheet.kt",
-          "revision": "ebaaae81837ed266564bdaaf0f36db188f392452"
+          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
         }
       },
       "sources": [
@@ -1719,7 +1762,7 @@
         "native": {
           "symbol": "LabMaterials",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt",
-          "revision": "ebaaae81837ed266564bdaaf0f36db188f392452"
+          "revision": "3d8dd2c5c34bdabeeeab01858b845c96e35c6cc7"
         }
       },
       "sources": [
