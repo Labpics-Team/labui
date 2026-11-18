@@ -20,6 +20,7 @@
       "**/*.tsbuildinfo",
       "packages/colors/contract.css",
       "packages/colors/contract.min.css",
+      "packages/colors/roles.json",
       "packages/colors/figma-reference.css",
       "docs/evidence/materials-20261117/figma-source.json",
       "scripts/minify-contract.cjs"

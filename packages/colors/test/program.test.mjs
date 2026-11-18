@@ -189,7 +189,12 @@ describe('LabUI profile over the published Colors Program', () => {
     const after = themeProfile('light', 'normal', changed);
     for (const name of Object.keys(after.roles)) {
       const value = after.resolve(name);
-      if (name.split('-').includes('brand') && !name.includes('-on-') && Array.isArray(value)) {
+      if (
+        name.split('-').includes('brand') &&
+        !name.includes('-on-') &&
+        name !== 'badge-label-brand' &&
+        Array.isArray(value)
+      ) {
         expect(value.slice(0, 3), name).toEqual([10, 90, 240]);
         expect(value[3], name).toBe(before.resolve(name)[3]);
       }

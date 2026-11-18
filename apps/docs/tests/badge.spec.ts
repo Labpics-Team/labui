@@ -1,106 +1,96 @@
-import { type Page, expect, test } from '@playwright/test';
-
-/**
- * Badge suite — a presentational primitive, verified on BOTH renderers.
- *
- * The fixture (`badge.html`) mounts the Lit `<lab-badge>` and the native-React
- * `<Badge>` with identical specimens under one [data-theme]:
- *   1. Delivered HTML carries the Lit element; the React island mounts client-side.
- *   2. Visual parity — matching specimens resolve the SAME computed colours.
- *   3. Semantics — Badge is a non-interactive label (no button role, not focusable).
- *   4. Tokens + theme — re-pointing a role and flipping [data-theme] re-skin both.
- */
-
-const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
-const fg = (el: HTMLElement) => getComputedStyle(el).color;
-
-/** The painted surface for a Lit host is the inner .badge in its shadow root. */
-function litBadge(page: Page, testid: string) {
-  return page.getByTestId(testid).locator('.badge');
-}
-function reactBadge(page: Page, testid: string) {
-  // React sets data-testid on the [data-lab-badge] span — the painted node itself.
-  return page.getByTestId(testid);
-}
+import { badgeProfile } from '@labpics/ui-tokens';
+import { expect, test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/badge.html');
+  await page.evaluate(() => document.fonts.ready);
 });
 
-test('delivered HTML carries the Lit element (React island mounts on the client)', async ({
-  request,
-}) => {
-  const body = await (await request.get('/badge.html')).text();
-  expect(body).toMatch(/<lab-badge/i);
-  expect(body).toContain('id="react-root"');
+for (const theme of ['light', 'dark'])
+  test(`all 60 authored combinations: geometry and paint parity in ${theme}`, async ({ page }) => {
+    await page.getByTestId('theme-select').selectOption(theme);
+    for (const color of Object.keys(badgeProfile.colors))
+      for (const type of ['fill', 'tinted'])
+        for (const state of ['enabled', 'disabled']) {
+          const id = `${color}-${type}-${state}`;
+          const lit = page.getByTestId(`lit-${id}`).locator('.badge');
+          const react = page.getByTestId(`react-${id}`);
+          await expect(react).toBeVisible();
+          const paint = (el: HTMLElement) => {
+            const s = getComputedStyle(el);
+            return {
+              background: s.backgroundColor,
+              color: s.color,
+              fontSize: s.fontSize,
+              weight: s.fontWeight,
+              line: s.lineHeight,
+              padding: s.padding,
+              radius: s.borderRadius,
+              height: el.getBoundingClientRect().height,
+              width: el.getBoundingClientRect().width,
+              opacity: s.opacity,
+            };
+          };
+          const actual = await react.evaluate(paint);
+          expect(actual, id).toEqual(await lit.evaluate(paint));
+          expect(actual.height, id).toBe(20);
+          expect(actual.fontSize).toBe('12px');
+          expect(actual.line).toBe('12px');
+          expect(actual.weight).toBe('500');
+          expect(actual.opacity).toBe('1');
+        }
+  });
+
+test('yellow preserves authored dark text; orange preserves white text', async ({ page }) => {
+  await expect(page.getByTestId('react-yellow-fill-enabled')).toHaveCSS('color', 'rgb(31, 25, 0)');
+  await expect(page.getByTestId('react-orange-fill-enabled')).toHaveCSS(
+    'color',
+    'rgb(255, 255, 255)',
+  );
 });
 
-test('visual parity: Lit and React resolve the same surface + label colours', async ({ page }) => {
-  await expect(reactBadge(page, 'react-brand-fill')).toBeVisible();
+test('disabled paints use neutral roles and remain presentational', async ({ page }) => {
+  const gray = page.getByTestId('react-gray-fill-disabled');
+  await expect(gray).not.toHaveAttribute('role');
+  await expect(gray).not.toHaveAttribute('tabindex');
+  const reference = await gray.evaluate((el) => ({
+    bg: getComputedStyle(el).backgroundColor,
+    fg: getComputedStyle(el).color,
+  }));
+  for (const color of Object.keys(badgeProfile.colors)) {
+    const badge = page.getByTestId(`react-${color}-fill-disabled`);
+    expect(
+      await badge.evaluate((el) => ({
+        bg: getComputedStyle(el).backgroundColor,
+        fg: getComputedStyle(el).color,
+      })),
+    ).toEqual(reference);
+  }
+  await expect(page.locator('lab-badge button')).toHaveCount(0);
+});
 
-  for (const variant of [
-    'brand-fill',
-    'success-tinted',
-    'danger-fill',
-    'neutral-tinted',
-    // Статики — дыра паритета из ревью поезда: расхождение близнецов на
-    // tinted static прошло бы зелёным без этих строк.
-    'static-dark-fill',
-    'static-light-tinted',
-  ] as const) {
-    const lit = litBadge(page, `lit-${variant}`);
-    const react = reactBadge(page, `react-${variant}`);
-
-    expect(await react.evaluate(bg), `${variant}: background parity`).toBe(await lit.evaluate(bg));
-    expect(await react.evaluate(fg), `${variant}: label parity`).toBe(await lit.evaluate(fg));
+test('changing the contracted surface and label repaints both renderers', async ({ page }) => {
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--lab-badge-fill-blue', 'rgb(1, 2, 3)');
+    document.documentElement.style.setProperty('--lab-badge-label-on-blue', 'rgb(240, 241, 242)');
+  });
+  for (const el of [
+    page.getByTestId('lit-blue-fill-enabled').locator('.badge'),
+    page.getByTestId('react-blue-fill-enabled'),
+  ]) {
+    await expect(el).toHaveCSS('background-color', 'rgb(1, 2, 3)');
+    await expect(el).toHaveCSS('color', 'rgb(240, 241, 242)');
   }
 });
 
-test('semantics: badge is a non-interactive label, not a button', async ({ page }) => {
-  // No button role on either renderer, and it is not in the tab order.
-  await expect(page.getByTestId('react-brand-fill')).not.toHaveAttribute('role', 'button');
-  const reactTabIndex = await reactBadge(page, 'react-brand-fill').getAttribute('tabindex');
-  expect(reactTabIndex).toBeNull();
-  // The Lit host exposes no inner <button>.
-  await expect(page.getByTestId('lit-brand-fill').locator('button')).toHaveCount(0);
-});
-
-test('disabled badge dims identically on both renderers', async ({ page }) => {
-  const litOpacity = await litBadge(page, 'lit-disabled').evaluate(
-    (el) => getComputedStyle(el).opacity,
-  );
-  const reactOpacity = await reactBadge(page, 'react-disabled').evaluate(
-    (el) => getComputedStyle(el).opacity,
-  );
-  expect(reactOpacity).toBe(litOpacity);
-  expect(Number(litOpacity)).toBeLessThan(1);
-});
-
-test('tokens: re-pointing --lab-badge-fill-brand re-skins BOTH fill renderers', async ({
-  page,
-}) => {
-  const lit = litBadge(page, 'lit-brand-fill');
-  const react = reactBadge(page, 'react-brand-fill');
-  await expect(react).toBeVisible();
-
+test('text zoom grows geometry without clipping the label', async ({ page }) => {
   await page.evaluate(() => {
-    document.documentElement.style.setProperty('--lab-badge-fill-brand', 'rgb(1, 2, 3)');
+    document.documentElement.style.fontSize = '32px';
   });
-
-  await expect.poll(() => lit.evaluate(bg)).toBe('rgb(1, 2, 3)');
-  await expect.poll(() => react.evaluate(bg)).toBe('rgb(1, 2, 3)');
-});
-
-test('theme: flipping [data-theme] re-skins both renderers with zero edits', async ({ page }) => {
-  const lit = litBadge(page, 'lit-neutral-tinted');
-  const react = reactBadge(page, 'react-neutral-tinted');
-  await expect(react).toBeVisible();
-
-  const litDark = await lit.evaluate(fg);
-  const reactDark = await react.evaluate(fg);
-
-  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
-
-  await expect.poll(() => lit.evaluate(fg)).not.toBe(litDark);
-  await expect.poll(() => react.evaluate(fg)).not.toBe(reactDark);
+  const lit = page.getByTestId('lit-brand-fill-enabled').locator('.badge');
+  const react = page.getByTestId('react-brand-fill-enabled');
+  for (const el of [lit, react]) {
+    await expect(el).toHaveCSS('font-size', '24px');
+    expect((await el.boundingBox())?.height).toBe(40);
+  }
 });

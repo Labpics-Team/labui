@@ -5,6 +5,8 @@ internal data class LabButtonMetrics(val height: Float, val radius: Float, val p
 internal data class LabInputMetrics(val height: Float, val radius: Float, val paddingX: Float, val paddingY: Float, val contentHeight: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float)
 internal data class LabSwitchMetrics(val trackWidth: Float, val trackHeight: Float, val controlHeight: Float, val labelGap: Float, val fontSize: Float, val lineHeight: Float, val letterSpacing: Float, val fontWeight: Float)
 
+public enum class LabBadgeColor(internal val role: String) { Neutral("neutral"), Gray("gray"), Blue("blue"), Red("red"), Orange("orange"), Green("green"), Yellow("yellow"), Teal("teal"), Mint("mint"), Indigo("indigo"), Purple("purple"), Pink("pink"), StaticDark("static-dark"), StaticLight("static-light"), Brand("brand") }
+
 internal object LabComponents {
     val ButtonS = LabButtonMetrics(36f, 9999f, 12f, 8f, 20f, 14f, 12f, 0f, 500f, 0f, 0.72f)
     val ButtonM = LabButtonMetrics(48f, 16f, 12f, 12f, 24f, 16f, 24f, 0f, 400f, -0.25f, 1f)
@@ -150,4 +152,17 @@ internal object LabComponents {
     const val SwitchCutoutOffWindingRule = "NONZERO"
     const val SwitchCutoutOffData = "M 6.9128887406063635 0.1495871834623516 C 7.174744708699412 -0.06398525199944971 7.560755252477094 -0.048922332108651434 7.804838861833421 0.19516127724767568 C 8.048922471189748 0.4392448866040028 8.063985391080546 0.8252554502504135 7.8504129556187445 1.0871114183434614 L 7.804838861833421 1.1378939799899654 L 4.942785772115067 3.999946910758495 L 7.804838861833421 6.862000000476849 L 7.8504129556187445 6.912782562123353 C 8.063985391080546 7.174638530216401 8.048922471189748 7.560649073994084 7.804838861833421 7.804732683350411 C 7.560755252477094 8.04881629270674 7.174744708699412 8.063879212597536 6.9128887406063635 7.850306777135735 L 6.862106178959859 7.804732683350411 L 4.000053089241505 4.9426795936320564 L 1.1379998405733256 7.804732683350411 C 0.8776435839466081 8.065088939977128 0.45562345406393767 8.065088939977128 0.19526719743722018 7.804732683350411 C -0.06508905918949734 7.5443764267236935 -0.06508905918949734 7.122356257103567 0.19526719743722018 6.862000000476849 L 3.057320406367943 3.999946910758495 L 0.19526719743722018 1.1378939799899654 L 0.14969310365189606 1.0871114183434614 C -0.06387933180990524 0.8252554502504135 -0.04881641191910693 0.4392448866040028 0.19526719743722018 0.19516127724767568 C 0.4393508067935473 -0.048922332108651434 0.8253613108337736 -0.06398525199944971 1.0872172789268215 0.1495871834623516 L 1.1379998405733256 0.19516127724767568 L 4.000053089241505 3.0572142278849332 L 6.862106178959859 0.19516127724767568 L 6.9128887406063635 0.1495871834623516 Z"
     const val SwitchCutoutHideOnColoredPressed = true
+    const val BadgeHeight = 20f
+    const val BadgeRadius = 9999f
+    const val BadgePaddingX = 8f
+    const val BadgePaddingY = 4f
+    const val BadgeGap = 4f
+    const val BadgeIconSize = 12f
+    const val BadgeFontSize = 12f
+    const val BadgeLineHeight = 12f
+    const val BadgeFontWeight = 500f
+    const val BadgeLetterSpacing = 0f
+    const val BadgeDisabledFillRole = "badge-base-disabled-fill"
+    const val BadgeDisabledLabelRole = "badge-base-disabled-label"
+    val BadgeDefaultColor = LabBadgeColor.Blue
 }

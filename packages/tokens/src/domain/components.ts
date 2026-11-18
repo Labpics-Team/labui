@@ -139,5 +139,21 @@ export function buildComponentTokens(): ResolvedToken[] {
   scalar('line-height', 'snackbar', snackbar.lineHeight / snackbar.fontSize);
   dimension('stroke', 'snackbar', snackbar.strokeWidth);
   dimension('size', 'snackbar-timer', snackbar.timer.size);
+  const badge = profile.badge;
+  dimension('size', 'badge', badge.height);
+  dimension('size', 'badge-icon', badge.iconSize);
+  dimension('radius', 'badge', badge.radius);
+  dimension('space', 'badge-x', badge.paddingX);
+  dimension('space', 'badge-y', badge.paddingY);
+  dimension('space', 'badge-gap', badge.gap);
+  dimension('font-size', 'badge', badge.fontSize);
+  scalar('font-weight', 'badge', badge.fontWeight);
+  scalar('line-height', 'badge', badge.lineHeight / badge.fontSize);
+  scalar(
+    'letter-spacing',
+    'badge',
+    badge.letterSpacing / badge.fontSize,
+    `${badge.letterSpacing / badge.fontSize}em`,
+  );
   return result;
 }

@@ -378,5 +378,91 @@
       },
       "hideOnColoredPressed": true
     }
+  },
+  "badge": {
+    "height": 20,
+    "radius": 9999,
+    "paddingX": 8,
+    "paddingY": 4,
+    "gap": 4,
+    "iconSize": 12,
+    "fontSize": 12,
+    "lineHeight": 12,
+    "fontWeight": 500,
+    "letterSpacing": 0,
+    "disabled": {
+      "fillRole": "badge-base-disabled-fill",
+      "labelRole": "badge-base-disabled-label"
+    },
+    "colors": {
+      "neutral": {
+        "fill": "badge-base-primary",
+        "label": "badge-base-inverted",
+        "tint": "badge-base-tint",
+        "tintLabel": "badge-base-primary"
+      },
+      "gray": {
+        "fill": "badge-base-tint",
+        "label": "badge-base-primary",
+        "tint": "badge-base-tint",
+        "tintLabel": "badge-base-secondary"
+      },
+      "blue": {
+        "anchor": "blue"
+      },
+      "red": {
+        "anchor": "red"
+      },
+      "orange": {
+        "anchor": "orange"
+      },
+      "green": {
+        "anchor": "green"
+      },
+      "yellow": {
+        "anchor": "yellow",
+        "lightLabelAnchor": "orange"
+      },
+      "teal": {
+        "anchor": "teal"
+      },
+      "mint": {
+        "anchor": "mint"
+      },
+      "indigo": {
+        "anchor": "indigo"
+      },
+      "purple": {
+        "anchor": "purple"
+      },
+      "pink": {
+        "anchor": "pink"
+      },
+      "static-dark": {
+        "fill": "bg-static-dark",
+        "label": "label-static-light-primary",
+        "tint": "badge-base-tint",
+        "tintLabel": "label-static-dark-primary"
+      },
+      "static-light": {
+        "fill": "bg-static-light",
+        "label": "label-static-dark-primary",
+        "tint": "badge-base-tint",
+        "tintLabel": "label-static-light-primary"
+      },
+      "brand": {
+        "anchor": "brand"
+      }
+    },
+    "aliases": {
+      "danger": "red",
+      "warning": "orange",
+      "success": "green",
+      "info": "blue"
+    },
+    "sourceRef": {
+      "key": "component-set/Badge/Badge"
+    },
+    "defaultColor": "blue"
   }
 }

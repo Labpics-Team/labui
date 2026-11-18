@@ -30,7 +30,8 @@
     "program.mjs",
     "program-source.mjs",
     "program-source.d.mts",
-    "profile.mjs"
+    "profile.mjs",
+    "authored-paints.mjs"
   ],
   "scripts": {
     "generate": "node generate-contract.mjs",
@@ -40,7 +41,8 @@
     "fx:render": "node test/fx-render/render-fx.mjs"
   },
   "dependencies": {
-    "@labpics/colors": "1.0.3"
+    "@labpics/colors": "1.0.3",
+    "@labpics/ui-tokens": "workspace:*"
   },
   "devDependencies": {
     "@types/css-tree": "3.2.0",

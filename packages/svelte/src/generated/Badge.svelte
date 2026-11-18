@@ -15,11 +15,13 @@
     type?: LabBadge['type'];
     disabled?: LabBadge['disabled'];
     dot?: Snippet;
+    icon?: Snippet;
+    iconEnd?: Snippet;
     children?: Snippet;
     [key: string]: unknown;
   }
 
-  let { color, type, disabled, children, dot, ...rest }: Props = $props();
+  let { color, type, disabled, children, dot, icon, iconEnd, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'color', attr: 'color', kind: 'string' },
@@ -38,4 +40,6 @@
 <lab-badge bind:this={el} {...rest}>
   {@render children?.()}
   {#if dot}<div slot="dot" style="display:contents">{@render dot()}</div>{/if}
+  {#if icon}<div slot="icon" style="display:contents">{@render icon()}</div>{/if}
+  {#if iconEnd}<div slot="icon-end" style="display:contents">{@render iconEnd()}</div>{/if}
 </lab-badge>

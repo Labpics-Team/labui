@@ -146,6 +146,16 @@
   --lab-line-height-snackbar: 1.5;
   --lab-stroke-snackbar: 0.0625rem;
   --lab-size-snackbar-timer: 2rem;
+  --lab-size-badge: 1.25rem;
+  --lab-size-badge-icon: 0.75rem;
+  --lab-radius-badge: 624.9375rem;
+  --lab-space-badge-x: 0.5rem;
+  --lab-space-badge-y: 0.25rem;
+  --lab-space-badge-gap: 0.25rem;
+  --lab-font-size-badge: 0.75rem;
+  --lab-font-weight-badge: 500;
+  --lab-line-height-badge: 1;
+  --lab-letter-spacing-badge: 0em;
 
   /* Spacing — linear rem multiplier (root font-size scales all) */
   --lab-space-0: 0rem;
