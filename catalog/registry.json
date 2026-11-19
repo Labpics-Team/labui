@@ -42,7 +42,10 @@
       "group": "data",
       "kind": "extension",
       "summary": "Авторские Lab Icons: оптика, смысловые состояния и движение импортированного символа.",
-      "web": { "subpath": "icon", "reactExport": "Icon" }
+      "web": {
+        "subpath": "icon",
+        "reactExport": "Icon"
+      }
     },
     {
       "slug": "button",
@@ -64,7 +67,15 @@
       "title": "Drag Button",
       "group": "actions",
       "kind": "control",
-      "summary": "Подтверждение действия перетаскиванием."
+      "summary": "Подтверждение действия перетаскиванием.",
+      "web": {
+        "subpath": "drag-button",
+        "reactExport": "DragButton"
+      },
+      "native": {
+        "symbol": "LabDragButton"
+      },
+      "profile": "drag-button"
     },
     {
       "slug": "input",

@@ -19,8 +19,10 @@ import { accordionCss } from '../src/components/accordion/styles.js';
 import { avatarCss } from '../src/components/avatar/styles.js';
 import { badgeCss } from '../src/components/badge/styles.js';
 import { breadcrumbCss } from '../src/components/breadcrumb/styles.js';
+import { buttonFillCss } from '../src/components/button/fill.js';
 import { cardCss } from '../src/components/card/styles.js';
 import { chipCss } from '../src/components/chip/styles.js';
+import { dragButtonCss } from '../src/components/drag-button/styles.js';
 import { inputCss } from '../src/components/input/styles.js';
 import { kbdCss } from '../src/components/kbd/styles.js';
 import { paginationCss } from '../src/components/pagination/styles.js';
@@ -56,6 +58,15 @@ function main(): void {
   // Re-export the shadow contract so consumers need only `@labpics/ui-core/shadow.css`.
   copyFileSync(shadowPkg, join(dist, 'shadow.css'));
   copyFileSync(tokensPkg, join(dist, 'tokens.css'));
+  writeFileSync(join(dist, 'drag-button.css'), dragButtonCss);
+  writeFileSync(
+    join(dist, 'button-fill.css'),
+    buttonFillCss(
+      '[data-lab-button][data-kind="fill"]',
+      '[data-lab-button][data-kind="fill"]:hover:not(:disabled)',
+      '[data-lab-button][data-kind="fill"]:active:not(:disabled)',
+    ),
+  );
   writeFileSync(join(dist, 'sheet.css'), sheetCss);
   writeFileSync(join(dist, 'input.css'), inputCss);
   writeFileSync(join(dist, 'select.css'), selectCss);

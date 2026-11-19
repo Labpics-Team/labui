@@ -670,4 +670,25 @@ internal object LabComponents {
     const val AvatarStatusesAwayLabel = "Нет на месте"
     const val AvatarStatusesDndRole = "label-danger-primary"
     const val AvatarStatusesDndLabel = "Не беспокоить"
+    const val DragButtonPadding = 4f
+    const val DragButtonHeight = 56f
+    const val DragButtonRadius = 20f
+    const val DragButtonMaskCount = 5f
+    const val DragButtonMaskWidth = 140f
+    const val DragButtonMaskHeight = 210f
+    const val DragButtonMaskGap = 64f
+    const val DragButtonMaskBlur = 128f
+    const val DragButtonRolesTrack = "fill-tertiary"
+    const val DragButtonRolesLabel = "label-primary"
+    const val DragButtonRolesDisabledLabel = "label-tertiary"
+    const val DragButtonGlowSize = 48f
+    const val DragButtonGlowOffsetX = 12f
+    const val DragButtonGlowOffsetY = 12f
+    const val DragButtonGlowBlur = 36f
+    const val DragButtonGlowOpacity = 0.3f
+    const val DragButtonGlowColorRole = "fx-glow-neutral"
+    const val DragButtonFontSize = 16f
+    const val DragButtonLineHeight = 24f
+    const val DragButtonFontWeight = 500f
+    const val DragButtonLetterSpacing = 0f
 }

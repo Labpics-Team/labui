@@ -17,6 +17,7 @@ export { renderChip, type ChipSsrProps, type ChipSsrSlots } from './chip.ssr.js'
 export { renderChoicebox, type ChoiceboxSsrProps, type ChoiceboxSsrSlots } from './choicebox.ssr.js';
 export { renderCombobox, type ComboboxSsrProps, type ComboboxSsrSlots } from './combobox.ssr.js';
 export { renderDialog, type DialogSsrProps, type DialogSsrSlots } from './dialog.ssr.js';
+export { renderDragButton, type DragButtonSsrProps, type DragButtonSsrSlots } from './drag-button.ssr.js';
 export { renderIcon, type IconSsrProps, type IconSsrSlots } from './icon.ssr.js';
 export { renderInput, type InputSsrProps, type InputSsrSlots } from './input.ssr.js';
 export { renderKbd, type KbdSsrProps, type KbdSsrSlots } from './kbd.ssr.js';

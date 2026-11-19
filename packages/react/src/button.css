@@ -1,3 +1,4 @@
+@import "@labpics/ui-core/button-fill.css";
 /*
  * <Button> (React) styles — the visual PARITY twin of the Lit `<lab-button>`.
  *
@@ -140,24 +141,6 @@
   color: var(--lab-label-danger);
 }
 
-[data-lab-button][data-kind="fill"] {
-  --_lab-btn-highlight: var(--lab-state-button-highlight);
-  --_lab-btn-light: var(--lab-label-static-light-primary);
-  background-image: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--_lab-btn-light) var(--_lab-btn-highlight), transparent),
-    transparent
-  );
-  box-shadow: inset var(--lab-space-button-inner-x) var(--lab-space-button-inner-y)
-    var(--lab-space-button-inner-blur) var(--lab-fx-control-inner);
-}
-[data-lab-button][data-kind="fill"]:hover:not(:disabled) {
-  --_lab-btn-highlight: var(--lab-state-button-hover-highlight);
-}
-[data-lab-button][data-kind="fill"]:active:not(:disabled) {
-  --_lab-btn-light: var(--lab-label-static-dark-primary);
-  --_lab-btn-highlight: var(--lab-state-button-pressed-shade);
-}
 .lab-button-text {
   display: inline-flex;
   align-items: center;
@@ -253,10 +236,6 @@
 }
 [data-lab-button][data-type][data-kind]:disabled .lab-button-description {
   color: inherit;
-}
-[data-lab-button][data-kind="fill"]:active:not(:disabled) {
-  box-shadow: inset var(--lab-space-button-inner-x) calc(-1 * var(--lab-space-button-inner-y))
-    var(--lab-space-button-inner-blur) var(--lab-fx-control-inner);
 }
 
 /* ── loading: spinner replaces the label without collapsing layout ───────── */

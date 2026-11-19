@@ -11,6 +11,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -28,6 +29,7 @@ public fun LabLoader(
     max: Float = 100f,
     label: String = "Загрузка",
     size: LabControlSize = LabControlSize.Medium,
+    tint: Color = Color.Unspecified,
 ) {
     val state = labProgressState(value, min, max)
     val motion = rememberLabProgressMotion(state, LabComponents.LoaderPeriodMs.toInt())
@@ -40,7 +42,7 @@ public fun LabLoader(
         LabControlSize.Large -> LabComponents.LoaderL
     }
     val colors = LocalLabTheme.current.colors
-    val primary = colors[LabComponents.LoaderColorRole]
+    val primary = if (tint == Color.Unspecified) colors[LabComponents.LoaderColorRole] else tint
     val secondary = colors[LabComponents.LoaderDeterminateMediumSecondaryRole]
     val track = colors[LabComponents.LoaderDeterminateLargeTrackRole]
     Box(modifier.size(metrics.diameter.dp).labProgressSemantics(state, label).drawWithCache {

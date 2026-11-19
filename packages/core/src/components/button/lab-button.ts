@@ -35,10 +35,11 @@
  * loading), and optional attributes use `ifDefined`, so `@lit-labs/ssr` emits a
  * meaningful, styled `<button>` in the declarative shadow DOM before any JS.
  */
-import { type TemplateResult, css, html } from 'lit';
+import { type TemplateResult, css, html, unsafeCSS } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
+import { buttonFillCss } from './fill.js';
 
 /** Semantic intent of the action. */
 export type LabButtonType = 'accent' | 'neutral' | 'danger';
@@ -282,19 +283,7 @@ export class LabButton extends LabElement {
       color: ${litVar('--lab-label-danger')};
     }
 
-    :host([kind='fill']) button {
-      --_highlight: var(--lab-state-button-highlight);
-      --_light: var(--lab-label-static-light-primary);
-      background-image: linear-gradient(to bottom, color-mix(in srgb, var(--_light) var(--_highlight), transparent), transparent);
-      box-shadow: inset var(--lab-space-button-inner-x) var(--lab-space-button-inner-y) var(--lab-space-button-inner-blur) var(--lab-fx-control-inner);
-    }
-    :host([kind='fill']) button:hover:not(:disabled) {
-      --_highlight: var(--lab-state-button-hover-highlight);
-    }
-    :host([kind='fill']) button:active:not(:disabled) {
-      --_light: var(--lab-label-static-dark-primary);
-      --_highlight: var(--lab-state-button-pressed-shade);
-    }
+    ${unsafeCSS(buttonFillCss(":host([kind='fill']) button", ":host([kind='fill']) button:hover:not(:disabled)", ":host([kind='fill']) button:active:not(:disabled)"))}
 
     .label {
       display: inline-flex;
@@ -354,9 +343,7 @@ export class LabButton extends LabElement {
     :host([type][kind='border']) button:disabled { border-color: var(--lab-border-soft); }
     :host([type='neutral']:not([kind='fill'])) slot[name='description'] { color: var(--lab-label-secondary); }
     :host([type][kind]) button:disabled slot[name='description'] { color: inherit; }
-    :host([kind='fill']) button:active:not(:disabled) {
-      box-shadow: inset var(--lab-space-button-inner-x) calc(-1 * var(--lab-space-button-inner-y)) var(--lab-space-button-inner-blur) var(--lab-fx-control-inner);
-    }
+
 
     /* ── loading: spinner replaces the label without collapsing layout ──── */
     :host([loading]) button {

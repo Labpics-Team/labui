@@ -1,7 +1,6 @@
 package pics.lab.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -24,25 +23,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.innerShadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.floor
@@ -127,11 +121,6 @@ public fun LabButton(
         LabControlSize.Large -> LabComponents.ButtonL
     }
     val shape = RoundedCornerShape(metrics.radius.dp)
-    val gradient = when {
-        pressed -> colors["bg-static-dark"].copy(alpha = LabComponents.ButtonFillPressedShade)
-        hovered -> colors["bg-static-light"].copy(alpha = LabComponents.ButtonFillHoverHighlight)
-        else -> colors["bg-static-light"].copy(alpha = LabComponents.ButtonFillHighlight)
-    }
     val descriptionColor = when {
         disabled -> label
         intent == LabIntent.Neutral && kind != LabButtonKind.Fill -> colors["label-secondary"]
@@ -139,14 +128,7 @@ public fun LabButton(
             label.copy(alpha = label.alpha * metrics.descriptionAccentPlainOpacity)
         else -> label.copy(alpha = label.alpha * LabComponents.ButtonDescriptionOpacity)
     }
-    val surface = Modifier.clip(shape).background(fill).then(
-        if (!disabled && kind == LabButtonKind.Fill) Modifier
-            .background(Brush.verticalGradient(listOf(gradient, gradient.copy(alpha = 0f))))
-            .innerShadow(shape, Shadow(radius = LabComponents.ButtonInnerShadowBlur.dp,
-                color = colors["fx-control-inner"],
-                offset = DpOffset(LabComponents.ButtonInnerShadowX.dp,
-                    (if (pressed) -LabComponents.ButtonInnerShadowY else LabComponents.ButtonInnerShadowY).dp)))
-        else Modifier)
+    val surface = Modifier.labButtonSurface(shape, fill, colors, !disabled && kind == LabButtonKind.Fill, pressed, hovered)
     val iconScope = LabButtonIconScope(label, metrics.icon.dp)
     val labelStyle = LabType.body().withTypography(color = label, fontSize = metrics.fontSize.sp,
         lineHeight = metrics.lineHeight.sp, letterSpacing = metrics.letterSpacing.sp,

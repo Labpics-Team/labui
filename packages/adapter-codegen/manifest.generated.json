@@ -736,6 +736,67 @@
       }
     },
     {
+      "tag": "lab-drag-button",
+      "subpath": "drag-button",
+      "pascal": "DragButton",
+      "className": "LabDragButton",
+      "props": [
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "helperText",
+          "attr": "helper-text",
+          "kind": "string"
+        },
+        {
+          "name": "showHelper",
+          "attr": "show-helper",
+          "kind": "boolean"
+        },
+        {
+          "name": "pendingText",
+          "attr": "pending-text",
+          "kind": "string"
+        },
+        {
+          "name": "successText",
+          "attr": "success-text",
+          "kind": "string"
+        },
+        {
+          "name": "dangerText",
+          "attr": "danger-text",
+          "kind": "string"
+        },
+        {
+          "name": "status",
+          "attr": "status",
+          "kind": "string"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "resetKey",
+          "attr": "reset-key",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "complete"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
       "tag": "lab-icon",
       "subpath": "icon",
       "pascal": "Icon",

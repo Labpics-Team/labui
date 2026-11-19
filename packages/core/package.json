@@ -315,7 +315,19 @@
         "types": "./dist/components/icon/runtime.d.cts",
         "default": "./dist/components/icon/runtime.cjs"
       }
-    }
+    },
+    "./drag-button/runtime": {
+      "import": {
+        "types": "./dist/components/drag-button/runtime.d.ts",
+        "default": "./dist/components/drag-button/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/drag-button/runtime.d.cts",
+        "default": "./dist/components/drag-button/runtime.cjs"
+      }
+    },
+    "./drag-button.css": "./dist/drag-button.css",
+    "./button-fill.css": "./dist/button-fill.css"
   },
   "files": ["dist"],
   "sideEffects": [
@@ -346,7 +358,9 @@
     "./dist/accordion.css",
     "./dist/segmented-control.css",
     "./dist/select.css",
-    "./dist/avatar.css"
+    "./dist/avatar.css",
+    "./dist/drag-button.css",
+    "./dist/button-fill.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

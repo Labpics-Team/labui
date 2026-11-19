@@ -63,3 +63,4 @@ export { segmentedProfile } from './segmented.js';
 export { selectProfile } from './select.js';
 
 export { avatarProfile } from './avatar.js';
+export { dragButtonProfile } from './drag-button.js';

@@ -57,11 +57,12 @@ export default libraryPreset({
     'src/components/tabs/runtime.ts',
     'src/components/accordion/runtime.ts',
     'src/components/segmented-control/runtime.ts',
+    'src/components/drag-button/runtime.ts',
     'src/motion/sheet.ts',
     ...componentEntries,
   ],
   external: [/^@zag-js\//, /^@lit-labs\//, 'lit', '@labpics/ui-core/icon/runtime'],
   // Icons exposes import-only ESM. Bundle its small pure renderer once into our
   // shared dual-format runtime; the optional motion entry remains lazy/external.
-  noExternal: ['@labpics/icons/render'],
+  noExternal: ['@labpics/icons/render', /^@labpics\/icons\/symbols\//],
 });

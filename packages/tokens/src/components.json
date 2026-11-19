@@ -1336,5 +1336,41 @@
         "label": "Не беспокоить"
       }
     }
+  },
+  "drag-button": {
+    "sourceRef": {
+      "key": "component-set/Drag Button/Drag button"
+    },
+    "$textStyle": "body-emphasized",
+    "padding": 4,
+    "height": 56,
+    "radius": 20,
+    "mask": {
+      "count": 5,
+      "width": 140,
+      "height": 210,
+      "gap": 64,
+      "blur": 128
+    },
+    "roles": {
+      "track": "fill-tertiary",
+      "label": "label-primary",
+      "disabledLabel": "label-tertiary"
+    },
+    "glow": {
+      "sourceRef": {
+        "key": "component-set/Drag Button/Drag button",
+        "variant": {
+          "State": "Halfy dragged"
+        },
+        "path": ["Button", "Interactive/Pressed/Glow"]
+      },
+      "size": 48,
+      "offsetX": 12,
+      "offsetY": 12,
+      "blur": 36,
+      "opacity": 0.3,
+      "colorRole": "fx-glow-neutral"
+    }
   }
 }

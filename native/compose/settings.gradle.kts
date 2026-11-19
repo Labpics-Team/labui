@@ -4,6 +4,10 @@ apply(from = "gradle/colors-release.settings.gradle.kts")
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        maven {
+            url = uri(providers.gradleProperty("iconsRepository").orElse("https://raw.githubusercontent.com/Labpics-Team/lab-icons/maven-compose-v0.4.0/").get())
+            content { includeModule("pics.lab", "icons-compose"); includeModule("pics.lab", "icons-compose-desktop"); includeModule("pics.lab", "icons-compose-android"); includeModule("pics.lab", "icons-compose-iosarm64"); includeModule("pics.lab", "icons-compose-iossimulatorarm64") }
+        }
         maven { url = uri(providers.gradleProperty("motionRepository").orElse("https://raw.githubusercontent.com/Labpics-Team/lab-motion/maven-compose-v0.1.0/").get()) }
         google(); mavenCentral()
     }

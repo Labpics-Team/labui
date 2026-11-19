@@ -17,6 +17,7 @@ export { Chip, type ChipProps } from './chip.js';
 export { Choicebox, type ChoiceboxProps } from './choicebox.js';
 export { Combobox, type ComboboxProps } from './combobox.js';
 export { Dialog, type DialogProps } from './dialog.js';
+export { DragButton, type DragButtonProps } from './drag-button.js';
 export { Icon, type IconProps } from './icon.js';
 export { Input, type InputProps } from './input.js';
 export { Kbd, type KbdProps } from './kbd.js';
