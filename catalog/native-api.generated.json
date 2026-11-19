@@ -1,6 +1,6 @@
 {
-  "revision": "4c20a0896c102544f6fa179107fdb4bedea353a8",
-  "sourceDigest": "sha256:3c38af02c2fd96a49be3ef0abbac7afb4216fc0a55421a832253727d39ae0462",
+  "revision": "f3e8cb6f38bbc1b969fe3613c9c983bc7368187f",
+  "sourceDigest": "sha256:206a97774ce656d66d737014843cd53532145f7892213bbf65131ac8558325e3",
   "symbols": [
     {
       "name": "LabAccordion",
@@ -41,6 +41,10 @@
     {
       "name": "LabChoicebox",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChoicebox.kt"
+    },
+    {
+      "name": "LabDragButton",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabDragButton.kt"
     },
     {
       "name": "LabInput",

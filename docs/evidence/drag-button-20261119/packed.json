@@ -1,0 +1,230 @@
+{
+  "archives": [
+    {
+      "name": "labpics-ui-tokens-0.0.0.tgz",
+      "sha256": "d486ffbd6d5f9bb003a3e20f5951780ba93a5924bca9adfa370d23a87d788d3e"
+    },
+    {
+      "name": "labpics-ui-shadow-0.0.0.tgz",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "labpics-ui-materials-0.0.0.tgz",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "labpics-fonts-0.0.0.tgz",
+      "sha256": "a3c4a35aadb8d495d0114c383118761304cd11ef34e45f9e34cd7cb2b3b31664"
+    },
+    {
+      "name": "labui-colors-0.0.0.tgz",
+      "sha256": "2dfc01336750f554b4a4e46155bb10caaf3c804df98ec237008961fee268decb"
+    },
+    {
+      "name": "labpics-ui-core-0.0.0.tgz",
+      "sha256": "33eb3cf1a5569758636c3397a6b5f3f5db8f8162abfb824826602a04d4145ba0"
+    },
+    {
+      "name": "labpics-ui-react-0.0.0.tgz",
+      "sha256": "217ecc3a91aebd47cbbde3ec431e790af6e93e7a5e5ee2b0816975c45b810614"
+    },
+    {
+      "name": "labpics-ui-vue-0.0.0.tgz",
+      "sha256": "f9d5a18a02fd1be6d065d7a5637b3f21d2eebffdfa8e16e08ae5f11f09ba8031"
+    },
+    {
+      "name": "labpics-ui-solid-0.0.0.tgz",
+      "sha256": "f2debeae7847a7132b5aff02cd8d9d568d30e6081fca98468ed735b524ea63d6"
+    },
+    {
+      "name": "labpics-ui-svelte-0.0.0.tgz",
+      "sha256": "cf19b3af9089adb93702f80ff04ab1087c11c7fffb9a673b27b7e57cd5fcdfaf"
+    },
+    {
+      "name": "labpics-ui-astro-0.0.0.tgz",
+      "sha256": "550a20939476a97aece815c52ff243ae07c2a067d7616b2da128eb9badfddad7"
+    }
+  ],
+  "publicIcons": false,
+  "declarations": true,
+  "records": [
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "partialCancel": true,
+      "singleCommit": true,
+      "clickKeyboard": true,
+      "escapePointerCancelResize": true,
+      "rtl": true,
+      "disabledResultReset": true
+    },
+    {
+      "engine": "chromium",
+      "renderer": "vue",
+      "partialCancel": true,
+      "singleCommit": true,
+      "clickKeyboard": true,
+      "escapePointerCancelResize": true,
+      "rtl": true,
+      "disabledResultReset": true
+    },
+    {
+      "engine": "chromium",
+      "renderer": "solid",
+      "partialCancel": true,
+      "singleCommit": true,
+      "clickKeyboard": true,
+      "escapePointerCancelResize": true,
+      "rtl": true,
+      "disabledResultReset": true
+    },
+    {
+      "engine": "chromium",
+      "renderer": "svelte",
+      "partialCancel": true,
+      "singleCommit": true,
+      "clickKeyboard": true,
+      "escapePointerCancelResize": true,
+      "rtl": true,
+      "disabledResultReset": true
+    },
+    {
+      "engine": "chromium",
+      "renderer": "astro",
+      "partialCancel": true,
+      "singleCommit": true,
+      "clickKeyboard": true,
+      "escapePointerCancelResize": true,
+      "rtl": true,
+      "disabledResultReset": true
+    },
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "normalMotionReturnAndInterruption": true
+    },
+    {
+      "engine": "chromium",
+      "renderer": "vue",
+      "normalMotionReturnAndInterruption": true
+    },
+    {
+      "engine": "chromium",
+      "typography": {
+        "family": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "weight": "500",
+        "size": "16px",
+        "synthesis": "weight style small-caps",
+        "variations": "normal",
+        "loaded": true,
+        "width": 60.39031982421875,
+        "faces": [
+          {
+            "family": "Geist",
+            "weight": "100 900",
+            "status": "loaded"
+          },
+          {
+            "family": "Geist",
+            "weight": "100 900",
+            "status": "unloaded"
+          },
+          {
+            "family": "Geist Mono",
+            "weight": "100 900",
+            "status": "unloaded"
+          }
+        ]
+      }
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "partialCancel": true,
+      "singleCommit": true,
+      "clickKeyboard": true,
+      "escapePointerCancelResize": true,
+      "rtl": true,
+      "disabledResultReset": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "vue",
+      "partialCancel": true,
+      "singleCommit": true,
+      "clickKeyboard": true,
+      "escapePointerCancelResize": true,
+      "rtl": true,
+      "disabledResultReset": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "solid",
+      "partialCancel": true,
+      "singleCommit": true,
+      "clickKeyboard": true,
+      "escapePointerCancelResize": true,
+      "rtl": true,
+      "disabledResultReset": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "svelte",
+      "partialCancel": true,
+      "singleCommit": true,
+      "clickKeyboard": true,
+      "escapePointerCancelResize": true,
+      "rtl": true,
+      "disabledResultReset": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "astro",
+      "partialCancel": true,
+      "singleCommit": true,
+      "clickKeyboard": true,
+      "escapePointerCancelResize": true,
+      "rtl": true,
+      "disabledResultReset": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "normalMotionReturnAndInterruption": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "vue",
+      "normalMotionReturnAndInterruption": true
+    },
+    {
+      "engine": "webkit",
+      "typography": {
+        "family": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "weight": "500",
+        "size": "16px",
+        "synthesis": "weight style small-caps",
+        "variations": "normal",
+        "loaded": true,
+        "width": 60.39033508300781,
+        "faces": [
+          {
+            "family": "Geist",
+            "weight": "100 900",
+            "status": "loaded"
+          },
+          {
+            "family": "Geist",
+            "weight": "100 900",
+            "status": "unloaded"
+          },
+          {
+            "family": "\"Geist Mono\"",
+            "weight": "100 900",
+            "status": "unloaded"
+          }
+        ]
+      }
+    }
+  ]
+}

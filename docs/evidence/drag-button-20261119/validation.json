@@ -1,0 +1,33 @@
+{
+  "sourceRevision": "c4ce6eb",
+  "figmaVersion": "2423213750570316842",
+  "sourceVerifier": "passed",
+  "coreTests": { "files": 22, "passed": 93 },
+  "adapterCatalogTests": { "files": 4, "passed": 32 },
+  "web": {
+    "engines": ["chromium", "webkit"],
+    "bindings": ["react", "vue", "solid", "svelte", "astro"],
+    "ssrHydration": "passed",
+    "esmCjs": "passed",
+    "standaloneDeclarations": "passed",
+    "normalMotionInterruption": "passed",
+    "fontReadyAndWeight": "passed",
+    "publicIcons": false
+  },
+  "native": {
+    "desktopTests": 6,
+    "installedConsumerTests": 1,
+    "installedConsumerCases": 6,
+    "uiVersion": "0.1.0-drag6-20261119",
+    "iconsVersion": "0.4.0",
+    "iconsSource": "verified CI Maven artifact from Icons PR139",
+    "renderApi": "SOFTWARE",
+    "headless": true,
+    "androidCompile": "requires integration CI; local SDK absent",
+    "iosRuntime": "not run on Windows"
+  },
+  "typecheck": ["core", "react", "docs"],
+  "build": ["tokens", "core", "react", "generated adapters", "docs"],
+  "biomeChangedSource": "passed",
+  "catalogCheck": "passed"
+}
