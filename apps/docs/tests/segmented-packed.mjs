@@ -7,13 +7,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, expect, webkit } from '@playwright/test';
+import { runPnpm as pnpm, writePackedConsumerProject } from './packed-consumer-project.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const output = join(root, 'docs/evidence/segmented-20261119');
 const consumer = await mkdtemp(join(tmpdir(), 'labui-segmented-'));
-const corepack = join(dirname(process.execPath), 'node_modules/corepack/dist/corepack.js');
-const pnpm = (args, cwd = root) =>
-  execFileSync(process.execPath, [corepack, 'pnpm', ...args], { cwd, stdio: 'pipe' });
 const records = [];
 let server;
 try {
@@ -57,10 +55,11 @@ try {
         .digest('hex'),
     });
   }
-  await writeFile(
-    join(consumer, 'package.json'),
-    JSON.stringify({ type: 'module', dependencies, pnpm: { overrides } }),
-  );
+  await writePackedConsumerProject(consumer, {
+    name: 'labui-segmented-consumer',
+    dependencies,
+    overrides,
+  });
   pnpm(['install', '--ignore-scripts'], consumer);
   await writeFile(
     join(consumer, 'shared.mjs'),

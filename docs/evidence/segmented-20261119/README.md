@@ -12,6 +12,19 @@
 
 Повторное ревью нашло отдельную required-регрессию multiple Choicebox: дочерние поля принимали ранний SSR-ввод, а родитель сохранял `defaultValue=[]`, поэтому reset мог не запустить повторную проверку группы. `choicebox-hydration-reset.json` подтверждает исправление в обычном и StrictMode roots: ранний B принят без callback, reset даёт пустое невалидное поле, следующий reset+click B даёт валидное значение и один callback; снятие B снова делает группу невалидной. Проверка использует стабильные `items`/`defaultValue` и built public React package в обоих браузерах.
 
+При объединении с общей framework-реализацией адаптеры сгенерированы повторно:
+начальные свойства Segmented передаются до подключения элемента. Установленные
+Segmented и Vue/Solid/Svelte прошли совместно: полный packed-сценарий выше,
+шесть обычных client mounts и шесть SSR/hydration-сценариев, reset и ранний ввод
+в обеих браузерных реализациях. Прошли 158 unit-тестов, общая сборка, typecheck,
+Biome и проекция каталога. Архивы в `packed.json` и соседнем
+`framework-ssr-20261119/result.json` относятся к этой объединённой сборке.
+
+Packed-проверки используют общий `packed-consumer-project.mjs`: версия pnpm
+берётся из проекта, transitive overrides записываются в `pnpm-workspace.yaml`.
+Так временный consumer не зависит от глобального выбора Corepack и сохраняет
+проверяемые локальные архивы при pnpm 10 и 11.
+
 После обновления каталога существующий `apps/docs/tests/selection.spec.ts` прошёл 40/40 сценариев в Chromium/WebKit за 23 секунды: mixed/required/reset/fieldset/FormData, отказ controlled-потребителя, SSR/no-JS, клавиатура, RTL и авторская типографика. Core/React typecheck, Segmented/Selection SSR (6 тестов), Biome для изменённых файлов и `catalog:check` также прошли.
 
 `native.json` фиксирует SHA256 исходников и Maven-артефактов `0.1.0-segmented-20261119.2`. Три SegmentedRenderTest прошли; отдельный SegmentedConsumerTest потребляет установленную Maven-публикацию, меняет значение и проверяет фактический текст результата в обеих темах при 100/125/200% текста. Это desktop CPU qualification; Android/iOS и экранный диктор этим прогоном не проверяются.

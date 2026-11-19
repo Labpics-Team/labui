@@ -4,10 +4,11 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/segmented-control';
   import type { LabSegmentedControl } from '@labpics/ui-core/segmented-control';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-segmented-control> — типы взяты прямо из класса ядра (LabSegmentedControl). */
   interface Props {
@@ -22,10 +23,11 @@
     items?: LabSegmentedControl['items'];
     onValueChange?: (event: CustomEvent) => void;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { shape, value, defaultValue, name, label, dir, disabled, required, items, onValueChange, children, ...rest }: Props = $props();
+  let { shape, value, defaultValue, name, label, dir, disabled, required, items, onValueChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'shape', attr: 'shape', kind: 'string' },
@@ -39,14 +41,20 @@
     { name: 'items', attr: 'items', kind: 'prop' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-segmented-control', {
+    specs, props: { shape, value, defaultValue, name, label, dir, disabled, required, items }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
+
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { shape, value, defaultValue, name, label, dir, disabled, required, items });
-  });
   $effect(() => forwardEvents(el, { 'value-change': onValueChange }));
 </script>
 
-<lab-segmented-control bind:this={el} {...rest}>
+<lab-segmented-control bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { shape, value, defaultValue, name, label, dir, disabled, required, items } } }}>
+  {@html server?.shadowHtml ?? ''}
   {@render children?.()}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-segmented-control>

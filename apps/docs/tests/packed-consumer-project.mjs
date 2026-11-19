@@ -15,6 +15,7 @@ export function runPnpm(args, cwd) {
     cwd,
     stdio: 'pipe',
     encoding: 'utf8',
+    windowsHide: true,
   });
 }
 

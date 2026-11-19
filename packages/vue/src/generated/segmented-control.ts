@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/segmented-control';
 import type { LabSegmentedControl } from '@labpics/ui-core/segmented-control';
-import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-segmented-control>, взятые прямо из класса ядра (LabSegmentedControl). */
 export type SegmentedControlProps = Pick<LabSegmentedControl, 'shape' | 'value' | 'defaultValue' | 'name' | 'label' | 'dir' | 'disabled' | 'required' | 'items'>;

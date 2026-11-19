@@ -2,7 +2,7 @@
   "archives": [
     {
       "name": "@labpics/ui-tokens",
-      "sha256": "c6921c0fcb2906a127021205695e0a4d7bf54111220e8e43d928ad0c277cf7b8"
+      "sha256": "14b836f4e35663136afbacc4ef90208150a202f9f6b5692364e46b3b34fbbebb"
     },
     {
       "name": "@labpics/ui-shadow",
@@ -18,19 +18,19 @@
     },
     {
       "name": "@labpics/ui-core",
-      "sha256": "fc230acfe4d1401c8cca42e020556afee95e99a3b13d2b8997fb923cd5c3c23f"
+      "sha256": "cc55e330dc9b36b6645a61796edf5ef08c247ea0fa77d7717f7eaef62c7cbe03"
     },
     {
       "name": "@labpics/ui-vue",
-      "sha256": "59d128e9b7d2628d160e8bd50f59b168141c592806450723f20cbfd6376cea41"
+      "sha256": "70671b4125fe497f6eb9867933efa46a0704abf419260ff97bdfe9b6e98212d9"
     },
     {
       "name": "@labpics/ui-solid",
-      "sha256": "aa6214675e98ab98b85075418ac45d270c6f84dc8e73071c6884fdb2ed61bdea"
+      "sha256": "bf96285fddc1e078a87f5a891d2f7151338626545853fc2668a84091f5077897"
     },
     {
       "name": "@labpics/ui-svelte",
-      "sha256": "f1e75cb61863a45e7211be6ac984dbfe2f705341c51b78e81bedf41c40e1b88e"
+      "sha256": "9249e14ba0d95a0270ef6fa78e15ef118f4e3ebc35be7d34897e63591b1303e6"
     }
   ],
   "qualification": {
@@ -53,7 +53,7 @@
       },
       {
         "name": "svelte",
-        "browserModules": 449,
+        "browserModules": 453,
         "browserProviders": [
           "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
         ],
