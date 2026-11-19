@@ -38,6 +38,7 @@ export default libraryPreset({
     'src/components/kbd/contract.ts',
     'src/components/chip/contract.ts',
     'src/components/select/behavior.ts',
+    'src/components/pin-input/behavior.ts',
     'src/components/breadcrumb/contract.ts',
     'src/components/pagination/contract.ts',
     'src/components/avatar/contract.ts',

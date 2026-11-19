@@ -327,7 +327,18 @@
       }
     },
     "./drag-button.css": "./dist/drag-button.css",
-    "./button-fill.css": "./dist/button-fill.css"
+    "./button-fill.css": "./dist/button-fill.css",
+    "./pin-input.css": "./dist/pin-input.css",
+    "./pin-input/behavior": {
+      "import": {
+        "types": "./dist/components/pin-input/behavior.d.ts",
+        "default": "./dist/components/pin-input/behavior.js"
+      },
+      "require": {
+        "types": "./dist/components/pin-input/behavior.d.cts",
+        "default": "./dist/components/pin-input/behavior.cjs"
+      }
+    }
   },
   "files": ["dist"],
   "sideEffects": [
@@ -360,7 +371,8 @@
     "./dist/select.css",
     "./dist/avatar.css",
     "./dist/drag-button.css",
-    "./dist/button-fill.css"
+    "./dist/button-fill.css",
+    "./dist/pin-input.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

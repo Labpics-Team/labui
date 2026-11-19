@@ -1,0 +1,10 @@
+<!doctype html>
+<html class="lab-scope" lang="ru" data-theme="light"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pin Input — установленный пакет</title>
+<link rel="stylesheet" href="./main.css"><style>
+body { margin: 0; padding: 24px; font-family: var(--lab-font-family); color: var(--lab-label-primary); background: var(--lab-bg-primary); }
+main { display: flex; flex-direction: column; gap: 32px; width: max-content; } .row { display: flex; gap: 36px; }
+form { display: flex; align-items: end; gap: 16px; margin-top: 24px; } #react { display: contents; } button { font: inherit; } output { min-width: 4em; }
+</style></head><body><main>
+<div class="row" id="lit-matrix"><lab-pin-input label="Пусто" label-hidden mask count="4"></lab-pin-input><lab-pin-input label="PIN" label-hidden mask default-value="12" count="4"></lab-pin-input><lab-pin-input label="Ошибка" label-hidden mask invalid type="danger" default-value="12" count="4"></lab-pin-input></div>
+<form id="lit-form"><lab-pin-input name="code" label="Код подтверждения" count="6" required otp></lab-pin-input><button type="reset">Сбросить</button></form>
+<div id="react"></div></main><script type="module" src="./main.js"></script></body></html>

@@ -1,55 +1,24 @@
-/**
- * <PinInput> — the native-React twin of the Lit `<lab-pin-input>` (ADR-0001).
- *
- * A segmented code field: N single-character inputs that focus-advance as the user
- * types, fill across on paste, and optionally mask. Same axes, same `@zag-js/pin-input`
- * machine through the SAME Behaviors seam — here via `useZag` (the React side) instead of
- * the Lit `ZagController`. No Lit in this path; Next's shallow WC-SSR never touches React.
- * The machine owns each box's value + roving focus that auto-advances + keyboard +
- * paste-fill + masking (`type=password`) + the complete/invalid lifecycle — the component
- * only spreads the machine's prop-getters onto native elements and paints with the SAME
- * --lab-* roles, so parity is CSS, not a second behaviour implementation.
- *
- * REUSES the field a11y seam: the label / helper / error association is the SAME shared
- * `field-a11y` helper from @labpics/ui-core that the Lit element and the other fields use
- * — so the ARIA description contract is ONE source of truth across both renderers. A pin
- * input is a GROUP of boxes, so the group owns aria-labelledby + describedby/error/invalid;
- * `aria-required` is deliberately different because role="group" does not support it.
- * Required therefore lands on each visible textbox segment, while the machine owns the
- * native `required` state of the hidden form input.
- *
- * Segments keyed by `index` (the machine's own key): pin boxes never reorder, so the
- * positional index IS the stable key for `getInputProps({ index })`.
- *
- * Client Component: a pin input is interactive (value + focus dance). It renders as a leaf
- * under a Server Component shell — never a `'use client'` page (dive-next P1).
- *
- * The axis types come from @labpics/ui-core (type-only — no Lit runtime), so the Lit and
- * React APIs share ONE source of truth and cannot drift.
- */
 'use client';
 
 import {
   type LabFieldSize,
   type LabFieldType,
-  type MachineModule,
-  type SchemaOf,
   fieldControlAria,
   fieldErrorIsActive,
   fieldPartIds,
 } from '@labpics/ui-core';
 import type { LabPinInputValueType } from '@labpics/ui-core/pin-input';
-import * as pinInputMachine from '@zag-js/pin-input';
-import { type ReactNode, useId } from 'react';
+import {
+  listenPinReset,
+  pinCount,
+  pinInputBehavior,
+  pinValueMatchesType,
+} from '@labpics/ui-core/pin-input/behavior';
+import { type ReactNode, useCallback, useEffect, useId, useRef } from 'react';
 import { useZag } from './use-zag.js';
-import './pin-input.css';
+import '@labpics/ui-core/pin-input.css';
 
 export type { LabFieldSize as LabPinInputSize, LabFieldType as LabPinInputType };
-
-type PinInputSchema = SchemaOf<pinInputMachine.Service>;
-type PinInputApi = pinInputMachine.Api;
-
-const pinInputModule: MachineModule<PinInputSchema, PinInputApi> = pinInputMachine;
 
 export interface PinInputProps {
   /** Visible label text — rendered into a real `<label>`; names the control group. */
@@ -88,6 +57,8 @@ export interface PinInputProps {
   invalid?: boolean;
   /** Native form field name (rides the machine's hidden input). */
   name?: string;
+  /** Associate with an external native form. */
+  form?: string;
   /** Fires when the machine changes the value (machine is source of truth). */
   onValueChange?: (value: string[], valueAsString: string) => void;
   /** Fires when all segments are filled. */
@@ -105,7 +76,7 @@ export function PinInput({
   valueType = 'numeric',
   mask = false,
   otp = false,
-  placeholder = '○',
+  placeholder = '',
   value,
   defaultValue,
   readOnly = false,
@@ -113,15 +84,39 @@ export function PinInput({
   required = false,
   invalid = false,
   name,
+  form,
   onValueChange,
   onValueComplete,
 }: PinInputProps): ReactNode {
+  count = pinCount(count);
+  const hidden = useRef<HTMLInputElement>(null);
+  const initialValue = useRef(defaultValue ?? []);
   const baseId = useId();
   const ids = fieldPartIds(baseId);
   const hasHelper = helper != null && helper !== '';
   const hasError = error != null && error !== '';
   const showError = fieldErrorIsActive({ invalid, hasError });
   const fieldAria = fieldControlAria({ id: baseId, invalid, required, hasHelper, hasError });
+  const syncForm = useCallback(
+    (accepted: string[]) => {
+      const input = hidden.current;
+      if (!input) return;
+      const cells = Array.from({ length: count }, (_, i) => accepted[i] ?? '');
+      input.value = cells.join('');
+      const missing = required && cells.some((character) => character === '');
+      const malformed = !pinValueMatchesType(cells, valueType);
+      input.setCustomValidity(
+        !readOnly && !disabled && (invalid || missing || malformed)
+          ? typeof error === 'string' && error
+            ? error
+            : malformed
+              ? 'Enter a code with the expected character type.'
+              : `Enter all ${count} characters.`
+          : '',
+      );
+    },
+    [count, required, invalid, readOnly, disabled, error, valueType],
+  );
 
   // The machine owns each box's value ARIA + roving tabindex + the hidden input; the field
   // owns the GROUP's shared label / description / error wiring. `aria-required` is NOT a
@@ -135,7 +130,7 @@ export function PinInput({
     'aria-errormessage': fieldAria['aria-errormessage'],
   } as const;
 
-  const api = useZag(pinInputModule, {
+  const api = useZag(pinInputBehavior, {
     id: baseId,
     // Pin the machine's label id to the field-a11y label part id, so the group's
     // aria-labelledby targets the SAME node the machine labels (one label id, no drift).
@@ -152,13 +147,32 @@ export function PinInput({
     invalid,
     required,
     name,
-    onValueChange: onValueChange
-      ? (details) => onValueChange(details.value, details.valueAsString)
-      : undefined,
-    onValueComplete: onValueComplete
-      ? (details) => onValueComplete(details.value, details.valueAsString)
-      : undefined,
+    form,
+    onValueChange: (details) => {
+      syncForm(value ?? details.value);
+      onValueChange?.(details.value, details.valueAsString);
+    },
+    onValueComplete: (details) => {
+      // Browser validation must be current inside a synchronous requestSubmit callback.
+      syncForm(details.value);
+      onValueComplete?.(details.value, details.valueAsString);
+    },
   });
+  const latest = useRef({ api, value });
+  latest.current = { api, value };
+  useEffect(() => {
+    const input = hidden.current;
+    if (!input) return;
+    return listenPinReset(input, () => {
+      const { api: current, value: controlled } = latest.current;
+      if (controlled === undefined) current.setValue(initialValue.current);
+      input.value =
+        controlled === undefined
+          ? initialValue.current.slice(0, count).join('')
+          : controlled.slice(0, count).join('');
+    });
+  }, [count]);
+  useEffect(() => syncForm(api.value), [api.value, syncForm]);
   const segmentNoun = valueType === 'numeric' ? 'digit' : 'character';
 
   return (
@@ -168,7 +182,7 @@ export function PinInput({
       data-lab-pin-input=""
       data-type={type}
       data-size={size}
-      data-label-hidden={labelHidden || undefined}
+      data-label-hidden={labelHidden || !label || undefined}
       data-readonly={readOnly || undefined}
       data-disabled={disabled || undefined}
       data-required={required || undefined}
@@ -190,15 +204,24 @@ export function PinInput({
           // Keyed by the machine's own index: pin boxes never reorder, so the positional
           // index IS the stable key for getInputProps({ index }). Required is applied to
           // the real textbox the user reaches, not to the unsupported aggregate group.
-          <input
-            key={index}
-            {...api.getInputProps({ index })}
-            aria-required={fieldAria['aria-required']}
-            aria-label={`${label}, ${segmentNoun} ${index + 1} of ${count}`}
-            className="lab-pin-input-segment"
-          />
+          <span className="lab-pin-input-cell" key={index}>
+            <input
+              {...api.getInputProps({ index })}
+              aria-required={fieldAria['aria-required']}
+              aria-describedby={fieldAria['aria-describedby']}
+              aria-errormessage={fieldAria['aria-errormessage']}
+              aria-label={`${label || 'Pin input'}, ${segmentNoun} ${index + 1} of ${count}`}
+              className="lab-pin-input-segment"
+            />
+            <span className="lab-pin-input-dot" aria-hidden="true" />
+          </span>
         ))}
-        <input {...api.getHiddenInputProps()} className="lab-pin-input-hidden" />
+        <input
+          {...api.getHiddenInputProps()}
+          ref={hidden}
+          onFocus={() => api.focus()}
+          className="lab-pin-input-hidden"
+        />
       </div>
       {hasHelper ? (
         <span id={ids.helper} className="lab-field-helper">

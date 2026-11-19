@@ -209,7 +209,11 @@
       "web": {
         "subpath": "pin-input",
         "reactExport": "PinInput"
-      }
+      },
+      "native": {
+        "symbol": "LabPinInput"
+      },
+      "profile": "pin-input"
     },
     {
       "slug": "slider",
@@ -464,7 +468,9 @@
         "subpath": "avatar",
         "reactExport": "Avatar"
       },
-      "native": { "symbol": "LabAvatar" },
+      "native": {
+        "symbol": "LabAvatar"
+      },
       "profile": "avatar"
     },
     {
@@ -1422,7 +1428,10 @@
           "family": "pin-input",
           "role": "root",
           "web": {
-            "scope": "Публичный API семейства; все авторские варианты ещё не сверены."
+            "scope": "Авторские ячейки 48×56, группы 4/6, заполнение, hover и danger; общий профиль Lit/React, IME, формы и доступные имена."
+          },
+          "native": {
+            "scope": "Нативный редактор Compose с авторскими ячейками, безопасной маской, IME, OTP autofill и общей геометрией."
           }
         }
       ]
@@ -1434,7 +1443,13 @@
       "uses": [
         {
           "family": "pin-input",
-          "role": "part"
+          "role": "part",
+          "web": {
+            "scope": "Авторские ячейки 48×56, группы 4/6, заполнение, hover и danger; общий профиль Lit/React, IME, формы и доступные имена."
+          },
+          "native": {
+            "scope": "Нативный редактор Compose с авторскими ячейками, безопасной маской, IME, OTP autofill и общей геометрией."
+          }
         }
       ]
     },

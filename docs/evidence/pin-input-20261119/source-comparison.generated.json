@@ -1,0 +1,65 @@
+[
+  {
+    "renderer": "chromium",
+    "state": "empty",
+    "meanAbsoluteChannelError": 0.11743551587301587,
+    "pixelsOver20": 0,
+    "pixels": 10752
+  },
+  {
+    "renderer": "chromium",
+    "state": "filled",
+    "meanAbsoluteChannelError": 0.6187375992063492,
+    "pixelsOver20": 223,
+    "pixels": 10752
+  },
+  {
+    "renderer": "chromium",
+    "state": "danger",
+    "meanAbsoluteChannelError": 0.6635664682539683,
+    "pixelsOver20": 221,
+    "pixels": 10752
+  },
+  {
+    "renderer": "webkit",
+    "state": "empty",
+    "meanAbsoluteChannelError": 0.12332589285714286,
+    "pixelsOver20": 0,
+    "pixels": 10752
+  },
+  {
+    "renderer": "webkit",
+    "state": "filled",
+    "meanAbsoluteChannelError": 0.535187251984127,
+    "pixelsOver20": 203,
+    "pixels": 10752
+  },
+  {
+    "renderer": "webkit",
+    "state": "danger",
+    "meanAbsoluteChannelError": 0.5537574404761905,
+    "pixelsOver20": 192,
+    "pixels": 10752
+  },
+  {
+    "renderer": "native",
+    "state": "empty",
+    "meanAbsoluteChannelError": 0.12633308531746032,
+    "pixelsOver20": 0,
+    "pixels": 10752
+  },
+  {
+    "renderer": "native",
+    "state": "filled",
+    "meanAbsoluteChannelError": 0.6050037202380952,
+    "pixelsOver20": 225,
+    "pixels": 10752
+  },
+  {
+    "renderer": "native",
+    "state": "danger",
+    "meanAbsoluteChannelError": 0.6264260912698413,
+    "pixelsOver20": 212,
+    "pixels": 10752
+  }
+]

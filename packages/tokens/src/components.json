@@ -1372,5 +1372,60 @@
       "opacity": 0.3,
       "colorRole": "fx-glow-neutral"
     }
+  },
+  "pin-input": {
+    "strokeWidth": 2,
+    "fieldGap": 8,
+    "focus": {
+      "width": 2,
+      "offset": 2
+    },
+    "caption": {
+      "$textStyle": "caption-s"
+    },
+    "sizes": {
+      "s": {
+        "width": 40,
+        "height": 48,
+        "radius": 10,
+        "gap": 8,
+        "dot": 6,
+        "$textStyle": "body"
+      },
+      "m": {
+        "width": 48,
+        "height": 56,
+        "radius": 12,
+        "gap": 12,
+        "dot": 8,
+        "$textStyle": "body"
+      },
+      "l": {
+        "width": 56,
+        "height": 64,
+        "radius": 14,
+        "gap": 12,
+        "dot": 10,
+        "$textStyle": "body"
+      }
+    },
+    "roles": {
+      "background": "bg-primary",
+      "border": "border-base",
+      "activeBorder": "border-accent",
+      "hover": "fill-quaternary",
+      "label": "label-primary",
+      "placeholder": "label-quaternary",
+      "focus": "border-focus",
+      "danger": "border-danger",
+      "caption": "label-secondary",
+      "disabledLabel": "label-quaternary",
+      "disabledBorder": "border-soft",
+      "readonlyBackground": "fill-quaternary"
+    },
+    "sourceRef": {
+      "key": "component-set/Input Pin/Input Pin / Cell",
+      "authoredVariants": 6
+    }
   }
 }

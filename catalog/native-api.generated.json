@@ -1,6 +1,6 @@
 {
-  "revision": "d596e8e2247623a0a240889a22e184f9b5e9a59c",
-  "sourceDigest": "sha256:56bfe84bf20fe009842720f78174c85aa981f5b53426b8e13954e1f44cfc0bf0",
+  "revision": "607d51001e670f900942e767f6086ac1f6d43f59",
+  "sourceDigest": "sha256:f1cf0415c4b50e7eae8e9b3a961c731424bc44f78a5ab776e08bcec3d28ea43b",
   "symbols": [
     {
       "name": "LabAccordion",
@@ -77,6 +77,10 @@
     {
       "name": "LabPagination",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabPagination.kt"
+    },
+    {
+      "name": "LabPinInput",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabPinInput.kt"
     },
     {
       "name": "LabProgress",

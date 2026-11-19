@@ -35,6 +35,52 @@ function PinInputWithEventReadout(): React.ReactNode {
   );
 }
 
+function PinForm(): React.ReactNode {
+  const [count, setCount] = useState(4);
+  const [accepted, setAccepted] = useState(false);
+  const [value, setValue] = useState(['9', '8', '7', '6']);
+  return (
+    <section data-testid="react-form-fixture">
+      <form id="react-pin-form">
+        <PinInput
+          name="code"
+          label="Form code"
+          count={count}
+          required
+          otp
+          defaultValue={['1', '2']}
+          onValueComplete={() => {
+            const form = document.querySelector<HTMLFormElement>('#react-pin-form');
+            form?.dispatchEvent(new Event('pin-complete'));
+          }}
+        />
+        <button type="reset">Reset code</button>
+        <button type="button" onClick={() => setCount(count === 4 ? 6 : 4)}>
+          Change length
+        </button>
+      </form>
+      <form id="react-multiple-pin-form">
+        <PinInput label="First code" name="first" required defaultValue={['1', '2']} />
+        <PinInput label="Second code" name="second" required defaultValue={['3', '4']} />
+        <button type="submit">Verify both codes</button>
+      </form>
+      <div data-testid="react-controlled">
+        <PinInput
+          name="controlled"
+          label="Controlled code"
+          value={value}
+          onValueChange={(next) => {
+            if (accepted) setValue(next);
+          }}
+        />
+        <button type="button" onClick={() => setAccepted(!accepted)}>
+          Accept input
+        </button>
+      </div>
+    </section>
+  );
+}
+
 const mount = document.querySelector<HTMLElement>('#react-root');
 if (!mount) throw new Error('Missing #react-root mount node in pin-input.html');
 
@@ -76,5 +122,6 @@ createRoot(mount).render(
       <PinInput size="l" label="Large" count={4} />
     </span>
     <PinInputWithEventReadout />
+    <PinForm />
   </StrictMode>,
 );

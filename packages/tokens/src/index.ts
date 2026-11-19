@@ -64,3 +64,5 @@ export { selectProfile } from './select.js';
 
 export { avatarProfile } from './avatar.js';
 export { dragButtonProfile } from './drag-button.js';
+
+export { pinInputProfile } from './pin-input.js';

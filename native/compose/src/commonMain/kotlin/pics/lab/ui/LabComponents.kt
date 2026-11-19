@@ -14,6 +14,7 @@ internal data class LabBreadcrumbMetrics(val fontSize: Float, val lineHeight: Fl
 internal data class LabAccordionMetrics(val padding: Float, val radius: Float, val gap: Float, val contentGap: Float, val fontSize: Float, val lineHeight: Float, val iconSize: Float)
 internal data class LabSelectMetrics(val height: Float, val radius: Float, val paddingStart: Float, val paddingEnd: Float, val paddingY: Float, val gap: Float, val leadingSize: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float)
 internal data class LabAvatarMetrics(val diameter: Float, val fontSize: Float, val lineHeight: Float, val statusSize: Float, val statusGap: Float)
+internal data class LabPinInputMetrics(val width: Float, val height: Float, val radius: Float, val gap: Float, val dot: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float)
 
 public enum class LabBadgeColor(internal val role: String) { Neutral("neutral"), Gray("gray"), Blue("blue"), Red("red"), Orange("orange"), Green("green"), Yellow("yellow"), Teal("teal"), Mint("mint"), Indigo("indigo"), Purple("purple"), Pink("pink"), StaticDark("static-dark"), StaticLight("static-light"), Brand("brand") }
 
@@ -691,4 +692,27 @@ internal object LabComponents {
     const val DragButtonLineHeight = 24f
     const val DragButtonFontWeight = 500f
     const val DragButtonLetterSpacing = 0f
+    val PinInputS = LabPinInputMetrics(40f, 48f, 10f, 8f, 6f, 16f, 24f, 400f, -0.25f)
+    val PinInputM = LabPinInputMetrics(48f, 56f, 12f, 12f, 8f, 16f, 24f, 400f, -0.25f)
+    val PinInputL = LabPinInputMetrics(56f, 64f, 14f, 12f, 10f, 16f, 24f, 400f, -0.25f)
+    const val PinInputStrokeWidth = 2f
+    const val PinInputFieldGap = 8f
+    const val PinInputFocusWidth = 2f
+    const val PinInputFocusOffset = 2f
+    const val PinInputCaptionFontSize = 14f
+    const val PinInputCaptionLineHeight = 12f
+    const val PinInputCaptionFontWeight = 500f
+    const val PinInputCaptionLetterSpacing = 0f
+    const val PinInputRolesBackground = "bg-primary"
+    const val PinInputRolesBorder = "border-base"
+    const val PinInputRolesActiveBorder = "border-accent"
+    const val PinInputRolesHover = "fill-quaternary"
+    const val PinInputRolesLabel = "label-primary"
+    const val PinInputRolesPlaceholder = "label-quaternary"
+    const val PinInputRolesFocus = "border-focus"
+    const val PinInputRolesDanger = "border-danger"
+    const val PinInputRolesCaption = "label-secondary"
+    const val PinInputRolesDisabledLabel = "label-quaternary"
+    const val PinInputRolesDisabledBorder = "border-soft"
+    const val PinInputRolesReadonlyBackground = "fill-quaternary"
 }

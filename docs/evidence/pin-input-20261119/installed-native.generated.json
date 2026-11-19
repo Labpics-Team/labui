@@ -1,0 +1,49 @@
+{
+  "coordinate": "pics.lab:ui-compose-desktop:0.1.0-pin-review-20261120",
+  "headless": true,
+  "renderApi": "SOFTWARE",
+  "tests": [
+    {
+      "name": "programmaticEditsAndReplacementStateCannotRetainAnInvisibleSuffix",
+      "classname": "pics.lab.ui.PinInputRenderTest",
+      "seconds": 1.467,
+      "passed": true
+    },
+    {
+      "name": "nativeSelectionPaintsForwardAndReversedRangesAndKeyboardReplacesThem",
+      "classname": "pics.lab.ui.PinInputRenderTest",
+      "seconds": 0.872,
+      "passed": true
+    },
+    {
+      "name": "validImeCompositionSurvivesLengthObservationAndCountChanges",
+      "classname": "pics.lab.ui.PinInputRenderTest",
+      "seconds": 0.379,
+      "passed": true
+    },
+    {
+      "name": "secureNativeEditorExposesPasswordSemanticsAndBlocksCopy",
+      "classname": "pics.lab.ui.PinInputRenderTest",
+      "seconds": 0.058,
+      "passed": true
+    },
+    {
+      "name": "hoverPaintBelongsOnlyToThePointedCell",
+      "classname": "pics.lab.ui.PinInputRenderTest",
+      "seconds": 0.115,
+      "passed": true
+    },
+    {
+      "name": "authoredCellsRenderBothThemesAtThreeScalesWithoutIdleFrames",
+      "classname": "pics.lab.ui.PinInputRenderTest",
+      "seconds": 0.745,
+      "passed": true
+    },
+    {
+      "name": "nativeEditorAcceptsPasteRejectsInvalidAndTruncatesChangedCount",
+      "classname": "pics.lab.ui.PinInputRenderTest",
+      "seconds": 0.65,
+      "passed": true
+    }
+  ]
+}

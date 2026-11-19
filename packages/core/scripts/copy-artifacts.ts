@@ -26,6 +26,7 @@ import { dragButtonCss } from '../src/components/drag-button/styles.js';
 import { inputCss } from '../src/components/input/styles.js';
 import { kbdCss } from '../src/components/kbd/styles.js';
 import { paginationCss } from '../src/components/pagination/styles.js';
+import { pinInputCss } from '../src/components/pin-input/styles.js';
 import { progressCss } from '../src/components/progress/styles.js';
 import { segmentedCss } from '../src/components/segmented-control/styles.js';
 import { selectCss } from '../src/components/select/styles.js';
@@ -82,6 +83,7 @@ function main(): void {
   writeFileSync(join(dist, 'badge.css'), badgeCss);
   writeFileSync(join(dist, 'kbd.css'), kbdCss);
   writeFileSync(join(dist, 'progress.css'), progressCss);
+  writeFileSync(join(dist, 'pin-input.css'), pinInputCss);
   writeFileSync(join(dist, 'pagination.css'), paginationCss);
   // Theme-scoped URLs inherit through Shadow DOM; JS contains no image payloads.
   copyFileSync(join(src, 'avatar-material.css'), join(dist, 'avatar-material.css'));

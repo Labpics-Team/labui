@@ -1,0 +1,144 @@
+[
+  {
+    "engine": "chromium",
+    "installed": true,
+    "geometry": [
+      {
+        "theme": "light",
+        "scale": 1,
+        "width": 48,
+        "height": 56,
+        "stroke": "2px",
+        "radius": "12px",
+        "border": "rgb(0, 122, 255)"
+      },
+      {
+        "theme": "light",
+        "scale": 1.25,
+        "width": 60,
+        "height": 70,
+        "stroke": "2px",
+        "radius": "15px",
+        "border": "rgb(0, 122, 255)"
+      },
+      {
+        "theme": "light",
+        "scale": 2,
+        "width": 96,
+        "height": 112,
+        "stroke": "4px",
+        "radius": "24px",
+        "border": "rgb(0, 122, 255)"
+      },
+      {
+        "theme": "dark",
+        "scale": 1,
+        "width": 48,
+        "height": 56,
+        "stroke": "2px",
+        "radius": "12px",
+        "border": "rgb(74, 143, 255)"
+      },
+      {
+        "theme": "dark",
+        "scale": 1.25,
+        "width": 60,
+        "height": 70,
+        "stroke": "2px",
+        "radius": "15px",
+        "border": "rgb(74, 143, 255)"
+      },
+      {
+        "theme": "dark",
+        "scale": 2,
+        "width": 96,
+        "height": 112,
+        "stroke": "4px",
+        "radius": "24px",
+        "border": "rgb(74, 143, 255)"
+      }
+    ],
+    "accessibilityViolations": 0,
+    "hydration": {
+      "dirtyValue": "92",
+      "autofillValue": "6789",
+      "controlledValue": "12",
+      "resetValue": "12"
+    },
+    "idle": {
+      "frames": 0,
+      "timers": 0
+    }
+  },
+  {
+    "engine": "webkit",
+    "installed": true,
+    "geometry": [
+      {
+        "theme": "light",
+        "scale": 1,
+        "width": 48,
+        "height": 56,
+        "stroke": "2px",
+        "radius": "12px",
+        "border": "rgb(0, 122, 255)"
+      },
+      {
+        "theme": "light",
+        "scale": 1.25,
+        "width": 60,
+        "height": 70,
+        "stroke": "2px",
+        "radius": "15px",
+        "border": "rgb(0, 122, 255)"
+      },
+      {
+        "theme": "light",
+        "scale": 2,
+        "width": 96,
+        "height": 112,
+        "stroke": "4px",
+        "radius": "24px",
+        "border": "rgb(0, 122, 255)"
+      },
+      {
+        "theme": "dark",
+        "scale": 1,
+        "width": 48,
+        "height": 56,
+        "stroke": "2px",
+        "radius": "12px",
+        "border": "rgb(74, 143, 255)"
+      },
+      {
+        "theme": "dark",
+        "scale": 1.25,
+        "width": 60,
+        "height": 70,
+        "stroke": "2px",
+        "radius": "15px",
+        "border": "rgb(74, 143, 255)"
+      },
+      {
+        "theme": "dark",
+        "scale": 2,
+        "width": 96,
+        "height": 112,
+        "stroke": "4px",
+        "radius": "24px",
+        "border": "rgb(74, 143, 255)"
+      }
+    ],
+    "accessibilityViolations": 0,
+    "hydration": {
+      "dirtyValue": "92",
+      "autofillValue": "6789",
+      "controlledValue": "12",
+      "resetValue": "12"
+    },
+    "idle": {
+      "frames": 0,
+      "timers": 0
+    }
+  }
+]

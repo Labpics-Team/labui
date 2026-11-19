@@ -35,7 +35,7 @@ export const pinInputDoc: ComponentDoc = {
   tag: 'lab-pin-input',
   title: 'Pin Input',
   summary:
-    "A segmented code field — N single-character inputs that focus-advance as you type, fill across on paste, and optionally mask. Runs the @zag-js/pin-input machine through the LabUI seam: the machine owns each box's value, the roving focus that auto-advances on type and steps back on Backspace, the paste-fill that distributes across the boxes, masking (type=password), the roving tabindex + per-box aria-invalid, and the complete/invalid lifecycle. It REUSES the shared field-a11y helper for the label / helper / error association — the same seam as Input — lifted to the control group (role=group + aria-labelledby + describedby), so the ARIA contract is one source of truth across both renderers. The element only paints with semantic --lab-* roles.",
+    'Короткий код с автоматическим переходом между ячейками, вставкой целиком и необязательной маской. Размер M повторяет Lab UI: 48×56 px, радиус 12 px, рамка 2 px и промежуток 12 px. Поддерживает формы, сброс, одноразовые коды и изменение длины. В Compose один нативный редактор сохраняет IME и системное выделение.',
   status: { kind: 'stable' },
 
   statesMatrix: {
