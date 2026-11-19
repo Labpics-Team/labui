@@ -18,7 +18,7 @@
     },
     {
       "name": "@labpics/ui-core",
-      "sha256": "65b6d91a8d02d87dedf3c0d8308595787a115ed57fd67b95b329bdc196fbe957"
+      "sha256": "1d7abdfc80386b9a6b62e0747d393206915cbf487107ea9e23a054accaffa025"
     },
     {
       "name": "@labpics/ui-vue",
@@ -37,7 +37,7 @@
     "records": [
       {
         "name": "vue",
-        "browserModules": 154,
+        "browserModules": 155,
         "browserProviders": [
           "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
         ],
@@ -45,7 +45,7 @@
       },
       {
         "name": "solid",
-        "browserModules": 150,
+        "browserModules": 151,
         "browserProviders": [
           "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
         ],
@@ -53,7 +53,7 @@
       },
       {
         "name": "svelte",
-        "browserModules": 444,
+        "browserModules": 445,
         "browserProviders": [
           "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
         ],
@@ -82,7 +82,7 @@
         "background": "rgba(120, 120, 128, 0.08)",
         "styles": 1,
         "selected": "true",
-        "field": "Server field"
+        "field": "Server\nfield\nwith\nbreaks"
       },
       "after": {
         "hosts": 1,
@@ -96,8 +96,8 @@
         "field": true,
         "text": "Typed before hydration & retained",
         "selection": [6, 12],
-        "fieldText": "Dirty component field",
-        "fieldSelection": [2, 8],
+        "fieldText": "My uncommitted draft",
+        "fieldSelection": [3, 10],
         "tabs": 2,
         "collapsible": false,
         "nullValue": null,
@@ -106,6 +106,11 @@
       },
       "events": 2,
       "clicks": 1,
+      "fieldUpdates": {
+        "normalized": "Server\nfield\nwith\nbreaks",
+        "external": "External\nupdate",
+        "attribute": "External\r\nupdate"
+      },
       "errors": []
     },
     {
@@ -120,7 +125,7 @@
         "background": "rgba(120, 120, 128, 0.08)",
         "styles": 1,
         "selected": "true",
-        "field": "Server field"
+        "field": "Server\nfield\nwith\nbreaks"
       },
       "after": {
         "hosts": 1,
@@ -134,8 +139,8 @@
         "field": true,
         "text": "Typed before hydration & retained",
         "selection": [6, 12],
-        "fieldText": "Dirty component field",
-        "fieldSelection": [2, 8],
+        "fieldText": "My uncommitted draft",
+        "fieldSelection": [3, 10],
         "tabs": 2,
         "collapsible": false,
         "nullValue": null,
@@ -144,6 +149,11 @@
       },
       "events": 2,
       "clicks": 1,
+      "fieldUpdates": {
+        "normalized": "Server\nfield\nwith\nbreaks",
+        "external": "External\nupdate",
+        "attribute": "External\r\nupdate"
+      },
       "errors": []
     },
     {
@@ -158,7 +168,7 @@
         "background": "rgba(120, 120, 128, 0.08)",
         "styles": 1,
         "selected": "true",
-        "field": "Server field"
+        "field": "Server\nfield\nwith\nbreaks"
       },
       "after": {
         "hosts": 1,
@@ -172,8 +182,8 @@
         "field": true,
         "text": "Typed before hydration & retained",
         "selection": [6, 12],
-        "fieldText": "Dirty component field",
-        "fieldSelection": [2, 8],
+        "fieldText": "My uncommitted draft",
+        "fieldSelection": [3, 10],
         "tabs": 2,
         "collapsible": false,
         "nullValue": null,
@@ -182,6 +192,11 @@
       },
       "events": 2,
       "clicks": 1,
+      "fieldUpdates": {
+        "normalized": "Server\nfield\nwith\nbreaks",
+        "external": "External\nupdate",
+        "attribute": "External\r\nupdate"
+      },
       "errors": []
     },
     {
@@ -196,7 +211,7 @@
         "background": "rgba(120, 120, 128, 0.08)",
         "styles": 1,
         "selected": "true",
-        "field": "Server field"
+        "field": "Server\nfield\nwith\nbreaks"
       },
       "after": {
         "hosts": 1,
@@ -210,8 +225,8 @@
         "field": true,
         "text": "Typed before hydration & retained",
         "selection": [6, 12],
-        "fieldText": "Dirty component field",
-        "fieldSelection": [2, 8],
+        "fieldText": "My uncommitted draft",
+        "fieldSelection": [3, 10],
         "tabs": 2,
         "collapsible": false,
         "nullValue": null,
@@ -220,6 +235,11 @@
       },
       "events": 2,
       "clicks": 1,
+      "fieldUpdates": {
+        "normalized": "Server\nfield\nwith\nbreaks",
+        "external": "External\nupdate",
+        "attribute": "External\r\nupdate"
+      },
       "errors": []
     },
     {
@@ -234,7 +254,7 @@
         "background": "rgba(120, 120, 128, 0.08)",
         "styles": 1,
         "selected": "true",
-        "field": "Server field"
+        "field": "Server\nfield\nwith\nbreaks"
       },
       "after": {
         "hosts": 1,
@@ -248,8 +268,8 @@
         "field": true,
         "text": "Typed before hydration & retained",
         "selection": [6, 12],
-        "fieldText": "Dirty component field",
-        "fieldSelection": [2, 8],
+        "fieldText": "My uncommitted draft",
+        "fieldSelection": [3, 10],
         "tabs": 2,
         "collapsible": false,
         "nullValue": null,
@@ -258,6 +278,11 @@
       },
       "events": 2,
       "clicks": 1,
+      "fieldUpdates": {
+        "normalized": "Server\nfield\nwith\nbreaks",
+        "external": "External\nupdate",
+        "attribute": "External\r\nupdate"
+      },
       "errors": []
     },
     {
@@ -272,7 +297,7 @@
         "background": "rgba(120, 120, 128, 0.08)",
         "styles": 1,
         "selected": "true",
-        "field": "Server field"
+        "field": "Server\nfield\nwith\nbreaks"
       },
       "after": {
         "hosts": 1,
@@ -286,8 +311,8 @@
         "field": true,
         "text": "Typed before hydration & retained",
         "selection": [6, 12],
-        "fieldText": "Dirty component field",
-        "fieldSelection": [2, 8],
+        "fieldText": "My uncommitted draft",
+        "fieldSelection": [3, 10],
         "tabs": 2,
         "collapsible": false,
         "nullValue": null,
@@ -296,6 +321,11 @@
       },
       "events": 2,
       "clicks": 1,
+      "fieldUpdates": {
+        "normalized": "Server\nfield\nwith\nbreaks",
+        "external": "External\nupdate",
+        "attribute": "External\r\nupdate"
+      },
       "errors": []
     }
   ]

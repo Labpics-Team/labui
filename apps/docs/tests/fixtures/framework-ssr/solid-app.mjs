@@ -4,6 +4,11 @@ import { Textarea } from '@labpics/ui-solid/textarea';
 import { Tooltip } from '@labpics/ui-solid/tooltip';
 import { createComponent, createSignal, mergeProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
+import {
+  externalFieldValue,
+  normalizedServerFieldValue,
+  serverFieldValue,
+} from './field-values.mjs';
 const element = (component, props = {}) =>
   createComponent(Dynamic, mergeProps({ component }, props));
 export function App() {
@@ -11,7 +16,7 @@ export function App() {
   const [selected, setSelected] = createSignal('draft');
   const [events, setEvents] = createSignal(0);
   const [clicks, setClicks] = createSignal(0);
-  const [fieldValue, setField] = createSignal('Server field');
+  const [fieldValue, setField] = createSignal(serverFieldValue);
   const [locked, setLocked] = createSignal(false);
   return element('main', {
     get children() {
@@ -105,8 +110,13 @@ export function App() {
           children: 'Lock field',
         }),
         element('button', {
+          id: 'normalize-field',
+          onClick: () => setField(normalizedServerFieldValue),
+          children: 'Normalize field',
+        }),
+        element('button', {
           id: 'set-field',
-          onClick: () => setField('External update'),
+          onClick: () => setField(externalFieldValue),
           children: 'Set field',
         }),
         createComponent(Accordion, {

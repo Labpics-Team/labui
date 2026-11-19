@@ -1,7 +1,8 @@
 ﻿<script>
 import {Tabs,Textarea,Accordion,Tooltip} from '@labpics/ui-svelte';
+import {serverFieldValue, normalizedServerFieldValue, externalFieldValue} from './field-values.mjs';
 let caption=$state('Draft'), selected=$state('draft'), events=$state(0), clicks=$state(0);
-let fieldValue=$state('Server field'),locked=$state(false);
+let fieldValue=$state(serverFieldValue),locked=$state(false);
 let items=$derived([{value:'draft',label:caption},{value:'history',label:'History'}]);
 </script>
 {#snippet draft()}
@@ -19,7 +20,8 @@ let items=$derived([{value:'draft',label:caption},{value:'history',label:'Histor
   <output id="events">{events}</output><output id="clicks">{clicks}</output>
   <Textarea id="field" label="Message" value={fieldValue} readonly={locked} />
   <button id="lock-field" onclick={()=>locked=true}>Lock field</button>
-  <button id="set-field" onclick={()=>fieldValue='External update'}>Set field</button>
+  <button id="normalize-field" onclick={()=>fieldValue=normalizedServerFieldValue}>Normalize field</button>
+  <button id="set-field" onclick={()=>fieldValue=externalFieldValue}>Set field</button>
   <Accordion id="accordion" items={[{value:'one',label:'One'}]} value={['one']} collapsible={false} slots={{one}} />
   <Tabs id="null-tabs" {items} value={null} defaultValue="draft" />
   <Tooltip id="tooltip" content="Help" arrow={false}>Trigger</Tooltip>

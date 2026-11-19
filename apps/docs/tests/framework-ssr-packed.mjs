@@ -7,6 +7,11 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, webkit } from '@playwright/test';
+import {
+  externalFieldValue,
+  normalizedExternalFieldValue,
+  normalizedServerFieldValue,
+} from './fixtures/framework-ssr/field-values.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const output = join(root, 'docs/evidence/framework-ssr-20261119');
@@ -202,15 +207,15 @@ try {
         assert(before.height > 20);
         assert(!['transparent', 'rgba(0, 0, 0, 0)'].includes(before.background));
         assert(before.styles > 0);
-        assert.equal(before.field, 'Server field');
+        assert.equal(before.field, normalizedServerFieldValue);
         assert.equal(await page.getByRole('tablist', { name: 'Files' }).count(), 1);
         assert.equal(await page.locator('#tabs').getAttribute('label'), null);
         assert.equal((await page.locator('#tabs').getAttribute('class')).trim(), 'my-tabs active');
         await page.locator('#editor').fill('Typed before hydration & retained');
-        await page.locator('#field textarea').fill('Dirty component field');
+        await page.locator('#field textarea').fill('My uncommitted draft');
         await page.evaluate(() => {
           window.before.editor.setSelectionRange(6, 12);
-          window.before.field.setSelectionRange(2, 8);
+          window.before.field.setSelectionRange(3, 10);
         });
         await page.evaluate(() => window.hydrate());
         const after = await page.evaluate(() => {
@@ -258,8 +263,8 @@ try {
         assert.equal(after.tabs, 2);
         assert.equal(after.text, 'Typed before hydration & retained');
         assert.deepEqual(after.selection, [6, 12]);
-        assert.equal(after.fieldText, 'Dirty component field');
-        assert.deepEqual(after.fieldSelection, [2, 8]);
+        assert.equal(after.fieldText, 'My uncommitted draft');
+        assert.deepEqual(after.fieldSelection, [3, 10]);
         assert.equal(after.collapsible, false);
         assert.equal(after.nullValue, null);
         assert.equal(after.arrow, false);
@@ -283,18 +288,27 @@ try {
           await page.locator('#editor').inputValue(),
           'Typed before hydration & retained',
         );
-        assert.equal(await page.locator('#field textarea').inputValue(), 'Dirty component field');
+        assert.equal(await page.locator('#field textarea').inputValue(), 'My uncommitted draft');
         await page.locator('#lock-field').click();
         await page.waitForFunction(
           () => document.querySelector('#field').shadowRoot.querySelector('textarea').readOnly,
         );
-        assert.equal(await page.locator('#field textarea').inputValue(), 'Dirty component field');
+        assert.equal(await page.locator('#field textarea').inputValue(), 'My uncommitted draft');
+        // The caller now changes CRLF/CR to LF. The new value equals the existing
+        // parsed attribute, but this is a real controlled update after adoption.
+        await page.locator('#normalize-field').click();
+        await page.waitForFunction(
+          (value) =>
+            document.querySelector('#field').shadowRoot.querySelector('textarea').value === value,
+          normalizedServerFieldValue,
+        );
         await page.locator('#set-field').click();
         await page.waitForFunction(
-          () =>
-            document.querySelector('#field').shadowRoot.querySelector('textarea').value ===
-            'External update',
+          (value) =>
+            document.querySelector('#field').shadowRoot.querySelector('textarea').value === value,
+          normalizedExternalFieldValue,
         );
+        assert.equal(await page.locator('#field').getAttribute('value'), externalFieldValue);
         assert(
           await page.evaluate(
             () =>
@@ -310,6 +324,11 @@ try {
           after,
           events: 2,
           clicks: 1,
+          fieldUpdates: {
+            normalized: normalizedServerFieldValue,
+            external: normalizedExternalFieldValue,
+            attribute: externalFieldValue,
+          },
           errors,
         });
         await page.screenshot({

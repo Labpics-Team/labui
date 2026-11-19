@@ -42,11 +42,18 @@ export function forwardDeclared(
     } else if (value === undefined || value === null) {
       element.removeAttribute(spec.attr);
     } else {
-      // Hydration adopts an existing attribute. Writing the same initial value
-      // again fires attributeChangedCallback and can undo a control's recovery
-      // of input typed before JS. Later caller changes must still reach it.
-      if (initial && element.getAttribute(spec.attr) === String(value)) continue;
-      element.setAttribute(spec.attr, String(value));
+      const attributeValue = String(value);
+      // Hydration adopts an existing attribute. HTML parsing changes CRLF/CR to
+      // LF; rewriting that equivalent initial value would fire attribute reactions
+      // and undo recovered user input. Keep exact equality for DOM-created attrs.
+      if (initial) {
+        const existing = element.getAttribute(spec.attr);
+        if (existing === attributeValue || existing === attributeValue.replace(/\r\n?/g, '\n'))
+          continue;
+      }
+      // Later caller changes always retain their exact value, even when the old
+      // attribute already equals their HTML-normalized form.
+      element.setAttribute(spec.attr, attributeValue);
     }
   }
 }

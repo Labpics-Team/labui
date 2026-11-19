@@ -5,11 +5,16 @@ import { Textarea } from '@labpics/ui-vue/textarea';
 import { Tooltip } from '@labpics/ui-vue/tooltip';
 import { computed, ref } from 'vue';
 import Editor from './VueEditor.vue';
+import {
+  externalFieldValue,
+  normalizedServerFieldValue,
+  serverFieldValue,
+} from './field-values.mjs';
 const caption = ref('Draft');
 const selected = ref('draft');
 const events = ref(0);
 const clicks = ref(0);
-const fieldValue = ref('Server field');
+const fieldValue = ref(serverFieldValue);
 const locked = ref(false);
 const items = computed(() => [
   { value: 'draft', label: caption.value },
@@ -32,7 +37,8 @@ const changed = (e) => {
   <output id="events">{{events}}</output><output id="clicks">{{clicks}}</output>
   <Textarea id="field" label="Message" :value="fieldValue" :readonly="locked" />
   <button id="lock-field" @click="locked=true">Lock field</button>
-  <button id="set-field" @click="fieldValue='External update'">Set field</button>
+  <button id="normalize-field" @click="fieldValue=normalizedServerFieldValue">Normalize field</button>
+  <button id="set-field" @click="fieldValue=externalFieldValue">Set field</button>
   <Accordion id="accordion" :items="[{value:'one',label:'One'}]" :value="['one']" :collapsible="false">
     <template #one>Body</template>
   </Accordion>

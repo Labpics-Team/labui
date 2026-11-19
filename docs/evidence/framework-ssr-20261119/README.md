@@ -17,8 +17,10 @@
 - Все шесть host-элементов, shadow trigger/panel и интерактивные light-DOM узлы
   сохраняются при гидратации. Ошибок и hydration mismatch нет.
 - Текст и выделение, изменённые до JavaScript, сохраняются в обычном textarea и
-  `LabTextarea`. Изменение readonly не повторяет прежний value; новый controlled
-  value применяется без замены внутреннего textarea.
+  `LabTextarea`, в том числе при исходном value со смешанными CRLF, CR и LF.
+  Изменение readonly не повторяет прежний value; новый controlled value применяется
+  без замены внутреннего textarea, даже если это только переход от CRLF/CR к LF.
+  Дальнейший value с CRLF передаётся в host-атрибут без нормализации адаптером.
 - Native click и custom events вызывают обработчики framework; label обновляется
   реактивно. Массивы, явный null, false при default true и пропущенный prop
   сохраняют смысл.
@@ -31,3 +33,9 @@ typecheck четырёх пакетов; Biome и `git diff --check`. Installed 
 Это проверка обычных адаптеров, а не только строковых `/ssr` helpers. Полный
 Nuxt/SolidStart/SvelteKit shell, streaming и closed shadow roots здесь не заявлены.
 Настройка и первоисточники: [framework-ssr.md](../../reference/framework-ssr.md).
+
+Холодное ревью выявило потерю dirty input при CRLF/CR в первоначальном серверном
+значении. Новая fixture воспроизвела сбой на `4a852ef`: после гидратации вместо
+`My uncommitted draft` получалось `Server\nfield\nwith\nbreaks`. Исправление
+ограничено сравнением при первом пробросе. Проверка дальнейшего изменения в LF
+отличает его от ошибочного постоянного подавления эквивалентных записей.

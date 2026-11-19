@@ -86,9 +86,11 @@ snippets сохраняются у framework host; они не строкифи�
 Отключённый boolean, явный `null` и property-only модель передаются существующим
 `data-lab-inputs` и восстанавливаются один раз до `connectedCallback`. Пропущенный
 input оставляет конструкторный default. При первом framework-пробросе уже имеющийся
-строковый атрибут с тем же значением не переписывается: повтор вызвал бы attribute
-reaction и затёр восстановленный Textarea draft. Последующее изменение caller
-применяется; обновление другого prop не повторяет старое значение.
+строковый атрибут с эквивалентным значением не переписывается: повтор вызвал бы
+attribute reaction и затёр восстановленный Textarea draft. Начальное сравнение
+учитывает нормализацию HTML-парсером CRLF и CR в LF. Последующее изменение caller
+применяется с исходным значением, даже если оно отличается от прежнего лишь
+переводами строк; обновление другого prop не повторяет старое значение.
 
 ## Статические HTML helpers
 
@@ -122,4 +124,5 @@ snippet. Обычный `tsc` использует ambient `*.svelte` и не к
 [Vue SSR](https://vuejs.org/guide/scaling-up/ssr),
 [обычный Vue wrapper с DSD](https://github.com/svebcomponents/svebcomponents/blob/main/packages/ssr-vue/src/lib/runtime/CustomElementWrapper.ts),
 [Solid hydrate](https://docs.solidjs.com/reference/rendering/hydrate),
-[Svelte snippets](https://svelte.dev/docs/svelte/snippet).
+[Svelte snippets](https://svelte.dev/docs/svelte/snippet),
+[HTML newline preprocessing](https://html.spec.whatwg.org/multipage/parsing.html#preprocessing-the-input-stream).
