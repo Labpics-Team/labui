@@ -10,6 +10,8 @@
 
 После независимого ревью добавлены различающие RED/GREEN-проверки. `selection-reset.json` также покрывает все пять React-вариантов с callback, который через `flushSync` принимает запрос, выбирает другое значение или удаляет компонент. `hydration.json` проверяет несколько ранних кликов в двух независимых unnamed Segmented, RadioGroup и Choicebox, раннее оформление, сохранение native input/name identity, пустой required standalone-компонент, отсутствие лишних FormData-полей, reset без имени и добавление/удаление `name`. Для Lit проверяется согласованность native/value/data-selected/tabindex сразу после одного `await updateComplete`, без дополнительного ручного `requestUpdate`.
 
+Повторное ревью нашло отдельную required-регрессию multiple Choicebox: дочерние поля принимали ранний SSR-ввод, а родитель сохранял `defaultValue=[]`, поэтому reset мог не запустить повторную проверку группы. `choicebox-hydration-reset.json` подтверждает исправление в обычном и StrictMode roots: ранний B принят без callback, reset даёт пустое невалидное поле, следующий reset+click B даёт валидное значение и один callback; снятие B снова делает группу невалидной. Проверка использует стабильные `items`/`defaultValue` и built public React package в обоих браузерах.
+
 После обновления каталога существующий `apps/docs/tests/selection.spec.ts` прошёл 40/40 сценариев в Chromium/WebKit за 23 секунды: mixed/required/reset/fieldset/FormData, отказ controlled-потребителя, SSR/no-JS, клавиатура, RTL и авторская типографика. Core/React typecheck, Segmented/Selection SSR (6 тестов), Biome для изменённых файлов и `catalog:check` также прошли.
 
 `native.json` фиксирует SHA256 исходников и Maven-артефактов `0.1.0-segmented-20261119.2`. Три SegmentedRenderTest прошли; отдельный SegmentedConsumerTest потребляет установленную Maven-публикацию, меняет значение и проверяет фактический текст результата в обеих темах при 100/125/200% текста. Это desktop CPU qualification; Android/iOS и экранный диктор этим прогоном не проверяются.
@@ -20,6 +22,7 @@
 $env:PLAYWRIGHT_BROWSERS_PATH = 'D:/AgentWork/.playwright-browsers'
 node apps/docs/tests/selection-reset.mjs
 node apps/docs/tests/segmented-hydration.mjs
+node apps/docs/tests/choicebox-hydration-reset.mjs
 node apps/docs/tests/segmented-packed.mjs
 node scripts/verify-segmented-source.mjs <read-only-nodes-cache.json>
 

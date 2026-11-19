@@ -45,11 +45,27 @@ export function Choicebox({
 }: ChoiceboxProps): ReactNode {
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
+  const mounted = useRef(false);
   const [localValue, setLocalValue] = useState<readonly string[]>(defaultValue);
   const selected = value ?? localValue;
   const current = useRef({ value, defaultValue });
+  const nativeSelection = (): string[] =>
+    Array.from(
+      root.current?.querySelectorAll<HTMLInputElement>('input:checked') ?? [],
+      (input) => input.value,
+    );
   useClientLayoutEffect(() => {
     current.current = { value, defaultValue };
+    // The group accepts the same early native choice preserved by its uncontrolled inputs.
+    if (!mounted.current && value === undefined) {
+      const accepted = nativeSelection();
+      if (
+        accepted.length !== localValue.length ||
+        accepted.some((item, index) => item !== localValue[index])
+      )
+        setLocalValue(accepted);
+    }
+    mounted.current = true;
   });
   // biome-ignore lint/correctness/useExhaustiveDependencies: rebind when the renderer or form changes.
   useEffect(() => {
@@ -136,14 +152,7 @@ export function Choicebox({
             form={name ? form : ''}
             icon={item.icon}
             description={item.description}
-            onCheckedChange={() =>
-              change(
-                Array.from(
-                  root.current?.querySelectorAll<HTMLInputElement>('input:checked') ?? [],
-                  (input) => input.value,
-                ),
-              )
-            }
+            onCheckedChange={() => change(nativeSelection())}
           >
             {item.label}
           </Checkbox>
