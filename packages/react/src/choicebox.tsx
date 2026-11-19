@@ -1,9 +1,11 @@
 'use client';
 import type { LabChoiceboxLayout } from '@labpics/ui-core/choicebox';
 import { listenSelectionReset } from '@labpics/ui-core/selection/runtime';
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { Checkbox } from './checkbox.js';
 import { Radio, RadioGroup } from './radio-group.js';
+
+const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 export interface ChoiceboxItem {
   value: string;
@@ -47,16 +49,26 @@ export function Choicebox({
   const selected = value ?? localValue;
   const current = useRef({ value, defaultValue });
   current.current = { value, defaultValue };
+  useClientLayoutEffect(() => {
+    // Composed controls receive the group's current value; their native reset baseline belongs to this group.
+    const baseline = value ?? defaultValue;
+    for (const input of root.current?.querySelectorAll<HTMLInputElement>('input') ?? [])
+      input.defaultChecked = baseline.includes(input.value);
+  });
   // biome-ignore lint/correctness/useExhaustiveDependencies: rebind when the renderer or form changes.
   useEffect(() => {
     const input = root.current?.querySelector<HTMLInputElement>('input');
     if (!input) return;
-    return listenSelectionReset(input, () => {
-      const next = current.current.value ?? current.current.defaultValue;
-      for (const item of root.current?.querySelectorAll<HTMLInputElement>('input') ?? [])
-        item.checked = next.includes(item.value);
-      if (current.current.value === undefined) setLocalValue(next);
-    });
+    return listenSelectionReset(
+      input,
+      () => {
+        const next = current.current.value ?? current.current.defaultValue;
+        for (const item of root.current?.querySelectorAll<HTMLInputElement>('input') ?? [])
+          item.checked = next.includes(item.value);
+        if (current.current.value === undefined) setLocalValue(next);
+      },
+      root.current ?? input,
+    );
   }, [multiple, form, items]);
   useEffect(() => {
     if (!multiple) return;
@@ -69,6 +81,9 @@ export function Choicebox({
   const change = (next: string[]): void => {
     if (value === undefined) setLocalValue(next);
     onValueChange?.(next);
+    if (value !== undefined)
+      for (const input of root.current?.querySelectorAll<HTMLInputElement>('input') ?? [])
+        input.checked = value.includes(input.value);
   };
   if (!multiple)
     return (
@@ -122,11 +137,12 @@ export function Choicebox({
             form={form}
             icon={item.icon}
             description={item.description}
-            onCheckedChange={(checked) =>
+            onCheckedChange={() =>
               change(
-                checked
-                  ? [...selected.filter((entry) => entry !== item.value), item.value]
-                  : selected.filter((entry) => entry !== item.value),
+                Array.from(
+                  root.current?.querySelectorAll<HTMLInputElement>('input:checked') ?? [],
+                  (input) => input.value,
+                ),
               )
             }
           >

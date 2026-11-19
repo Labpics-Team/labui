@@ -24,6 +24,7 @@ import { inputCss } from '../src/components/input/styles.js';
 import { kbdCss } from '../src/components/kbd/styles.js';
 import { paginationCss } from '../src/components/pagination/styles.js';
 import { progressCss } from '../src/components/progress/styles.js';
+import { segmentedCss } from '../src/components/segmented-control/styles.js';
 import { selectionCss } from '../src/components/selection/styles.js';
 import { sheetCss } from '../src/components/sheet/styles.js';
 import { snackbarCss } from '../src/components/snackbar/styles.js';
@@ -60,6 +61,7 @@ function main(): void {
   writeFileSync(join(dist, 'chip.css'), chipCss);
   writeFileSync(join(dist, 'breadcrumb.css'), breadcrumbCss);
   writeFileSync(join(dist, 'accordion.css'), accordionCss);
+  writeFileSync(join(dist, 'segmented-control.css'), segmentedCss);
   writeFileSync(join(dist, 'switch.css'), switchCss);
   writeFileSync(join(dist, 'tabs.css'), tabsCss);
   writeFileSync(join(dist, 'selection-controls.css'), selectionCss);

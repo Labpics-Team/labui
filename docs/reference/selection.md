@@ -53,6 +53,15 @@ Required требует хотя бы одного доступного выбр
 fieldset исключают поля из отправки и проверки. Lit использует ElementInternals;
 React — нативные поля формы. Отменённый reset сохраняет текущий выбор.
 
+React-поля сохраняют исходное значение в native `defaultChecked`, а текущее
+значение синхронизируют при commit. Обработчик native `input` принимает уже
+совершённый выбор; новый ввод отменяет отложенную синхронизацию reset в этой
+группе. Поэтому `form.reset(); input.click()` в одном JS task сохраняет новый
+выбор и вызывает один callback. Reset синхронизируется после default action,
+когда известна отмена у родительского элемента; удаление компонента отменяет
+ожидающую задачу. Multiple Choicebox читает всю фактическую группу, включая
+другие флаги, которые reset уже вернул к исходному значению.
+
 Checkbox поддерживает Space; RadioGroup и single Choicebox — стрелки, Home и End,
 с пропуском недоступных вариантов и переносом фокуса. Tab входит в radio-группу
 один раз. Направление горизонтальных стрелок учитывает RTL. Разметка SSR содержит
@@ -78,4 +87,6 @@ SSR-функции адаптеров принимают `{ dynamic: { 'label-a'
 Иконка декоративная. В активную карточку не вкладывают другой интерактивный элемент.
 
 Основания поведения: [W3C Checkbox](https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/),
-[W3C Radio Group](https://www.w3.org/WAI/ARIA/apg/patterns/radio/).
+[W3C Radio Group](https://www.w3.org/WAI/ARIA/apg/patterns/radio/),
+[HTML reset](https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#resetting-a-form),
+[React input](https://react.dev/reference/react-dom/components/input).

@@ -17,10 +17,13 @@ import {
   useContext,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
 import '@labpics/ui-core/selection-controls.css';
+
+const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 export interface RadioGroupProps {
   type?: LabRadioGroupType;
@@ -43,6 +46,7 @@ interface RadioContext {
   size: LabRadioGroupSize;
   variant: LabSelectionVariant;
   value: string | null;
+  resetValue: string | null;
   disabled: boolean;
   required: boolean;
   name?: string;
@@ -73,8 +77,9 @@ export function RadioGroup({
   const selected = value !== undefined ? value : localValue;
   const current = useRef({ value, defaultValue });
   current.current = { value, defaultValue };
-  useEffect(() => {
+  useClientLayoutEffect(() => {
     const inputs = Array.from(root.current?.querySelectorAll<HTMLInputElement>('input') ?? []);
+    for (const input of inputs) input.checked = input.value === selected;
     const enabled = inputs.filter((input) => !input.matches(':disabled'));
     const tabStop = enabled.find((input) => input.checked) ?? enabled[0];
     for (const input of inputs) input.tabIndex = input === tabStop ? 0 : -1;
@@ -86,19 +91,26 @@ export function RadioGroup({
   useEffect(() => {
     const input = root.current?.querySelector<HTMLInputElement>('input');
     if (!input) return;
-    return listenSelectionReset(input, () => {
-      const next =
-        current.current.value !== undefined ? current.current.value : current.current.defaultValue;
-      for (const item of root.current?.querySelectorAll<HTMLInputElement>('input') ?? [])
-        item.checked = item.value === next;
-      if (current.current.value === undefined) setLocalValue(next);
-    });
+    return listenSelectionReset(
+      input,
+      () => {
+        const next =
+          current.current.value !== undefined
+            ? current.current.value
+            : current.current.defaultValue;
+        for (const item of root.current?.querySelectorAll<HTMLInputElement>('input') ?? [])
+          item.checked = item.value === next;
+        if (current.current.value === undefined) setLocalValue(next);
+      },
+      root.current ?? input,
+    );
   }, [form, children]);
   const context: RadioContext = {
     type,
     size,
     variant,
     value: selected,
+    resetValue: value !== undefined ? value : defaultValue,
     disabled,
     required,
     name,
@@ -106,6 +118,9 @@ export function RadioGroup({
     select(next) {
       if (value === undefined) setLocalValue(next);
       onValueChange?.(next);
+      if (value !== undefined)
+        for (const input of root.current?.querySelectorAll<HTMLInputElement>('input') ?? [])
+          input.checked = input.value === value;
     },
   };
   return (
@@ -220,7 +235,7 @@ export function Radio({
         type="radio"
         name={group.name}
         value={value}
-        checked={checked}
+        defaultChecked={group.resetValue === value}
         disabled={blocked}
         required={group.required && group.value === null}
         form={group.form}
@@ -228,7 +243,7 @@ export function Radio({
         aria-labelledby={labels || undefined}
         aria-label={labels ? undefined : ariaLabel}
         aria-describedby={description != null ? `${id}-description` : undefined}
-        onChange={(event) => {
+        onInput={(event) => {
           if (event.currentTarget.checked) group.select(value);
         }}
       />

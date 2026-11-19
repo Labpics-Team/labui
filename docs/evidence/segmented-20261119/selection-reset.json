@@ -1,0 +1,54 @@
+[
+  {
+    "engine": "chromium",
+    "browser": "140.0.7339.186",
+    "models": ["Checkbox", "RadioGroup", "Choicebox single/multiple", "SegmentedControl"],
+    "controlledRefusal": true,
+    "sameTaskResetClick": true,
+    "lateResetCancellation": true,
+    "lifecycle": [
+      {
+        "mode": "input supersedes reset",
+        "callbacks": 0,
+        "checked": false
+      },
+      {
+        "mode": "ancestor cancels reset",
+        "callbacks": 0,
+        "checked": false
+      },
+      {
+        "mode": "disposed before timer",
+        "callbacks": 0,
+        "checked": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "browser": "26.0",
+    "models": ["Checkbox", "RadioGroup", "Choicebox single/multiple", "SegmentedControl"],
+    "controlledRefusal": true,
+    "sameTaskResetClick": true,
+    "lateResetCancellation": true,
+    "lifecycle": [
+      {
+        "mode": "input supersedes reset",
+        "callbacks": 0,
+        "checked": false
+      },
+      {
+        "mode": "ancestor cancels reset",
+        "callbacks": 0,
+        "checked": false
+      },
+      {
+        "mode": "disposed before timer",
+        "callbacks": 0,
+        "checked": true
+      }
+    ],
+    "errors": []
+  }
+]

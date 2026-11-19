@@ -143,3 +143,9 @@ export { Sheet, type SheetProps, type LabSheetPosition } from './sheet.js';
 export { Snackbar, type SnackbarProps } from './snackbar.js';
 
 export { Chip, type ChipProps } from './chip.js';
+
+export {
+  SegmentedControl,
+  type SegmentedControlProps,
+  type SegmentedItem,
+} from './segmented-control.js';

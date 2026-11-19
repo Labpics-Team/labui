@@ -36,6 +36,15 @@
       "lineHeight": 12,
       "fontWeight": 500,
       "letterSpacing": 0
+    },
+    "caption-s": {
+      "sourceNode": "7555:14405",
+      "sourceTextStyle": "6178:9032",
+      "fontFamily": "Geist",
+      "fontSize": 14,
+      "lineHeight": 12,
+      "fontWeight": 500,
+      "letterSpacing": 0
     }
   }
 }

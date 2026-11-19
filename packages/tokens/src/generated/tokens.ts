@@ -36,6 +36,13 @@ export const textStyle = {
     fontWeight: 'var(--lab-text-caption-xs-font-weight)',
     letterSpacing: 'var(--lab-text-caption-xs-letter-spacing)',
   },
+  'caption-s': {
+    fontFamily: 'var(--lab-font-family)',
+    fontSize: 'var(--lab-text-caption-s-font-size)',
+    lineHeight: 'var(--lab-text-caption-s-line-height)',
+    fontWeight: 'var(--lab-text-caption-s-font-weight)',
+    letterSpacing: 'var(--lab-text-caption-s-letter-spacing)',
+  },
 } as const;
 
 export type TextStyleRole = keyof typeof textStyle;

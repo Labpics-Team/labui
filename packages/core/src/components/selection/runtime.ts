@@ -46,10 +46,18 @@ export function mountSelectionMotion(root: HTMLElement, input: HTMLInputElement)
   };
 }
 
-/** Reconcile after the form's default reset action and ancestor cancellation. */
-export function listenSelectionReset(input: HTMLInputElement, reset: () => void): () => void {
+/** Reconcile reset after default handling; a later native input supersedes it. */
+export function listenSelectionReset(
+  input: HTMLInputElement,
+  reset: () => void,
+  selection: EventTarget = input,
+): () => void {
   const form = input.form;
   const tasks = new Set<ReturnType<typeof setTimeout>>();
+  const cancelPending = (): void => {
+    for (const task of tasks) clearTimeout(task);
+    tasks.clear();
+  };
   const onReset = (event: Event): void => {
     const task = setTimeout(() => {
       tasks.delete(task);
@@ -58,8 +66,10 @@ export function listenSelectionReset(input: HTMLInputElement, reset: () => void)
     tasks.add(task);
   };
   form?.addEventListener('reset', onReset);
+  selection.addEventListener('input', cancelPending, true);
   return () => {
-    for (const task of tasks) clearTimeout(task);
+    cancelPending();
     form?.removeEventListener('reset', onReset);
+    selection.removeEventListener('input', cancelPending, true);
   };
 }

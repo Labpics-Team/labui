@@ -2,7 +2,7 @@
   "name": "@labpics/ui-core",
   "version": "0.0.0",
   "private": true,
-  "description": "Компоненты Lab UI на Lit, общие типы и поведение, темы, материалы и серверный рендеринг для веб-привязок.",
+  "description": "РљРѕРјРїРѕРЅРµРЅС‚С‹ Lab UI РЅР° Lit, РѕР±С‰РёРµ С‚РёРїС‹ Рё РїРѕРІРµРґРµРЅРёРµ, С‚РµРјС‹, РјР°С‚РµСЂРёР°Р»С‹ Рё СЃРµСЂРІРµСЂРЅС‹Р№ СЂРµРЅРґРµСЂРёРЅРі РґР»СЏ РІРµР±-РїСЂРёРІСЏР·РѕРє.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -262,6 +262,17 @@
       "types": "./dist/components/accordion/runtime.d.ts",
       "import": "./dist/components/accordion/runtime.js",
       "require": "./dist/components/accordion/runtime.cjs"
+    },
+    "./segmented-control.css": "./dist/segmented-control.css",
+    "./segmented-control/runtime": {
+      "import": {
+        "types": "./dist/components/segmented-control/runtime.d.ts",
+        "default": "./dist/components/segmented-control/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/segmented-control/runtime.d.cts",
+        "default": "./dist/components/segmented-control/runtime.cjs"
+      }
     }
   },
   "files": ["dist"],
@@ -290,7 +301,8 @@
     "./dist/tabs.css",
     "./dist/breadcrumb.css",
     "./dist/pagination.css",
-    "./dist/accordion.css"
+    "./dist/accordion.css",
+    "./dist/segmented-control.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

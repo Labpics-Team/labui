@@ -6,8 +6,10 @@ import {
   listenSelectionReset,
   mountSelectionMotion,
 } from '@labpics/ui-core/selection/runtime';
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import '@labpics/ui-core/selection-controls.css';
+
+const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 export interface CheckboxProps {
   type?: LabCheckboxType;
@@ -74,8 +76,11 @@ export function Checkbox({
       motion.current = undefined;
     };
   }, [form]);
-  useEffect(() => {
-    if (input.current) input.current.indeterminate = mixed;
+  useClientLayoutEffect(() => {
+    if (input.current) {
+      input.current.checked = state === true;
+      input.current.indeterminate = mixed;
+    }
     motion.current?.update();
   });
   const hasStart = labelStart != null && labelStart !== false && labelStart !== '';
@@ -118,7 +123,7 @@ export function Checkbox({
         ref={input}
         id={id}
         type="checkbox"
-        checked={state === true}
+        defaultChecked={(checked ?? defaultChecked) === true}
         aria-checked={mixed ? 'mixed' : state}
         disabled={disabled}
         required={required}
@@ -128,7 +133,7 @@ export function Checkbox({
         aria-labelledby={labels || undefined}
         aria-label={labels ? undefined : ariaLabel}
         aria-describedby={description != null ? `${id}-description` : undefined}
-        onChange={(event) => {
+        onInput={(event) => {
           const next = event.currentTarget.checked;
           if (checked === undefined) setLocalChecked(next);
           onCheckedChange?.(next);

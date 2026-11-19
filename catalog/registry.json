@@ -241,7 +241,15 @@
       "title": "Segmented Control",
       "group": "input",
       "kind": "control",
-      "summary": "Переключение значения между соседними сегментами."
+      "summary": "Переключение значения между соседними сегментами.",
+      "web": {
+        "subpath": "segmented-control",
+        "reactExport": "SegmentedControl"
+      },
+      "profile": "segmented",
+      "native": {
+        "symbol": "LabSegmentedControl"
+      }
     },
     {
       "slug": "file-upload",
@@ -1723,7 +1731,13 @@
       "uses": [
         {
           "family": "segmented-control",
-          "role": "root"
+          "role": "root",
+          "web": {
+            "scope": "Rounded/Regular/Sharp; 2–5 segments; text/icons; active, inactive, hover, disabled; radio and form semantics."
+          },
+          "native": {
+            "scope": "Shared profile: shapes, states, text/icons; controlled radio selection, keyboard and local saveable state."
+          }
         }
       ]
     },
@@ -1734,7 +1748,13 @@
       "uses": [
         {
           "family": "segmented-control",
-          "role": "part"
+          "role": "part",
+          "web": {
+            "scope": "Rounded/Regular/Sharp; 2–5 segments; text/icons; active, inactive, hover, disabled; radio and form semantics."
+          },
+          "native": {
+            "scope": "Shared profile: shapes, states, text/icons; controlled radio selection, keyboard and local saveable state."
+          }
         }
       ]
     },

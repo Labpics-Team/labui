@@ -343,4 +343,11 @@ internal object LabTextStyles {
         fontWeight = androidx.compose.ui.text.font.FontWeight(500),
         letterSpacing = 0.sp,
     )
+    // Figma 7555:14405
+    val CaptionS = androidx.compose.ui.text.TextStyle(
+        fontSize = 14.sp,
+        lineHeight = 12.sp,
+        fontWeight = androidx.compose.ui.text.font.FontWeight(500),
+        letterSpacing = 0.sp,
+    )
 }

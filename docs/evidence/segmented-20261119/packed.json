@@ -1,0 +1,107 @@
+{
+  "archives": [
+    {
+      "name": "labpics-ui-tokens-0.0.0.tgz",
+      "sha256": "bdcfd87742e11b843a0c18945b36f1f66d4ac5697062405e654ad89cc961d422"
+    },
+    {
+      "name": "labpics-ui-shadow-0.0.0.tgz",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "labpics-ui-materials-0.0.0.tgz",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "labpics-fonts-0.0.0.tgz",
+      "sha256": "d88c7478b94becc1ddbf77f92c4af2fb00ec882cb456847a38c2ee3bd6b35fd9"
+    },
+    {
+      "name": "labui-colors-0.0.0.tgz",
+      "sha256": "2dfc01336750f554b4a4e46155bb10caaf3c804df98ec237008961fee268decb"
+    },
+    {
+      "name": "labpics-ui-core-0.0.0.tgz",
+      "sha256": "6b973df9d9bc07d067d0f111c74f506d74a2ef8c65f53bff01638fc797439a76"
+    },
+    {
+      "name": "labpics-ui-react-0.0.0.tgz",
+      "sha256": "902ecf2a53026a9ad538a75b08b4eac335262a1b18ea652de09af9e6f01ddb35"
+    },
+    {
+      "name": "labpics-ui-vue-0.0.0.tgz",
+      "sha256": "bc13cd594083b8755bc82dbdc2ce05ba7ae8af702c6408bb6b5e6f2548f7934b"
+    },
+    {
+      "name": "labpics-ui-solid-0.0.0.tgz",
+      "sha256": "17511246b881d5b272e8b737fc91d5ced63041cff8bb71ff7723c097bb9f790a"
+    },
+    {
+      "name": "labpics-ui-svelte-0.0.0.tgz",
+      "sha256": "d2cb530acd2a345071ec7d1a6ada144e1feffc7d2246fa2420da2599d63e88ec"
+    },
+    {
+      "name": "labpics-ui-astro-0.0.0.tgz",
+      "sha256": "ddb475241f2def7b3832600b367840d418bf49bf216ecb822c63a2855ad0d84a"
+    }
+  ],
+  "declarations": true,
+  "records": [
+    {
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "SSRHelpers": ["vue", "solid", "svelte", "astro"],
+      "react": true,
+      "iconOnlyAccessibleLabel": true,
+      "reactReorderRemovalAndControlledUpdate": true,
+      "typography": {
+        "fontFamily": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "fontWeight": "500",
+        "fontSize": "14px",
+        "lineHeight": "12px",
+        "loaded": true
+      },
+      "noJsFirstPaint": true,
+      "sameNodesAfterHydration": true,
+      "radioFormReset": true,
+      "requiredEmpty": true,
+      "preHydrationSelectionPreserved": true,
+      "controlledRefusal": true,
+      "fieldsetDisabled": true,
+      "rtlKeyboard": true,
+      "all42Variants": true,
+      "lightDark": true,
+      "reducedMotion": true,
+      "scale": [100, 125, 200],
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "browser": "26.0",
+      "SSRHelpers": ["vue", "solid", "svelte", "astro"],
+      "react": true,
+      "iconOnlyAccessibleLabel": true,
+      "reactReorderRemovalAndControlledUpdate": true,
+      "typography": {
+        "fontFamily": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "fontWeight": "500",
+        "fontSize": "14px",
+        "lineHeight": "12px",
+        "loaded": true
+      },
+      "noJsFirstPaint": true,
+      "sameNodesAfterHydration": true,
+      "radioFormReset": true,
+      "requiredEmpty": true,
+      "preHydrationSelectionPreserved": true,
+      "controlledRefusal": true,
+      "fieldsetDisabled": true,
+      "rtlKeyboard": true,
+      "all42Variants": true,
+      "lightDark": true,
+      "reducedMotion": true,
+      "scale": [100, 125, 200],
+      "errors": []
+    }
+  ]
+}

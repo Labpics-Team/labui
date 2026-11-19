@@ -57,3 +57,5 @@ export { tabsProfile } from './tabs.js';
 export { breadcrumbProfile } from './breadcrumb.js';
 export { paginationProfile } from './pagination.js';
 export { accordionProfile } from './accordion.js';
+
+export { segmentedProfile } from './segmented.js';

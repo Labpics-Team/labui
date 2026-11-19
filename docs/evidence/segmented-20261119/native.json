@@ -1,0 +1,115 @@
+{
+    "renderer":  "ImageComposeScene / Skiko SOFTWARE / Java headless",
+    "iconsVersion":  "0.4.0-semantic.6",
+    "artifacts":  [
+                      {
+                          "sha256":  "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3",
+                          "path":  "pics/lab/ui-colors/0.1.0-segmented-20261119.2/ui-colors-0.1.0-segmented-20261119.2-sources.jar"
+                      },
+                      {
+                          "sha256":  "fa63a86a2ed1b5450216ed085dd1a73b5236432340e7cd64180fc496c03c219d",
+                          "path":  "pics/lab/ui-colors/0.1.0-segmented-20261119.2/ui-colors-0.1.0-segmented-20261119.2.jar"
+                      },
+                      {
+                          "sha256":  "c5b732eae93235ed369c159256a408383dab2f0b2d0e99134be8b94999f9f844",
+                          "path":  "pics/lab/ui-colors/0.1.0-segmented-20261119.2/ui-colors-0.1.0-segmented-20261119.2.module"
+                      },
+                      {
+                          "sha256":  "15e40516d253a60f6573aaf54a5a3fbdcf94f06c193b53757de97d70e2baf0bb",
+                          "path":  "pics/lab/ui-colors/0.1.0-segmented-20261119.2/ui-colors-0.1.0-segmented-20261119.2.pom"
+                      },
+                      {
+                          "sha256":  "9ac32d299e180afd3985501406dd52f071d1a54a18df176774da3fba83e501b1",
+                          "path":  "pics/lab/ui-colors-desktop/0.1.0-segmented-20261119.2/ui-colors-desktop-0.1.0-segmented-20261119.2-sources.jar"
+                      },
+                      {
+                          "sha256":  "0309c3881c5e8d4d0acbfba01b6b5cf730cf022c4d208823a1c8ab4ef4583263",
+                          "path":  "pics/lab/ui-colors-desktop/0.1.0-segmented-20261119.2/ui-colors-desktop-0.1.0-segmented-20261119.2.jar"
+                      },
+                      {
+                          "sha256":  "8830b5e09d12cb5b51f8ed4608ca916c31acc923b9405208b8b7f98d75f8de00",
+                          "path":  "pics/lab/ui-colors-desktop/0.1.0-segmented-20261119.2/ui-colors-desktop-0.1.0-segmented-20261119.2.module"
+                      },
+                      {
+                          "sha256":  "68e6a3f646a402be3aa87fdfa0ae5dda586a4980afb53aa3b8911ca847083451",
+                          "path":  "pics/lab/ui-colors-desktop/0.1.0-segmented-20261119.2/ui-colors-desktop-0.1.0-segmented-20261119.2.pom"
+                      },
+                      {
+                          "sha256":  "ca69fa5a9dde3cc0da1aa6660b2e641392b6040a4dabc0c3b5f68a76fab3cd85",
+                          "path":  "pics/lab/ui-compose/0.1.0-segmented-20261119.2/ui-compose-0.1.0-segmented-20261119.2-sources.jar"
+                      },
+                      {
+                          "sha256":  "f84c76307bcf7b23dcb56e37298c572a9cb06700d69998460dff1723fd258e19",
+                          "path":  "pics/lab/ui-compose/0.1.0-segmented-20261119.2/ui-compose-0.1.0-segmented-20261119.2.jar"
+                      },
+                      {
+                          "sha256":  "0186e846a3952178e3aadc90197497130c4292b6072cb8c5edab630d171b077e",
+                          "path":  "pics/lab/ui-compose/0.1.0-segmented-20261119.2/ui-compose-0.1.0-segmented-20261119.2.module"
+                      },
+                      {
+                          "sha256":  "88ee01a22d74d5263ba35354f06f58615290fc3d08437b28ec7d610738b2bc2f",
+                          "path":  "pics/lab/ui-compose/0.1.0-segmented-20261119.2/ui-compose-0.1.0-segmented-20261119.2.pom"
+                      },
+                      {
+                          "sha256":  "6e67e388716a03cf1becd1d8e9f571166c463dbf6353b5230fe2b5836d1a5202",
+                          "path":  "pics/lab/ui-compose-desktop/0.1.0-segmented-20261119.2/ui-compose-desktop-0.1.0-segmented-20261119.2-sources.jar"
+                      },
+                      {
+                          "sha256":  "890536a54b421d7db12a720b174fc222a2847cfae046a4fe074179b6f9604597",
+                          "path":  "pics/lab/ui-compose-desktop/0.1.0-segmented-20261119.2/ui-compose-desktop-0.1.0-segmented-20261119.2.jar"
+                      },
+                      {
+                          "sha256":  "a7e63ba62647a25c245b8314171ce2e819607b4668dbda00abe67b66b5010944",
+                          "path":  "pics/lab/ui-compose-desktop/0.1.0-segmented-20261119.2/ui-compose-desktop-0.1.0-segmented-20261119.2.module"
+                      },
+                      {
+                          "sha256":  "7a056ee8e7b6ce1081c2ecbf2326c6b465669d9ed4cae2379125facb86428c9a",
+                          "path":  "pics/lab/ui-compose-desktop/0.1.0-segmented-20261119.2/ui-compose-desktop-0.1.0-segmented-20261119.2.pom"
+                      }
+                  ],
+    "source":  [
+                   {
+                       "sha256":  "1aa9cb9b02404406a9d1afb01049dacaf8eb38c9425ba90646601b9182645618",
+                       "path":  "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSegmentedControl.kt"
+                   },
+                   {
+                       "sha256":  "0326c12bd5f412694619d9979bf0b679ac3b918faded86ea4e03eb456ff9a2fc",
+                       "path":  "native/compose/src/commonMain/kotlin/pics/lab/ui/LabComponents.kt"
+                   },
+                   {
+                       "sha256":  "70f37fa1429434e6be01cf46d483813c805845ee5ff0e11aad7ce09f847a6173",
+                       "path":  "native/compose/src/commonMain/kotlin/pics/lab/ui/LabTokens.kt"
+                   },
+                   {
+                       "sha256":  "5e3db0b9561f890967802644dd9eb1e707468982e766adeeef032903261edae6",
+                       "path":  "packages/tokens/src/components.json"
+                   },
+                   {
+                       "sha256":  "e8fdfd73678af0f9e5c137c1c741c01249bd60f13f8772792e8dd3386e04e8d4",
+                       "path":  "packages/tokens/src/text-styles.json"
+                   }
+               ],
+    "tests":  {
+                  "library":  {
+                                  "suite":  "pics.lab.ui.SegmentedRenderTest",
+                                  "failed":  0,
+                                  "passed":  3
+                              },
+                  "installedConsumer":  {
+                                            "suite":  "pics.lab.ui.sample.SegmentedConsumerTest",
+                                            "failed":  0,
+                                            "passed":  1
+                                        }
+              },
+    "publicationVersion":  "0.1.0-segmented-20261119.2",
+    "scenarios":  [
+                      "42 source selections in both themes",
+                      "RTL keyboard and disabled skip",
+                      "controlled refusal",
+                      "empty selection",
+                      "motion interruption and reduced motion",
+                      "100/125/200 percent text",
+                      "installed Maven consumer state changes real displayed period"
+                  ],
+    "sourceHashNormalization":  "UTF-8 LF"
+}

@@ -27,6 +27,7 @@ export { PinInput, type PinInputProps } from './pin-input.js';
 export { Popover, type PopoverProps } from './popover.js';
 export { Progress, type ProgressProps } from './progress.js';
 export { RadioGroup, type RadioGroupProps } from './radio-group.js';
+export { SegmentedControl, type SegmentedControlProps } from './segmented-control.js';
 export { Select, type SelectProps } from './select.js';
 export { Sheet, type SheetProps } from './sheet.js';
 export { Slider, type SliderProps } from './slider.js';

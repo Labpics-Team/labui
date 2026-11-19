@@ -554,4 +554,34 @@ internal object LabComponents {
         cubicTo(8.23705f, -0.0771456f, 8.70091f, -0.0582458f, 8.99384f, 0.234521f)
         close()
     } }
+    const val SegmentedPadding = 2f
+    const val SegmentedControlHeight = 36f
+    const val SegmentedControlPadding = 12f
+    const val SegmentedGap = 4f
+    const val SegmentedIconSize = 12f
+    const val SegmentedIconOnlySize = 20f
+    const val SegmentedIconOnlyPadding = 8f
+    const val SegmentedSeparatorInset = 8f
+    const val SegmentedStrokeWidth = 1f
+    val SegmentedActiveShadow get() = LabShadows.xs
+    const val SegmentedShapesRoundedTrackRadius = 9999f
+    const val SegmentedShapesRoundedControlRadius = 9999f
+    const val SegmentedShapesRegularTrackRadius = 12f
+    const val SegmentedShapesRegularControlRadius = 10f
+    const val SegmentedShapesSharpTrackRadius = 0f
+    const val SegmentedShapesSharpControlRadius = 4f
+    const val SegmentedRolesLabel = "label-primary"
+    const val SegmentedRolesInactiveLabel = "label-secondary"
+    const val SegmentedRolesDisabledLabel = "label-tertiary"
+    const val SegmentedRolesTrack = "fill-quaternary"
+    const val SegmentedRolesHover = "fill-quaternary"
+    const val SegmentedRolesActiveFill = "control-bg"
+    const val SegmentedRolesBorder = "border-base"
+    const val SegmentedRolesFocus = "border-focus"
+    const val SegmentedFocusWidth = 2f
+    const val SegmentedFocusInset = 2f
+    const val SegmentedFontSize = 14f
+    const val SegmentedLineHeight = 12f
+    const val SegmentedFontWeight = 500f
+    const val SegmentedLetterSpacing = 0f
 }

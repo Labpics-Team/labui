@@ -1089,5 +1089,54 @@
       "y": 5.734375,
       "data": "M8.99384 0.234521C9.28658 0.527434 9.30478 0.990701 9.04851 1.30483L8.99384 1.36537L5.93391 4.4253C5.81124 4.5479 5.68571 4.6747 5.56998 4.7729C5.44718 4.87717 5.28378 4.9955 5.06738 5.0659C4.77284 5.16157 4.45504 5.16163 4.16051 5.0659L4.08171 5.0379C3.90384 4.96663 3.76531 4.86417 3.65791 4.7729C3.54224 4.6747 3.41651 4.54783 3.29398 4.4253L0.234057 1.36537L0.179364 1.30483C-0.0767561 0.990701 -0.0586359 0.527381 0.234057 0.234521C0.546417 -0.0778258 1.05314 -0.0777191 1.36556 0.234521L4.42544 3.29443C4.49258 3.3615 4.54578 3.41423 4.59211 3.4591C4.59951 3.46623 4.60698 3.47297 4.61364 3.4793C4.62038 3.47283 4.62818 3.46643 4.63578 3.4591C4.68211 3.41417 4.73524 3.36157 4.80244 3.29443L7.86231 0.234521L7.92284 0.179181C8.23705 -0.0771456 8.70091 -0.0582458 8.99384 0.234521Z"
     }
+  },
+  "segmented": {
+    "sourceRef": {
+      "key": "component-set/Segmented Control/Segmented Control"
+    },
+    "controlSourceRef": {
+      "sourceRef": {
+        "key": "component-set/Segmented Control/control"
+      }
+    },
+    "$textStyle": "caption-s",
+    "padding": 2,
+    "controlHeight": 36,
+    "controlPadding": 12,
+    "gap": 4,
+    "iconSize": 12,
+    "iconOnlySize": 20,
+    "iconOnlyPadding": 8,
+    "separatorInset": 8,
+    "strokeWidth": 1,
+    "activeShadow": "xs",
+    "shapes": {
+      "rounded": {
+        "trackRadius": 9999,
+        "controlRadius": 9999
+      },
+      "regular": {
+        "trackRadius": 12,
+        "controlRadius": 10
+      },
+      "sharp": {
+        "trackRadius": 0,
+        "controlRadius": 4
+      }
+    },
+    "roles": {
+      "label": "label-primary",
+      "inactiveLabel": "label-secondary",
+      "disabledLabel": "label-tertiary",
+      "track": "fill-quaternary",
+      "hover": "fill-quaternary",
+      "activeFill": "control-bg",
+      "border": "border-base",
+      "focus": "border-focus"
+    },
+    "focus": {
+      "width": 2,
+      "inset": 2
+    }
   }
 }

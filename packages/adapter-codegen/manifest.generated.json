@@ -1415,6 +1415,67 @@
       }
     },
     {
+      "tag": "lab-segmented-control",
+      "subpath": "segmented-control",
+      "pascal": "SegmentedControl",
+      "className": "LabSegmentedControl",
+      "props": [
+        {
+          "name": "shape",
+          "attr": "shape",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultValue",
+          "attr": "default-value",
+          "kind": "string"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "dir",
+          "attr": "dir",
+          "kind": "string"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "items",
+          "attr": "items",
+          "kind": "prop"
+        }
+      ],
+      "events": [
+        "value-change"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": true
+      }
+    },
+    {
       "tag": "lab-select",
       "subpath": "select",
       "pascal": "Select",

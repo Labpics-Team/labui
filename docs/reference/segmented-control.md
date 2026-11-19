@@ -1,0 +1,25 @@
+# Segmented Control
+
+`lab-segmented-control`, React `SegmentedControl` и Compose `LabSegmentedControl` выбирают один короткий режим внутри текущего вида: день/неделя/месяц, список/сетка, единицы измерения. Это группа radio. Связанных панелей и навигации между страницами у компонента нет.
+
+## Авторское исполнение
+
+Общий профиль `segmented` в `packages/tokens/src/components.json` задаёт обе реализации. Оболочка имеет отступ 2 px, контрол — 36 px, итоговая высота — 40 px. Текст использует общую роль Caption/S: Geist Medium 14/12. Соседние иконки — 12 px, icon-only — 20 px. Отступы контрола — 12 px для текста и 8 px для icon-only. `shape` принимает `rounded`, `regular`, `sharp`: радиусы оболочки/контрола соответственно 9999/9999, 12/10, 0/4 px.
+
+Выбранный сегмент получает `control-bg` и полный Shadow/XS; hover — `fill-quaternary`. Разделитель `border-base` появляется только между соседними невыбранными сегментами. Disabled использует `label-tertiary`. Фокус — дополнительное внутреннее кольцо, видимое внутри обрезанной оболочки. Figma содержит 42 групповых варианта: каждый выбранный сегмент при 2–5 элементах и трёх формах; 24 варианта внутреннего контрола покрывают состояния, формы и icon-only.
+
+Элементы делят доступную ширину. Длинный текст сохраняет естественную ширину и прокручивается внутри группы; это адаптация для перевода и увеличения текста, вместо потери доступной подписи. Web масштабируется через rem; native использует dp/sp. Solid/Glass/Acrylic остаются свойством окружения: компонент читает семантические роли текущей темы.
+
+## Значение, формы и клавиатура
+
+В web `value !== undefined` включает controlled-режим; `null` оставляет группу без выбора. `defaultValue` задаёт начальное значение и цель reset для uncontrolled-режима. Lit `selectedValue` читает текущее значение. Событие Lit `value-change` несёт `{ value: string }`, React `onValueChange` получает строку. При отказе приложения прежнее значение остаётся выбранным. Удаление выбранного элемента не выбирает другой автоматически.
+
+`items` содержит уникальные `value`, обязательные `label`, необязательные `disabled`, `icon`, `iconEnd`, `iconOnly`. В Lit иконки называют декоративные слоты; React принимает ReactNode. Icon-only сохраняет текстовую доступную подпись. JSON `items` отражается в серверном HTML; повреждённый JSON не создаёт частичную группу.
+
+`name`, `form`, `required`, `disabled` следуют HTML-форме. Lit использует ElementInternals; React — настоящие radio inputs. В FormData попадает только доступное выбранное значение. Отключённый fieldset блокирует действия и отправку. Reset восстанавливает defaultValue; controlled-значение остаётся входом приложения. В группе один Tab-вход: выбранный доступный элемент, иначе первый доступный. Стрелки выбирают и перемещают фокус с циклическим переходом; Home/End переходят к краям, disabled пропускается, горизонтальное направление отражается в RTL. Space выбирает сфокусированный radio.
+
+Compose принимает `value` и `onValueChange`; локальный сценарий использует `rememberLabSegmentedState(defaultValue)` и передаёт `state.value` / `{ state.value = it }`. Этот state сохраняется через saveable state. Native имеет radio semantics, общий keyboard path и доступную подпись. Native-форму и сохранение результата определяет приложение.
+
+Выбор меняется сразу. Motion выполняет только появление выбранной поверхности; прерывание останавливает прежнюю декорацию, reduced motion показывает итог без движения. Первый серверный кадр уже содержит подписи, выбор, disabled, required и один Tab-вход. Реальные radio остаются доступны без JS; отправка Lit FACE требует upgrade custom element.
+
+Источники: [Lab UI v2.1](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1), [WAI-ARIA Radio Group](https://www.w3.org/WAI/ARIA/apg/patterns/radio/), [Radix Segmented Control](https://www.radix-ui.com/themes/docs/components/segmented-control). Radix подтверждает применение для одиночного выбора; поведение здесь опирается на нативные radio и существующий общий keyboard helper LabUI.

@@ -27,6 +27,7 @@ export { renderPinInput, type PinInputSsrProps, type PinInputSsrSlots } from './
 export { renderPopover, type PopoverSsrProps, type PopoverSsrSlots } from './popover.ssr.js';
 export { renderProgress, type ProgressSsrProps, type ProgressSsrSlots } from './progress.ssr.js';
 export { renderRadioGroup, type RadioGroupSsrProps, type RadioGroupSsrSlots } from './radio-group.ssr.js';
+export { renderSegmentedControl, type SegmentedControlSsrProps, type SegmentedControlSsrSlots } from './segmented-control.ssr.js';
 export { renderSelect, type SelectSsrProps, type SelectSsrSlots } from './select.ssr.js';
 export { renderSheet, type SheetSsrProps, type SheetSsrSlots } from './sheet.ssr.js';
 export { renderSlider, type SliderSsrProps, type SliderSsrSlots } from './slider.ssr.js';
