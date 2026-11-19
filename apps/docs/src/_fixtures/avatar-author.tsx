@@ -45,6 +45,33 @@ for (const size of ['s', 'm', 'l'] as const) {
     );
 }
 
+for (const size of ['m', 'l'] as const) {
+  const section = document.createElement('section');
+  section.innerHTML = `<h2>Texture ${size} — Lit / React</h2><div class="row lit"></div><div class="row react"></div>`;
+  mount.append(section);
+  for (const color of Object.keys(avatarProfile.colors)) {
+    const avatar = document.createElement('lab-avatar');
+    Object.assign(avatar, { name: color, color, size, fallback: 'texture', status: 'online' });
+    avatar.dataset.testid = `lit-texture-${size}-${color}`;
+    section.querySelector('.lit')?.append(avatar);
+  }
+  const reactTexture = section.querySelector('.react');
+  if (!reactTexture) throw new Error('Missing React texture fixture');
+  createRoot(reactTexture).render(
+    Object.keys(avatarProfile.colors).map((color) => (
+      <Avatar
+        key={color}
+        data-testid={`react-texture-${size}-${color}`}
+        name={color}
+        color={color as keyof typeof avatarProfile.colors}
+        size={size}
+        fallback="texture"
+        status="online"
+      />
+    )),
+  );
+}
+
 const stateRow = document.createElement('section');
 stateRow.className = 'row';
 stateRow.innerHTML =

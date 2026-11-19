@@ -1,6 +1,7 @@
 package pics.lab.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.offset
@@ -19,6 +20,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -37,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import org.jetbrains.compose.resources.Font
+import org.jetbrains.compose.resources.imageResource
 import pics.lab.ui.resources.Res
 import pics.lab.ui.resources.avatar_rounded_extrabold
 
@@ -102,7 +105,11 @@ public fun LabAvatar(
                 BasicText(text, modifier = Modifier.offset(y = (metrics.diameter * (LabComponents.AvatarLetterBoxHeightRatio - 1) / 2 * textScale).dp), style = TextStyle(fontFamily = font, fontWeight = FontWeight(LabComponents.AvatarFontWeight.toInt()),
                     fontSize = metrics.fontSize.sp, lineHeight = metrics.lineHeight.sp,
                     letterSpacing = LabComponents.AvatarLetterSpacing.sp, color = colors[LabComponents.AvatarLetterRole]))
-            } else if (!ready) Box(Modifier.matchParentSize().background(fill))
+            } else if (!ready) Image(
+                imageResource(avatarTextureResource(color, LocalLabTheme.current.preferences)),
+                contentDescription = null, modifier = Modifier.matchParentSize(), contentScale = ContentScale.FillBounds,
+                filterQuality = FilterQuality.High,
+            )
             if (!src.isNullOrBlank()) key(src) {
                 AsyncImage(model = src, contentDescription = null, contentScale = ContentScale.Crop,
                     modifier = Modifier.matchParentSize().alpha(if (ready) 1f else 0f),

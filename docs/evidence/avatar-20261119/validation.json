@@ -1,0 +1,39 @@
+{
+  "webBytes": 4016540,
+  "nativePngBytes": 6421743,
+  "webRangeBytes": [78002, 115252],
+  "webDecodedBytesPerVariant": 262144,
+  "nativeDecodedBytesByDensity": {
+    "1": 9216,
+    "1.5": 20736,
+    "2": 36864,
+    "3": 82944,
+    "4": 147456
+  },
+  "sourceHashes": {
+    "image": {
+      "node": "7719:58822",
+      "file": "source/image.png",
+      "sha256": "20061de6f91eefc889e3a6d13ed86a14de338cefd544cda7a6d02e76c2fdc6ea"
+    },
+    "texture": {
+      "node": "7719:58823",
+      "file": "source/texture.png",
+      "sha256": "459651bb4accceed2b0719a87c58bc8136e590bd7515aea802adacd248b6cb4f"
+    }
+  },
+  "checks": {
+    "avatarCoreTests": 3,
+    "colorsTests": 255,
+    "browserTests": 7,
+    "nativeAvatarTests": 5,
+    "installedNativeModes": 4,
+    "installedNativeDensities": [1, 2, 4],
+    "installedWebZoom200": {
+      "cssPixels": 96,
+      "dpr": 2,
+      "physicalPixels": 192
+    },
+    "nativeCoordinate": "pics.lab:ui-compose-desktop:0.1.0-avatar-material-final-20261119"
+  }
+}

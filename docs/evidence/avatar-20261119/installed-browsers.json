@@ -1,0 +1,62 @@
+[
+  {
+    "name": "chromium",
+    "version": "140.0.7339.186",
+    "textures": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256
+      }
+    ],
+    "requests": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "firefox",
+    "version": "141.0",
+    "textures": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256
+      }
+    ],
+    "requests": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "name": "webkit",
+    "version": "26.0",
+    "textures": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256
+      }
+    ],
+    "requests": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "status": 200
+      }
+    ]
+  }
+]

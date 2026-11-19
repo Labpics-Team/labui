@@ -44,6 +44,107 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => document.fonts.ready);
 });
 
+test('texture URLs retain an external stylesheet base through Lit and React styles', async ({
+  page,
+}) => {
+  await page.route('**/nested-avatar-assets/theme.css', (route) =>
+    route.fulfill({
+      contentType: 'text/css',
+      body: '[data-avatar-asset-probe] { --lab-avatar-texture-blue:url("./blue.webp"); }',
+    }),
+  );
+  await page.route('**/nested-avatar-assets/blue.webp', (route) =>
+    route.fulfill({
+      contentType: 'image/webp',
+      body: readFileSync(
+        new URL('../../../packages/core/src/assets/avatar/blue-light-normal.webp', import.meta.url),
+      ),
+    }),
+  );
+  await setAvatar(page, { fallback: 'texture', color: 'blue' });
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        document.body.dataset.avatarAssetProbe = '';
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = '/nested-avatar-assets/theme.css';
+        link.onload = () => resolve();
+        link.onerror = () => reject(new Error('Stylesheet failed'));
+        document.head.append(link);
+      }),
+  );
+  for (const renderer of renderers) {
+    const url = await state(page, renderer)
+      .locator('.lab-avatar-texture')
+      .evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(url).toContain('/nested-avatar-assets/blue.webp');
+  }
+});
+
+test('texture resources paint in both renderers across appearance, contrast and nested scopes', async ({
+  page,
+}) => {
+  const urls = new Set<string>();
+  for (const theme of ['light', 'dark'])
+    for (const contrast of ['normal', 'more']) {
+      await page.evaluate(
+        ({ theme, contrast }) => {
+          Object.assign(document.documentElement.dataset, { theme, contrast });
+        },
+        { theme, contrast },
+      );
+      for (const color of colors) {
+        const paints = await Promise.all(
+          renderers.map((renderer) =>
+            page
+              .getByTestId(`${renderer}-texture-l-${color}`)
+              .locator('.lab-avatar-texture')
+              .evaluate(async (el) => {
+                const background = getComputedStyle(el).backgroundImage;
+                const url = background.match(/^url\("(.+)"\)$/)?.[1];
+                if (!url) throw new Error(`Missing texture: ${background}`);
+                const image = new Image();
+                image.src = url;
+                await image.decode();
+                const canvas = document.createElement('canvas');
+                canvas.width = canvas.height = 48;
+                const context = canvas.getContext('2d');
+                if (!context) throw new Error('Missing 2D canvas');
+                context.drawImage(image, 0, 0, 48, 48);
+                const pixels = context.getImageData(12, 12, 24, 24).data;
+                const distinct = new Set<string>();
+                for (let i = 0; i < pixels.length; i += 4)
+                  distinct.add(`${pixels[i]},${pixels[i + 1]},${pixels[i + 2]}`);
+                return {
+                  url,
+                  width: image.naturalWidth,
+                  height: image.naturalHeight,
+                  distinct: distinct.size,
+                };
+              }),
+          ),
+        );
+        expect(paints[0]).toEqual(paints[1]);
+        expect(paints[0].width).toBe(256);
+        expect(paints[0].height).toBe(256);
+        expect(paints[0].distinct).toBeGreaterThan(250);
+        urls.add(paints[0].url);
+      }
+    }
+  expect(urls.size).toBe(40);
+  await page.getByTestId('lit-texture-l-blue').evaluate((el) => {
+    el.setAttribute('data-theme', 'light');
+    el.setAttribute('data-contrast', 'normal');
+  });
+  expect(
+    await page
+      .getByTestId('lit-texture-l-blue')
+      .locator('.lab-avatar-texture')
+      .evaluate((el) => getComputedStyle(el).backgroundImage),
+  ).toContain('blue-light-normal');
+});
+
 test('name, letter mark, texture and presence form one accessible image', async ({ page }) => {
   await setAvatar(page, { name: 'Анна Каренина', status: 'online' });
   for (const renderer of renderers) {

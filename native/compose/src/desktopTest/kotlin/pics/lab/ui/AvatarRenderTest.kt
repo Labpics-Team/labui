@@ -59,6 +59,39 @@ class AvatarRenderTest {
         org.jetbrains.skia.Bitmap.makeFromImage(image).use { it.getColor(x, y) }
     }
 
+    @Test fun authoredTexturePaintsEveryPaletteModeAtNormalAndDoubleDensity() {
+        val output = File("build/avatar-render").apply { mkdirs() }
+        for (appearance in LabAppearance.entries) for (contrast in listOf(false, true)) for (density in listOf(1f, 2f)) {
+            val prefs = LabPreferences(appearance = appearance, increasedContrast = contrast)
+            val theme = LabThemeState(initialLabColors(prefs), prefs)
+            val scene = ImageComposeScene((720 * density).toInt(), (208 * density).toInt(), Density(density)) {
+                LabTheme(theme) { Column(Modifier.fillMaxSize().background(theme.colors["bg-primary"]).padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                    for (size in listOf(LabControlSize.Medium, LabControlSize.Large)) Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        for (color in LabAvatarColor.entries) LabAvatar(color.name, fallback = LabAvatarFallback.Texture,
+                            size = size, color = color, status = LabAvatarStatus.Online)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        LabAvatar("Даниил", initials = "Д", status = LabAvatarStatus.Online)
+                        LabAvatar("Команда", fallback = LabAvatarFallback.Texture, status = LabAvatarStatus.Away)
+                    }
+                } }
+            }
+            try {
+                val bytes = settle(scene)
+                File(output, "avatar-texture-${appearance.name.lowercase()}-${if (contrast) "more" else "normal"}-${(density * 100).toInt()}.png").writeBytes(bytes)
+                assertEquals(22, images(scene).size)
+                val rendered = ImageIO.read(bytes.inputStream())
+                for (index in 0..9) {
+                    val colors = mutableSetOf<Int>()
+                    for (y in 8..23) for (x in 8..23) colors += rendered.getRGB(
+                        ((24 + index * 48 + x) * density).toInt(), ((24 + y) * density).toInt())
+                    assertTrue(colors.size > 150, "Texture ${LabAvatarColor.entries[index]} must retain the authored material, not a flat fill")
+                }
+            } finally { scene.close() }
+        }
+    }
+
     @Test fun authoredLetterMastersRenderInBothThemesAndAtDoubleTextScale() {
         val output = File("build/avatar-render").apply { mkdirs() }
         for (appearance in LabAppearance.entries) for (scale in listOf(1f, 2f)) {

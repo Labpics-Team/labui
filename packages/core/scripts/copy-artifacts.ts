@@ -11,7 +11,7 @@
  * Mirrors the same step in @labpics/ui-tokens. tsup only bundles the TS entry;
  * the CSS surface is shipped verbatim.
  */
-import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -72,6 +72,11 @@ function main(): void {
   writeFileSync(join(dist, 'kbd.css'), kbdCss);
   writeFileSync(join(dist, 'progress.css'), progressCss);
   writeFileSync(join(dist, 'pagination.css'), paginationCss);
+  // Theme-scoped URLs inherit through Shadow DOM; JS contains no image payloads.
+  copyFileSync(join(src, 'avatar-material.css'), join(dist, 'avatar-material.css'));
+  cpSync(join(src, 'assets', 'avatar'), join(dist, 'assets', 'avatar'), { recursive: true });
+  // Keep resource URLs in theme.css's external stylesheet. React injects the
+  // component CSS into <style>; moving relative URLs there changes their base.
   writeFileSync(join(dist, 'avatar.css'), avatarCss);
 
   process.stdout.write(
