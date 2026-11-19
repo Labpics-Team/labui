@@ -1,65 +1,10 @@
 /**
- * `<lab-select>` — the COMPOUND + POSITIONED canon: a trigger that opens a
- * positioned listbox of selectable options. It fuses the two earlier canons —
- * the keyed-compound group machine (`<lab-radio-group>`: one machine owning N
- * per-value parts) and the positioned, dismissable overlay (`<lab-popover>`:
- * shadow positioner with `strategy:'fixed'`, dismiss + focus from the machine).
- *
- * Compound + positioned shape (the CANON for Combobox / Dropdown that follow):
- *   A Zag *select* machine is ONE instance owning the trigger, the positioner,
- *   the listbox content, and N option parts keyed by VALUE. Its `connect()`
- *   returns group-level getters (`getTriggerProps`, `getContentProps`,
- *   `getPositionerProps`, `getValueTextProps`, `getHiddenSelectProps`) AND
- *   per-item getters that take the ITEM OBJECT (`getItemProps({ item })`,
- *   `getItemTextProps({ item })`, `getItemIndicatorProps({ item })`). The machine
- *   resolves each item's value through the `collection` (`itemToValue`), queries
- *   the DOM through `getRootNode` (pointed at THIS element's shadow root), and
- *   anchors the listbox with Floating UI. So every part the machine drives MUST
- *   live in ONE shadow scope — the element renders all parts in its own shadow
- *   DOM from a declarative `items` config, NOT a parent + N child elements.
- *
- *   Positioner canon (from `<lab-popover>`): the content sits in the shadow root,
- *   positioned with `strategy:'fixed'` to escape clipping/stacking ancestors
- *   WITHOUT a portal, so the machine is told `portalled:false`. (The React twin
- *   sets `portalled:true` and renders into a body portal; dismiss + keyboard +
- *   positioning are identical because both come from the machine.)
- *
- * Keyed mapping (from `<lab-radio-group>`): each option node carries
- * `data-value="<value>"`; `updated()` spreads the machine's per-item getters onto
- * its node by that STABLE key (via `CSS.escape`), never the positional index —
- * options can be filtered/reordered, and the machine already keys its getters by
- * value, so a node never receives another option's props if render order and the
- * `items` array diverge. The id the machine puts on each option is exactly what
- * the listbox's `aria-activedescendant` points at during keyboard navigation.
- *
- * Axes (the Figma model — Size × Multiple × Disabled × Placement):
- *   - size:        s | m | l — trigger height + listbox font band.
- *   - multiple:    single (one value) | multiple (a set; `aria-multiselectable`).
- *   - value:       controlled selected value(s) (reflected as a JSON attribute).
- *   - defaultValue: uncontrolled initial value(s), read once by the machine.
- *   - disabled:    trigger non-interactive.
- *   - placement:   where the listbox sits relative to the trigger (Zag popper).
- *
- * a11y is the machine's, not hand-rolled: the trigger is `role="combobox"` with
- * `aria-haspopup="listbox"` / `aria-controls` → content / `aria-expanded`; the
- * content is `role="listbox"` with `aria-activedescendant` (single) and
- * `aria-multiselectable` (multiple); each option is `role="option"` with
- * `aria-selected`; Arrow/Home/End navigation, typeahead, Escape/outside-click
- * dismiss and focus restoration ALL come from `@zag-js/select` (DIP — injected
- * `MachineModule`, zero hand-written roving/positioning/dismiss). A hidden native
- * `<select>` is wired for form submission.
- *
- * Token contract (core-CONTRACT §2): ONLY semantic `--lab-*` roles. The listbox is
- * the raised surface (`--lab-bg-secondary` + `--lab-label-primary`) with a
- * `--lab-border-soft` hairline and `--lab-fx-shadow-major` lift, layered at
- * `--lab-z-dropdown`; the highlighted option fills with `--lab-fill-primary`,
- * the selected option's label is `--lab-label-accent`. No hex, no primitive.
- *
- * SSR (core-CONTRACT §7): a select is client-only. The server emits the trigger and
- * a `hidden` listbox; the machine upgrades it on the client. No flash, no pre-work.
+ * A single or multiple choice from a positioned listbox. Zag provides selection,
+ * keyboard navigation, focus and positioning; all Lit parts share one shadow root.
+ * A supplied value is controlled. Without one, defaultValue initializes the machine.
  */
 import * as selectMachine from '@zag-js/select';
-import { type TemplateResult, css, html, nothing } from 'lit';
+import { type TemplateResult, css, html, isServer, nothing } from 'lit';
 import type { MachineModule, PropTypes, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
@@ -130,7 +75,9 @@ export class LabSelect extends LabElement {
      */
     value: {
       attribute: 'value',
-      converter: { fromAttribute: (raw: string | null): string[] => parseValues(raw) },
+      converter: {
+        fromAttribute: (raw: string | null) => (raw === null ? null : parseValues(raw)),
+      },
     },
     /** Uncontrolled initial value(s) — read once by the machine at init. */
     defaultValue: {
@@ -154,7 +101,8 @@ export class LabSelect extends LabElement {
   declare name: string;
   declare placeholder: string;
   declare label: string;
-  declare value: string[];
+  /** Null leaves selection to the component; an array, including [], is controlled. */
+  declare value: string[] | null;
   declare defaultValue: string[];
   declare items: LabSelectItem[];
 
@@ -173,25 +121,21 @@ export class LabSelect extends LabElement {
     this.name = '';
     this.placeholder = 'Select…';
     this.label = '';
-    this.value = [];
+    this.value = null;
     this.defaultValue = [];
     this.items = [];
-    // Wire the Zag select behaviour. `portalled:false` because the content lives in
-    // this shadow root; `strategy:'fixed'` is the overlay canon for escaping
-    // clipping/stacking ancestors without a portal. `value` is passed only when the
-    // consumer set the attribute (controlled); otherwise the machine owns it from
-    // `defaultValue` — the same honest two-mode contract as the other controls.
+    // All parts live in this shadow root. A defined value is controlled regardless
+    // of whether it arrived as a JS property or an attribute.
     this.machineCtl = this.runMachine(selectModule, () => ({
       id: this.machineId,
       collection: this.collection,
       multiple: this.multiple,
       disabled: this.disabled,
       name: this.name || undefined,
-      value: this.hasAttribute('value') ? this.value : undefined,
-      defaultValue: this.defaultValue.length ? this.defaultValue : undefined,
+      value: this.value ?? undefined,
+      defaultValue: this.defaultValue?.length ? this.defaultValue : undefined,
       positioning: { placement: this.placement, strategy: 'fixed' },
       onValueChange: (details: selectMachine.ValueChangeDetails<LabSelectItem>) => {
-        this.value = details.value;
         this.dispatchEvent(
           new CustomEvent<selectMachine.ValueChangeDetails<LabSelectItem>>('value-change', {
             detail: details,
@@ -210,6 +154,13 @@ export class LabSelect extends LabElement {
         );
       },
     }));
+  }
+
+  /** The accepted selection, including the machine's uncontrolled state. */
+  get selectedValues(): readonly string[] {
+    return isServer || !this.isConnected
+      ? (this.value ?? this.defaultValue ?? [])
+      : this.machineCtl.api.value;
   }
 
   override willUpdate(changed: Map<string, unknown>): void {
@@ -465,23 +416,15 @@ export class LabSelect extends LabElement {
     }
   }
 
-  /**
-   * The trigger's display text: the machine's `valueAsString` (the selected
-   * label(s), joined through the collection) when something is selected, else the
-   * placeholder. The machine is the single source of truth — this mirrors the React
-   * twin's `{api.valueAsString || placeholder}` so a `default-value` (or any
-   * selection) is visible on the Lit trigger too. `render()` runs on every machine
-   * transition (ZagController subscribes → requestUpdate), so the text tracks the
-   * selection live. Pre-connection (Lit SSR runs render() before the machine starts)
-   * the api is unavailable — fall back to the placeholder for the SSR shell; the
-   * client upgrade fills the real value in.
-   */
+  /** Resolve the same accepted selection before and after the machine connects. */
   private get valueText(): string {
-    try {
-      return this.machineCtl.api.valueAsString || this.placeholder;
-    } catch {
-      return this.placeholder;
-    }
+    if (!isServer && this.isConnected) return this.machineCtl.api.valueAsString || this.placeholder;
+    return (
+      this.selectedValues
+        .map((value) => this.items?.find((item) => item.value === value)?.label)
+        .filter((label) => label !== undefined)
+        .join(', ') || this.placeholder
+    );
   }
 
   override render(): TemplateResult {

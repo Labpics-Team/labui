@@ -1,3 +1,4 @@
+import type { LabSelect } from '@labpics/ui-core/select';
 import { type Locator, type Page, expect, test } from '@playwright/test';
 
 /**
@@ -71,6 +72,78 @@ async function reactFocusInContent(page: Page): Promise<void> {
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/select.html');
+});
+
+for (const input of ['property', 'attribute'] as const) {
+  test(`controlled ${input}: a selection request waits for the caller to accept it`, async ({
+    page,
+  }) => {
+    await page.evaluate(async (input) => {
+      await customElements.whenDefined('lab-select');
+      const select = document.createElement('lab-select');
+      select.dataset.testid = 'controlled-select';
+      select.items = [
+        { value: 'apple', label: 'Apple' },
+        { value: 'banana', label: 'Banana' },
+        { value: 'cherry', label: 'Cherry' },
+      ];
+      if (input === 'property') select.value = ['banana'];
+      else select.setAttribute('value', '["banana"]');
+      select.addEventListener('value-change', (event) => {
+        select.dataset.request = JSON.stringify((event as CustomEvent).detail.value);
+      });
+      document.querySelector('main')?.append(select);
+    }, input);
+    const host = litHost(page, 'controlled-select');
+    const trigger = litTrigger(page, 'controlled-select');
+    await expect(trigger.locator('.value-text')).toHaveText('Banana');
+    await trigger.click();
+    await host.locator('.item[data-value="cherry"]').click();
+    await expect(host).toHaveAttribute('data-request', '["cherry"]');
+    await expect(trigger.locator('.value-text')).toHaveText('Banana');
+    expect(await host.evaluate((element) => (element as LabSelect).value)).toEqual(['banana']);
+    await expect(host.locator('select')).toHaveValue('banana');
+
+    // An unrelated render must not turn a rejected request into accepted state.
+    await host.evaluate((element) => element.setAttribute('label', 'Fruit'));
+    await expect(trigger.locator('.value-text')).toHaveText('Banana');
+    await host.evaluate((element) => {
+      (element as LabSelect).value = ['cherry'];
+    });
+    await expect(trigger.locator('.value-text')).toHaveText('Cherry');
+    await expect(host.locator('select')).toHaveValue('cherry');
+    await host.evaluate((element) => {
+      (element as LabSelect).value = [];
+    });
+    await expect(trigger.locator('.value-text')).toHaveText('Select…');
+    await trigger.click();
+    await host.locator('.item[data-value="apple"]').click();
+    await expect(host).toHaveAttribute('data-request', '["apple"]');
+    await expect(trigger.locator('.value-text')).toHaveText('Select…');
+  });
+}
+
+test('uncontrolled values keep accumulating without becoming controlled after the first choice', async ({
+  page,
+}) => {
+  const host = litHost(page, 'lit-select-multi');
+  const trigger = litTrigger(page, 'lit-select-multi');
+  await trigger.click();
+  await host.locator('.item[data-value="apple"]').click();
+  await expect(trigger.locator('.value-text')).toHaveText('Apple');
+  await host.locator('.item[data-value="banana"]').click();
+  await expect(trigger.locator('.value-text')).toHaveText('Apple, Banana');
+  await host.locator('.item[data-value="apple"]').click();
+  await expect(trigger.locator('.value-text')).toHaveText('Banana');
+  expect(await host.evaluate((element) => (element as LabSelect).selectedValues)).toEqual([
+    'banana',
+  ]);
+  expect(await host.evaluate((element) => (element as LabSelect).value)).toBeNull();
+  await host.evaluate((element) => {
+    (element as LabSelect).defaultValue = ['cherry'];
+    (element as LabSelect).label = 'Selection';
+  });
+  await expect(trigger.locator('.value-text')).toHaveText('Banana');
 });
 
 test('delivered HTML carries the Lit element (React island mounts client-side)', async ({
@@ -482,6 +555,7 @@ test('aria-multiselectable: present on the multi listbox, absent on the single o
   await litTrigger(page, 'lit-select').click();
   await expect(litContent(page, 'lit-select')).toBeVisible();
   expect(await litContent(page, 'lit-select').getAttribute('aria-multiselectable')).toBeNull();
+  await litFocusInContent(page, 'lit-select');
   await page.keyboard.press('Escape');
   await expect(litContent(page, 'lit-select')).toBeHidden();
 
@@ -494,6 +568,7 @@ test('aria-multiselectable: present on the multi listbox, absent on the single o
   );
 
   // React parity (multi specimen).
+  await litFocusInContent(page, 'lit-select-multi');
   await page.keyboard.press('Escape');
   await reactTrigger(page, 'react-select-multi').click();
   await expect(page.locator('.lab-select-content[data-state="open"]')).toHaveAttribute(

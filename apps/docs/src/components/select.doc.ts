@@ -208,9 +208,10 @@ export const selectDoc: ComponentDoc = {
       },
       {
         name: 'value',
-        type: 'string[]',
+        type: 'string[] | null',
+        default: 'null',
         description:
-          'Controlled selected value(s) — when set (JSON attribute or property), the consumer owns the value.',
+          'An array, including [], controls the selection through a JS property or JSON attribute. A value-change event requests an update; only the caller changes value. Null leaves selection to the component.',
       },
       {
         name: 'defaultValue',
@@ -234,7 +235,7 @@ export const selectDoc: ComponentDoc = {
       {
         name: 'value-change',
         description:
-          'CustomEvent<ValueChangeDetails> fired when the machine changes the selected value(s). The machine is the source of truth.',
+          'CustomEvent<ValueChangeDetails> requests a selection. In controlled mode, assign detail.value to the value property to accept it; ignoring the event preserves the current selection.',
       },
       {
         name: 'open-change',
