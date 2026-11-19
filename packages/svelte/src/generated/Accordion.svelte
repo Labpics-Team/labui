@@ -28,7 +28,7 @@
     [key: string]: unknown;
   }
 
-  let { orientation, size, multiple, collapsible, disabled, headingLevel, value, defaultValue, items, onValueChange, children, slots, ...rest }: Props = $props();
+  let { orientation: prop_orientation, size: prop_size, multiple: prop_multiple, collapsible: prop_collapsible, disabled: prop_disabled, headingLevel: prop_headingLevel, value: prop_value, defaultValue: prop_defaultValue, items: prop_items, onValueChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'orientation', attr: 'orientation', kind: 'string' },
@@ -43,7 +43,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-accordion', {
-    specs, props: { orientation, size, multiple, collapsible, disabled, headingLevel, value, defaultValue, items }, attributes: rest,
+    specs, props: { orientation: prop_orientation, size: prop_size, multiple: prop_multiple, collapsible: prop_collapsible, disabled: prop_disabled, headingLevel: prop_headingLevel, value: prop_value, defaultValue: prop_defaultValue, items: prop_items }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -52,7 +52,7 @@
   $effect(() => forwardEvents(el, { 'value-change': onValueChange }));
 </script>
 
-<lab-accordion bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { orientation, size, multiple, collapsible, disabled, headingLevel, value, defaultValue, items } } }}>
+<lab-accordion bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { orientation: prop_orientation, size: prop_size, multiple: prop_multiple, collapsible: prop_collapsible, disabled: prop_disabled, headingLevel: prop_headingLevel, value: prop_value, defaultValue: prop_defaultValue, items: prop_items } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

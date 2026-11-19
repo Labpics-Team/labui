@@ -25,7 +25,7 @@
     [key: string]: unknown;
   }
 
-  let { size, modal, closable, heading, description, onOpenChange, children, slots, content, ...rest }: Props = $props();
+  let { size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description, onOpenChange, children, slots, content: slot_content, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
@@ -36,16 +36,16 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-alert-dialog', {
-    specs, props: { size, modal, closable, heading, description }, attributes: rest,
+    specs, props: { size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'content': content, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'content': slot_content, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
 </script>
 
-<lab-alert-dialog bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, modal, closable, heading, description } } }}>
+<lab-alert-dialog bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

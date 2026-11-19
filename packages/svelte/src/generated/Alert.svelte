@@ -30,7 +30,7 @@
     [key: string]: unknown;
   }
 
-  let { open, controlled, type, quantity, heading, description, showIcon, closeLabel, announcement, notificationKey, onDismiss, children, slots, icon, ...rest }: Props = $props();
+  let { open: prop_open, controlled: prop_controlled, type: prop_type, quantity: prop_quantity, heading: prop_heading, description: prop_description, showIcon: prop_showIcon, closeLabel: prop_closeLabel, announcement: prop_announcement, notificationKey: prop_notificationKey, onDismiss, children, slots, icon: slot_icon, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'open', attr: 'open', kind: 'prop' },
@@ -46,16 +46,16 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-alert', {
-    specs, props: { open, controlled, type, quantity, heading, description, showIcon, closeLabel, announcement, notificationKey }, attributes: rest,
+    specs, props: { open: prop_open, controlled: prop_controlled, type: prop_type, quantity: prop_quantity, heading: prop_heading, description: prop_description, showIcon: prop_showIcon, closeLabel: prop_closeLabel, announcement: prop_announcement, notificationKey: prop_notificationKey }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'icon': icon, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'icon': slot_icon, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, { 'dismiss': onDismiss }));
 </script>
 
-<lab-alert bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { open, controlled, type, quantity, heading, description, showIcon, closeLabel, announcement, notificationKey } } }}>
+<lab-alert bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { open: prop_open, controlled: prop_controlled, type: prop_type, quantity: prop_quantity, heading: prop_heading, description: prop_description, showIcon: prop_showIcon, closeLabel: prop_closeLabel, announcement: prop_announcement, notificationKey: prop_notificationKey } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}

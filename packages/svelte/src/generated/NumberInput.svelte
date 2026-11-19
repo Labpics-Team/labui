@@ -39,7 +39,7 @@
     [key: string]: unknown;
   }
 
-  let { type, size, label, labelHidden, helper, error, value, defaultValue, placeholder, min, max, step, scrubber, allowMouseWheel, readonly, disabled, required, invalid, name, onValueChange, onValueCommit, children, slots, ...rest }: Props = $props();
+  let { type: prop_type, size: prop_size, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, value: prop_value, defaultValue: prop_defaultValue, placeholder: prop_placeholder, min: prop_min, max: prop_max, step: prop_step, scrubber: prop_scrubber, allowMouseWheel: prop_allowMouseWheel, readonly: prop_readonly, disabled: prop_disabled, required: prop_required, invalid: prop_invalid, name: prop_name, onValueChange, onValueCommit, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -64,7 +64,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-number-input', {
-    specs, props: { type, size, label, labelHidden, helper, error, value, defaultValue, placeholder, min, max, step, scrubber, allowMouseWheel, readonly, disabled, required, invalid, name }, attributes: rest,
+    specs, props: { type: prop_type, size: prop_size, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, value: prop_value, defaultValue: prop_defaultValue, placeholder: prop_placeholder, min: prop_min, max: prop_max, step: prop_step, scrubber: prop_scrubber, allowMouseWheel: prop_allowMouseWheel, readonly: prop_readonly, disabled: prop_disabled, required: prop_required, invalid: prop_invalid, name: prop_name }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -73,7 +73,7 @@
   $effect(() => forwardEvents(el, { 'value-change': onValueChange, 'value-commit': onValueCommit }));
 </script>
 
-<lab-number-input bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, label, labelHidden, helper, error, value, defaultValue, placeholder, min, max, step, scrubber, allowMouseWheel, readonly, disabled, required, invalid, name } } }}>
+<lab-number-input bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type: prop_type, size: prop_size, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, value: prop_value, defaultValue: prop_defaultValue, placeholder: prop_placeholder, min: prop_min, max: prop_max, step: prop_step, scrubber: prop_scrubber, allowMouseWheel: prop_allowMouseWheel, readonly: prop_readonly, disabled: prop_disabled, required: prop_required, invalid: prop_invalid, name: prop_name } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}

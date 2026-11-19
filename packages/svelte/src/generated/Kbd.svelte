@@ -20,7 +20,7 @@
     [key: string]: unknown;
   }
 
-  let { size, keys, children, slots, ...rest }: Props = $props();
+  let { size: prop_size, keys: prop_keys, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
@@ -28,7 +28,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-kbd', {
-    specs, props: { size, keys }, attributes: rest,
+    specs, props: { size: prop_size, keys: prop_keys }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -37,7 +37,7 @@
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-kbd bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, keys } } }}>
+<lab-kbd bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size: prop_size, keys: prop_keys } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

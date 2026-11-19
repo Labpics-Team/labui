@@ -26,7 +26,7 @@
     [key: string]: unknown;
   }
 
-  let { placement, size, content, openDelay, closeDelay, disabled, arrow, onOpenChange, children, slots, ...rest }: Props = $props();
+  let { placement: prop_placement, size: prop_size, content: prop_content, openDelay: prop_openDelay, closeDelay: prop_closeDelay, disabled: prop_disabled, arrow: prop_arrow, onOpenChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'placement', attr: 'placement', kind: 'string' },
@@ -39,7 +39,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-tooltip', {
-    specs, props: { placement, size, content, openDelay, closeDelay, disabled, arrow }, attributes: rest,
+    specs, props: { placement: prop_placement, size: prop_size, content: prop_content, openDelay: prop_openDelay, closeDelay: prop_closeDelay, disabled: prop_disabled, arrow: prop_arrow }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -48,7 +48,7 @@
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
 </script>
 
-<lab-tooltip bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { placement, size, content, openDelay, closeDelay, disabled, arrow } } }}>
+<lab-tooltip bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { placement: prop_placement, size: prop_size, content: prop_content, openDelay: prop_openDelay, closeDelay: prop_closeDelay, disabled: prop_disabled, arrow: prop_arrow } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

@@ -40,7 +40,7 @@
     [key: string]: unknown;
   }
 
-  let { type, size, label, labelHidden, helper, error, value, placeholder, inputType, autocomplete, readonly, disabled, required, invalid, name, maxLength, minLength, pattern, onLabChange, onLabInput, children, slots, leading, trailing, ...rest }: Props = $props();
+  let { type: prop_type, size: prop_size, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, value: prop_value, placeholder: prop_placeholder, inputType: prop_inputType, autocomplete: prop_autocomplete, readonly: prop_readonly, disabled: prop_disabled, required: prop_required, invalid: prop_invalid, name: prop_name, maxLength: prop_maxLength, minLength: prop_minLength, pattern: prop_pattern, onLabChange, onLabInput, children, slots, leading: slot_leading, trailing: slot_trailing, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -64,16 +64,16 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-input', {
-    specs, props: { type, size, label, labelHidden, helper, error, value, placeholder, inputType, autocomplete, readonly, disabled, required, invalid, name, maxLength, minLength, pattern }, attributes: rest,
+    specs, props: { type: prop_type, size: prop_size, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, value: prop_value, placeholder: prop_placeholder, inputType: prop_inputType, autocomplete: prop_autocomplete, readonly: prop_readonly, disabled: prop_disabled, required: prop_required, invalid: prop_invalid, name: prop_name, maxLength: prop_maxLength, minLength: prop_minLength, pattern: prop_pattern }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'leading': leading, 'trailing': trailing, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'leading': slot_leading, 'trailing': slot_trailing, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, { 'lab-change': onLabChange, 'lab-input': onLabInput }));
 </script>
 
-<lab-input bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, label, labelHidden, helper, error, value, placeholder, inputType, autocomplete, readonly, disabled, required, invalid, name, maxLength, minLength, pattern } } }}>
+<lab-input bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type: prop_type, size: prop_size, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, value: prop_value, placeholder: prop_placeholder, inputType: prop_inputType, autocomplete: prop_autocomplete, readonly: prop_readonly, disabled: prop_disabled, required: prop_required, invalid: prop_invalid, name: prop_name, maxLength: prop_maxLength, minLength: prop_minLength, pattern: prop_pattern } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}

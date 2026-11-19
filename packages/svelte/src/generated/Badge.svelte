@@ -24,7 +24,7 @@
     [key: string]: unknown;
   }
 
-  let { color, type, disabled, children, slots, dot, icon, iconEnd, ...rest }: Props = $props();
+  let { color: prop_color, type: prop_type, disabled: prop_disabled, children, slots, dot: slot_dot, icon: slot_icon, iconEnd: slot_iconEnd, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'color', attr: 'color', kind: 'string' },
@@ -33,16 +33,16 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-badge', {
-    specs, props: { color, type, disabled }, attributes: rest,
+    specs, props: { color: prop_color, type: prop_type, disabled: prop_disabled }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'dot': dot, 'icon': icon, 'icon-end': iconEnd, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'dot': slot_dot, 'icon': slot_icon, 'icon-end': slot_iconEnd, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-badge bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { color, type, disabled } } }}>
+<lab-badge bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { color: prop_color, type: prop_type, disabled: prop_disabled } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

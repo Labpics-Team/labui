@@ -25,7 +25,7 @@
     [key: string]: unknown;
   }
 
-  let { size, variant, value, min, max, label, showValueText, children, slots, ...rest }: Props = $props();
+  let { size: prop_size, variant: prop_variant, value: prop_value, min: prop_min, max: prop_max, label: prop_label, showValueText: prop_showValueText, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
@@ -38,7 +38,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-progress', {
-    specs, props: { size, variant, value, min, max, label, showValueText }, attributes: rest,
+    specs, props: { size: prop_size, variant: prop_variant, value: prop_value, min: prop_min, max: prop_max, label: prop_label, showValueText: prop_showValueText }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -47,7 +47,7 @@
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-progress bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, variant, value, min, max, label, showValueText } } }}>
+<lab-progress bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size: prop_size, variant: prop_variant, value: prop_value, min: prop_min, max: prop_max, label: prop_label, showValueText: prop_showValueText } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}

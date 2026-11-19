@@ -27,7 +27,7 @@
     [key: string]: unknown;
   }
 
-  let { placement, size, modal, closable, arrow, heading, description, onOpenChange, children, slots, content, ...rest }: Props = $props();
+  let { placement: prop_placement, size: prop_size, modal: prop_modal, closable: prop_closable, arrow: prop_arrow, heading: prop_heading, description: prop_description, onOpenChange, children, slots, content: slot_content, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'placement', attr: 'placement', kind: 'string' },
@@ -40,16 +40,16 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-popover', {
-    specs, props: { placement, size, modal, closable, arrow, heading, description }, attributes: rest,
+    specs, props: { placement: prop_placement, size: prop_size, modal: prop_modal, closable: prop_closable, arrow: prop_arrow, heading: prop_heading, description: prop_description }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'content': content, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'content': slot_content, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
 </script>
 
-<lab-popover bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { placement, size, modal, closable, arrow, heading, description } } }}>
+<lab-popover bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { placement: prop_placement, size: prop_size, modal: prop_modal, closable: prop_closable, arrow: prop_arrow, heading: prop_heading, description: prop_description } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

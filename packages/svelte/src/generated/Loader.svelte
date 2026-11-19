@@ -23,7 +23,7 @@
     [key: string]: unknown;
   }
 
-  let { size, label, value, min, max, children, slots, ...rest }: Props = $props();
+  let { size: prop_size, label: prop_label, value: prop_value, min: prop_min, max: prop_max, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
@@ -34,7 +34,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-loader', {
-    specs, props: { size, label, value, min, max }, attributes: rest,
+    specs, props: { size: prop_size, label: prop_label, value: prop_value, min: prop_min, max: prop_max }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -43,7 +43,7 @@
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-loader bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, label, value, min, max } } }}>
+<lab-loader bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size: prop_size, label: prop_label, value: prop_value, min: prop_min, max: prop_max } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}

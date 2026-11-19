@@ -40,7 +40,7 @@
     [key: string]: unknown;
   }
 
-  let { type, size, label, labelHidden, helper, error, placeholder, max, delimiter, editable, addOnPaste, allowDuplicates, value, defaultValue, readonly, disabled, required, invalid, name, onInputValueChange, onValueChange, onValueInvalid, children, slots, ...rest }: Props = $props();
+  let { type: prop_type, size: prop_size, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, placeholder: prop_placeholder, max: prop_max, delimiter: prop_delimiter, editable: prop_editable, addOnPaste: prop_addOnPaste, allowDuplicates: prop_allowDuplicates, value: prop_value, defaultValue: prop_defaultValue, readonly: prop_readonly, disabled: prop_disabled, required: prop_required, invalid: prop_invalid, name: prop_name, onInputValueChange, onValueChange, onValueInvalid, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -65,7 +65,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-tags-input', {
-    specs, props: { type, size, label, labelHidden, helper, error, placeholder, max, delimiter, editable, addOnPaste, allowDuplicates, value, defaultValue, readonly, disabled, required, invalid, name }, attributes: rest,
+    specs, props: { type: prop_type, size: prop_size, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, placeholder: prop_placeholder, max: prop_max, delimiter: prop_delimiter, editable: prop_editable, addOnPaste: prop_addOnPaste, allowDuplicates: prop_allowDuplicates, value: prop_value, defaultValue: prop_defaultValue, readonly: prop_readonly, disabled: prop_disabled, required: prop_required, invalid: prop_invalid, name: prop_name }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -74,7 +74,7 @@
   $effect(() => forwardEvents(el, { 'input-value-change': onInputValueChange, 'value-change': onValueChange, 'value-invalid': onValueInvalid }));
 </script>
 
-<lab-tags-input bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, label, labelHidden, helper, error, placeholder, max, delimiter, editable, addOnPaste, allowDuplicates, value, defaultValue, readonly, disabled, required, invalid, name } } }}>
+<lab-tags-input bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type: prop_type, size: prop_size, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, placeholder: prop_placeholder, max: prop_max, delimiter: prop_delimiter, editable: prop_editable, addOnPaste: prop_addOnPaste, allowDuplicates: prop_allowDuplicates, value: prop_value, defaultValue: prop_defaultValue, readonly: prop_readonly, disabled: prop_disabled, required: prop_required, invalid: prop_invalid, name: prop_name } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}

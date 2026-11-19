@@ -28,7 +28,7 @@
     [key: string]: unknown;
   }
 
-  let { shape, value, defaultValue, name, label, dir, disabled, required, items, onValueChange, children, slots, ...rest }: Props = $props();
+  let { shape: prop_shape, value: prop_value, defaultValue: prop_defaultValue, name: prop_name, label: prop_label, dir: prop_dir, disabled: prop_disabled, required: prop_required, items: prop_items, onValueChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'shape', attr: 'shape', kind: 'string' },
@@ -43,7 +43,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-segmented-control', {
-    specs, props: { shape, value, defaultValue, name, label, dir, disabled, required, items }, attributes: rest,
+    specs, props: { shape: prop_shape, value: prop_value, defaultValue: prop_defaultValue, name: prop_name, label: prop_label, dir: prop_dir, disabled: prop_disabled, required: prop_required, items: prop_items }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -52,7 +52,7 @@
   $effect(() => forwardEvents(el, { 'value-change': onValueChange }));
 </script>
 
-<lab-segmented-control bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { shape, value, defaultValue, name, label, dir, disabled, required, items } } }}>
+<lab-segmented-control bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { shape: prop_shape, value: prop_value, defaultValue: prop_defaultValue, name: prop_name, label: prop_label, dir: prop_dir, disabled: prop_disabled, required: prop_required, items: prop_items } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

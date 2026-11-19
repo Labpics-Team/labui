@@ -32,7 +32,7 @@
     [key: string]: unknown;
   }
 
-  let { type, size, checked, defaultChecked, controlled, disabled, required, icon, name, value, onCheckedChange, children, slots, iconOff, iconOn, labelStart, ...rest }: Props = $props();
+  let { type: prop_type, size: prop_size, checked: prop_checked, defaultChecked: prop_defaultChecked, controlled: prop_controlled, disabled: prop_disabled, required: prop_required, icon: prop_icon, name: prop_name, value: prop_value, onCheckedChange, children, slots, iconOff: slot_iconOff, iconOn: slot_iconOn, labelStart: slot_labelStart, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -48,16 +48,16 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-switch', {
-    specs, props: { type, size, checked, defaultChecked, controlled, disabled, required, icon, name, value }, attributes: rest,
+    specs, props: { type: prop_type, size: prop_size, checked: prop_checked, defaultChecked: prop_defaultChecked, controlled: prop_controlled, disabled: prop_disabled, required: prop_required, icon: prop_icon, name: prop_name, value: prop_value }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'icon-off': iconOff, 'icon-on': iconOn, 'label-start': labelStart, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'icon-off': slot_iconOff, 'icon-on': slot_iconOn, 'label-start': slot_labelStart, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, { 'checked-change': onCheckedChange }));
 </script>
 
-<lab-switch bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, checked, defaultChecked, controlled, disabled, required, icon, name, value } } }}>
+<lab-switch bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type: prop_type, size: prop_size, checked: prop_checked, defaultChecked: prop_defaultChecked, controlled: prop_controlled, disabled: prop_disabled, required: prop_required, icon: prop_icon, name: prop_name, value: prop_value } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

@@ -29,7 +29,7 @@
     [key: string]: unknown;
   }
 
-  let { variant, edge, orientation, size, activationMode, value, defaultValue, label, dir, items, onValueChange, children, slots, ...rest }: Props = $props();
+  let { variant: prop_variant, edge: prop_edge, orientation: prop_orientation, size: prop_size, activationMode: prop_activationMode, value: prop_value, defaultValue: prop_defaultValue, label: prop_label, dir: prop_dir, items: prop_items, onValueChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'variant', attr: 'variant', kind: 'string' },
@@ -45,7 +45,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-tabs', {
-    specs, props: { variant, edge, orientation, size, activationMode, value, defaultValue, label, dir, items }, attributes: rest,
+    specs, props: { variant: prop_variant, edge: prop_edge, orientation: prop_orientation, size: prop_size, activationMode: prop_activationMode, value: prop_value, defaultValue: prop_defaultValue, label: prop_label, dir: prop_dir, items: prop_items }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -54,7 +54,7 @@
   $effect(() => forwardEvents(el, { 'value-change': onValueChange }));
 </script>
 
-<lab-tabs bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { variant, edge, orientation, size, activationMode, value, defaultValue, label, dir, items } } }}>
+<lab-tabs bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { variant: prop_variant, edge: prop_edge, orientation: prop_orientation, size: prop_size, activationMode: prop_activationMode, value: prop_value, defaultValue: prop_defaultValue, label: prop_label, dir: prop_dir, items: prop_items } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}
