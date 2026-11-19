@@ -293,6 +293,60 @@ try {
         await reset(renderer);
         await button.press('Enter');
         assert.equal(await page.evaluate(() => window.calls.length), 1);
+        if (renderer !== 'react') {
+          await reset(renderer);
+          await button.click();
+          const host = page.locator(`[data-renderer="${renderer}"] lab-drag-button`);
+          await host.evaluate(async (node) => {
+            const destination = document.createElement('div');
+            node.parentNode.append(destination);
+            destination.append(node);
+            await node.updateComplete;
+          });
+          await expect(host).toHaveJSProperty('status', 'idle');
+          await expect(button).toHaveAttribute('data-status', 'pending');
+          await expect(button).toHaveAttribute('aria-disabled', 'true');
+          await button.press('Enter');
+          await button.press('Space');
+          await button.click({ force: true });
+          assert.equal(
+            await page.evaluate(() => window.calls.length),
+            1,
+            'Reparenting must preserve the committed attempt',
+          );
+          await host.evaluate(async (node) => {
+            const destination = node.parentNode;
+            node.remove();
+            node.resetKey += ':next';
+            await node.updateComplete;
+            destination.append(node);
+            await node.updateComplete;
+          });
+          await expect(button).toHaveAttribute('data-status', 'idle');
+          await button.press('Enter');
+          assert.equal(
+            await page.evaluate(() => window.calls.length),
+            2,
+            'A reset key changed while detached opens the next attempt',
+          );
+          await host.evaluate(async (node) => {
+            const destination = node.parentNode;
+            node.status = 'success';
+            await node.updateComplete;
+            node.remove();
+            node.status = 'idle';
+            await node.updateComplete;
+            destination.append(node);
+            await node.updateComplete;
+          });
+          await expect(button).toHaveAttribute('data-status', 'idle');
+          await button.press('Enter');
+          assert.equal(
+            await page.evaluate(() => window.calls.length),
+            3,
+            'Returning a controlled result to idle while detached opens the next attempt',
+          );
+        }
         records.push({
           engine,
           renderer,
@@ -302,6 +356,7 @@ try {
           escapePointerCancelResize: true,
           rtl: true,
           disabledResultReset: true,
+          ...(renderer !== 'react' ? { reconnectPreservesAttemptAndExplicitResets: true } : {}),
         });
       }
       await page.emulateMedia({ reducedMotion: 'no-preference' });

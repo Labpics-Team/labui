@@ -12,10 +12,40 @@ export interface DragButtonOptions {
   change(status: LabDragButtonStatus): void;
 }
 
+/** One logical attempt survives listener teardown when the same control is reconnected. */
+export class DragButtonAttempt {
+  private controlledStatus: LabDragButtonStatus = 'idle';
+  private resetKey: unknown;
+  private committed = false;
+  private resetVersion = 0;
+  get status(): LabDragButtonStatus {
+    return this.controlledStatus === 'idle' && this.committed ? 'pending' : this.controlledStatus;
+  }
+  get version(): number {
+    return this.resetVersion;
+  }
+  update(status: LabDragButtonStatus, resetKey: unknown): void {
+    if (resetKey !== this.resetKey || (this.controlledStatus !== 'idle' && status === 'idle')) {
+      this.committed = false;
+      this.resetVersion++;
+    }
+    this.controlledStatus = status;
+    this.resetKey = resetKey;
+  }
+  commit(): void {
+    this.committed = true;
+  }
+}
+
 /** A button with an optional horizontal gesture. Native click owns keyboard and AT activation. */
-export function mountDragButton(button: HTMLButtonElement, initial: DragButtonOptions) {
+export function mountDragButton(
+  button: HTMLButtonElement,
+  initial: DragButtonOptions,
+  attempt = new DragButtonAttempt(),
+) {
   let options = initial;
-  let committed = initial.status !== 'idle';
+  attempt.update(initial.status, initial.resetKey);
+  let attemptVersion = attempt.version;
   let disposed = false;
   let pointer:
     | { id: number; start: number; direction: number; travel: number; moved: boolean }
@@ -28,7 +58,7 @@ export function mountDragButton(button: HTMLButtonElement, initial: DragButtonOp
   if (!element) throw new Error('Drag Button requires its fill element');
   const fill = element;
   const motion = scope(button);
-  const view = () => (options.status === 'idle' && committed ? 'pending' : options.status);
+  const view = () => attempt.status;
   const blocked = () => options.disabled || button.matches(':disabled') || view() !== 'idle';
   function stopMotion() {
     motionGeneration++;
@@ -84,7 +114,7 @@ export function mountDragButton(button: HTMLButtonElement, initial: DragButtonOp
   }
   function activate(source: LabDragButtonSource) {
     if (blocked()) return;
-    committed = true; // Before notifying consumers: synchronous/repeated events cannot submit twice.
+    attempt.commit(); // Before notifying consumers: synchronous/repeated events cannot submit twice.
     release();
     stopMotion();
     paint(1);
@@ -193,10 +223,10 @@ export function mountDragButton(button: HTMLButtonElement, initial: DragButtonOp
   paint(view() === 'idle' ? 0 : 1);
   return {
     update(next: DragButtonOptions) {
-      const reset =
-        next.resetKey !== options.resetKey || (options.status !== 'idle' && next.status === 'idle');
+      attempt.update(next.status, next.resetKey);
+      const reset = attempt.version !== attemptVersion;
+      attemptVersion = attempt.version;
       options = next;
-      if (reset) committed = false;
       if (reset || blocked()) cancel(false);
       options.change(view());
     },

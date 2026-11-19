@@ -1,9 +1,9 @@
 import { symbol as checkmark } from '@labpics/icons/symbols/checkmark';
 import { symbol as chevronForward } from '@labpics/icons/symbols/chevron-forward';
-import { type PropertyValues, css, html, unsafeCSS } from 'lit';
+import { css, html, unsafeCSS } from 'lit';
 import { LabElement } from '../../lit/lab-element.js';
 import '../icon/index.js';
-import { type LabDragButtonStatus, mountDragButton } from './runtime.js';
+import { DragButtonAttempt, type LabDragButtonStatus, mountDragButton } from './runtime.js';
 import { dragButtonCss } from './styles.js';
 export type { LabDragButtonStatus, LabDragButtonSource } from './runtime.js';
 
@@ -34,6 +34,7 @@ export class LabDragButton extends LabElement {
   private declare currentStatus: LabDragButtonStatus;
   private declare iconSize: number;
   private runtime?: ReturnType<typeof mountDragButton>;
+  private readonly attempt = new DragButtonAttempt();
   constructor() {
     super();
     this.label = 'Confirm';
@@ -49,10 +50,12 @@ export class LabDragButton extends LabElement {
     this.resetKey = '';
   }
   static override styles = [unsafeCSS(dragButtonCss), css`:host { display: block; min-width: 0; }`];
-  protected override willUpdate(changed: PropertyValues): void {
-    if (changed.has('status')) this.currentStatus = this.status;
+  protected override willUpdate(): void {
+    this.attempt.update(this.status, this.resetKey);
+    this.currentStatus = this.attempt.status;
   }
   protected override updated(): void {
+    if (!this.isConnected) return;
     const options = {
       status: this.status,
       disabled: this.disabled,
@@ -75,7 +78,7 @@ export class LabDragButton extends LabElement {
     };
     if (!this.runtime) {
       const button = this.renderRoot.querySelector('button');
-      if (button) this.runtime = mountDragButton(button, options);
+      if (button) this.runtime = mountDragButton(button, options, this.attempt);
     } else this.runtime.update(options);
   }
   override connectedCallback(): void {
