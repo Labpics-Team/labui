@@ -10,6 +10,14 @@ import kotlin.math.roundToInt
 /** Full raster evidence is written before an assertion can stop the paint matrix. */
 internal data class TextPixelEvidence(val inkPixels: Int, val mismatches: Int, val maximum: IntArray) {
     fun summary(): String = "$mismatches pixels, max ARGB=${maximum.joinToString("/")}"
+
+    // Linux and macOS round coverage differently in 3–4 pixels at the outer
+    // edge of Å. Keep a bounded allowance for that measured raster difference,
+    // not a whole-image threshold which could hide lost or double-painted ink.
+    // Wide/wide calibration must remain identical. Full pixel evidence and
+    // missing-restoration/double-paint controls are retained in docs/evidence.
+    fun preservesInk(calibration: Boolean): Boolean = if (calibration) mismatches == 0
+        else mismatches <= 4 && maximum[0] == 0 && maximum.all { it <= 10 }
 }
 
 internal fun recordTextPixelEvidence(
