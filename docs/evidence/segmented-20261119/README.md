@@ -8,6 +8,8 @@
 
 `selection-reset.json` проверяет общий React reset для Checkbox, RadioGroup, Choicebox single/multiple и SegmentedControl: uncontrolled и controlled refusal, reset+click в одном JS task, FormData и ровно один callback, позднюю отмену reset у предка и dispose до timer. Проверяются built public packages в Chromium/WebKit.
 
+После обновления каталога существующий `apps/docs/tests/selection.spec.ts` прошёл 40/40 сценариев в Chromium/WebKit за 23 секунды: mixed/required/reset/fieldset/FormData, отказ controlled-потребителя, SSR/no-JS, клавиатура, RTL и авторская типографика. Core/React typecheck, Segmented/Selection SSR (6 тестов), Biome для изменённых файлов и `catalog:check` также прошли.
+
 `native.json` фиксирует SHA256 исходников и Maven-артефактов `0.1.0-segmented-20261119.2`. Три SegmentedRenderTest прошли; отдельный SegmentedConsumerTest потребляет установленную Maven-публикацию, меняет значение и проверяет фактический текст результата в обеих темах при 100/125/200% текста. Это desktop CPU qualification; Android/iOS и экранный диктор этим прогоном не проверяются.
 
 Воспроизведение из собранного workspace:
