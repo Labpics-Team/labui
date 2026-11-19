@@ -56,7 +56,7 @@ export const dragButtonCss = `
 [data-lab-drag-button][data-status='pending'] { cursor: progress; }
 [data-lab-drag-button]:disabled > .lab-drag-fill { background: var(--lab-fill-quaternary); color: var(--lab-label-quaternary); box-shadow: none; }
 .lab-drag-announcement { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; }
-${buttonFillCss('[data-lab-drag-button] > .lab-drag-fill', '[data-lab-drag-button][data-status="idle"]:hover:not(:disabled) > .lab-drag-fill', '[data-lab-drag-button][data-dragging=""] > .lab-drag-fill')}
+${buttonFillCss('[data-lab-drag-button] > .lab-drag-fill', '[data-lab-drag-button][data-status="idle"]:hover:not(:disabled):not([data-dragging=""]) > .lab-drag-fill', '[data-lab-drag-button][data-dragging=""] > .lab-drag-fill')}
 @keyframes lab-drag-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .lab-drag-spinner { animation: none; } }
 @media (forced-colors: active) {

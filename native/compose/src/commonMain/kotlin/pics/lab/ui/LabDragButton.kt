@@ -196,14 +196,18 @@ public fun LabDragButton(
             val blur = LabComponents.DragButtonMaskBlur
             val maskWidth = LabComponents.DragButtonMaskCount * LabComponents.DragButtonMaskWidth +
                 (LabComponents.DragButtonMaskCount - 1) * LabComponents.DragButtonMaskGap
-            Canvas(Modifier.requiredSize((maskWidth + blur * 2).dp, (LabComponents.DragButtonMaskHeight + blur * 2).dp)
+            Box(Modifier.requiredSize((maskWidth + blur * 2).dp, (LabComponents.DragButtonMaskHeight + blur * 2).dp)
                 .align(Alignment.CenterEnd).absoluteOffset(x = (blur - ((maskWidth + blur * 2) - trackWidth).coerceAtLeast(0f) / 2).dp).graphicsLayer {
                     compositingStrategy = CompositingStrategy.Offscreen; blendMode = BlendMode.DstIn
-                    renderEffect = BlurEffect(blur.dp.toPx() / 2, blur.dp.toPx() / 2)
                 }) {
                 repeat(LabComponents.DragButtonMaskCount.toInt()) { index ->
-                    drawRect(Color.White, Offset((blur + index * (LabComponents.DragButtonMaskWidth + LabComponents.DragButtonMaskGap)).dp.toPx(), blur.dp.toPx()),
-                        Size(LabComponents.DragButtonMaskWidth.dp.toPx(), LabComponents.DragButtonMaskHeight.dp.toPx()))
+                    // Figma blurs each item before their alpha is composited into one mask.
+                    Canvas(Modifier.requiredSize((LabComponents.DragButtonMaskWidth + blur * 2).dp, (LabComponents.DragButtonMaskHeight + blur * 2).dp)
+                        .absoluteOffset(x = (index * (LabComponents.DragButtonMaskWidth + LabComponents.DragButtonMaskGap)).dp)
+                        .graphicsLayer { renderEffect = dragButtonLayerBlur(blur.dp.toPx()) }) {
+                        drawRect(Color.White, Offset(blur.dp.toPx(), blur.dp.toPx()),
+                            Size(LabComponents.DragButtonMaskWidth.dp.toPx(), LabComponents.DragButtonMaskHeight.dp.toPx()))
+                    }
                 }
             }
         }
@@ -214,7 +218,7 @@ public fun LabDragButton(
             contentAlignment = if (effective == LabDragButtonStatus.Idle) Alignment.CenterEnd else Alignment.Center) {
             if (dragging) Canvas(Modifier.requiredSize((LabComponents.DragButtonGlowSize + LabComponents.DragButtonGlowBlur * 2).dp)
                 .align(Alignment.Center).absoluteOffset(LabComponents.DragButtonGlowOffsetX.dp, LabComponents.DragButtonGlowOffsetY.dp)
-                .graphicsLayer { alpha = LabComponents.DragButtonGlowOpacity; renderEffect = BlurEffect(LabComponents.DragButtonGlowBlur.dp.toPx() / 2, LabComponents.DragButtonGlowBlur.dp.toPx() / 2) }) {
+                .graphicsLayer { alpha = LabComponents.DragButtonGlowOpacity; renderEffect = dragButtonLayerBlur(LabComponents.DragButtonGlowBlur.dp.toPx()) }) {
                 drawCircle(colors[LabComponents.DragButtonGlowColorRole], radius = LabComponents.DragButtonGlowSize.dp.toPx() / 2)
             }
             if (effective == LabDragButtonStatus.Idle) Box(Modifier.size(metrics.height.dp), contentAlignment = Alignment.Center) {
@@ -226,4 +230,11 @@ public fun LabDragButton(
             }
         }
     }
+}
+
+// Authored layer blur is a diameter (sigma = diameter / 2). Compose/Android convert
+// their radius to Skia sigma as 0.57735 * radius + 0.5; invert that boundary once.
+private fun dragButtonLayerBlur(diameterPx: Float): BlurEffect {
+    val radius = ((diameterPx / 2 - 0.5f) / 0.57735f).coerceAtLeast(0f)
+    return BlurEffect(radius, radius)
 }
