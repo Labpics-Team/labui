@@ -257,3 +257,32 @@ test('a slotted native control has a live description in the browser accessibili
   await host.evaluate((element) => element.remove());
   await expect(page.locator(`[id="${id}"]`)).toHaveCount(0);
 });
+test('Tab between tooltip controls keeps the newly focused description open', async ({ page }) => {
+  await page.evaluate(() => {
+    const fixture = document.createElement('div');
+    fixture.dataset.testid = 'focus-transfer';
+    fixture.style.cssText = 'position:fixed;left:40px;top:80px';
+    fixture.innerHTML =
+      '<lab-tooltip content="First description"><button>First</button></lab-tooltip><lab-tooltip content="Second description"><button>Second</button></lab-tooltip>';
+    document.body.append(fixture);
+  });
+  const hosts = page.getByTestId('focus-transfer').locator('lab-tooltip');
+  await page.mouse.move(0, 0);
+  await page.keyboard.press('Tab');
+  await hosts.nth(0).locator('button').focus();
+  await expect(hosts.nth(0).locator('.lab-tooltip-content')).toBeVisible();
+  await page.keyboard.press('Tab');
+  await expect(hosts.nth(1).locator('button')).toBeFocused();
+  await expect(hosts.nth(1).locator('.lab-tooltip-content')).toBeVisible();
+  await expect(hosts.nth(0).locator('.lab-tooltip-content')).toBeHidden();
+  await page.keyboard.press('Shift+Tab');
+  await expect(hosts.nth(0).locator('.lab-tooltip-content')).toBeVisible();
+  await expect(hosts.nth(1).locator('.lab-tooltip-content')).toBeHidden();
+  await hosts.evaluateAll((elements) => {
+    elements[1].querySelector('button')?.focus();
+    queueMicrotask(() => elements[0].querySelector('button')?.focus());
+  });
+  await expect(hosts.nth(0).locator('button')).toBeFocused();
+  await expect(hosts.nth(0).locator('.lab-tooltip-content')).toBeVisible();
+  await expect(hosts.nth(1).locator('.lab-tooltip-content')).toBeHidden();
+});

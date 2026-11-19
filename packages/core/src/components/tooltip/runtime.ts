@@ -92,28 +92,60 @@ export function mountTooltip(
     if (!other.length) trigger.removeAttribute('aria-describedby');
     else trigger.setAttribute('aria-describedby', other.join(' '));
   };
+  // Store notifications and Vanilla sends are queued independently. Evaluate a
+  // stale store close when its transition runs, after any intervening focus.
+  const states = Object.fromEntries(
+    Object.entries(tooltip.machine.states).map(([name, state]) => {
+      const close = state.on?.close;
+      return [
+        name,
+        close
+          ? {
+              ...state,
+              on: {
+                ...state.on,
+                close: [
+                  { guard: 'ignoreStaleStoreClose' },
+                  ...(Array.isArray(close) ? close : [close]),
+                ],
+              },
+            }
+          : state,
+      ];
+    }),
+  ) as typeof tooltip.machine.states;
   const behavior: typeof tooltip.machine = {
     ...tooltip.machine,
     states: {
-      ...tooltip.machine.states,
+      ...states,
       // Escape must also work during the pointer's trip across the gap.
       closing: {
-        ...tooltip.machine.states.closing,
+        ...states.closing,
         effects: ['trackPositioning', 'waitForCloseDelay', 'trackEscapeKey'],
       },
     },
     implementations: {
       ...tooltip.machine.implementations,
+      guards: {
+        ...tooltip.machine.implementations?.guards,
+        ignoreStaleStoreClose(args) {
+          return (
+            args.event.src === 'id.change' &&
+            !!tooltip.machine.implementations?.guards?.isVisible?.(args)
+          );
+        },
+      },
       effects: {
         ...tooltip.machine.implementations?.effects,
         trackStore(args) {
           const cleanup = tooltip.machine.implementations?.effects?.trackStore?.(args);
           // Upstream defers its subscription to a microtask. Match that ordering
           // on immediate StrictMode cleanup so no stopped machine stays subscribed.
-          return () =>
+          return () => {
             queueMicrotask(() => {
               if (typeof cleanup === 'function') cleanup();
             });
+          };
         },
         trackPositioning({ context }) {
           let active = true;
