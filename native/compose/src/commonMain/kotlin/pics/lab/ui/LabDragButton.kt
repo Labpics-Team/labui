@@ -30,14 +30,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.BlurEffect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -60,6 +61,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import pics.lab.icons.Icon
@@ -176,7 +178,6 @@ public fun LabDragButton(
                 }
             } finally { if (dragging) resetGesture() }
         }) {
-        val trackWidth = maxWidth.value
         // Mask belongs to helper + track, never the growing Button.
         Box(Modifier.matchParentSize().clipToBounds().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen; scaleX = if (rtl) -1f else 1f }) {
             if (showHelper && effective == LabDragButtonStatus.Idle) Layout(modifier = Modifier.matchParentSize(), content = {
@@ -193,23 +194,9 @@ public fun LabDragButton(
                 }
             }
             Canvas(Modifier.matchParentSize()) { drawRoundRect(colors[LabComponents.DragButtonRolesTrack], cornerRadius = CornerRadius(LabComponents.DragButtonRadius.dp.toPx())) }
-            val blur = LabComponents.DragButtonMaskBlur
-            val maskWidth = LabComponents.DragButtonMaskCount * LabComponents.DragButtonMaskWidth +
-                (LabComponents.DragButtonMaskCount - 1) * LabComponents.DragButtonMaskGap
-            Box(Modifier.requiredSize((maskWidth + blur * 2).dp, (LabComponents.DragButtonMaskHeight + blur * 2).dp)
-                .align(Alignment.CenterEnd).absoluteOffset(x = (blur - ((maskWidth + blur * 2) - trackWidth).coerceAtLeast(0f) / 2).dp).graphicsLayer {
+            DragButtonMask(Modifier.matchParentSize().graphicsLayer {
                     compositingStrategy = CompositingStrategy.Offscreen; blendMode = BlendMode.DstIn
-                }) {
-                repeat(LabComponents.DragButtonMaskCount.toInt()) { index ->
-                    // Figma blurs each item before their alpha is composited into one mask.
-                    Canvas(Modifier.requiredSize((LabComponents.DragButtonMaskWidth + blur * 2).dp, (LabComponents.DragButtonMaskHeight + blur * 2).dp)
-                        .absoluteOffset(x = (index * (LabComponents.DragButtonMaskWidth + LabComponents.DragButtonMaskGap)).dp)
-                        .graphicsLayer { renderEffect = dragButtonLayerBlur(blur.dp.toPx()) }) {
-                        drawRect(Color.White, Offset(blur.dp.toPx(), blur.dp.toPx()),
-                            Size(LabComponents.DragButtonMaskWidth.dp.toPx(), LabComponents.DragButtonMaskHeight.dp.toPx()))
-                    }
-                }
-            }
+                })
         }
         val innerWidth = maxWidth - (LabComponents.DragButtonPadding * 2).dp
         val width = if (effective == LabDragButtonStatus.Idle) metrics.height.dp + (innerWidth - metrics.height.dp) * progress.value else innerWidth
@@ -232,9 +219,29 @@ public fun LabDragButton(
     }
 }
 
-// Authored layer blur is a diameter (sigma = diameter / 2). Compose/Android convert
-// their radius to Skia sigma as 0.57735 * radius + 0.5; invert that boundary once.
+// Authored layer blur is a diameter (sigma = diameter / 2).
 private fun dragButtonLayerBlur(diameterPx: Float): BlurEffect {
-    val radius = ((diameterPx / 2 - 0.5f) / 0.57735f).coerceAtLeast(0f)
+    val radius = blurRadiusForSigma(diameterPx / 2)
     return BlurEffect(radius, radius)
+}
+
+@Composable
+private fun DragButtonMask(modifier: Modifier) {
+    Box(modifier.drawWithCache {
+        if (size.width < 1 || size.height < 1) return@drawWithCache onDrawBehind {}
+        val width = LabComponents.DragButtonMaskWidth.dp.toPx()
+        val height = LabComponents.DragButtonMaskHeight.dp.toPx()
+        val gap = LabComponents.DragButtonMaskGap.dp.toPx()
+        val count = LabComponents.DragButtonMaskCount.toInt()
+        val maskWidth = count * width + (count - 1) * gap
+        // Keep the source coordinates right-anchored and vertically centred. Native blur
+        // expands its temporary input; the retained alpha image contains only visible pixels.
+        val mask = rasterizeBlurMask(IntSize(size.width.toInt(), size.height.toInt()),
+            List(count) { index ->
+                val left = size.width - maskWidth + index * (width + gap)
+                val top = (size.height - height) / 2
+                Rect(left, top, left + width, top + height)
+            }, LabComponents.DragButtonMaskBlur.dp.toPx() / 2)
+        onDrawBehind { drawImage(mask) }
+    })
 }

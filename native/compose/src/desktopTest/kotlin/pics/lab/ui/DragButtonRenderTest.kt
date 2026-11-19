@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import java.io.File
+import java.lang.management.ManagementFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -159,6 +160,34 @@ class DragButtonRenderTest {
                 File(output, "native-${appearance.name.lowercase()}-200-320-long-success.png").writeBytes(result)
             } finally { scene.close() }
         }
+    }
+
+    @Test fun dragFrameCostWithoutPngEncoding() {
+        val output = File("build/drag-button-evidence").apply { mkdirs() }
+        val rows = mutableListOf("density\tframes\tp50_us\tp95_us\tmax_us\tjvm_bytes_per_frame")
+        val allocations = ManagementFactory.getThreadMXBean() as com.sun.management.ThreadMXBean
+        for (density in listOf(1f, 2f)) {
+            val scene = ImageComposeScene((1144 * density).toInt(), (56 * density).toInt(), Density(density)) {
+                LabTheme(theme()) { LabDragButton("Confirm", {}) }
+            }
+            try {
+                settle(scene)
+                scene.sendPointerEvent(PointerEventType.Press, Offset(28 * density, 28 * density))
+                fun frame(index: Int) {
+                    val fraction = 0.1f + (index % 100) / 125f
+                    scene.sendPointerEvent(PointerEventType.Move, Offset((28 + 1088 * fraction) * density, 28 * density))
+                    scene.render(System.nanoTime()).close()
+                }
+                repeat(40, ::frame)
+                val before = allocations.getThreadAllocatedBytes(Thread.currentThread().id)
+                val samples = LongArray(180) { index ->
+                    val start = System.nanoTime(); frame(index); (System.nanoTime() - start) / 1000
+                }.sorted()
+                val bytes = allocations.getThreadAllocatedBytes(Thread.currentThread().id) - before
+                rows.add("$density\t${samples.size}\t${samples[samples.size / 2]}\t${samples[(samples.size * .95).toInt()]}\t${samples.last()}\t${bytes / samples.size}")
+            } finally { scene.close() }
+        }
+        File(output, "native-frame-cost.tsv").writeText(rows.joinToString("\n") + "\n")
     }
 
 }

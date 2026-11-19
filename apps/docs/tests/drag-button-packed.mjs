@@ -189,6 +189,7 @@ try {
       page.on('pageerror', (error) => errors.push(error.message));
       await page.goto(url);
       await page.evaluate(() => document.fonts.ready);
+      await page.evaluate(() => document.fonts.load('500 16px Geist', 'Swipe it'));
       await expect(page.locator('[data-result="danger"] button')).toHaveAttribute(
         'data-status',
         'danger',
@@ -330,6 +331,29 @@ try {
       }
       await page.emulateMedia({ reducedMotion: 'reduce' });
       const source = page.locator('[data-source] button');
+      records.push({
+        engine,
+        typography: await source.locator('.lab-drag-helper').evaluate((node) => {
+          const style = getComputedStyle(node);
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          context.font = style.font;
+          return {
+            family: style.fontFamily,
+            weight: style.fontWeight,
+            size: style.fontSize,
+            synthesis: style.fontSynthesis,
+            variations: style.fontVariationSettings,
+            loaded: document.fonts.check('500 16px Geist', 'Swipe it'),
+            width: context.measureText('Swipe it').width,
+            faces: [...document.fonts].map((face) => ({
+              family: face.family,
+              weight: face.weight,
+              status: face.status,
+            })),
+          };
+        }),
+      });
       for (const theme of ['light', 'dark'])
         for (const scale of [100, 125, 200])
           for (const width of [320, 416, 1144]) {
