@@ -8,7 +8,7 @@
   import '@labpics/ui-core/tooltip';
   import type { LabTooltip } from '@labpics/ui-core/tooltip';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-tooltip> — типы взяты прямо из класса ядра (LabTooltip). */
   interface Props {
@@ -44,13 +44,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { placement, size, content, openDelay, closeDelay, disabled, arrow });
-  });
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
 </script>
 
-<lab-tooltip bind:this={el} {...server?.attributes} {...rest}>
+<lab-tooltip bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { placement, size, content, openDelay, closeDelay, disabled, arrow } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

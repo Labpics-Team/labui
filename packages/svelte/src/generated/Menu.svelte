@@ -8,7 +8,7 @@
   import '@labpics/ui-core/menu';
   import type { LabMenu } from '@labpics/ui-core/menu';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-menu> — типы взяты прямо из класса ядра (LabMenu). */
   interface Props {
@@ -41,13 +41,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { size, placement, disabled, label, items });
-  });
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange, 'select': onSelect }));
 </script>
 
-<lab-menu bind:this={el} {...server?.attributes} {...rest}>
+<lab-menu bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, placement, disabled, label, items } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

@@ -8,7 +8,7 @@
   import '@labpics/ui-core/alert-dialog';
   import type { LabAlertDialog } from '@labpics/ui-core/alert-dialog';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-alert-dialog> — типы взяты прямо из класса ядра (LabAlertDialog). */
   interface Props {
@@ -41,13 +41,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { size, modal, closable, heading, description });
-  });
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
 </script>
 
-<lab-alert-dialog bind:this={el} {...server?.attributes} {...rest}>
+<lab-alert-dialog bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, modal, closable, heading, description } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

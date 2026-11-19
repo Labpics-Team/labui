@@ -8,7 +8,7 @@
   import '@labpics/ui-core/pin-input';
   import type { LabPinInput } from '@labpics/ui-core/pin-input';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-pin-input> — типы взяты прямо из класса ядра (LabPinInput). */
   interface Props {
@@ -68,13 +68,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { type, size, label, labelHidden, helper, error, count, valueType, mask, otp, placeholder, value, defaultValue, readonly, disabled, required, invalid, name });
-  });
   $effect(() => forwardEvents(el, { 'value-change': onValueChange, 'value-complete': onValueComplete, 'value-invalid': onValueInvalid }));
 </script>
 
-<lab-pin-input bind:this={el} {...server?.attributes} {...rest}>
+<lab-pin-input bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, label, labelHidden, helper, error, count, valueType, mask, otp, placeholder, value, defaultValue, readonly, disabled, required, invalid, name } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

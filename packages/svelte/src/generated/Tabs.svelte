@@ -8,7 +8,7 @@
   import '@labpics/ui-core/tabs';
   import type { LabTabs } from '@labpics/ui-core/tabs';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-tabs> — типы взяты прямо из класса ядра (LabTabs). */
   interface Props {
@@ -50,13 +50,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { variant, edge, orientation, size, activationMode, value, defaultValue, label, dir, items });
-  });
   $effect(() => forwardEvents(el, { 'value-change': onValueChange }));
 </script>
 
-<lab-tabs bind:this={el} {...server?.attributes} {...rest}>
+<lab-tabs bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { variant, edge, orientation, size, activationMode, value, defaultValue, label, dir, items } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

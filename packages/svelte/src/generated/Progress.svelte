@@ -8,7 +8,7 @@
   import '@labpics/ui-core/progress';
   import type { LabProgress } from '@labpics/ui-core/progress';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-progress> — типы взяты прямо из класса ядра (LabProgress). */
   interface Props {
@@ -43,13 +43,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { size, variant, value, min, max, label, showValueText });
-  });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-progress bind:this={el} {...server?.attributes} {...rest}>
+<lab-progress bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, variant, value, min, max, label, showValueText } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

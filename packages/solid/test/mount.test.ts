@@ -5,7 +5,7 @@ import type { LabChip } from '@labpics/ui-core/chip';
  * репрезентативных компонента: button (слоты + булевы), input (свойство value),
  * checkbox (кастом-событие).
  */
-import { createComponent, createSignal } from 'solid-js';
+import { createComponent, createSignal, getOwner } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Button } from '../src/generated/button.js';
@@ -19,7 +19,15 @@ const disposers: Array<() => void> = [];
 function mount(component: () => unknown): HTMLElement {
   const host = document.createElement('div');
   document.body.appendChild(host);
-  disposers.push(render(component as () => Element, host));
+  disposers.push(
+    render(() => {
+      expect(
+        getOwner(),
+        'solid-js signals and solid-js/web must share the same runtime',
+      ).not.toBeNull();
+      return component() as Element;
+    }, host),
+  );
   return host;
 }
 

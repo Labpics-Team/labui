@@ -8,7 +8,7 @@
   import '@labpics/ui-core/checkbox';
   import type { LabCheckbox } from '@labpics/ui-core/checkbox';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-checkbox> — типы взяты прямо из класса ядра (LabCheckbox). */
   interface Props {
@@ -57,13 +57,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { type, size, variant, checked, indeterminate, defaultChecked, defaultIndeterminate, controlled, disabled, required, name, value });
-  });
   $effect(() => forwardEvents(el, { 'checked-change': onCheckedChange }));
 </script>
 
-<lab-checkbox bind:this={el} {...server?.attributes} {...rest}>
+<lab-checkbox bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, variant, checked, indeterminate, defaultChecked, defaultIndeterminate, controlled, disabled, required, name, value } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

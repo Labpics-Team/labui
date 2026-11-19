@@ -8,7 +8,7 @@
   import '@labpics/ui-core/chip';
   import type { LabChip } from '@labpics/ui-core/chip';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-chip> — типы взяты прямо из класса ядра (LabChip). */
   interface Props {
@@ -57,13 +57,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { mode, size, sharp, active, selected, defaultSelected, controlled, disabled, loading, showLeading, name, value });
-  });
   $effect(() => forwardEvents(el, { 'action': onAction, 'remove': onRemove, 'selected-change': onSelectedChange }));
 </script>
 
-<lab-chip bind:this={el} {...server?.attributes} {...rest}>
+<lab-chip bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { mode, size, sharp, active, selected, defaultSelected, controlled, disabled, loading, showLeading, name, value } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

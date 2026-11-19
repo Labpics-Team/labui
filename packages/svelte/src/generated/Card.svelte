@@ -8,7 +8,7 @@
   import '@labpics/ui-core/card';
   import type { LabCard } from '@labpics/ui-core/card';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-card> — типы взяты прямо из класса ядра (LabCard). */
   interface Props {
@@ -53,13 +53,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { variant, padding, interactive, image, imageAlt, heading, headingHint, description, caption, lowerCaption });
-  });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-card bind:this={el} {...server?.attributes} {...rest}>
+<lab-card bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { variant, padding, interactive, image, imageAlt, heading, headingHint, description, caption, lowerCaption } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

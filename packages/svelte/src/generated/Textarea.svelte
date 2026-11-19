@@ -8,7 +8,7 @@
   import '@labpics/ui-core/textarea';
   import type { LabTextarea } from '@labpics/ui-core/textarea';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-textarea> — типы взяты прямо из класса ядра (LabTextarea). */
   interface Props {
@@ -67,13 +67,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { type, size, label, labelHidden, helper, error, value, placeholder, rows, autoResize, readonly, disabled, required, invalid, name, autocomplete, maxLength, minLength });
-  });
   $effect(() => forwardEvents(el, { 'lab-change': onLabChange, 'lab-input': onLabInput }));
 </script>
 
-<lab-textarea bind:this={el} {...server?.attributes} {...rest}>
+<lab-textarea bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, label, labelHidden, helper, error, value, placeholder, rows, autoResize, readonly, disabled, required, invalid, name, autocomplete, maxLength, minLength } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

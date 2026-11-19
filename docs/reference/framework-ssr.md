@@ -32,6 +32,34 @@ Solid также требует обычный `HydrationScript` в докуме
 структура light DOM одинаковы на сервере и клиенте. Браузер потребляет DSD-шаблон
 при разборе исходного HTML, поэтому клиентское дерево не содержит этого элемента.
 
+## Первое клиентское подключение
+
+При обычном client-only mount все объявленные inputs доступны до
+`connectedCallback` и старта машины. Правильного значения свойства после mount
+недостаточно: `defaultValue`, например, машина принимает только при инициализации.
+
+Адаптеры передают пакет `{ specs, props }` через обычное DOM-свойство `LabElement`.
+Его имя задаёт `LAB_INPUTS_PROPERTY` из `adapter-runtime`, setter применяет общий
+`forwardDeclared`. Vue использует forced property binding, Solid — `prop:`,
+Svelte — setter custom element. Эти операции выполняются до вставки нового узла.
+Свойство не отражается в HTML; сервер по-прежнему использует element SSR snapshot.
+При гидратации тот же setter принимает существующие значения через правила
+adoption ниже, а дальнейшие реактивные изменения проходят этим же путём.
+
+Refs, `$effect`, actions и `onMount` не определяют момент initial forwarding:
+они могут сработать после connection. Вложенный отсоединённый DOM-родитель способен
+скрыть такую ошибку; установленный consumer проверяет также верхнеуровневые узлы.
+
+Первоначально отсутствующий input сохраняет constructor default. При снятии
+ранее заданного атрибутного input адаптер удаляет атрибут, а boolean также
+сбрасывает property. Снятие JS-property input через `undefined` прекращает
+последующие записи и оставляет текущее свойство элемента. Это не выбирает режим
+контрола: например, у Select явный `null` освобождает выбор, а массив, включая
+`[]`, задаёт controlled value. Снятие binding не заменяет этот API и не сбрасывает
+`defaultValue`.
+Это правило DOM input binding Vue/Solid/Svelte; семантика native React
+определяется API его компонентов.
+
 ## Слоты Svelte 5
 
 Неименованное содержимое передаётся через `children`. Фиксированные named snippets
@@ -107,8 +135,11 @@ pnpm --filter @labpics/ui-vue --filter @labpics/ui-solid --filter @labpics/ui-sv
 pnpm --filter @labpics/ui-docs test:framework-ssr
 ```
 
-Проверка устанавливает tarballs вне workspace и запускает шесть сценариев:
-Vue/Solid/Svelte × Chromium/WebKit. Она проверяет styled HTML до регистрации
+Проверка устанавливает tarballs вне workspace и запускает двенадцать сценариев:
+Vue/Solid/Svelte × Chromium/WebKit × client mount/SSR hydration. CSR-путь загружает
+пустой root, фиксирует props при первом `connectedCallback`, проверяет initial
+selection, взаимодействие, реактивные изменения и однократность `defaultValue`.
+SSR-путь проверяет styled HTML до регистрации
 custom elements, исходные host/shadow/light-DOM узлы, dirty Textarea и выделение,
 обработчики snippets/slots, reactive updates, false/null/default inputs и новый
 controlled value. Vue использует скомпилированные SFC и вложенный компонент.
@@ -123,6 +154,8 @@ snippet. Обычный `tsc` использует ambient `*.svelte` и не к
 Основания: [Lit element parts](https://github.com/lit/lit/blob/main/packages/labs/ssr-react/src/lib/node/render-custom-element.ts),
 [Vue SSR](https://vuejs.org/guide/scaling-up/ssr),
 [обычный Vue wrapper с DSD](https://github.com/svebcomponents/svebcomponents/blob/main/packages/ssr-vue/src/lib/runtime/CustomElementWrapper.ts),
+[Vue DOM property bindings](https://vuejs.org/guide/extras/web-components#passing-dom-properties),
 [Solid hydrate](https://docs.solidjs.com/reference/rendering/hydrate),
 [Svelte snippets](https://svelte.dev/docs/svelte/snippet),
+[Svelte 5.19 custom-element setters](https://github.com/sveltejs/svelte/blob/svelte%405.19.0/packages/svelte/src/internal/client/dom/elements/attributes.js),
 [HTML newline preprocessing](https://html.spec.whatwg.org/multipage/parsing.html#preprocessing-the-input-stream).

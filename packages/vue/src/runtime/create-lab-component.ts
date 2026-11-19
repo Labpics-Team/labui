@@ -1,10 +1,10 @@
-import { type LabPropSpec, forwardDeclared } from '@labpics/ui-core/adapter-runtime';
+import { LAB_INPUTS_PROPERTY, type LabPropSpec } from '@labpics/ui-core/adapter-runtime';
 /**
  * Фабрика тонких Vue-обёрток над Lit web-components (ADR-0001, A-prime).
  *
  * Генератор передаёт тег, спеки и события. SSR добавляет только shadow root;
  * host, слоты и нативные события остаются узлами Vue. Общий forwardDeclared
- * применяет объявленные входы при получении ref и при изменении реактивных props.
+ * применяет входы через DOM property до connection и при реактивных изменениях.
  * Он не повторяет начальную SSR-запись поверх восстановленного ввода пользователя.
  *
  * Регистрация: генерируемый файл делает side-effect импорт
@@ -60,16 +60,10 @@ export function createLabComponent<Props, Events extends string>(
     inheritAttrs: false,
     props: propNames,
     setup(props: Record<string, unknown>, { slots, attrs }) {
-      let element: HTMLElement | undefined;
-      let inputs: Record<string, unknown> = {};
-      const setElement = (node: unknown): void => {
-        element = node instanceof HTMLElement ? node : undefined;
-        forwardDeclared(element, spec.specs, inputs);
-      };
       return () => {
         // Reading the declared inputs during render tracks Vue's reactive props;
         // the shared forwarder owns their initial adoption and subsequent changes.
-        inputs = {};
+        const inputs: Record<string, unknown> = {};
         for (const s of spec.specs) inputs[s.name] = props[s.name];
         const server = renderElementParts(tag, {
           specs: spec.specs,
@@ -82,9 +76,8 @@ export function createLabComponent<Props, Events extends string>(
         const bindings: Record<string, unknown> = {
           ...server?.attributes,
           ...attrs,
-          ref: setElement,
+          ...(!server && { [`.${LAB_INPUTS_PROPERTY}`]: { specs: spec.specs, props: inputs } }),
         };
-        if (!server) forwardDeclared(element, spec.specs, inputs);
         // Слоты: default → дети; именованные (в т.ч. динамические content/icon/…)
         // оборачиваем в display:contents-элемент с slot=<name> (нативное слотирование
         // требует РЕНДЕРЯЩИЙСЯ узел в light-DOM; <template> не спроецировался бы).

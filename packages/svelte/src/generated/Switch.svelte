@@ -8,7 +8,7 @@
   import '@labpics/ui-core/switch';
   import type { LabSwitch } from '@labpics/ui-core/switch';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-switch> — типы взяты прямо из класса ядра (LabSwitch). */
   interface Props {
@@ -53,13 +53,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { type, size, checked, defaultChecked, controlled, disabled, required, icon, name, value });
-  });
   $effect(() => forwardEvents(el, { 'checked-change': onCheckedChange }));
 </script>
 
-<lab-switch bind:this={el} {...server?.attributes} {...rest}>
+<lab-switch bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, checked, defaultChecked, controlled, disabled, required, icon, name, value } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

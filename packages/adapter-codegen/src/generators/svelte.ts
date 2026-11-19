@@ -3,7 +3,7 @@
  * + барель-`index.ts` (реэкспорт). Svelte-библиотека распространяется исходными
  * `.svelte` (компилирует потребитель через svelte-package).
  *
- * Проброс: объявленные пропы → forwardDeclared (по спекам, camelCase→нужный атрибут),
+ * Проброс: объявленные пропы → DOM input binding до connection,
  * события → forwardEvents (on:-директивы избегаем — deprecated в Svelte 5; вешаем
  * addEventListener в $effect), статические именованные слоты → snippet-пропы,
  * контент по умолчанию → {@render children}. Нативные атрибуты → {...rest}.
@@ -89,7 +89,7 @@ function componentFile(c: ComponentMeta): string {
   import '@labpics/ui-core/${c.subpath}';
   import type { ${c.className} } from '@labpics/ui-core/${c.subpath}';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <${c.tag}> — типы взяты прямо из класса ядра (${c.className}). */
   interface Props {
@@ -110,13 +110,10 @@ ${specs}
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { ${valuesObj} });
-  });
   $effect(() => forwardEvents(el, { ${eventsObj} }));
 </script>
 
-<${c.tag} bind:this={el} {...server?.attributes} {...rest}>
+<${c.tag} bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { ${valuesObj} } } }}>
   {@html server?.shadowHtml ?? ''}${childrenMarkup}
 ${namedSlotMarkup}
 </${c.tag}>

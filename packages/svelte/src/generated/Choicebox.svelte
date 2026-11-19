@@ -8,7 +8,7 @@
   import '@labpics/ui-core/choicebox';
   import type { LabChoicebox } from '@labpics/ui-core/choicebox';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-choicebox> — типы взяты прямо из класса ядра (LabChoicebox). */
   interface Props {
@@ -50,13 +50,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { layout, multiple, value, defaultValue, controlled, disabled, required, name, label, items });
-  });
   $effect(() => forwardEvents(el, { 'value-change': onValueChange }));
 </script>
 
-<lab-choicebox bind:this={el} {...server?.attributes} {...rest}>
+<lab-choicebox bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { layout, multiple, value, defaultValue, controlled, disabled, required, name, label, items } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

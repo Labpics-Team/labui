@@ -8,7 +8,7 @@
   import '@labpics/ui-core/snackbar';
   import type { LabSnackbar } from '@labpics/ui-core/snackbar';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-snackbar> — типы взяты прямо из класса ядра (LabSnackbar). */
   interface Props {
@@ -42,13 +42,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { open, message, duration, actionLabel, notificationKey });
-  });
   $effect(() => forwardEvents(el, { 'lab-action': onLabAction, 'lab-error': onLabError, 'lab-open-change': onLabOpenChange }));
 </script>
 
-<lab-snackbar bind:this={el} {...server?.attributes} {...rest}>
+<lab-snackbar bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { open, message, duration, actionLabel, notificationKey } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

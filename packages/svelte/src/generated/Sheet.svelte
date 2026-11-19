@@ -8,7 +8,7 @@
   import '@labpics/ui-core/sheet';
   import type { LabSheet } from '@labpics/ui-core/sheet';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-sheet> — типы взяты прямо из класса ядра (LabSheet). */
   interface Props {
@@ -46,13 +46,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { open, position, modal, closable, heading, description });
-  });
   $effect(() => forwardEvents(el, { 'motion-error': onMotionError, 'open-change': onOpenChange, 'position-change': onPositionChange }));
 </script>
 
-<lab-sheet bind:this={el} {...server?.attributes} {...rest}>
+<lab-sheet bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { open, position, modal, closable, heading, description } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

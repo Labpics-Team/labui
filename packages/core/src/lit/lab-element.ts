@@ -16,6 +16,7 @@ import type { MachineSchema } from '@zag-js/core';
  * roles in its own styles and never branches on the active theme/material.
  */
 import { type CSSResultGroup, type CSSResultOrNative, LitElement, css } from 'lit';
+import { LAB_INPUTS_PROPERTY, type LabInputBinding, forwardDeclared } from '../adapter-runtime.js';
 import type { MachineModule, MachineProps } from '../behaviors/types.js';
 import { LAB_ELEMENT_BRAND, SSR_INPUTS_ATTRIBUTE, parseSsrInputs } from './ssr-inputs.js';
 import { ZagController } from './zag-controller.js';
@@ -41,6 +42,16 @@ const cornerShapeStyles = css`
 export class LabElement extends LitElement {
   static readonly [LAB_ELEMENT_BRAND] = true;
   private restoredServerInputs = false;
+
+  /**
+   * Non-reflected adapter input binding. A framework's ordinary property patch
+   * runs before DOM insertion, so connection and machine startup see all inputs.
+   * Hydration uses the same forwarder to adopt SSR values without replaying them
+   * over a recovered user draft. No scheduling or component-specific behavior.
+   */
+  set [LAB_INPUTS_PROPERTY](binding: LabInputBinding | undefined) {
+    if (binding) forwardDeclared(this, binding.specs, binding.props);
+  }
 
   static override get observedAttributes(): string[] {
     // biome-ignore lint/complexity/noThisInStatic: preserve each subclass's declared attribute list

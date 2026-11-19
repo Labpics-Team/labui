@@ -12,6 +12,7 @@ import {
   normalizedExternalFieldValue,
   normalizedServerFieldValue,
 } from './fixtures/framework-ssr/field-values.mjs';
+import { checkClientMount } from './framework-client-mount.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const output = join(root, 'docs/evidence/framework-ssr-20261119');
@@ -25,6 +26,7 @@ const corepack = join(
 const pnpm = (args, cwd) =>
   execFileSync(process.execPath, [corepack, ...args], { cwd, stdio: 'pipe', encoding: 'utf8' });
 const records = [];
+const clientMount = [];
 const archives = [];
 let server;
 try {
@@ -159,6 +161,16 @@ try {
     const browser = await type.launch({ headless: true });
     try {
       for (const framework of ['vue', 'solid', 'svelte']) {
+        console.info(`Checking ${framework} client mount -> ${browserName}`);
+        clientMount.push(
+          await checkClientMount(
+            browser,
+            framework,
+            browserName,
+            `http://127.0.0.1:${server.address().port}`,
+            output,
+          ),
+        );
         console.info(`Checking ${framework} SSR -> ${browserName} hydration`);
         const page = await browser.newPage();
         const errors = [];
@@ -345,9 +357,9 @@ try {
   qualification.types = { nodeNextEsm: true, nodeNextCjs: true, svelteSlots: true };
   await writeFile(
     join(output, 'result.json'),
-    `${JSON.stringify({ archives, qualification, records }, null, 2)}\n`,
+    `${JSON.stringify({ archives, qualification, clientMount, records }, null, 2)}\n`,
   );
-  console.info('Six installed native framework SSR/hydration cases passed');
+  console.info('Six installed client mounts and six native framework SSR/hydration cases passed');
 } finally {
   if (server) await new Promise((done) => server.close(done));
   assert(

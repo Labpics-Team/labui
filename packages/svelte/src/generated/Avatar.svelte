@@ -8,7 +8,7 @@
   import '@labpics/ui-core/avatar';
   import type { LabAvatar } from '@labpics/ui-core/avatar';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-avatar> — типы взяты прямо из класса ядра (LabAvatar). */
   interface Props {
@@ -39,13 +39,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { size, color, status, src, name });
-  });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-avatar bind:this={el} {...server?.attributes} {...rest}>
+<lab-avatar bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, color, status, src, name } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

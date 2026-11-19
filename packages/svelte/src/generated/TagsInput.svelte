@@ -8,7 +8,7 @@
   import '@labpics/ui-core/tags-input';
   import type { LabTagsInput } from '@labpics/ui-core/tags-input';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-tags-input> — типы взяты прямо из класса ядра (LabTagsInput). */
   interface Props {
@@ -70,13 +70,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { type, size, label, labelHidden, helper, error, placeholder, max, delimiter, editable, addOnPaste, allowDuplicates, value, defaultValue, readonly, disabled, required, invalid, name });
-  });
   $effect(() => forwardEvents(el, { 'input-value-change': onInputValueChange, 'value-change': onValueChange, 'value-invalid': onValueInvalid }));
 </script>
 
-<lab-tags-input bind:this={el} {...server?.attributes} {...rest}>
+<lab-tags-input bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, label, labelHidden, helper, error, placeholder, max, delimiter, editable, addOnPaste, allowDuplicates, value, defaultValue, readonly, disabled, required, invalid, name } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

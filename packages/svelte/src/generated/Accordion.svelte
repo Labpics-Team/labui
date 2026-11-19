@@ -8,7 +8,7 @@
   import '@labpics/ui-core/accordion';
   import type { LabAccordion } from '@labpics/ui-core/accordion';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-accordion> — типы взяты прямо из класса ядра (LabAccordion). */
   interface Props {
@@ -48,13 +48,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { orientation, size, multiple, collapsible, disabled, headingLevel, value, defaultValue, items });
-  });
   $effect(() => forwardEvents(el, { 'value-change': onValueChange }));
 </script>
 
-<lab-accordion bind:this={el} {...server?.attributes} {...rest}>
+<lab-accordion bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { orientation, size, multiple, collapsible, disabled, headingLevel, value, defaultValue, items } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

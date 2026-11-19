@@ -2,13 +2,28 @@
 
 Исполняемая проверка: [framework-ssr-packed.mjs](../../../apps/docs/tests/framework-ssr-packed.mjs).
 Результаты, SHA-256 восьми установленных tarballs и клиентские SSR-провайдеры:
-[result.json](result.json). PNG показывают приложение после гидратации и обновлений.
+[result.json](result.json). PNG показывают приложение после гидратации и обновлений;
+файлы `*-mount.png` — отдельный client-only mount с пустым исходным root.
 
 Потребитель устанавливается во временную папку вне workspace. Vue использует
 официально скомпилированные SFC, включая вложенный Editor; Solid — собственный
 `renderToString`/`hydrate`, Svelte — скомпилированные компоненты и snippets.
 Серверные package exports проверены через Node ESM, CJS (Vue/Solid) и Vite SSR.
 Клиентская сборка не содержит server renderer и исходных workspace aliases.
+
+Дополнительно шесть CSR-сценариев используют обычные Vue `createApp`, Solid
+`render` и Svelte `mount`. Проверка записывает inputs в момент первого
+`connectedCallback`, перед вызовом исходного callback, и проверяет реальный
+результат: multiple Select начинается с `['b']`, клик по C даёт `['b', 'c']`,
+обновление items сохраняет выбор и меняет label. Controlled value меняется через
+props и очищается в `[]`; явный `null` допускает default, а изменение `defaultValue`
+после старта не сбрасывает пользовательский выбор. Vue/Svelte включают узлы
+непосредственно в подключённом root: лишний отсоединённый родитель мог скрыть
+ошибку позднего применения initial props.
+Отдельно проверено снятие property binding через `undefined`: текущее значение
+сохраняется, независимая запись элемента переживает обновление других props,
+а следующее явное значение снова применяется. Это не подменяет `null` как
+документированный способ освободить controlled Select.
 
 Для Vue, Solid и Svelte в Chromium и WebKit подтверждено:
 
@@ -25,7 +40,7 @@
   реактивно. Массивы, явный null, false при default true и пропущенный prop
   сохраняют смысл.
 
-Проверки исходников: core 83, Vue 10, Solid 14, Svelte 14 и codegen 32 теста;
+Проверки исходников: core 85, Vue 10, Solid 14, Svelte 14 и codegen 32 теста;
 typecheck четырёх пакетов; Biome и `git diff --check`. Installed TypeScript
 проверяет новый core-вход в ESM/CJS, `svelte-check` — допустимый snippet и ошибку
 при передаче строки. Версии framework: Vue 3.5.42, Solid 1.9.4, Svelte 5.19.0.
@@ -39,3 +54,15 @@ Nuxt/SolidStart/SvelteKit shell, streaming и closed shadow roots здесь н�
 `My uncommitted draft` получалось `Server\nfield\nwith\nbreaks`. Исправление
 ограничено сравнением при первом пробросе. Проверка дальнейшего изменения в LF
 отличает его от ошибочного постоянного подавления эквивалентных записей.
+
+Отдельное cold client-mount ревью обнаружило, что refs/effects передавали initial
+props после старта машины. Регрессия воспроизведена в Vue и Solid по пустому
+`items` непосредственно при connection. Все адаптеры теперь используют общий
+DOM input property: setter выполняет прежний forwarder до вставки элемента,
+сохраняя SSR adoption. Двенадцать установленных browser-сценариев проходят вместе.
+
+Тестовый resolver Solid также исправлен: external `solid-js/web` импортировал
+серверный reactive runtime, тогда как тест использовал browser runtime.
+Проверка `getOwner()` внутри `render()` выявила несовпадение; `ssr.noExternal`
+оставляет оба импорта в одном browser resolver. Ожидания reactive updates,
+withdrawal и default true/false сохранены.

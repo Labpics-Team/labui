@@ -1,4 +1,4 @@
-import { type LabPropSpec, forwardDeclared } from '@labpics/ui-core/adapter-runtime';
+import { LAB_INPUTS_PROPERTY, type LabPropSpec } from '@labpics/ui-core/adapter-runtime';
 import { renderElementParts } from '@labpics/ui-core/element-ssr';
 /**
  * Фабрика тонких Solid-обёрток над Lit web-components (ADR-0001, A-prime).
@@ -6,7 +6,7 @@ import { renderElementParts } from '@labpics/ui-core/element-ssr';
  * Написана на РАНТАЙМ-примитивах Solid (createComponent / Dynamic / createEffect), а не
  * на JSX: тогда пакет — чистый TS и собирается обычным tsup (без solid-компилятора),
  * а JSX самого потребителя (`<Select .../>`) компилит его же билд. Форвардинг
- * императивный — через ref + createEffect, поэтому undefined-обработчик/проп
+ * через DOM property до connection; события — через ref + createEffect. undefined-обработчик/проп
  * обрабатывается чисто (атрибут снят, слушатель не повешен). Вид проброса — по PropKind.
  *
  * Регистрация: генерируемый файл делает side-effect импорт @labpics/ui-core/<subpath>.
@@ -76,12 +76,6 @@ export function createLabComponent<Props, Events extends string>(
     // (нативные атрибуты) спредим на элемент.
     const [, rest] = splitProps(all, [...propNames, ...handlerNames, 'children']);
     const server = renderElementParts(tag, { specs: spec.specs, props: all, attributes: rest });
-    // Реактивный проброс объявленных пропов.
-    createEffect(() => {
-      const node = el();
-      if (!node) return;
-      forwardDeclared(node, spec.specs, all);
-    });
     // Проброс кастом-событий: вешаем только заданные обработчики, снимаем при смене.
     createEffect(() => {
       const node = el();
@@ -101,6 +95,13 @@ export function createLabComponent<Props, Events extends string>(
     return createComponent(
       Dynamic,
       mergeProps({ component: tag, ref: setEl }, server?.attributes ?? {}, rest, {
+        get [`prop:${LAB_INPUTS_PROPERTY}`]() {
+          if (server) return undefined;
+          // Read under Solid's property effect before a setter can untrack work.
+          const inputs: Record<string, unknown> = {};
+          for (const input of spec.specs) inputs[input.name] = all[input.name];
+          return { specs: spec.specs, props: inputs };
+        },
         get children() {
           const children = (all as { children?: JSX.Element }).children;
           return server ? [ssr(server.shadowHtml), children] : children;

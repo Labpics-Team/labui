@@ -8,7 +8,7 @@
   import '@labpics/ui-core/pagination';
   import type { LabPagination } from '@labpics/ui-core/pagination';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-pagination> — типы взяты прямо из класса ядра (LabPagination). */
   interface Props {
@@ -58,13 +58,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { count, pageSize, page, defaultPage, siblingCount, variant, disabled, ambient, progress, href, label, previousLabel, nextLabel, pageLabel });
-  });
   $effect(() => forwardEvents(el, { 'page-change': onPageChange }));
 </script>
 
-<lab-pagination bind:this={el} {...server?.attributes} {...rest}>
+<lab-pagination bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { count, pageSize, page, defaultPage, siblingCount, variant, disabled, ambient, progress, href, label, previousLabel, nextLabel, pageLabel } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

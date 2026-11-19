@@ -8,7 +8,7 @@
   import '@labpics/ui-core/badge';
   import type { LabBadge } from '@labpics/ui-core/badge';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-badge> — типы взяты прямо из класса ядра (LabBadge). */
   interface Props {
@@ -38,13 +38,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { color, type, disabled });
-  });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-badge bind:this={el} {...server?.attributes} {...rest}>
+<lab-badge bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { color, type, disabled } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

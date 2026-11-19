@@ -8,7 +8,7 @@
   import '@labpics/ui-core/select';
   import type { LabSelect } from '@labpics/ui-core/select';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-select> — типы взяты прямо из класса ядра (LabSelect). */
   interface Props {
@@ -51,13 +51,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { size, placement, multiple, disabled, name, placeholder, label, value, defaultValue, items });
-  });
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange, 'value-change': onValueChange }));
 </script>
 
-<lab-select bind:this={el} {...server?.attributes} {...rest}>
+<lab-select bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, placement, multiple, disabled, name, placeholder, label, value, defaultValue, items } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

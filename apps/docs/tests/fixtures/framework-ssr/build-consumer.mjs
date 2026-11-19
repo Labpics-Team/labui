@@ -29,16 +29,26 @@ const frameworks = {
   vue: {
     server: `import {createSSRApp} from 'vue';import {renderToString} from 'vue/server-renderer';import App from './VueApp.vue';export const html=await renderToString(createSSRApp(App));`,
     hydrate: `import {createSSRApp,nextTick} from 'vue';import App from './VueApp.vue';export async function mount(){createSSRApp(App).mount('#app');await nextTick()}`,
+    mount: `import {createApp,nextTick} from 'vue';import App from './ClientMount.vue';createApp(App).mount('#app');await nextTick();`,
   },
   solid: {
     server: `import {renderToString,generateHydrationScript} from 'solid-js/web';import {createComponent} from 'solid-js';import {App} from './solid-app.mjs';export const html=renderToString(()=>createComponent(App,{}));export const hydrationScript=generateHydrationScript();`,
     hydrate: `import {hydrate} from 'solid-js/web';import {createComponent} from 'solid-js';import {App} from './solid-app.mjs';export function mount(){hydrate(()=>createComponent(App,{}),document.getElementById('app'))}`,
+    mount: `import {render} from 'solid-js/web';import {createComponent} from 'solid-js';import {App} from './client-mount-solid.mjs';render(()=>createComponent(App,{}),document.getElementById('app'));`,
   },
   svelte: {
     server: `import {render} from 'svelte/server';import App from './SvelteApp.svelte';export const html=render(App).body;`,
     hydrate: `import {hydrate,flushSync} from 'svelte';import App from './SvelteApp.svelte';export function mount(){hydrate(App,{target:document.getElementById('app')});flushSync()}`,
+    mount: `import {mount,flushSync} from 'svelte';import App from './ClientMount.svelte';mount(App,{target:document.getElementById('app')});flushSync();`,
   },
 };
+const styles = `
+  import '@labui/colors/contract.css';
+  import '@labpics/ui-tokens/tokens.css';
+  import '@labpics/ui-tokens/motion.css';
+  import '@labpics/ui-core/theme.css';
+  import '@labpics/ui-core/shadow.css';
+`;
 // Qualify both server module formats in the same registry, with CJS registering first.
 const require = createRequire(import.meta.url);
 const vue = require('vue');
@@ -71,11 +81,7 @@ for (const [name, source] of Object.entries(frameworks)) {
   await writeFile(
     `${name}-client.mjs`,
     `
-    import '@labui/colors/contract.css';
-    import '@labpics/ui-tokens/tokens.css';
-    import '@labpics/ui-tokens/motion.css';
-    import '@labpics/ui-core/theme.css';
-    import '@labpics/ui-core/shadow.css';
+    ${styles}
     import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
     window.hydrate=async()=>{
       const {mount}=await import('./${name}-hydrate.mjs');await mount();
@@ -83,6 +89,10 @@ for (const [name, source] of Object.entries(frameworks)) {
       window.hydrated=true;
     };
   `,
+  );
+  await writeFile(
+    `${name}-mount-client.mjs`,
+    `${styles}\n${source.mount}\nawait Promise.all([...document.querySelectorAll('lab-select')].map(x=>x.updateComplete));window.clientReady=true;`,
   );
   const server = await build({
     entryPoints: [`${name}-server.mjs`],
@@ -110,7 +120,7 @@ for (const [name, source] of Object.entries(frameworks)) {
     ],
   });
   const browser = await build({
-    entryPoints: [`${name}-client.mjs`],
+    entryPoints: [`${name}-client.mjs`, `${name}-mount-client.mjs`],
     outdir: `web/${name}`,
     bundle: true,
     format: 'esm',
@@ -147,6 +157,10 @@ for (const [name, source] of Object.entries(frameworks)) {
   await writeFile(
     `web/${name}/index.html`,
     `<!doctype html><html data-theme="light"><head><meta charset="utf-8">${rendered.hydrationScript ?? ''}<link rel="stylesheet" href="/${name}/${name}-client.css"><style>body{margin:24px;font-family:system-ui}main{display:grid;gap:20px;max-width:640px}main>button{justify-self:start;min-height:36px}</style></head><body><div id="app">${rendered.html}</div><script type="module" src="/${name}/${name}-client.js"></script></body></html>`,
+  );
+  await writeFile(
+    `web/${name}/mount.html`,
+    `<!doctype html><html data-theme="light"><head><meta charset="utf-8"><link rel="stylesheet" href="/${name}/${name}-mount-client.css"><style>body{margin:24px;font-family:system-ui}#app,main{display:grid;gap:20px;max-width:640px}#app>button,main>button{justify-self:start;min-height:36px}</style></head><body><div id="app"></div><script type="module" src="/${name}/${name}-mount-client.js"></script></body></html>`,
   );
   await writeFile(`web/${name}/browser-metafile.json`, JSON.stringify(browser.metafile));
   await writeFile(`web/${name}/server-metafile.json`, JSON.stringify(server.metafile));

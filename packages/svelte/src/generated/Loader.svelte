@@ -8,7 +8,7 @@
   import '@labpics/ui-core/loader';
   import type { LabLoader } from '@labpics/ui-core/loader';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-loader> — типы взяты прямо из класса ядра (LabLoader). */
   interface Props {
@@ -39,13 +39,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { size, label, value, min, max });
-  });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-loader bind:this={el} {...server?.attributes} {...rest}>
+<lab-loader bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, label, value, min, max } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

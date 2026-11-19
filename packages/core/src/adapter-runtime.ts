@@ -6,12 +6,20 @@ export interface LabPropSpec {
   readonly kind: LabPropKind;
 }
 
+/** Frameworks set DOM properties before inserting a newly created element. */
+export const LAB_INPUTS_PROPERTY = 'labInputs';
+export interface LabInputBinding {
+  readonly specs: readonly LabPropSpec[];
+  readonly props: Readonly<Record<string, unknown>>;
+}
+
 const forwarded = new WeakMap<HTMLElement, Map<string, unknown>>();
 
 /**
  * Apply only caller input changes. An omitted input does not own the element's
  * constructor default or reflected state. Withdrawing an attribute input removes
- * it once; withdrawing a JS-property input releases control of its current value.
+ * it once; withdrawing a JS-property input stops forwarding and keeps its current
+ * value. A control's explicit release value (for example null) follows its API.
  * Explicit null/false/empty values still reach the element.
  */
 export function forwardDeclared(

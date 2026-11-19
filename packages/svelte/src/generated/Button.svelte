@@ -8,7 +8,7 @@
   import '@labpics/ui-core/button';
   import type { LabButton } from '@labpics/ui-core/button';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-button> — типы взяты прямо из класса ядра (LabButton). */
   interface Props {
@@ -45,13 +45,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { type, kind, size, icon, loading, disabled, htmlType });
-  });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-button bind:this={el} {...server?.attributes} {...rest}>
+<lab-button bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, kind, size, icon, loading, disabled, htmlType } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

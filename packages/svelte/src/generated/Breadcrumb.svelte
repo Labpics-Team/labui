@@ -8,7 +8,7 @@
   import '@labpics/ui-core/breadcrumb';
   import type { LabBreadcrumb } from '@labpics/ui-core/breadcrumb';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-breadcrumb> — типы взяты прямо из класса ядра (LabBreadcrumb). */
   interface Props {
@@ -41,13 +41,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { size, separator, items, maxItems, label, expandLabel });
-  });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-breadcrumb bind:this={el} {...server?.attributes} {...rest}>
+<lab-breadcrumb bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, separator, items, maxItems, label, expandLabel } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

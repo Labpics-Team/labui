@@ -8,7 +8,7 @@
   import '@labpics/ui-core/kbd';
   import type { LabKbd } from '@labpics/ui-core/kbd';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-kbd> — типы взяты прямо из класса ядра (LabKbd). */
   interface Props {
@@ -33,13 +33,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { size, keys });
-  });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-kbd bind:this={el} {...server?.attributes} {...rest}>
+<lab-kbd bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, keys } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

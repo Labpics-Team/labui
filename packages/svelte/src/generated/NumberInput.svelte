@@ -8,7 +8,7 @@
   import '@labpics/ui-core/number-input';
   import type { LabNumberInput } from '@labpics/ui-core/number-input';
   import { type Snippet, untrack } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-number-input> — типы взяты прямо из класса ядра (LabNumberInput). */
   interface Props {
@@ -69,13 +69,10 @@
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { type, size, label, labelHidden, helper, error, value, defaultValue, placeholder, min, max, step, scrubber, allowMouseWheel, readonly, disabled, required, invalid, name });
-  });
   $effect(() => forwardEvents(el, { 'value-change': onValueChange, 'value-commit': onValueCommit }));
 </script>
 
-<lab-number-input bind:this={el} {...server?.attributes} {...rest}>
+<lab-number-input bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, label, labelHidden, helper, error, value, defaultValue, placeholder, min, max, step, scrubber, allowMouseWheel, readonly, disabled, required, invalid, name } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

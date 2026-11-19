@@ -2,7 +2,7 @@
   "archives": [
     {
       "name": "@labpics/ui-tokens",
-      "sha256": "c6921c0fcb2906a127021205695e0a4d7bf54111220e8e43d928ad0c277cf7b8"
+      "sha256": "32a0c13811235938dc1cf90409ec327fcc069e063a5bcfd719d4cdf342d7dabd"
     },
     {
       "name": "@labpics/ui-shadow",
@@ -18,26 +18,26 @@
     },
     {
       "name": "@labpics/ui-core",
-      "sha256": "99d2ed1b752ab0c934b2de63a868fe2405879865f5cc2f48e1fd286cbdb2666b"
+      "sha256": "4312a25f8f354f1a5317b553995decb154bcce4a0237948b0c75b3e8c6b1493e"
     },
     {
       "name": "@labpics/ui-vue",
-      "sha256": "53131c5dbb481a07e940b90756b6e235aedd5c65595066694a2eff98810599c3"
+      "sha256": "59d128e9b7d2628d160e8bd50f59b168141c592806450723f20cbfd6376cea41"
     },
     {
       "name": "@labpics/ui-solid",
-      "sha256": "cbd30fc777389ce71e694fb4a2dab119d123fc5003175feec35804369c37d424"
+      "sha256": "aa6214675e98ab98b85075418ac45d270c6f84dc8e73071c6884fdb2ed61bdea"
     },
     {
       "name": "@labpics/ui-svelte",
-      "sha256": "dc73349434a44cb4a2da8ff89b00cf37740e27a05c6c5d757be4c8235ca0ab21"
+      "sha256": "f1e75cb61863a45e7211be6ac984dbfe2f705341c51b78e81bedf41c40e1b88e"
     }
   ],
   "qualification": {
     "records": [
       {
         "name": "vue",
-        "browserModules": 155,
+        "browserModules": 183,
         "browserProviders": [
           "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
         ],
@@ -45,7 +45,7 @@
       },
       {
         "name": "solid",
-        "browserModules": 151,
+        "browserModules": 179,
         "browserProviders": [
           "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
         ],
@@ -53,7 +53,7 @@
       },
       {
         "name": "svelte",
-        "browserModules": 445,
+        "browserModules": 449,
         "browserProviders": [
           "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
         ],
@@ -69,6 +69,242 @@
       "svelteSlots": true
     }
   },
+  "clientMount": [
+    {
+      "framework": "vue",
+      "browser": "chromium",
+      "connections": [
+        {
+          "id": "uncontrolled",
+          "label": "Uncontrolled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        },
+        {
+          "id": "controlled",
+          "label": "Controlled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": ["a"]
+        },
+        {
+          "id": "released",
+          "label": "Explicit null",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        }
+      ],
+      "uncontrolled": {
+        "selected": ["b", "c"],
+        "text": "B, Renamed C"
+      },
+      "controlled": {
+        "selected": [],
+        "text": "Choose"
+      },
+      "errors": []
+    },
+    {
+      "framework": "solid",
+      "browser": "chromium",
+      "connections": [
+        {
+          "id": "uncontrolled",
+          "label": "Uncontrolled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        },
+        {
+          "id": "controlled",
+          "label": "Controlled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": ["a"]
+        },
+        {
+          "id": "released",
+          "label": "Explicit null",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        }
+      ],
+      "uncontrolled": {
+        "selected": ["b", "c"],
+        "text": "B, Renamed C"
+      },
+      "controlled": {
+        "selected": [],
+        "text": "Choose"
+      },
+      "errors": []
+    },
+    {
+      "framework": "svelte",
+      "browser": "chromium",
+      "connections": [
+        {
+          "id": "uncontrolled",
+          "label": "Uncontrolled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        },
+        {
+          "id": "controlled",
+          "label": "Controlled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": ["a"]
+        },
+        {
+          "id": "released",
+          "label": "Explicit null",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        }
+      ],
+      "uncontrolled": {
+        "selected": ["b", "c"],
+        "text": "B, Renamed C"
+      },
+      "controlled": {
+        "selected": [],
+        "text": "Choose"
+      },
+      "errors": []
+    },
+    {
+      "framework": "vue",
+      "browser": "webkit",
+      "connections": [
+        {
+          "id": "uncontrolled",
+          "label": "Uncontrolled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        },
+        {
+          "id": "controlled",
+          "label": "Controlled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": ["a"]
+        },
+        {
+          "id": "released",
+          "label": "Explicit null",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        }
+      ],
+      "uncontrolled": {
+        "selected": ["b", "c"],
+        "text": "B, Renamed C"
+      },
+      "controlled": {
+        "selected": [],
+        "text": "Choose"
+      },
+      "errors": []
+    },
+    {
+      "framework": "solid",
+      "browser": "webkit",
+      "connections": [
+        {
+          "id": "uncontrolled",
+          "label": "Uncontrolled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        },
+        {
+          "id": "controlled",
+          "label": "Controlled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": ["a"]
+        },
+        {
+          "id": "released",
+          "label": "Explicit null",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        }
+      ],
+      "uncontrolled": {
+        "selected": ["b", "c"],
+        "text": "B, Renamed C"
+      },
+      "controlled": {
+        "selected": [],
+        "text": "Choose"
+      },
+      "errors": []
+    },
+    {
+      "framework": "svelte",
+      "browser": "webkit",
+      "connections": [
+        {
+          "id": "uncontrolled",
+          "label": "Uncontrolled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        },
+        {
+          "id": "controlled",
+          "label": "Controlled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": ["a"]
+        },
+        {
+          "id": "released",
+          "label": "Explicit null",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        }
+      ],
+      "uncontrolled": {
+        "selected": ["b", "c"],
+        "text": "B, Renamed C"
+      },
+      "controlled": {
+        "selected": [],
+        "text": "Choose"
+      },
+      "errors": []
+    }
+  ],
   "records": [
     {
       "framework": "vue",
