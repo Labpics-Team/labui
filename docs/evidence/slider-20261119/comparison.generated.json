@@ -1,0 +1,242 @@
+[
+  {
+    "node": "6467-117311",
+    "specimen": "linear-0",
+    "renderer": "Chromium",
+    "size": [
+      628,
+      12
+    ],
+    "meanRgbDifference": [
+      0.16069532908704884,
+      0.08200636942675159,
+      0.0
+    ],
+    "pixelsWithChannelDifferenceOver20": 29
+  },
+  {
+    "node": "6467-117311",
+    "specimen": "linear-0",
+    "renderer": "Compose",
+    "size": [
+      628,
+      12
+    ],
+    "meanRgbDifference": [
+      0.15127388535031847,
+      0.07656581740976645,
+      0.0
+    ],
+    "pixelsWithChannelDifferenceOver20": 27
+  },
+  {
+    "node": "7557-11680",
+    "specimen": "linear-50",
+    "renderer": "Chromium",
+    "size": [
+      628,
+      12
+    ],
+    "meanRgbDifference": [
+      0.16679936305732485,
+      0.08598726114649681,
+      0.0
+    ],
+    "pixelsWithChannelDifferenceOver20": 30
+  },
+  {
+    "node": "7557-11680",
+    "specimen": "linear-50",
+    "renderer": "Compose",
+    "size": [
+      628,
+      12
+    ],
+    "meanRgbDifference": [
+      0.15459129511677283,
+      0.07815817409766454,
+      0.0
+    ],
+    "pixelsWithChannelDifferenceOver20": 27
+  },
+  {
+    "node": "6467-117330",
+    "specimen": "circular-0",
+    "renderer": "Chromium",
+    "size": [
+      96,
+      100
+    ],
+    "meanRgbDifference": [
+      0.26729166666666665,
+      0.15041666666666667,
+      0.0
+    ],
+    "pixelsWithChannelDifferenceOver20": 25
+  },
+  {
+    "node": "6467-117330",
+    "specimen": "circular-0",
+    "renderer": "Compose",
+    "size": [
+      96,
+      100
+    ],
+    "meanRgbDifference": [
+      0.28510416666666666,
+      0.16177083333333334,
+      0.0
+    ],
+    "pixelsWithChannelDifferenceOver20": 31
+  },
+  {
+    "node": "6467-117334",
+    "specimen": "circular-50",
+    "renderer": "Chromium",
+    "size": [
+      96,
+      104
+    ],
+    "meanRgbDifference": [
+      1.0545873397435896,
+      0.5608974358974359,
+      0.0
+    ],
+    "pixelsWithChannelDifferenceOver20": 203
+  },
+  {
+    "node": "6467-117334",
+    "specimen": "circular-50",
+    "renderer": "Compose",
+    "size": [
+      96,
+      104
+    ],
+    "meanRgbDifference": [
+      1.0390625,
+      0.5511818910256411,
+      0.0
+    ],
+    "pixelsWithChannelDifferenceOver20": 199
+  },
+  {
+    "node": "6467-117338",
+    "specimen": "circular-100",
+    "renderer": "Chromium",
+    "size": [
+      96,
+      100
+    ],
+    "meanRgbDifference": [
+      1.5535416666666666,
+      0.8246875,
+      0.0
+    ],
+    "pixelsWithChannelDifferenceOver20": 291
+  },
+  {
+    "node": "6467-117338",
+    "specimen": "circular-100",
+    "renderer": "Compose",
+    "size": [
+      96,
+      100
+    ],
+    "meanRgbDifference": [
+      1.73125,
+      0.919375,
+      0.0
+    ],
+    "pixelsWithChannelDifferenceOver20": 328
+  },
+  {
+    "node": "7530-6557",
+    "specimen": "large-0",
+    "renderer": "Chromium",
+    "size": [
+      628,
+      56
+    ],
+    "meanRgbDifference": [
+      0.390667652411283,
+      0.1833200636942675,
+      0.9893937670609645
+    ],
+    "pixelsWithChannelDifferenceOver20": 225
+  },
+  {
+    "node": "7530-6557",
+    "specimen": "large-0",
+    "renderer": "Compose",
+    "size": [
+      628,
+      56
+    ],
+    "meanRgbDifference": [
+      0.043818243858052774,
+      0.023202911737943584,
+      0.9888819381255687
+    ],
+    "pixelsWithChannelDifferenceOver20": 3
+  },
+  {
+    "node": "7530-6626",
+    "specimen": "large-50",
+    "renderer": "Chromium",
+    "size": [
+      628,
+      56
+    ],
+    "meanRgbDifference": [
+      1.433632848043676,
+      0.8137227024567789,
+      0.4978673794358508
+    ],
+    "pixelsWithChannelDifferenceOver20": 384
+  },
+  {
+    "node": "7530-6626",
+    "specimen": "large-50",
+    "renderer": "Compose",
+    "size": [
+      628,
+      56
+    ],
+    "meanRgbDifference": [
+      0.49229413102820746,
+      0.3047372611464968,
+      0.49795268425841677
+    ],
+    "pixelsWithChannelDifferenceOver20": 152
+  },
+  {
+    "node": "7530-6616",
+    "specimen": "large-100",
+    "renderer": "Chromium",
+    "size": [
+      628,
+      56
+    ],
+    "meanRgbDifference": [
+      1.82174135577798,
+      1.1144222020018197,
+      0.0006255686988171065
+    ],
+    "pixelsWithChannelDifferenceOver20": 420
+  },
+  {
+    "node": "7530-6616",
+    "specimen": "large-100",
+    "renderer": "Compose",
+    "size": [
+      628,
+      56
+    ],
+    "meanRgbDifference": [
+      0.7877900363967243,
+      0.5065969062784349,
+      0.0002843494085532302
+    ],
+    "pixelsWithChannelDifferenceOver20": 162
+  }
+]

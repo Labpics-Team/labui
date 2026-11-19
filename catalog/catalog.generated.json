@@ -78,7 +78,7 @@
         "native": {
           "symbol": "LabButton",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabButton.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -120,7 +120,7 @@
         "native": {
           "symbol": "LabDragButton",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabDragButton.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -156,7 +156,7 @@
         "native": {
           "symbol": "LabInput",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabInput.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -219,7 +219,7 @@
         "native": {
           "symbol": "LabInput",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabInput.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -285,7 +285,7 @@
         "native": {
           "symbol": "LabCheckbox",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabCheckbox.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -327,7 +327,7 @@
         "native": {
           "symbol": "LabRadioGroup",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabRadioGroup.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -369,7 +369,7 @@
         "native": {
           "symbol": "LabSwitch",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSwitch.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -411,7 +411,7 @@
         "native": {
           "symbol": "LabSelect",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSelect.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -531,7 +531,7 @@
         "native": {
           "symbol": "LabPinInput",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabPinInput.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -568,10 +568,14 @@
       "title": "Slider",
       "group": "input",
       "kind": "control",
-      "summary": "Выбор значения на непрерывной шкале.",
+      "summary": "Линейная, круговая и большая шкалы с авторской геометрией и точным вводом значений.",
       "web": {
         "subpath": "slider",
         "reactExport": "Slider"
+      },
+      "profile": "slider",
+      "native": {
+        "symbol": "LabSlider"
       },
       "documentation": "slider.doc.ts",
       "capabilities": {
@@ -579,7 +583,11 @@
           "tag": "lab-slider",
           "reactExport": "Slider"
         },
-        "native": null
+        "native": {
+          "symbol": "LabSlider",
+          "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSlider.kt",
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
+        }
       },
       "sources": [
         {
@@ -634,7 +642,7 @@
         "native": {
           "symbol": "LabChip",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChip.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -678,7 +686,7 @@
         "native": {
           "symbol": "LabChoicebox",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChoicebox.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -741,7 +749,7 @@
         "native": {
           "symbol": "LabSegmentedControl",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSegmentedControl.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -859,7 +867,7 @@
         "native": {
           "symbol": "LabTabs",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabTabs.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -927,7 +935,7 @@
         "native": {
           "symbol": "LabBreadcrumb",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabBreadcrumb.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -966,7 +974,7 @@
         "native": {
           "symbol": "LabPagination",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabPagination.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -1221,7 +1229,7 @@
         "native": {
           "symbol": "LabSnackbar",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSnackbar.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -1276,7 +1284,7 @@
         "native": {
           "symbol": "LabProgress",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabProgress.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -1339,7 +1347,7 @@
         "native": {
           "symbol": "LabLoader",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabLoader.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -1416,7 +1424,7 @@
         "native": {
           "symbol": "LabBadge",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabBadge.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -1458,7 +1466,7 @@
         "native": {
           "symbol": "LabAvatar",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabAvatar.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -1510,7 +1518,7 @@
         "native": {
           "symbol": "LabKbd",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabKbd.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -1552,7 +1560,7 @@
         "native": {
           "symbol": "LabAccordion",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabAccordion.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -1895,7 +1903,7 @@
         "native": {
           "symbol": "LabCard",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSurface.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -1937,7 +1945,7 @@
         "native": {
           "symbol": "LabSheetHost",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSheet.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [
@@ -2023,7 +2031,7 @@
         "native": {
           "symbol": "LabMaterials",
           "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt",
-          "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce"
+          "revision": "b88c5e7f964e54b8711722513c721b07dca024d7"
         }
       },
       "sources": [

@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0-slider-20261120.1",
+  "iconsVersion": "0.4.0-semantic.6",
+  "sourceSubstitution": false,
+  "artifacts": [
+    {
+      "path": "pics/lab/ui-colors-desktop/0.1.0-slider-20261120.1/ui-colors-desktop-0.1.0-slider-20261120.1.jar",
+      "sha256": "0309c3881c5e8d4d0acbfba01b6b5cf730cf022c4d208823a1c8ab4ef4583263"
+    },
+    {
+      "path": "pics/lab/ui-compose-desktop/0.1.0-slider-20261120.1/ui-compose-desktop-0.1.0-slider-20261120.1.jar",
+      "sha256": "cf601ba696028ef817a2f9f1b14841a43edfe0c58af5170431f8d5e37c37368b"
+    }
+  ]
+}

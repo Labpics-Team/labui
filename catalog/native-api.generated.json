@@ -1,6 +1,6 @@
 {
-  "revision": "c5aadbfe44f25964cf83f1a5e3a74e055bcb22ce",
-  "sourceDigest": "sha256:f1cf0415c4b50e7eae8e9b3a961c731424bc44f78a5ab776e08bcec3d28ea43b",
+  "revision": "b88c5e7f964e54b8711722513c721b07dca024d7",
+  "sourceDigest": "sha256:b9630d5a08755c451014a95c78b9387695d891548e89ef612bec4f0693eb3e7b",
   "symbols": [
     {
       "name": "LabAccordion",
@@ -101,6 +101,14 @@
     {
       "name": "LabSheetHost",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSheet.kt"
+    },
+    {
+      "name": "LabSlider",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSlider.kt"
+    },
+    {
+      "name": "LabRangeSlider",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSlider.kt"
     },
     {
       "name": "LabSnackbarDefaults",

@@ -1,0 +1,92 @@
+{
+  "archives": [
+    {
+      "name": "@labpics/ui-tokens",
+      "sha256": "355a35bf877e00bbb70cbe208837af959a76ce4bc6b085768c646993fe3621a0"
+    },
+    {
+      "name": "@labpics/ui-shadow",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "@labpics/ui-materials",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "@labpics/fonts",
+      "sha256": "d0d46708a7b04e7fca9900afc5735ca7a72fa5ae1082787ea603199b632b2fef"
+    },
+    {
+      "name": "@labui/colors",
+      "sha256": "f01ced7601b53b7df06c2358381ac5bdc31dc9eb5d6cfa0092c519f4d9555d06"
+    },
+    {
+      "name": "@labpics/ui-core",
+      "sha256": "a20fc2f15ee683eebfe13b1465dbe777b3df99457c632736eadb797c93657a65"
+    },
+    {
+      "name": "@labpics/ui-react",
+      "sha256": "8d67cbb95d84669b7c084a0c645c02230fec1fc88ff5b4525e7e9b5df5ccd040"
+    },
+    {
+      "name": "@labpics/ui-vue",
+      "sha256": "d273f42cfcf419a538b8f29e6c3d7a632660831be238db859e061650d06b02da"
+    },
+    {
+      "name": "@labpics/ui-solid",
+      "sha256": "3145cfe1a0406bda1e3deb8655a988d5a3e47df250e4eeaf5c01b2a55c6a2b48"
+    },
+    {
+      "name": "@labpics/ui-svelte",
+      "sha256": "d96a498b30cae8ea29b9a0407e9dbb6b8fb4c87a25d7cfcf8f447dcf71986656"
+    },
+    {
+      "name": "@labpics/ui-astro",
+      "sha256": "0ab6f34e86c70ce057552893c1dd4111acb3541b1748fdee4d4bf6d7bfd22311"
+    }
+  ],
+  "records": [
+    {
+      "engine": "chromium",
+      "ssrHydratedRenderers": 5,
+      "geometry": {
+        "track": 4,
+        "diameter": 12,
+        "center": 308
+      },
+      "density": [
+        1,
+        1.25,
+        2
+      ],
+      "rootFontSize": [
+        16,
+        20,
+        32
+      ],
+      "idleRaf": 0,
+      "behavior": "controlled and end callback, keyboard including RTL, external forms, disabled fieldset/first legend, submit/reset/cancel, non-divisible steps, range collision, circular seam/cancel, reparent, pointer geometry and forms at each root font size"
+    },
+    {
+      "engine": "webkit",
+      "ssrHydratedRenderers": 5,
+      "geometry": {
+        "track": 4,
+        "diameter": 12,
+        "center": 308
+      },
+      "density": [
+        1,
+        1.25,
+        2
+      ],
+      "rootFontSize": [
+        16,
+        20,
+        32
+      ],
+      "idleRaf": 0,
+      "behavior": "controlled and end callback, keyboard including RTL, external forms, disabled fieldset/first legend, submit/reset/cancel, non-divisible steps, range collision, circular seam/cancel, reparent, pointer geometry and forms at each root font size"
+    }
+  ]
+}
