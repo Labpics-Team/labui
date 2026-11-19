@@ -30,6 +30,53 @@ import kotlin.test.assertTrue
 class TypographyRenderTest {
     private fun walk(node: SemanticsNode): List<SemanticsNode> = listOf(node) + node.children.flatMap(::walk)
 
+    /** Also run after changing the profile's $textStyle binding and regenerating components. */
+    @Test fun choiceboxLabelUsesTheCompleteResolvedComponentProfile() {
+        val label = "Shared workspace and original project materials"
+        val ready = AtomicBoolean(false)
+        val theme = LabThemeState(initialLabColors(LabPreferences(reducedMotion = true)))
+        val scene = ImageComposeScene(820, 180) {
+            val font = labFontFamily()
+            val resolver = LocalFontFamilyResolver.current
+            LaunchedEffect(font) { resolver.preload(font); ready.set(true) }
+            LabTheme(theme, font) {
+                Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    LabChoicebox("shared", {}, listOf(LabChoiceboxItem("shared", label)),
+                        layout = LabChoiceboxLayout.Row)
+                    BasicText(label, style = TextStyle(fontFamily = font,
+                        fontSize = LabComponents.SelectionChoiceboxFontSize.sp,
+                        lineHeight = LabComponents.SelectionChoiceboxLineHeight.sp,
+                        fontWeight = FontWeight(LabComponents.SelectionChoiceboxFontWeight.toInt()),
+                        letterSpacing = LabComponents.SelectionChoiceboxLetterSpacing.sp))
+                }
+            }
+        }
+        try {
+            var previous: ByteArray? = null
+            var equal = 0
+            for (frame in 0 until 150) {
+                val current = scene.render().use { image -> image.encodeToData()!!.use { it.bytes } }
+                equal = if (ready.get() && previous?.contentEquals(current) == true) equal + 1 else 0
+                if (equal >= 3) break
+                previous = current
+                Thread.sleep(10)
+            }
+            assertTrue(equal >= 3, "Fonts and scene must settle")
+            val layouts = scene.semanticsOwners.flatMap { walk(it.unmergedRootSemanticsNode) }.flatMap { node ->
+                mutableListOf<TextLayoutResult>().also { node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(it) }
+            }.filter { it.layoutInput.text.text == label }
+            assertEquals(2, layouts.size)
+            val actual = layouts[0].layoutInput.style
+            val expected = layouts[1].layoutInput.style
+            assertEquals(expected.fontSize, actual.fontSize)
+            assertEquals(expected.lineHeight, actual.lineHeight)
+            assertEquals(expected.fontWeight, actual.fontWeight)
+            assertEquals(expected.letterSpacing, actual.letterSpacing)
+            assertTrue(abs(layouts[0].multiParagraph.intrinsics.maxIntrinsicWidth -
+                layouts[1].multiParagraph.intrinsics.maxIntrinsicWidth) < 0.02f)
+        } finally { scene.close() }
+    }
+
     @Test fun authoredRolesPreserveWholeStringMetricsAndChoiceboxWrapping() {
         val description = "Shared access to original materials and project history for every member of the workspace."
         val output = File("build/typography-render").apply { mkdirs() }

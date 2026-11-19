@@ -5,6 +5,11 @@ import type { ResolvedToken } from './token.js';
 /** Authored roles are complete styles, independent of the configurable fluid scale. */
 export const authoredTextStyles = profile.roles;
 
+/** Authored roles never share the configurable fluid scales' property namespace. */
+export function textStyleCssVarName(role: string, property: string): string {
+  return `--lab-text-${role}-${property}`;
+}
+
 export function buildTextStyleTokens(): ResolvedToken[] {
   return Object.entries(authoredTextStyles).flatMap(
     ([name, style]) =>

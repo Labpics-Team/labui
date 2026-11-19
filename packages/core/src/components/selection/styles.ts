@@ -1,4 +1,4 @@
-import { selectionProfile as p } from '@labpics/ui-tokens';
+import { selectionProfile as p, textStyle } from '@labpics/ui-tokens';
 
 const rem = (px: number): string => `${px / 16}rem`;
 const role = (name: string): string => `var(--lab-${name})`;
@@ -127,7 +127,7 @@ ${Object.entries(p.sizes)
 [data-lab-selection][data-variant="plain"] .lab-selection-label { display: contents; }
 [data-lab-selection][data-variant="plain"] .lab-selection-label > span { max-inline-size: 100%; }
 [data-lab-selection][data-variant="plain"] .lab-selection-label > .lab-selection-description { display: contents; }
-[data-lab-selection] .lab-selection-description { display: block; font-size: var(--lab-font-size-body); line-height: var(--lab-line-height-body); font-weight: var(--lab-font-weight-body); letter-spacing: var(--lab-letter-spacing-body); color: ${role(p.choicebox.descriptionRole)}; overflow-wrap: anywhere; }
+[data-lab-selection] .lab-selection-description { display: block; font-size: ${textStyle.body.fontSize}; line-height: ${textStyle.body.lineHeight}; font-weight: ${textStyle.body.fontWeight}; letter-spacing: ${textStyle.body.letterSpacing}; color: ${role(p.choicebox.descriptionRole)}; overflow-wrap: anywhere; }
 [data-lab-selection] input { position: absolute; inline-size: 1px; block-size: 1px; margin: -1px; padding: 0; border: 0; clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
 [data-lab-selection] .lab-selection-icon { display: none; }
 [data-lab-radio-group] { display: flex; flex-wrap: wrap; gap: var(--lab-space-md); min-inline-size: 0; max-inline-size: 100%; padding: 0; margin: 0; border: 0; }
@@ -141,7 +141,7 @@ ${Object.entries(p.sizes)
   corner-shape: superellipse(var(--lab-radius-corner-k, 1.1));
   box-shadow: inset 0 0 0 ${rem(p.choicebox.strokeWidth)} ${role(p.choicebox.strokeRole)};
   font-size: ${rem(p.choicebox.fontSize)}; line-height: ${p.choicebox.lineHeight / p.choicebox.fontSize};
-  font-weight: ${p.choicebox.fontWeight}; letter-spacing: 0;
+  font-weight: ${p.choicebox.fontWeight}; letter-spacing: ${p.choicebox.letterSpacing / p.choicebox.fontSize}em;
 }
 [data-lab-selection][data-variant="card"] { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "icon control" "label label"; gap: ${rem(p.choicebox.cardContentGap)}; min-block-size: ${rem(p.choicebox.cardHeight)}; align-content: start; }
 [data-lab-selection][data-variant="row"] { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "icon label control"; column-gap: ${rem(p.choicebox.rowContentGap)}; min-block-size: ${rem(p.choicebox.rowHeight)}; }

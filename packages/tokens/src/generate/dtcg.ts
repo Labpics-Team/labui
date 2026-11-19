@@ -72,7 +72,7 @@ export function generateDtcg(tokens: ResolvedTokens): string {
     state: numberGroup(tokens.states),
     opacity: numberGroup(tokens.opacity),
   };
-  for (const token of [...tokens.textStyles, ...tokens.components]) {
+  for (const token of tokens.components) {
     doc[token.kind] ??= {};
     const group = doc[token.kind] as DtcgGroup;
     if (group[token.name])

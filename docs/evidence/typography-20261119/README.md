@@ -74,3 +74,40 @@ Card/Choicebox profiles с `components.json`, чтение DTCG и `tsc --strict
 новая роль типизирована, использование `xl` как `TextStyleRole` отклоняется.
 
 Модель и границы описаны в [справке типографики](../../reference/typography.md).
+
+## Проверка замечаний независимого ревью
+
+Ревью выявило два пропуска исходной проверки: конфликт авторских имён с
+пользовательскими именами fluid-шкалы и жёсткий выбор Medium в native Choicebox.
+Оба исправлены до интеграции.
+
+CSS авторских ролей теперь имеет отдельный префикс `--lab-text-<role>-<property>`.
+DTCG хранит их только в составной группе `typography`; группы `font-size` и
+`font-weight` сохраняют пространство имён настраиваемой шкалы. Тест перебирает
+каждую авторскую роль как имя шагов 0/1 и веса 350: генерация проходит,
+объявления CSS не повторяются, авторские значения сохраняются. Существующий
+конфликт с реальной метрикой `font-size/card-title` по-прежнему отклоняется.
+
+Choicebox label читает все четыре метрики развёрнутого профиля в Compose;
+web больше не задаёт tracking литералом 0. Новые проверки реального label:
+
+```sh
+native/compose/gradlew.bat -p native/compose :desktopTest --tests pics.lab.ui.TypographyRenderTest.choiceboxLabelUsesTheCompleteResolvedComponentProfile
+pnpm --filter @labpics/ui-docs exec playwright test selection.spec.ts -g "choicebox label follows" --project=chromium --workers=1
+```
+
+Они прошли с исходной ссылкой `selection.choicebox.$textStyle=body-emphasized`
+(500, tracking 0), затем с временной ссылкой `body` (400, tracking −0.25 px).
+Для различающего опыта после смены ссылки выполнены `generate-components.mjs`
+и сборки tokens → core → react. Compose проверил весь tuple и ширину строки;
+Lit и React — все computed text metrics. После опыта исходная ссылка
+восстановлена и пакеты пересобраны. Финальная проверка: 118 unit-тестов tokens,
+typecheck, шесть browser-сценариев исходного профиля, два offscreen-сценария
+`TypographyRenderTest`; с альтернативной ролью отдельно прошли один native
+и два browser-сценария.
+
+Dev-сервер между сборками разных профилей необходимо перезапускать: живой
+процесс Node может сохранять уже импортированный SSR-модуль с предыдущими
+стилями. Первый такой прогон показал старый Medium у Lit; новый процесс после
+той же сборки дал Regular на обеих web-привязках. Обычный production-прогон
+Playwright запускает собранный сайт новым процессом.

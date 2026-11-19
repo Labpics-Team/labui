@@ -1,6 +1,6 @@
 import { cssVarName } from '../domain/alias.js';
 import type { ResolvedTokens } from '../domain/build.js';
-import { authoredTextStyles } from '../domain/text-styles.js';
+import { authoredTextStyles, textStyleCssVarName } from '../domain/text-styles.js';
 import type { ResolvedAlias, ResolvedToken } from '../domain/token.js';
 
 /**
@@ -28,7 +28,7 @@ export function generateTs(tokens: ResolvedTokens): string {
           ]
             .map(
               (property) =>
-                `    ${property.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())}: 'var(--lab-${property}-${role})',`,
+                `    ${property.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())}: 'var(${textStyleCssVarName(role, property)})',`,
             )
             .join('\n')}\n  },`,
       ),

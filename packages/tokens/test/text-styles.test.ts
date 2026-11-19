@@ -4,7 +4,7 @@ import components from '../src/components.js';
 import { defaultConfig } from '../src/config/default-config.js';
 import { resolveConfig } from '../src/config/merge.js';
 import { authoredTextStyles, buildTextStyleTokens } from '../src/domain/text-styles.js';
-import { generate } from '../src/generate/index.js';
+import { generate, generateFromOverride } from '../src/generate/index.js';
 import { resolveTextStyles } from '../src/resolve-text-styles.mjs';
 
 const source = JSON.parse(
@@ -81,5 +81,34 @@ describe('authored text roles', () => {
     expect(JSON.parse(generate(custom).dtcg).typography).toEqual(
       JSON.parse(generate(defaultConfig).dtcg).typography,
     );
+  });
+
+  it('keeps authored roles distinct when fluid steps and weights use the same names', () => {
+    const authored = JSON.parse(generate(defaultConfig).dtcg).typography;
+    for (const role of Object.keys(authoredTextStyles)) {
+      for (const step of ['0', '1']) {
+        const artifacts = generateFromOverride({ typography: { stepLabels: { [step]: role } } });
+        const dtcg = JSON.parse(artifacts.dtcg);
+        expect(dtcg.typography).toEqual(authored);
+        expect(dtcg['font-size'][role].$extensions['com.labpics.ui-tokens'].fluid.step).toBe(
+          Number(step),
+        );
+        expect(artifacts.css).toContain(`--lab-font-size-${role}:`);
+        expect(artifacts.css).toContain(`--lab-text-${role}-font-size:`);
+        const names = [...artifacts.css.matchAll(/^\s*(--lab-[\w-]+):/gm)].map((match) => match[1]);
+        expect(new Set(names).size).toBe(names.length);
+        expect(artifacts.ts).toContain(`'var(--lab-text-${role}-font-size)'`);
+      }
+      const weighted = generateFromOverride({ typography: { weights: { [role]: 350 } } });
+      expect(JSON.parse(weighted.dtcg)['font-weight'][role].$value).toBe(350);
+      expect(JSON.parse(weighted.dtcg).typography).toEqual(authored);
+      expect(weighted.css).toContain(`--lab-font-weight-${role}: 350;`);
+    }
+  });
+
+  it('still rejects a real collision with a component metric', () => {
+    expect(() =>
+      generateFromOverride({ typography: { stepLabels: { '0': 'card-title' } } }),
+    ).toThrow('Duplicate component token: font-size/card-title');
   });
 });

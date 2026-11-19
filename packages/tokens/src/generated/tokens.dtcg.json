@@ -2225,54 +2225,6 @@
         }
       }
     },
-    "body": {
-      "$type": "dimension",
-      "$value": {
-        "value": 16,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "1rem"
-        }
-      }
-    },
-    "body-emphasized": {
-      "$type": "dimension",
-      "$value": {
-        "value": 16,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "1rem"
-        }
-      }
-    },
-    "headline": {
-      "$type": "dimension",
-      "$value": {
-        "value": 20,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "1.25rem"
-        }
-      }
-    },
-    "caption-xs": {
-      "$type": "dimension",
-      "$value": {
-        "value": 12,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "0.75rem"
-        }
-      }
-    },
     "button-s": {
       "$type": "dimension",
       "$value": {
@@ -2495,54 +2447,6 @@
       "$type": "number",
       "$value": 0.8582
     },
-    "body": {
-      "$type": "dimension",
-      "$value": {
-        "value": 24,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "1.5rem"
-        }
-      }
-    },
-    "body-emphasized": {
-      "$type": "dimension",
-      "$value": {
-        "value": 24,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "1.5rem"
-        }
-      }
-    },
-    "headline": {
-      "$type": "dimension",
-      "$value": {
-        "value": 20,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "1.25rem"
-        }
-      }
-    },
-    "caption-xs": {
-      "$type": "dimension",
-      "$value": {
-        "value": 12,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "0.75rem"
-        }
-      }
-    },
     "button-s": {
       "$type": "number",
       "$value": 0.8571
@@ -2669,22 +2573,6 @@
       "$type": "number",
       "$value": 700
     },
-    "body": {
-      "$type": "number",
-      "$value": 400
-    },
-    "body-emphasized": {
-      "$type": "number",
-      "$value": 500
-    },
-    "headline": {
-      "$type": "number",
-      "$value": 500
-    },
-    "caption-xs": {
-      "$type": "number",
-      "$value": 500
-    },
     "button": {
       "$type": "number",
       "$value": 500
@@ -2786,54 +2674,6 @@
     "6xl": {
       "$type": "number",
       "$value": -0.0469
-    },
-    "body": {
-      "$type": "dimension",
-      "$value": {
-        "value": -0.25,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "-0.015625rem"
-        }
-      }
-    },
-    "body-emphasized": {
-      "$type": "dimension",
-      "$value": {
-        "value": 0,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "0rem"
-        }
-      }
-    },
-    "headline": {
-      "$type": "dimension",
-      "$value": {
-        "value": -0.33,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "-0.020625rem"
-        }
-      }
-    },
-    "caption-xs": {
-      "$type": "dimension",
-      "$value": {
-        "value": 0,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "0rem"
-        }
-      }
     },
     "button-s-description": {
       "$type": "number",

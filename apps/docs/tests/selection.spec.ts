@@ -1,4 +1,5 @@
 import { type Locator, expect, test } from '@playwright/test';
+import components from '../../../packages/tokens/src/components.js';
 
 const values = (form: Locator) =>
   form.evaluate((node) => Array.from(new FormData(node as HTMLFormElement).entries()));
@@ -85,6 +86,32 @@ for (const renderer of ['lit', 'react'])
   }
 
 for (const renderer of ['lit', 'react']) {
+  test(`${renderer}: choicebox label follows its complete resolved text profile`, async ({
+    page,
+  }) => {
+    const label = page
+      .getByTestId(`${renderer}-form`)
+      .locator('[data-variant="card"] .lab-selection-label')
+      .first();
+    await expect(label).toBeVisible();
+    const actual = await label.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        fontSize: style.fontSize,
+        lineHeight: style.lineHeight,
+        fontWeight: style.fontWeight,
+        letterSpacing: style.letterSpacing === 'normal' ? '0px' : style.letterSpacing,
+      };
+    });
+    const expected = components.selection.choicebox;
+    expect(actual).toEqual({
+      fontSize: `${expected.fontSize}px`,
+      lineHeight: `${expected.lineHeight}px`,
+      fontWeight: `${expected.fontWeight}`,
+      letterSpacing: `${expected.letterSpacing}px`,
+    });
+  });
+
   test(`${renderer}: native form values, mixed, required, reset and fieldset`, async ({ page }) => {
     const form = page.getByTestId(`${renderer}-form`);
     const check = form.getByRole('checkbox', { name: 'Условия', exact: true });

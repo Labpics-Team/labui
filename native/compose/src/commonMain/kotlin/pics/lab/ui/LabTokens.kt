@@ -184,10 +184,6 @@ internal object LabTokens {
     const val FontSize4xl: Float = 64.1194f
     const val FontSize5xl: Float = 84.6376f
     const val FontSize6xl: Float = 111.7217f
-    const val FontSizeBody: Float = 16f
-    const val FontSizeBodyEmphasized: Float = 16f
-    const val FontSizeHeadline: Float = 20f
-    const val FontSizeCaptionXs: Float = 12f
     const val FontSizeButtonS: Float = 14f
     const val FontSizeButtonM: Float = 16f
     const val FontSizeButtonL: Float = 16f
@@ -213,10 +209,6 @@ internal object LabTokens {
     const val LineHeight4xl: Float = 1f
     const val LineHeight5xl: Float = 0.9761f
     const val LineHeight6xl: Float = 0.8582f
-    const val LineHeightBody: Float = 24f
-    const val LineHeightBodyEmphasized: Float = 24f
-    const val LineHeightHeadline: Float = 20f
-    const val LineHeightCaptionXs: Float = 12f
     const val LineHeightButtonS: Float = 0.8571f
     const val LineHeightButtonM: Float = 1.5f
     const val LineHeightButtonL: Float = 1.5f
@@ -236,10 +228,6 @@ internal object LabTokens {
     const val FontWeightMedium: Float = 500f
     const val FontWeightSemibold: Float = 600f
     const val FontWeightBold: Float = 700f
-    const val FontWeightBody: Float = 400f
-    const val FontWeightBodyEmphasized: Float = 500f
-    const val FontWeightHeadline: Float = 500f
-    const val FontWeightCaptionXs: Float = 500f
     const val FontWeightButton: Float = 500f
     const val FontWeightButtonSDescription: Float = 500f
     const val FontWeightButtonMDescription: Float = 400f
@@ -265,10 +253,6 @@ internal object LabTokens {
     const val LetterSpacing4xl: Float = -0.0454f
     const val LetterSpacing5xl: Float = -0.0466f
     const val LetterSpacing6xl: Float = -0.0469f
-    const val LetterSpacingBody: Float = -0.25f
-    const val LetterSpacingBodyEmphasized: Float = 0f
-    const val LetterSpacingHeadline: Float = -0.33f
-    const val LetterSpacingCaptionXs: Float = 0f
     const val LetterSpacingButtonSDescription: Float = 0f
     const val LetterSpacingButtonS: Float = 0f
     const val LetterSpacingButtonMDescription: Float = -0.0156f
