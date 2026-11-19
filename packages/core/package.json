@@ -327,7 +327,18 @@
       }
     },
     "./drag-button.css": "./dist/drag-button.css",
-    "./button-fill.css": "./dist/button-fill.css"
+    "./button-fill.css": "./dist/button-fill.css",
+    "./tooltip.css": "./dist/tooltip.css",
+    "./tooltip/runtime": {
+      "import": {
+        "types": "./dist/components/tooltip/runtime.d.ts",
+        "default": "./dist/components/tooltip/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/tooltip/runtime.d.cts",
+        "default": "./dist/components/tooltip/runtime.cjs"
+      }
+    }
   },
   "files": ["dist"],
   "sideEffects": [
@@ -360,7 +371,8 @@
     "./dist/select.css",
     "./dist/avatar.css",
     "./dist/drag-button.css",
-    "./dist/button-fill.css"
+    "./dist/button-fill.css",
+    "./dist/tooltip.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
@@ -392,7 +404,8 @@
     "@zag-js/tooltip": "1.41.2",
     "@zag-js/types": "1.41.2",
     "@zag-js/vanilla": "1.41.2",
-    "lit": "3.3.3"
+    "lit": "3.3.3",
+    "@floating-ui/dom": "1.7.6"
   },
   "peerDependencies": {
     "@lit-labs/ssr": "^4.1.0"

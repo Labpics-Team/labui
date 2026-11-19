@@ -13,7 +13,9 @@
   /** Пропы <lab-tooltip> — типы взяты прямо из класса ядра (LabTooltip). */
   interface Props {
     placement?: LabTooltip['placement'];
+    type?: LabTooltip['type'];
     size?: LabTooltip['size'];
+    tail?: LabTooltip['tail'];
     content?: LabTooltip['content'];
     openDelay?: LabTooltip['openDelay'];
     closeDelay?: LabTooltip['closeDelay'];
@@ -25,20 +27,22 @@
     [key: string]: unknown;
   }
 
-  let { placement, size, content, openDelay, closeDelay, disabled, arrow, onOpenChange, children, slots, ...rest }: Props = $props();
+  let { placement, type, size, tail, content, openDelay, closeDelay, disabled, arrow, onOpenChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'placement', attr: 'placement', kind: 'string' },
+    { name: 'type', attr: 'type', kind: 'string' },
     { name: 'size', attr: 'size', kind: 'string' },
+    { name: 'tail', attr: 'tail', kind: 'string' },
     { name: 'content', attr: 'content', kind: 'string' },
     { name: 'openDelay', attr: 'open-delay', kind: 'string' },
     { name: 'closeDelay', attr: 'close-delay', kind: 'string' },
     { name: 'disabled', attr: 'disabled', kind: 'boolean' },
-    { name: 'arrow', attr: 'arrow', kind: 'boolean' },
+    { name: 'arrow', attr: 'arrow', kind: 'prop' },
   ];
 
   const server = untrack(() => renderElementParts('lab-tooltip', {
-    specs, props: { placement, size, content, openDelay, closeDelay, disabled, arrow }, attributes: rest,
+    specs, props: { placement, type, size, tail, content, openDelay, closeDelay, disabled, arrow }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -47,7 +51,7 @@
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
 </script>
 
-<lab-tooltip bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { placement, size, content, openDelay, closeDelay, disabled, arrow } } }}>
+<lab-tooltip bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { placement, type, size, tail, content, openDelay, closeDelay, disabled, arrow } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

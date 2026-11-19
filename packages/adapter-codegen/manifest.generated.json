@@ -2288,8 +2288,18 @@
           "kind": "string"
         },
         {
+          "name": "type",
+          "attr": "type",
+          "kind": "string"
+        },
+        {
           "name": "size",
           "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "tail",
+          "attr": "tail",
           "kind": "string"
         },
         {
@@ -2315,7 +2325,7 @@
         {
           "name": "arrow",
           "attr": "arrow",
-          "kind": "boolean"
+          "kind": "prop"
         }
       ],
       "events": [

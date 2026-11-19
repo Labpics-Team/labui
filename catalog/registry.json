@@ -437,6 +437,10 @@
       "web": {
         "subpath": "tooltip",
         "reactExport": "Tooltip"
+      },
+      "profile": "tooltip",
+      "native": {
+        "symbol": "LabTooltip"
       }
     },
     {
@@ -464,7 +468,9 @@
         "subpath": "avatar",
         "reactExport": "Avatar"
       },
-      "native": { "symbol": "LabAvatar" },
+      "native": {
+        "symbol": "LabAvatar"
+      },
       "profile": "avatar"
     },
     {
