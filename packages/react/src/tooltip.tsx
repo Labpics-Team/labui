@@ -1,69 +1,52 @@
-/**
- * <Tooltip> — the native-React twin of the Lit `<lab-tooltip>` (ADR-0001), and
- * the React half of the positioned-overlay canon.
- *
- * Same axes, same `@zag-js/tooltip` machine through the SAME Behaviors seam — here
- * via `useZag` instead of the Lit `ZagController`. The machine owns the open
- * lifecycle (hover/focus + openDelay/closeDelay), Escape-to-dismiss, `role="tooltip"`
- * + `aria-describedby`, and the DYNAMIC POSITIONING (Zag popper / Floating UI). The
- * component only spreads prop-getters onto native elements and paints with the SAME
- * `--lab-*` roles, so parity is CSS, not a second behaviour implementation.
- *
- * ── The overlay canon (React half) ───────────────────────────────────────────
- * The floating layer renders into a `createPortal` at `document.body`. That is the
- * idiomatic React escape hatch from ancestor `overflow:hidden` and stacking
- * contexts — the same guarantee the Lit twin gets from `strategy:'fixed'` inside
- * its shadow root. The portal is gated on a `mounted` flag so the server and the
- * first hydration pass emit NOTHING for it: a tooltip is client-only, so there is
- * no SSR markup to mismatch. The positioning config (`strategy:'fixed'`,
- * placement) is identical to the Lit element's — one machine, two renderers.
- *
- * Client Component: a tooltip is interactive (open state, positioning). It renders
- * as a leaf under a Server Component shell — never a `'use client'` page (dive-next P1).
- *
- * The axis types come from @labpics/ui-core (type-only — no Lit runtime), so the
- * Lit and React APIs share ONE source of truth and cannot drift.
- */
 'use client';
+import {
+  type LabTooltipPlacement,
+  type LabTooltipSize,
+  type LabTooltipTail,
+  type LabTooltipType,
+  mountTooltip,
+} from '@labpics/ui-core/tooltip/runtime';
+import {
+  Children,
+  type ReactElement,
+  type ReactNode,
+  type Ref,
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import '@labpics/ui-materials/material.css';
+import '@labpics/ui-core/tooltip.css';
 
-import type { MachineModule, SchemaOf } from '@labpics/ui-core';
-import type { LabTooltipPlacement, LabTooltipSize } from '@labpics/ui-core/tooltip';
-import * as tooltipMachine from '@zag-js/tooltip';
-import { type ReactNode, useEffect, useId, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { useZag } from './use-zag.js';
-import './tooltip.css';
-
-type TooltipSchema = SchemaOf<tooltipMachine.Service>;
-type TooltipApi = tooltipMachine.Api;
-
-const tooltipModule: MachineModule<TooltipSchema, TooltipApi> = tooltipMachine;
+const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 export interface TooltipProps {
-  /** The tooltip body — text or rich content (parity with the Lit `content`/slot). */
+  /** Supplementary non-interactive text; essential instructions belong inline. */
   content?: ReactNode;
-  /** Where the floating layer sits relative to the trigger. */
   placement?: LabTooltipPlacement;
-  /** Control size — drives content padding, font-size and max-width. */
+  type?: LabTooltipType;
+  /** M is authored; S and L are compatibility extensions. */
   size?: LabTooltipSize;
-  /** Delay in ms before the tooltip opens on hover/focus. */
+  tail?: LabTooltipTail;
   openDelay?: number;
-  /** Delay in ms before the tooltip closes. */
   closeDelay?: number;
-  /** When true, the machine never opens. */
   disabled?: boolean;
-  /** Whether to render the pointing arrow. */
   arrow?: boolean;
-  /** Fires when the machine opens or closes (machine is the source of truth). */
   onOpenChange?: (open: boolean) => void;
-  /** The trigger content — wrapped in the accessible trigger button. */
+  /** One native control or ref-forwarding control, e.g. Button. Plain text becomes focusable. */
   children?: ReactNode;
 }
 
 export function Tooltip({
   content,
   placement = 'bottom',
+  type = 'neutral',
   size = 'm',
+  tail = 'chevron',
   openDelay = 400,
   closeDelay = 150,
   disabled = false,
@@ -71,39 +54,90 @@ export function Tooltip({
   onOpenChange,
   children,
 }: TooltipProps): ReactNode {
-  const api = useZag(tooltipModule, {
-    id: useId(),
+  const trigger = useRef<HTMLElement | null>(null);
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+  const positioner = useRef<HTMLDivElement>(null);
+  const surface = useRef<HTMLDivElement>(null);
+  const pointer = useRef<HTMLSpanElement>(null);
+  const controller = useRef<ReturnType<typeof mountTooltip>>();
+  const child = isValidElement(children)
+    ? (Children.only(children) as ReactElement<{ ref?: Ref<HTMLElement> }>)
+    : null;
+  // React 18 stores ref on the element; React 19 stores it in props. Inspect
+  // value descriptors so neither version's deprecated getter is evaluated.
+  const childRef: Ref<HTMLElement> | undefined = child
+    ? (Object.getOwnPropertyDescriptor(child.props, 'ref')?.value ??
+      Object.getOwnPropertyDescriptor(child, 'ref')?.value)
+    : undefined;
+  const setTrigger = useCallback(
+    (node: HTMLElement | null) => {
+      trigger.current = node;
+      setTarget(node);
+      if (typeof childRef === 'function') {
+        const cleanup = (childRef as (node: HTMLElement | null) => unknown)(node);
+        if (typeof cleanup === 'function')
+          return () => {
+            trigger.current = null;
+            setTarget(null);
+            cleanup();
+          };
+      } else if (childRef) (childRef as { current: HTMLElement | null }).current = node;
+    },
+    [childRef],
+  );
+  const options = {
+    placement,
     openDelay,
     closeDelay,
     disabled,
-    positioning: { placement, strategy: 'fixed' },
-    onOpenChange: onOpenChange ? (details) => onOpenChange(details.open) : undefined,
+    arrow,
+    tail,
+    description: () => surface.current?.textContent ?? '',
+    onOpenChange,
+  };
+  const latest = useRef(options);
+  latest.current = options;
+  useClientLayoutEffect(() => {
+    if (!target) return;
+    if (!trigger.current || !positioner.current || !surface.current || !pointer.current)
+      throw new TypeError('Tooltip needs a control forwarding its ref to a native element.');
+    controller.current = mountTooltip(
+      trigger.current,
+      positioner.current,
+      surface.current,
+      pointer.current,
+      latest.current,
+    );
+    return () => {
+      controller.current?.dispose();
+      controller.current = undefined;
+    };
+  }, [target]);
+  useClientLayoutEffect(() => {
+    controller.current?.update(options);
   });
-
-  // Overlays are client-only: gate the body portal on mount so SSR/first hydration
-  // emit nothing for the floating layer (no markup to mismatch).
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  const floating = (
-    <div {...api.getPositionerProps()} className="lab-tooltip-positioner">
-      <div {...api.getContentProps()} className="lab-tooltip-content" data-size={size}>
-        {content}
-        {arrow && (
-          <span {...api.getArrowProps()} className="lab-tooltip-arrow">
-            <span {...api.getArrowTipProps()} className="lab-tooltip-arrow-tip" />
-          </span>
-        )}
-      </div>
-    </div>
-  );
-
   return (
     <>
-      <button type="button" {...api.getTriggerProps()} className="lab-tooltip-trigger">
-        {children}
-      </button>
-      {mounted && createPortal(floating, document.body)}
+      {child ? (
+        cloneElement(child, { ref: setTrigger })
+      ) : (
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: Passive text needs a keyboard path to its supplementary description.
+        <span ref={setTrigger} tabIndex={0} className="lab-tooltip-fallback">
+          {children}
+        </span>
+      )}
+      <div ref={positioner} {...{ popover: 'manual' }} className="lab-tooltip-positioner">
+        <div ref={surface} className="lab-tooltip-content" data-size={size} data-type={type} hidden>
+          {content}
+          <span
+            ref={pointer}
+            aria-hidden="true"
+            hidden={!arrow}
+            className="lab-tooltip-arrow"
+            data-tail={tail}
+          />
+        </div>
+      </div>
     </>
   );
 }

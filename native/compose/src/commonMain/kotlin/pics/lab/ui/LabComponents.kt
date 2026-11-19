@@ -22,6 +22,8 @@ public enum class LabAvatarColor(internal val role: String) { Red("avatar-fill-r
 
 public enum class LabAvatarStatus(internal val role: String?, internal val label: String) { None(null, ""), Online("label-info-primary", "В сети"), Offline("label-quaternary", "Не в сети"), Away("label-warning-primary", "Нет на месте"), Dnd("label-danger-primary", "Не беспокоить") }
 
+public enum class LabTooltipType(internal val surfaceRole: String, internal val labelRole: String) { Neutral("bg-tertiary", "label-primary"), Inverted("bg-inverted", "label-inverted-primary"), Accent("fill-accent", "label-on-accent") }
+
 internal object LabComponents {
     val ButtonS = LabButtonMetrics(36f, 9999f, 12f, 8f, 20f, 14f, 12f, 0f, 500f, 0f, 0.72f)
     val ButtonM = LabButtonMetrics(48f, 16f, 12f, 12f, 24f, 16f, 24f, 0f, 400f, -0.25f, 1f)
@@ -745,4 +747,84 @@ internal object LabComponents {
     const val SliderLargeIndicatorInset = 12f
     const val SliderLargeMaskWidth = 7f
     const val SliderLargeMaskBlur = 2f
+    const val TooltipRadius = 12f
+    const val TooltipCornerSmoothing = 0.6f
+    const val TooltipPadding = 12f
+    const val TooltipMinWidth = 48f
+    const val TooltipMaxWidth = 352f
+    const val TooltipGap = 4f
+    const val TooltipTailWidth = 28f
+    const val TooltipTailHeight = 8f
+    const val TooltipTailChevronViewBox = 28f
+    const val TooltipTailChevronX = 0f
+    const val TooltipTailChevronY = 0f
+    // Shared contour: transform the canvas, never mutate this path.
+    val TooltipTailChevronPath by lazy { androidx.compose.ui.graphics.Path().apply {
+        moveTo(13.5332f, 8f)
+        cubicTo(11.3314f, 8f, 12.0314f, 0.0000253097f, 3.78929f, 0f)
+        lineTo(23.277f, 0f)
+        cubicTo(15.7349f, 0.00000141942f, 15.7349f, 8f, 13.5332f, 8f)
+        close()
+    } }
+    const val TooltipTailBubbleViewBox = 28f
+    const val TooltipTailBubbleX = 6f
+    const val TooltipTailBubbleY = 0f
+    const val TooltipTailBubbleWidth = 17f
+    const val TooltipTailBubbleHeight = 15f
+    // Shared contour: transform the canvas, never mutate this path.
+    val TooltipTailBubblePath by lazy { androidx.compose.ui.graphics.Path().apply {
+        moveTo(13f, 7f)
+        cubicTo(15.2091f, 7f, 17f, 8.79086f, 17f, 11f)
+        cubicTo(17f, 13.2091f, 15.2091f, 15f, 13f, 15f)
+        cubicTo(10.7909f, 15f, 9f, 13.2091f, 9f, 11f)
+        cubicTo(9f, 8.79086f, 10.7909f, 7f, 13f, 7f)
+        close()
+        moveTo(12f, 0f)
+        cubicTo(12f, 3.31371f, 9.31371f, 6f, 6f, 6f)
+        cubicTo(2.68629f, 6f, 0f, 3.31371f, 0f, 0f)
+        lineTo(12f, 0f)
+        close()
+    } }
+    const val TooltipTypesNeutralSurfaceRole = "bg-tertiary"
+    const val TooltipTypesNeutralLabelRole = "label-primary"
+    const val TooltipTypesInvertedSurfaceRole = "bg-inverted"
+    const val TooltipTypesInvertedLabelRole = "label-inverted-primary"
+    const val TooltipTypesAccentSurfaceRole = "fill-accent"
+    const val TooltipTypesAccentLabelRole = "label-on-accent"
+    val TooltipShadow = listOf(
+        LabShadowLayer(0f, 16f, 36f, 0f, "bg-static-dark", 0.12f),
+        LabShadowLayer(0f, 24f, 48f, 0f, "bg-static-dark", 0.04f),
+        LabShadowLayer(0f, 36f, 64f, 0f, "bg-static-dark", 0.02f),
+        LabShadowLayer(0f, 48f, 96f, 0f, "bg-static-dark", 0.01f),
+    )
+    const val TooltipBodyViewBox = 202f
+    const val TooltipBodyX = 0f
+    const val TooltipBodyY = 0f
+    const val TooltipBodyStretchWidth = 202f
+    const val TooltipBodyStretchHeight = 48f
+    // Shared contour: transform the canvas, never mutate this path.
+    fun TooltipBodyPath(width: Float, height: Float, scale: Float) = androidx.compose.ui.graphics.Path().apply {
+        moveTo(0f * scale, 19.2f * scale)
+        cubicTo(0f * scale, 12.4794f * scale, 0f * scale, 9.11905f * scale, 1.30792f * scale, 6.55211f * scale)
+        cubicTo(2.4584f * scale, 4.29417f * scale, 4.29417f * scale, 2.4584f * scale, 6.55211f * scale, 1.30792f * scale)
+        cubicTo(9.11905f * scale, 0f * scale, 12.4794f * scale, 0f * scale, 19.2f * scale, 0f * scale)
+        lineTo(182.8f * scale + (width - 202f * scale), 0f * scale)
+        cubicTo(189.521f * scale + (width - 202f * scale), 0f * scale, 192.881f * scale + (width - 202f * scale), 0f * scale, 195.448f * scale + (width - 202f * scale), 1.30792f * scale)
+        cubicTo(197.706f * scale + (width - 202f * scale), 2.4584f * scale, 199.542f * scale + (width - 202f * scale), 4.29417f * scale, 200.692f * scale + (width - 202f * scale), 6.55211f * scale)
+        cubicTo(202f * scale + (width - 202f * scale), 9.11905f * scale, 202f * scale + (width - 202f * scale), 12.4794f * scale, 202f * scale + (width - 202f * scale), 19.2f * scale)
+        lineTo(202f * scale + (width - 202f * scale), 28.8f * scale + (height - 48f * scale))
+        cubicTo(202f * scale + (width - 202f * scale), 35.5206f * scale + (height - 48f * scale), 202f * scale + (width - 202f * scale), 38.8809f * scale + (height - 48f * scale), 200.692f * scale + (width - 202f * scale), 41.4479f * scale + (height - 48f * scale))
+        cubicTo(199.542f * scale + (width - 202f * scale), 43.7058f * scale + (height - 48f * scale), 197.706f * scale + (width - 202f * scale), 45.5416f * scale + (height - 48f * scale), 195.448f * scale + (width - 202f * scale), 46.6921f * scale + (height - 48f * scale))
+        cubicTo(192.881f * scale + (width - 202f * scale), 48f * scale + (height - 48f * scale), 189.521f * scale + (width - 202f * scale), 48f * scale + (height - 48f * scale), 182.8f * scale + (width - 202f * scale), 48f * scale + (height - 48f * scale))
+        lineTo(19.2f * scale, 48f * scale + (height - 48f * scale))
+        cubicTo(12.4794f * scale, 48f * scale + (height - 48f * scale), 9.11905f * scale, 48f * scale + (height - 48f * scale), 6.55211f * scale, 46.6921f * scale + (height - 48f * scale))
+        cubicTo(4.29417f * scale, 45.5416f * scale + (height - 48f * scale), 2.4584f * scale, 43.7058f * scale + (height - 48f * scale), 1.30792f * scale, 41.4479f * scale + (height - 48f * scale))
+        cubicTo(0f * scale, 38.8809f * scale + (height - 48f * scale), 0f * scale, 35.5206f * scale + (height - 48f * scale), 0f * scale, 28.8f * scale + (height - 48f * scale))
+        lineTo(0f * scale, 19.2f * scale)
+        close()
+    }
+    const val TooltipFontSize = 16f
+    const val TooltipLineHeight = 24f
+    const val TooltipFontWeight = 400f
+    const val TooltipLetterSpacing = -0.25f
 }

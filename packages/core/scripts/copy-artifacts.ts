@@ -36,6 +36,7 @@ import { sliderCss } from '../src/components/slider/styles.js';
 import { snackbarCss } from '../src/components/snackbar/styles.js';
 import { switchCss } from '../src/components/switch/styles.js';
 import { tabsCss } from '../src/components/tabs/styles.js';
+import { tooltipCss } from '../src/components/tooltip/styles.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '..', 'src');
@@ -81,6 +82,7 @@ function main(): void {
   writeFileSync(join(dist, 'switch.css'), switchCss);
   writeFileSync(join(dist, 'slider.css'), sliderCss);
   writeFileSync(join(dist, 'tabs.css'), tabsCss);
+  writeFileSync(join(dist, 'tooltip.css'), tooltipCss);
   writeFileSync(join(dist, 'selection-controls.css'), selectionCss);
   writeFileSync(join(dist, 'badge.css'), badgeCss);
   writeFileSync(join(dist, 'kbd.css'), kbdCss);

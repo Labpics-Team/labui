@@ -22,7 +22,7 @@ const upper = (name) =>
 const kotlinString = (value) => JSON.stringify(value).replaceAll('$', '\\$');
 // Authored component contours use explicit absolute commands. Reject unsupported
 // input at generation time instead of parsing or silently losing it at mount.
-function authoredPath(prefix, data) {
+function authoredPath(prefix, data, stretch) {
   const commands = { M: ['moveTo', 2], L: ['lineTo', 2], C: ['cubicTo', 6], Z: ['close', 0] };
   const tokens = [];
   let end = 0;
@@ -43,14 +43,25 @@ function authoredPath(prefix, data) {
     const values = tokens.slice(index, index + count).map(Number);
     if (values.length !== count || values.some((value) => !Number.isFinite(Math.fround(value))))
       throw new Error(`${prefix}: invalid operands for ${command}`);
-    body.push(`        ${method}(${values.map((value) => `${value}f`).join(', ')})`);
+    body.push(
+      `        ${method}(${values
+        .map((value, axis) => {
+          if (!stretch) return `${value}f`;
+          const dimension = axis % 2 === 0 ? 'width' : 'height';
+          const reference = axis % 2 === 0 ? stretch.width : stretch.height;
+          return `${value}f * scale${value > reference / 2 ? ` + (${dimension} - ${reference}f * scale)` : ''}`;
+        })
+        .join(', ')})`,
+    );
     index += count;
   }
   return [
     '    // Shared contour: transform the canvas, never mutate this path.',
-    `    val ${prefix}Path by lazy { androidx.compose.ui.graphics.Path().apply {`,
+    stretch
+      ? `    fun ${prefix}Path(width: Float, height: Float, scale: Float) = androidx.compose.ui.graphics.Path().apply {`
+      : `    val ${prefix}Path by lazy { androidx.compose.ui.graphics.Path().apply {`,
     ...body,
-    '    } }',
+    stretch ? '    }' : '    } }',
   ];
 }
 const lines = [
@@ -66,6 +77,21 @@ for (const [component, definition] of Object.entries(resolvedProfile)) {
   );
 }
 for (const [component, definition] of Object.entries(profile)) {
+  if (
+    definition.types &&
+    Object.values(definition.types).every((type) => type.surfaceRole && type.labelRole)
+  )
+    lines.push(
+      '',
+      `public enum class Lab${upper(component)}Type(internal val surfaceRole: String, internal val labelRole: String) { ${Object.entries(
+        definition.types,
+      )
+        .map(
+          ([name, roles]) =>
+            `${upper(name)}(${kotlinString(roles.surfaceRole)}, ${kotlinString(roles.labelRole)})`,
+        )
+        .join(', ')} }`,
+    );
   if (definition.colors)
     lines.push(
       '',
@@ -110,7 +136,7 @@ function emitConstants(prefix, definition) {
       typeof definition.x === 'number' &&
       typeof definition.y === 'number'
     )
-      lines.push(...authoredPath(prefix, value));
+      lines.push(...authoredPath(prefix, value, definition.stretch));
     else if (typeof value === 'number')
       lines.push(`    const val ${prefix}${upper(name)} = ${value}f`);
     else if (name === 'material' && typeof value === 'string')

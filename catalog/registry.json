@@ -445,6 +445,10 @@
       "web": {
         "subpath": "tooltip",
         "reactExport": "Tooltip"
+      },
+      "profile": "tooltip",
+      "native": {
+        "symbol": "LabTooltip"
       }
     },
     {

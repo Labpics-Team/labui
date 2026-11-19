@@ -1476,5 +1476,93 @@
       "maskWidth": 7,
       "maskBlur": 2
     }
+  },
+  "tooltip": {
+    "sourceRef": {
+      "key": "component-set/Tooltip/Tooltip Direction"
+    },
+    "$textStyle": "body",
+    "radius": 12,
+    "cornerSmoothing": 0.6,
+    "padding": 12,
+    "minWidth": 48,
+    "maxWidth": 352,
+    "gap": 4,
+    "tail": {
+      "width": 28,
+      "height": 8,
+      "chevron": {
+        "viewBox": 28,
+        "x": 0,
+        "y": 0,
+        "data": "M13.5332 8C11.3314 8 12.0314 2.53097e-05 3.78929 0L23.277 0C15.7349 1.41942e-06 15.7349 8 13.5332 8Z"
+      },
+      "bubble": {
+        "viewBox": 28,
+        "x": 6,
+        "y": 0,
+        "width": 17,
+        "height": 15,
+        "data": "M13 7C15.2091 7 17 8.79086 17 11C17 13.2091 15.2091 15 13 15C10.7909 15 9 13.2091 9 11C9 8.79086 10.7909 7 13 7Z M12 0C12 3.31371 9.31371 6 6 6C2.68629 6 0 3.31371 0 0L12 0Z"
+      }
+    },
+    "types": {
+      "neutral": {
+        "surfaceRole": "bg-tertiary",
+        "labelRole": "label-primary"
+      },
+      "inverted": {
+        "surfaceRole": "bg-inverted",
+        "labelRole": "label-inverted-primary"
+      },
+      "accent": {
+        "surfaceRole": "fill-accent",
+        "labelRole": "label-on-accent"
+      }
+    },
+    "shadow": [
+      {
+        "x": 0,
+        "y": 16,
+        "blur": 36,
+        "spread": 0,
+        "colorRole": "bg-static-dark",
+        "opacity": 0.12
+      },
+      {
+        "x": 0,
+        "y": 24,
+        "blur": 48,
+        "spread": 0,
+        "colorRole": "bg-static-dark",
+        "opacity": 0.04
+      },
+      {
+        "x": 0,
+        "y": 36,
+        "blur": 64,
+        "spread": 0,
+        "colorRole": "bg-static-dark",
+        "opacity": 0.02
+      },
+      {
+        "x": 0,
+        "y": 48,
+        "blur": 96,
+        "spread": 0,
+        "colorRole": "bg-static-dark",
+        "opacity": 0.01
+      }
+    ],
+    "body": {
+      "viewBox": 202,
+      "x": 0,
+      "y": 0,
+      "stretch": {
+        "width": 202,
+        "height": 48
+      },
+      "data": "M0 19.2C0 12.4794 0 9.11905 1.30792 6.55211C2.4584 4.29417 4.29417 2.4584 6.55211 1.30792C9.11905 0 12.4794 0 19.2 0L182.8 0C189.521 0 192.881 0 195.448 1.30792C197.706 2.4584 199.542 4.29417 200.692 6.55211C202 9.11905 202 12.4794 202 19.2L202 28.8C202 35.5206 202 38.8809 200.692 41.4479C199.542 43.7058 197.706 45.5416 195.448 46.6921C192.881 48 189.521 48 182.8 48L19.2 48C12.4794 48 9.11905 48 6.55211 46.6921C4.29417 45.5416 2.4584 43.7058 1.30792 41.4479C0 38.8809 0 35.5206 0 28.8L0 19.2Z"
+    }
   }
 }

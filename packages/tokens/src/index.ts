@@ -68,3 +68,5 @@ export { dragButtonProfile } from './drag-button.js';
 export { pinInputProfile } from './pin-input.js';
 
 export { sliderProfile } from './slider.js';
+
+export { tooltipProfile } from './tooltip.js';

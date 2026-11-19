@@ -10,7 +10,7 @@ import '@labpics/ui-core/tooltip';
 import type { LabTooltip } from '@labpics/ui-core/tooltip';
 
 /** Пропы <lab-tooltip>, взятые прямо из класса ядра (LabTooltip). */
-export type TooltipProps = Pick<LabTooltip, 'placement' | 'size' | 'content' | 'openDelay' | 'closeDelay' | 'disabled' | 'arrow'>;
+export type TooltipProps = Pick<LabTooltip, 'placement' | 'type' | 'size' | 'tail' | 'content' | 'openDelay' | 'closeDelay' | 'disabled' | 'arrow'>;
 
 /**
  * <Tooltip> — тонкая Vue-обёртка над <lab-tooltip>.
@@ -22,12 +22,14 @@ export const Tooltip: LabComponent<TooltipProps, 'open-change'> = createLabCompo
 >('lab-tooltip', {
   specs: [
       { name: 'placement', attr: 'placement', kind: 'string' },
+      { name: 'type', attr: 'type', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },
+      { name: 'tail', attr: 'tail', kind: 'string' },
       { name: 'content', attr: 'content', kind: 'string' },
       { name: 'openDelay', attr: 'open-delay', kind: 'string' },
       { name: 'closeDelay', attr: 'close-delay', kind: 'string' },
       { name: 'disabled', attr: 'disabled', kind: 'boolean' },
-      { name: 'arrow', attr: 'arrow', kind: 'boolean' },
+      { name: 'arrow', attr: 'arrow', kind: 'prop' },
   ],
   events: ['open-change'],
 });
