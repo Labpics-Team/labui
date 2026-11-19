@@ -31,6 +31,8 @@ const componentEntries = discoverComponents().map(({ entry }) => entry);
 export default libraryPreset({
   entry: [
     'src/index.ts',
+    'src/components/alert/contract.ts',
+    'src/components/alert/runtime.ts',
     'src/adapter-runtime.ts',
     'src/typography.ts',
     'src/components/icon/runtime.ts',

@@ -1,0 +1,275 @@
+{
+  "fileVersion": "2423213750570316842",
+  "page": "6109:6798",
+  "readAt": "2026-11-19",
+  "source": "https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1",
+  "snapshotSha256": "4d54ce9a04ed0e1ac7214cae55299b8651112fc727503a79a72843ee553e7ed4",
+  "variants": [
+    {
+      "id": "7720:6057",
+      "variant": "Type=Neutral, Quantity=1",
+      "bounds": {
+        "x": 796,
+        "y": 424,
+        "width": 450,
+        "height": 80
+      },
+      "main": {
+        "paddingLeft": 16,
+        "paddingTop": 16,
+        "paddingRight": 16,
+        "paddingBottom": 16,
+        "cornerRadius": 24,
+        "cornerSmoothing": 0,
+        "itemSpacing": 24,
+        "strokeWeight": 1,
+        "strokeAlign": "INSIDE"
+      },
+      "labelGap": 4,
+      "contentPaddingStart": 4,
+      "texts": [
+        {
+          "name": "Alert",
+          "textStyle": "2008:12592",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 500,
+          "letterSpacing": 0
+        },
+        {
+          "name": "Alert description that warning about something",
+          "textStyle": "2008:12580",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "letterSpacing": -0.25
+        }
+      ]
+    },
+    {
+      "id": "7720:6072",
+      "variant": "Type=Danger, Quantity=1",
+      "bounds": {
+        "x": 796,
+        "y": 552,
+        "width": 450,
+        "height": 80
+      },
+      "main": {
+        "paddingLeft": 16,
+        "paddingTop": 16,
+        "paddingRight": 16,
+        "paddingBottom": 16,
+        "cornerRadius": 24,
+        "cornerSmoothing": 0,
+        "itemSpacing": 24,
+        "strokeWeight": 1,
+        "strokeAlign": "INSIDE"
+      },
+      "labelGap": 4,
+      "contentPaddingStart": 4,
+      "texts": [
+        {
+          "name": "Alert",
+          "textStyle": "2008:12592",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 500,
+          "letterSpacing": 0
+        },
+        {
+          "name": "Alert description that warning about something",
+          "textStyle": "2008:12580",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "letterSpacing": -0.25
+        }
+      ]
+    },
+    {
+      "id": "7720:12417",
+      "variant": "Type=Neutral, Quantity=2",
+      "bounds": {
+        "x": 796,
+        "y": 680,
+        "width": 450,
+        "height": 88
+      },
+      "main": {
+        "paddingLeft": 16,
+        "paddingTop": 16,
+        "paddingRight": 16,
+        "paddingBottom": 16,
+        "cornerRadius": 24,
+        "cornerSmoothing": 0,
+        "itemSpacing": 24,
+        "strokeWeight": 1,
+        "strokeAlign": "INSIDE"
+      },
+      "labelGap": 4,
+      "contentPaddingStart": 4,
+      "texts": [
+        {
+          "name": "Alert",
+          "textStyle": "2008:12592",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 500,
+          "letterSpacing": 0
+        },
+        {
+          "name": "Alert description that warning about something",
+          "textStyle": "2008:12580",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "letterSpacing": -0.25
+        }
+      ]
+    },
+    {
+      "id": "7720:12433",
+      "variant": "Type=Danger, Quantity=2",
+      "bounds": {
+        "x": 796,
+        "y": 816,
+        "width": 450,
+        "height": 88
+      },
+      "main": {
+        "paddingLeft": 16,
+        "paddingTop": 16,
+        "paddingRight": 16,
+        "paddingBottom": 16,
+        "cornerRadius": 24,
+        "cornerSmoothing": 0,
+        "itemSpacing": 24,
+        "strokeWeight": 1,
+        "strokeAlign": "INSIDE"
+      },
+      "labelGap": 4,
+      "contentPaddingStart": 4,
+      "texts": [
+        {
+          "name": "Alert",
+          "textStyle": "2008:12592",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 500,
+          "letterSpacing": 0
+        },
+        {
+          "name": "Alert description that warning about something",
+          "textStyle": "2008:12580",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "letterSpacing": -0.25
+        }
+      ]
+    },
+    {
+      "id": "7720:12484",
+      "variant": "Type=Neutral, Quantity=3",
+      "bounds": {
+        "x": 796,
+        "y": 952,
+        "width": 450,
+        "height": 96
+      },
+      "main": {
+        "paddingLeft": 16,
+        "paddingTop": 16,
+        "paddingRight": 16,
+        "paddingBottom": 16,
+        "cornerRadius": 24,
+        "cornerSmoothing": 0,
+        "itemSpacing": 24,
+        "strokeWeight": 1,
+        "strokeAlign": "INSIDE"
+      },
+      "labelGap": 4,
+      "contentPaddingStart": 4,
+      "texts": [
+        {
+          "name": "Alert",
+          "textStyle": "2008:12592",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 500,
+          "letterSpacing": 0
+        },
+        {
+          "name": "Alert description that warning about something",
+          "textStyle": "2008:12580",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "letterSpacing": -0.25
+        }
+      ]
+    },
+    {
+      "id": "7720:12500",
+      "variant": "Type=Danger, Quantity=3",
+      "bounds": {
+        "x": 796,
+        "y": 1096,
+        "width": 450,
+        "height": 96
+      },
+      "main": {
+        "paddingLeft": 16,
+        "paddingTop": 16,
+        "paddingRight": 16,
+        "paddingBottom": 16,
+        "cornerRadius": 24,
+        "cornerSmoothing": 0,
+        "itemSpacing": 24,
+        "strokeWeight": 1,
+        "strokeAlign": "INSIDE"
+      },
+      "labelGap": 4,
+      "contentPaddingStart": 4,
+      "texts": [
+        {
+          "name": "Alert",
+          "textStyle": "2008:12592",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 500,
+          "letterSpacing": 0
+        },
+        {
+          "name": "Alert description that warning about something",
+          "textStyle": "2008:12580",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "letterSpacing": -0.25
+        }
+      ]
+    }
+  ],
+  "stack": {
+    "slice": 8,
+    "materialHeight": 16,
+    "bottomRadius": 8,
+    "first": {
+      "inset": 24,
+      "opacity": 0.76,
+      "material": "Base"
+    },
+    "second": {
+      "inset": 48,
+      "opacity": 0.52,
+      "material": "Muted"
+    }
+  },
+  "notes": [
+    "Danger changes only the leading icon role.",
+    "Live examples are 446 units wide, masters 450; width is content/application-owned.",
+    "Anatomy lists Labels, Icon, Control, Alert container, Alert stacks."
+  ]
+}

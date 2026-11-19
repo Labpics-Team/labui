@@ -70,3 +70,5 @@ export { pinInputProfile } from './pin-input.js';
 export { sliderProfile } from './slider.js';
 
 export { tooltipProfile } from './tooltip.js';
+
+export { alertProfile } from './alert.js';

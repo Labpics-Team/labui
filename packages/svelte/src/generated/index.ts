@@ -6,6 +6,7 @@
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
 export { default as Accordion } from './Accordion.svelte';
+export { default as Alert } from './Alert.svelte';
 export { default as AlertDialog } from './AlertDialog.svelte';
 export { default as Avatar } from './Avatar.svelte';
 export { default as Badge } from './Badge.svelte';

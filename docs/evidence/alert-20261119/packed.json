@@ -1,0 +1,1948 @@
+{
+  "archives": [
+    {
+      "name": "labpics-ui-tokens-0.0.0.tgz",
+      "sha256": "c46686108c7769a07ce0560cc5898c2019d9ae40877f1962dd7230a23058d92e"
+    },
+    {
+      "name": "labpics-ui-shadow-0.0.0.tgz",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "labpics-ui-materials-0.0.0.tgz",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "labpics-fonts-0.0.0.tgz",
+      "sha256": "d0d46708a7b04e7fca9900afc5735ca7a72fa5ae1082787ea603199b632b2fef"
+    },
+    {
+      "name": "labui-colors-0.0.0.tgz",
+      "sha256": "56ba4da1572ea321215974308bf0eb76333e8b583650b69e67d69bffacee7351"
+    },
+    {
+      "name": "labpics-ui-core-0.0.0.tgz",
+      "sha256": "d8e4aa49730dac56a3433c26e52a74d5d1a0570a50eb05f8e9accbb1c81d114a"
+    },
+    {
+      "name": "labpics-ui-react-0.0.0.tgz",
+      "sha256": "e2d816a692371748b40ebdf9f1891810189206360596616d8465196c8029bfbd"
+    },
+    {
+      "name": "labpics-ui-vue-0.0.0.tgz",
+      "sha256": "99b5f04c504d9b3dd84ed9ab74350bdce44987ed092eae9d90e4c9c041d20492"
+    },
+    {
+      "name": "labpics-ui-solid-0.0.0.tgz",
+      "sha256": "3866b8023e7f8b59a5a3550a8c24999dc19c9b3439068d87d59482298b685749"
+    },
+    {
+      "name": "labpics-ui-svelte-0.0.0.tgz",
+      "sha256": "d48a76ea6affed27a4370b06a0c39c102eea26e8d32e66686e9f766400b27bca"
+    },
+    {
+      "name": "labpics-ui-astro-0.0.0.tgz",
+      "sha256": "68707ac15e9ae87be2812c9631457507113f6bd1f2c576b52491038358cf6ca2"
+    }
+  ],
+  "publicIcons": false,
+  "declarations": true,
+  "records": [
+    {
+      "engine": "chromium",
+      "theme": "light",
+      "scale": 100,
+      "material": "solid",
+      "width": 450,
+      "height": 96,
+      "frontHeight": 80,
+      "radius": "24px",
+      "textRight": 409.578125,
+      "closeX": 434,
+      "stackHeight": 16,
+      "lineBoxes": [
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            704.671875
+          ]
+        },
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            728.671875
+          ]
+        }
+      ],
+      "svg": 24,
+      "paints": [
+        {
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgb(255, 255, 255)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgb(247, 248, 250)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgb(255, 255, 255)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "light",
+      "scale": 100,
+      "material": "acrylic",
+      "width": 450,
+      "height": 96,
+      "frontHeight": 80,
+      "radius": "24px",
+      "textRight": 409.578125,
+      "closeX": 434,
+      "stackHeight": 16,
+      "lineBoxes": [
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            704.671875
+          ]
+        },
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            728.671875
+          ]
+        }
+      ],
+      "svg": 24,
+      "paints": [
+        {
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "light",
+      "scale": 100,
+      "material": "glass",
+      "width": 450,
+      "height": 96,
+      "frontHeight": 80,
+      "radius": "24px",
+      "textRight": 409.578125,
+      "closeX": 434,
+      "stackHeight": 16,
+      "lineBoxes": [
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            704.671875
+          ]
+        },
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            728.671875
+          ]
+        }
+      ],
+      "svg": 24,
+      "paints": [
+        {
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "light",
+      "scale": 125,
+      "material": "solid",
+      "width": 450,
+      "height": 149.984375,
+      "frontHeight": 129.984375,
+      "radius": "30px",
+      "textRight": 394,
+      "closeX": 424,
+      "stackHeight": 20,
+      "lineBoxes": [
+        {
+          "height": 30,
+          "lineHeight": 30,
+          "lineTops": [
+            887.0625
+          ]
+        },
+        {
+          "height": 59.984375,
+          "lineHeight": 30,
+          "lineTops": [
+            917.0625,
+            947.0625
+          ]
+        }
+      ],
+      "svg": 30,
+      "paints": [
+        {
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgb(255, 255, 255)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgb(247, 248, 250)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgb(255, 255, 255)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "light",
+      "scale": 125,
+      "material": "acrylic",
+      "width": 450,
+      "height": 149.984375,
+      "frontHeight": 129.984375,
+      "radius": "30px",
+      "textRight": 394,
+      "closeX": 424,
+      "stackHeight": 20,
+      "lineBoxes": [
+        {
+          "height": 30,
+          "lineHeight": 30,
+          "lineTops": [
+            887.0625
+          ]
+        },
+        {
+          "height": 59.984375,
+          "lineHeight": 30,
+          "lineTops": [
+            917.0625,
+            947.0625
+          ]
+        }
+      ],
+      "svg": 30,
+      "paints": [
+        {
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "light",
+      "scale": 125,
+      "material": "glass",
+      "width": 450,
+      "height": 149.984375,
+      "frontHeight": 129.984375,
+      "radius": "30px",
+      "textRight": 394,
+      "closeX": 424,
+      "stackHeight": 20,
+      "lineBoxes": [
+        {
+          "height": 30,
+          "lineHeight": 30,
+          "lineTops": [
+            887.0625
+          ]
+        },
+        {
+          "height": 59.984375,
+          "lineHeight": 30,
+          "lineTops": [
+            917.0625,
+            947.0625
+          ]
+        }
+      ],
+      "svg": 30,
+      "paints": [
+        {
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "light",
+      "scale": 200,
+      "material": "solid",
+      "width": 450,
+      "height": 383.96875,
+      "frontHeight": 351.96875,
+      "radius": "48px",
+      "textRight": 346,
+      "closeX": 394,
+      "stackHeight": 32,
+      "lineBoxes": [
+        {
+          "height": 48,
+          "lineHeight": 48,
+          "lineTops": [
+            1581.28125
+          ]
+        },
+        {
+          "height": 239.96875,
+          "lineHeight": 48,
+          "lineTops": [
+            1629.28125,
+            1677.28125,
+            1725.28125,
+            1773.28125,
+            1821.28125
+          ]
+        }
+      ],
+      "svg": 48,
+      "paints": [
+        {
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgb(255, 255, 255)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgb(247, 248, 250)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgb(255, 255, 255)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "light",
+      "scale": 200,
+      "material": "acrylic",
+      "width": 450,
+      "height": 383.96875,
+      "frontHeight": 351.96875,
+      "radius": "48px",
+      "textRight": 346,
+      "closeX": 394,
+      "stackHeight": 32,
+      "lineBoxes": [
+        {
+          "height": 48,
+          "lineHeight": 48,
+          "lineTops": [
+            822.28125
+          ]
+        },
+        {
+          "height": 239.96875,
+          "lineHeight": 48,
+          "lineTops": [
+            870.28125,
+            918.28125,
+            966.28125,
+            1014.28125,
+            1062.28125
+          ]
+        }
+      ],
+      "svg": 48,
+      "paints": [
+        {
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "light",
+      "scale": 200,
+      "material": "glass",
+      "width": 450,
+      "height": 383.96875,
+      "frontHeight": 351.96875,
+      "radius": "48px",
+      "textRight": 346,
+      "closeX": 394,
+      "stackHeight": 32,
+      "lineBoxes": [
+        {
+          "height": 48,
+          "lineHeight": 48,
+          "lineTops": [
+            822.28125
+          ]
+        },
+        {
+          "height": 239.96875,
+          "lineHeight": 48,
+          "lineTops": [
+            870.28125,
+            918.28125,
+            966.28125,
+            1014.28125,
+            1062.28125
+          ]
+        }
+      ],
+      "svg": 48,
+      "paints": [
+        {
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "dark",
+      "scale": 100,
+      "material": "solid",
+      "width": 450,
+      "height": 96,
+      "frontHeight": 80,
+      "radius": "24px",
+      "textRight": 409.578125,
+      "closeX": 434,
+      "stackHeight": 16,
+      "lineBoxes": [
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            704.671875
+          ]
+        },
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            728.671875
+          ]
+        }
+      ],
+      "svg": 24,
+      "paints": [
+        {
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgb(28, 28, 30)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgb(16, 16, 18)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgb(36, 36, 38)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "dark",
+      "scale": 100,
+      "material": "acrylic",
+      "width": 450,
+      "height": 96,
+      "frontHeight": 80,
+      "radius": "24px",
+      "textRight": 409.578125,
+      "closeX": 434,
+      "stackHeight": 16,
+      "lineBoxes": [
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            704.671875
+          ]
+        },
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            728.671875
+          ]
+        }
+      ],
+      "svg": 24,
+      "paints": [
+        {
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "dark",
+      "scale": 100,
+      "material": "glass",
+      "width": 450,
+      "height": 96,
+      "frontHeight": 80,
+      "radius": "24px",
+      "textRight": 409.578125,
+      "closeX": 434,
+      "stackHeight": 16,
+      "lineBoxes": [
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            704.671875
+          ]
+        },
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            728.671875
+          ]
+        }
+      ],
+      "svg": 24,
+      "paints": [
+        {
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "dark",
+      "scale": 125,
+      "material": "solid",
+      "width": 450,
+      "height": 149.984375,
+      "frontHeight": 129.984375,
+      "radius": "30px",
+      "textRight": 394,
+      "closeX": 424,
+      "stackHeight": 20,
+      "lineBoxes": [
+        {
+          "height": 30,
+          "lineHeight": 30,
+          "lineTops": [
+            887.0625
+          ]
+        },
+        {
+          "height": 59.984375,
+          "lineHeight": 30,
+          "lineTops": [
+            917.0625,
+            947.0625
+          ]
+        }
+      ],
+      "svg": 30,
+      "paints": [
+        {
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgb(28, 28, 30)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgb(16, 16, 18)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgb(36, 36, 38)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "dark",
+      "scale": 125,
+      "material": "acrylic",
+      "width": 450,
+      "height": 149.984375,
+      "frontHeight": 129.984375,
+      "radius": "30px",
+      "textRight": 394,
+      "closeX": 424,
+      "stackHeight": 20,
+      "lineBoxes": [
+        {
+          "height": 30,
+          "lineHeight": 30,
+          "lineTops": [
+            887.0625
+          ]
+        },
+        {
+          "height": 59.984375,
+          "lineHeight": 30,
+          "lineTops": [
+            917.0625,
+            947.0625
+          ]
+        }
+      ],
+      "svg": 30,
+      "paints": [
+        {
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "dark",
+      "scale": 125,
+      "material": "glass",
+      "width": 450,
+      "height": 149.984375,
+      "frontHeight": 129.984375,
+      "radius": "30px",
+      "textRight": 394,
+      "closeX": 424,
+      "stackHeight": 20,
+      "lineBoxes": [
+        {
+          "height": 30,
+          "lineHeight": 30,
+          "lineTops": [
+            887.0625
+          ]
+        },
+        {
+          "height": 59.984375,
+          "lineHeight": 30,
+          "lineTops": [
+            917.0625,
+            947.0625
+          ]
+        }
+      ],
+      "svg": 30,
+      "paints": [
+        {
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "dark",
+      "scale": 200,
+      "material": "solid",
+      "width": 450,
+      "height": 383.96875,
+      "frontHeight": 351.96875,
+      "radius": "48px",
+      "textRight": 346,
+      "closeX": 394,
+      "stackHeight": 32,
+      "lineBoxes": [
+        {
+          "height": 48,
+          "lineHeight": 48,
+          "lineTops": [
+            1581.28125
+          ]
+        },
+        {
+          "height": 239.96875,
+          "lineHeight": 48,
+          "lineTops": [
+            1629.28125,
+            1677.28125,
+            1725.28125,
+            1773.28125,
+            1821.28125
+          ]
+        }
+      ],
+      "svg": 48,
+      "paints": [
+        {
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgb(28, 28, 30)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgb(16, 16, 18)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgb(36, 36, 38)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "dark",
+      "scale": 200,
+      "material": "acrylic",
+      "width": 450,
+      "height": 383.96875,
+      "frontHeight": 351.96875,
+      "radius": "48px",
+      "textRight": 346,
+      "closeX": 394,
+      "stackHeight": 32,
+      "lineBoxes": [
+        {
+          "height": 48,
+          "lineHeight": 48,
+          "lineTops": [
+            822.28125
+          ]
+        },
+        {
+          "height": 239.96875,
+          "lineHeight": 48,
+          "lineTops": [
+            870.28125,
+            918.28125,
+            966.28125,
+            1014.28125,
+            1062.28125
+          ]
+        }
+      ],
+      "svg": 48,
+      "paints": [
+        {
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "theme": "dark",
+      "scale": 200,
+      "material": "glass",
+      "width": 450,
+      "height": 383.96875,
+      "frontHeight": 351.96875,
+      "radius": "48px",
+      "textRight": 346,
+      "closeX": 394,
+      "stackHeight": 32,
+      "lineBoxes": [
+        {
+          "height": 48,
+          "lineHeight": 48,
+          "lineTops": [
+            822.28125
+          ]
+        },
+        {
+          "height": 239.96875,
+          "lineHeight": 48,
+          "lineTops": [
+            870.28125,
+            918.28125,
+            966.28125,
+            1014.28125,
+            1062.28125
+          ]
+        }
+      ],
+      "svg": 48,
+      "paints": [
+        {
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "light",
+      "scale": 100,
+      "material": "solid",
+      "width": 450,
+      "height": 96,
+      "frontHeight": 80,
+      "radius": "24px",
+      "textRight": 409.578125,
+      "closeX": 434,
+      "stackHeight": 16,
+      "lineBoxes": [
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            707.3125
+          ]
+        },
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            731.3125
+          ]
+        }
+      ],
+      "svg": 24,
+      "paints": [
+        {
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgb(255, 255, 255)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgb(247, 248, 250)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgb(255, 255, 255)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "light",
+      "scale": 100,
+      "material": "acrylic",
+      "width": 450,
+      "height": 96,
+      "frontHeight": 80,
+      "radius": "24px",
+      "textRight": 409.578125,
+      "closeX": 434,
+      "stackHeight": 16,
+      "lineBoxes": [
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            707.3125
+          ]
+        },
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            731.3125
+          ]
+        }
+      ],
+      "svg": 24,
+      "paints": [
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "light",
+      "scale": 100,
+      "material": "glass",
+      "width": 450,
+      "height": 96,
+      "frontHeight": 80,
+      "radius": "24px",
+      "textRight": 409.578125,
+      "closeX": 434,
+      "stackHeight": 16,
+      "lineBoxes": [
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            707.3125
+          ]
+        },
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            731.3125
+          ]
+        }
+      ],
+      "svg": 24,
+      "paints": [
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "light",
+      "scale": 125,
+      "material": "solid",
+      "width": 450,
+      "height": 149.78125,
+      "frontHeight": 129.78125,
+      "radius": "30px",
+      "textRight": 394,
+      "closeX": 424,
+      "stackHeight": 20,
+      "lineBoxes": [
+        {
+          "height": 30,
+          "lineHeight": 30,
+          "lineTops": [
+            889.453125
+          ]
+        },
+        {
+          "height": 59.78125,
+          "lineHeight": 30,
+          "lineTops": [
+            919.453125,
+            949.453125
+          ]
+        }
+      ],
+      "svg": 30,
+      "paints": [
+        {
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgb(255, 255, 255)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgb(247, 248, 250)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgb(255, 255, 255)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "light",
+      "scale": 125,
+      "material": "acrylic",
+      "width": 450,
+      "height": 149.78125,
+      "frontHeight": 129.78125,
+      "radius": "30px",
+      "textRight": 394,
+      "closeX": 424,
+      "stackHeight": 20,
+      "lineBoxes": [
+        {
+          "height": 30,
+          "lineHeight": 30,
+          "lineTops": [
+            889.453125
+          ]
+        },
+        {
+          "height": 59.78125,
+          "lineHeight": 30,
+          "lineTops": [
+            919.453125,
+            949.453125
+          ]
+        }
+      ],
+      "svg": 30,
+      "paints": [
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "light",
+      "scale": 125,
+      "material": "glass",
+      "width": 450,
+      "height": 149.78125,
+      "frontHeight": 129.78125,
+      "radius": "30px",
+      "textRight": 394,
+      "closeX": 424,
+      "stackHeight": 20,
+      "lineBoxes": [
+        {
+          "height": 30,
+          "lineHeight": 30,
+          "lineTops": [
+            889.453125
+          ]
+        },
+        {
+          "height": 59.78125,
+          "lineHeight": 30,
+          "lineTops": [
+            919.453125,
+            949.453125
+          ]
+        }
+      ],
+      "svg": 30,
+      "paints": [
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "light",
+      "scale": 200,
+      "material": "solid",
+      "width": 450,
+      "height": 384.5,
+      "frontHeight": 352.5,
+      "radius": "48px",
+      "textRight": 346,
+      "closeX": 394,
+      "stackHeight": 32,
+      "lineBoxes": [
+        {
+          "height": 48.25,
+          "lineHeight": 48,
+          "lineTops": [
+            1583.625
+          ]
+        },
+        {
+          "height": 240.25,
+          "lineHeight": 48,
+          "lineTops": [
+            1631.875,
+            1679.875,
+            1727.875,
+            1775.875,
+            1823.875
+          ]
+        }
+      ],
+      "svg": 48,
+      "paints": [
+        {
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgb(255, 255, 255)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgb(247, 248, 250)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgb(255, 255, 255)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "light",
+      "scale": 200,
+      "material": "acrylic",
+      "width": 450,
+      "height": 384.5,
+      "frontHeight": 352.5,
+      "radius": "48px",
+      "textRight": 346,
+      "closeX": 394,
+      "stackHeight": 32,
+      "lineBoxes": [
+        {
+          "height": 48.25,
+          "lineHeight": 48,
+          "lineTops": [
+            823.625
+          ]
+        },
+        {
+          "height": 240.25,
+          "lineHeight": 48,
+          "lineTops": [
+            871.875,
+            919.875,
+            967.875,
+            1015.875,
+            1063.875
+          ]
+        }
+      ],
+      "svg": 48,
+      "paints": [
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "light",
+      "scale": 200,
+      "material": "glass",
+      "width": 450,
+      "height": 384.5,
+      "frontHeight": 352.5,
+      "radius": "48px",
+      "textRight": 346,
+      "closeX": 394,
+      "stackHeight": 32,
+      "lineBoxes": [
+        {
+          "height": 48.25,
+          "lineHeight": 48,
+          "lineTops": [
+            823.625
+          ]
+        },
+        {
+          "height": 240.25,
+          "lineHeight": 48,
+          "lineTops": [
+            871.875,
+            919.875,
+            967.875,
+            1015.875,
+            1063.875
+          ]
+        }
+      ],
+      "svg": 48,
+      "paints": [
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(255 255 255 / 0.8)",
+          "blend": "rgb(38 38 38)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(153 153 153 / 0.96)",
+          "blend": "rgb(92 92 92)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(179 179 179 / 0.8)",
+          "blend": "rgb(56 56 56)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "color-dodge"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "dark",
+      "scale": 100,
+      "material": "solid",
+      "width": 450,
+      "height": 96,
+      "frontHeight": 80,
+      "radius": "24px",
+      "textRight": 409.578125,
+      "closeX": 434,
+      "stackHeight": 16,
+      "lineBoxes": [
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            707.3125
+          ]
+        },
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            731.3125
+          ]
+        }
+      ],
+      "svg": 24,
+      "paints": [
+        {
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgb(28, 28, 30)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgb(16, 16, 18)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgb(36, 36, 38)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "dark",
+      "scale": 100,
+      "material": "acrylic",
+      "width": 450,
+      "height": 96,
+      "frontHeight": 80,
+      "radius": "24px",
+      "textRight": 409.578125,
+      "closeX": 434,
+      "stackHeight": 16,
+      "lineBoxes": [
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            707.3125
+          ]
+        },
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            731.3125
+          ]
+        }
+      ],
+      "svg": 24,
+      "paints": [
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "dark",
+      "scale": 100,
+      "material": "glass",
+      "width": 450,
+      "height": 96,
+      "frontHeight": 80,
+      "radius": "24px",
+      "textRight": 409.578125,
+      "closeX": 434,
+      "stackHeight": 16,
+      "lineBoxes": [
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            707.3125
+          ]
+        },
+        {
+          "height": 24,
+          "lineHeight": 24,
+          "lineTops": [
+            731.3125
+          ]
+        }
+      ],
+      "svg": 24,
+      "paints": [
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "dark",
+      "scale": 125,
+      "material": "solid",
+      "width": 450,
+      "height": 149.78125,
+      "frontHeight": 129.78125,
+      "radius": "30px",
+      "textRight": 394,
+      "closeX": 424,
+      "stackHeight": 20,
+      "lineBoxes": [
+        {
+          "height": 30,
+          "lineHeight": 30,
+          "lineTops": [
+            889.453125
+          ]
+        },
+        {
+          "height": 59.78125,
+          "lineHeight": 30,
+          "lineTops": [
+            919.453125,
+            949.453125
+          ]
+        }
+      ],
+      "svg": 30,
+      "paints": [
+        {
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgb(28, 28, 30)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgb(16, 16, 18)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgb(36, 36, 38)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "dark",
+      "scale": 125,
+      "material": "acrylic",
+      "width": 450,
+      "height": 149.78125,
+      "frontHeight": 129.78125,
+      "radius": "30px",
+      "textRight": 394,
+      "closeX": 424,
+      "stackHeight": 20,
+      "lineBoxes": [
+        {
+          "height": 30,
+          "lineHeight": 30,
+          "lineTops": [
+            889.453125
+          ]
+        },
+        {
+          "height": 59.78125,
+          "lineHeight": 30,
+          "lineTops": [
+            919.453125,
+            949.453125
+          ]
+        }
+      ],
+      "svg": 30,
+      "paints": [
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "dark",
+      "scale": 125,
+      "material": "glass",
+      "width": 450,
+      "height": 149.78125,
+      "frontHeight": 129.78125,
+      "radius": "30px",
+      "textRight": 394,
+      "closeX": 424,
+      "stackHeight": 20,
+      "lineBoxes": [
+        {
+          "height": 30,
+          "lineHeight": 30,
+          "lineTops": [
+            889.453125
+          ]
+        },
+        {
+          "height": 59.78125,
+          "lineHeight": 30,
+          "lineTops": [
+            919.453125,
+            949.453125
+          ]
+        }
+      ],
+      "svg": 30,
+      "paints": [
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "dark",
+      "scale": 200,
+      "material": "solid",
+      "width": 450,
+      "height": 384.5,
+      "frontHeight": 352.5,
+      "radius": "48px",
+      "textRight": 346,
+      "closeX": 394,
+      "stackHeight": 32,
+      "lineBoxes": [
+        {
+          "height": 48.25,
+          "lineHeight": 48,
+          "lineTops": [
+            1583.625
+          ]
+        },
+        {
+          "height": 240.25,
+          "lineHeight": 48,
+          "lineTops": [
+            1631.875,
+            1679.875,
+            1727.875,
+            1775.875,
+            1823.875
+          ]
+        }
+      ],
+      "svg": 48,
+      "paints": [
+        {
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgb(28, 28, 30)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgb(16, 16, 18)",
+          "blendMode": "normal"
+        },
+        {
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgb(36, 36, 38)",
+          "blendMode": "normal"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "dark",
+      "scale": 200,
+      "material": "acrylic",
+      "width": 450,
+      "height": 384.5,
+      "frontHeight": 352.5,
+      "radius": "48px",
+      "textRight": 346,
+      "closeX": 394,
+      "stackHeight": 32,
+      "lineBoxes": [
+        {
+          "height": 48.25,
+          "lineHeight": 48,
+          "lineTops": [
+            823.625
+          ]
+        },
+        {
+          "height": 240.25,
+          "lineHeight": 48,
+          "lineTops": [
+            871.875,
+            919.875,
+            967.875,
+            1015.875,
+            1063.875
+          ]
+        }
+      ],
+      "svg": 48,
+      "paints": [
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "theme": "dark",
+      "scale": 200,
+      "material": "glass",
+      "width": 450,
+      "height": 384.5,
+      "frontHeight": 352.5,
+      "radius": "48px",
+      "textRight": 346,
+      "closeX": 394,
+      "stackHeight": 32,
+      "lineBoxes": [
+        {
+          "height": 48.25,
+          "lineHeight": 48,
+          "lineTops": [
+            823.625
+          ]
+        },
+        {
+          "height": 240.25,
+          "lineHeight": 48,
+          "lineTops": [
+            871.875,
+            919.875,
+            967.875,
+            1015.875,
+            1063.875
+          ]
+        }
+      ],
+      "svg": 48,
+      "paints": [
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(130 130 130 / 0.8)",
+          "blend": "rgb(31 31 31)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(37 37 37 / 0.92)",
+          "blend": "rgb(124 124 124)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        },
+        {
+          "renderer": "capture-blend",
+          "normal": "rgb(37 37 37 / 0.8)",
+          "blend": "rgb(140 140 140)",
+          "background": "rgba(0, 0, 0, 0)",
+          "blendMode": "overlay"
+        }
+      ]
+    }
+  ]
+}
