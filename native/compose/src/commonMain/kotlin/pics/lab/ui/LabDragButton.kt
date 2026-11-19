@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -180,7 +179,7 @@ public fun LabDragButton(
         // Mask belongs to helper + track, never the growing Button.
         Box(Modifier.matchParentSize().clipToBounds().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen; scaleX = if (rtl) -1f else 1f }) {
             if (showHelper && effective == LabDragButtonStatus.Idle) Box(Modifier.matchParentSize().padding(horizontal = (metrics.height + LabComponents.DragButtonPadding).dp), contentAlignment = Alignment.Center) {
-                BasicText(helperText, Modifier.graphicsLayer { scaleX = if (rtl) -1f else 1f },
+                LabText(helperText, Modifier.graphicsLayer { scaleX = if (rtl) -1f else 1f },
                     style = textStyle.withTypography(color = colors[LabComponents.DragButtonRolesLabel]), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Canvas(Modifier.matchParentSize()) { drawRoundRect(colors[LabComponents.DragButtonRolesTrack], cornerRadius = CornerRadius(LabComponents.DragButtonRadius.dp.toPx())) }
@@ -213,7 +212,7 @@ public fun LabDragButton(
             } else Row(Modifier.padding(horizontal = metrics.paddingX.dp, vertical = metrics.paddingY.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (effective == LabDragButtonStatus.Pending) LabLoader(modifier = Modifier.size(metrics.icon.dp).clearAndSetSemantics {}, size = LabControlSize.Small, tint = ink)
                 else Icon(checkmark, ink, size = metrics.icon.dp)
-                BasicText(message, Modifier.padding(horizontal = LabComponents.ButtonLabelPaddingX.dp), style = textStyle.withTypography(color = ink))
+                LabText(message, Modifier.padding(horizontal = LabComponents.ButtonLabelPaddingX.dp), style = textStyle.withTypography(color = ink))
             }
         }
     }

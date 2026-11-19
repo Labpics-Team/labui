@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,6 +19,7 @@ import pics.lab.ui.LabButtonKind
 import pics.lab.ui.LabDragButton
 import pics.lab.ui.LabDragButtonStatus
 import pics.lab.ui.LabTheme
+import pics.lab.ui.LabText
 import pics.lab.ui.LabThemeState
 import pics.lab.ui.labFontFamily
 
@@ -31,10 +31,10 @@ fun DragTransferExample(theme: LabThemeState) {
     LabTheme(theme) {
         val text = TextStyle(fontFamily = labFontFamily(), fontSize = 16.sp, lineHeight = 24.sp, color = theme.colors["label-primary"])
         Column(Modifier.fillMaxSize().background(theme.colors["bg-primary"]).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            BasicText("Перевод в общий бюджет", style = text)
+            LabText("Перевод в общий бюджет", style = text)
             LabDragButton("Подтвердить перевод", { count++; status = LabDragButtonStatus.Success },
                 status = status, helperText = "Подтвердить перевод", successText = "Отправлено", pendingText = "Отправляем", dangerText = "Не отправлено")
-            BasicText("Отправлено переводов: $count", style = text)
+            LabText("Отправлено переводов: $count", style = text)
             LabButton("Новый перевод", { status = LabDragButtonStatus.Idle }, kind = LabButtonKind.Tinted)
         }
     }

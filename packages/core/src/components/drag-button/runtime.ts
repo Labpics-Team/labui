@@ -24,8 +24,9 @@ export function mountDragButton(button: HTMLButtonElement, initial: DragButtonOp
   let suppressClick = false;
   let playback: Playback | undefined;
   let motionGeneration = 0;
-  const fill = button.querySelector<HTMLElement>('.lab-drag-fill');
-  if (!fill) throw new Error('Drag Button requires its fill element');
+  const element = button.querySelector<HTMLElement>('.lab-drag-fill');
+  if (!element) throw new Error('Drag Button requires its fill element');
+  const fill = element;
   const motion = scope(button);
   const view = () => (options.status === 'idle' && committed ? 'pending' : options.status);
   const blocked = () => options.disabled || button.matches(':disabled') || view() !== 'idle';
