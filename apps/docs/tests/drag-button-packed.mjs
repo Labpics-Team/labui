@@ -140,6 +140,7 @@ try {
       '--format=esm',
       '--outdir=public',
       '--loader:.woff2=file',
+      '--loader:.webp=file',
       '--loader:.woff=file',
       '--loader:.ttf=file',
     ],

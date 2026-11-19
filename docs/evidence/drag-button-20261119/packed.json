@@ -2,7 +2,7 @@
   "archives": [
     {
       "name": "labpics-ui-tokens-0.0.0.tgz",
-      "sha256": "d486ffbd6d5f9bb003a3e20f5951780ba93a5924bca9adfa370d23a87d788d3e"
+      "sha256": "f9bf57744b6f390316796ba61e251936873aed01aa013786b81e42642755da15"
     },
     {
       "name": "labpics-ui-shadow-0.0.0.tgz",
@@ -14,35 +14,35 @@
     },
     {
       "name": "labpics-fonts-0.0.0.tgz",
-      "sha256": "a3c4a35aadb8d495d0114c383118761304cd11ef34e45f9e34cd7cb2b3b31664"
+      "sha256": "d0d46708a7b04e7fca9900afc5735ca7a72fa5ae1082787ea603199b632b2fef"
     },
     {
       "name": "labui-colors-0.0.0.tgz",
-      "sha256": "2dfc01336750f554b4a4e46155bb10caaf3c804df98ec237008961fee268decb"
+      "sha256": "56ba4da1572ea321215974308bf0eb76333e8b583650b69e67d69bffacee7351"
     },
     {
       "name": "labpics-ui-core-0.0.0.tgz",
-      "sha256": "4316b771d54e92ccc725bab23c932779d5423e9c8c3a178d834f5fd1a0d2832c"
+      "sha256": "edfe9f239b9b00ec2fd86295d1f0abca0b27b7e32ff8c24719a19f874b7740a8"
     },
     {
       "name": "labpics-ui-react-0.0.0.tgz",
-      "sha256": "d17759545759b451b6a6999e433d9cfb97ee8e24c07fb99f305e5dfbb5b65811"
+      "sha256": "5b6a3e3f7f4940a56424816dc04eb46787e252bd57fd2c90b72dc4e1295bf553"
     },
     {
       "name": "labpics-ui-vue-0.0.0.tgz",
-      "sha256": "f9d5a18a02fd1be6d065d7a5637b3f21d2eebffdfa8e16e08ae5f11f09ba8031"
+      "sha256": "dd8b718d8c0b5d5c29a657ef07f82c327ea51c0428fe7de0bd1c3c88d34e2c67"
     },
     {
       "name": "labpics-ui-solid-0.0.0.tgz",
-      "sha256": "f2debeae7847a7132b5aff02cd8d9d568d30e6081fca98468ed735b524ea63d6"
+      "sha256": "eb361a0180c950ede38467542c8a54048f9aeb53da941f578faf01b2fcb02e0f"
     },
     {
       "name": "labpics-ui-svelte-0.0.0.tgz",
-      "sha256": "cf19b3af9089adb93702f80ff04ab1087c11c7fffb9a673b27b7e57cd5fcdfaf"
+      "sha256": "344aa99f0129210bed087f4d4f8d1b6da3de40084f8402257badee05c6eea008"
     },
     {
       "name": "labpics-ui-astro-0.0.0.tgz",
-      "sha256": "550a20939476a97aece815c52ff243ae07c2a067d7616b2da128eb9badfddad7"
+      "sha256": "d387f54eef1e34d3614649feee624e49cdd2db350f365180990597d862591279"
     }
   ],
   "publicIcons": false,
@@ -137,6 +137,11 @@
             "family": "Geist Mono",
             "weight": "100 900",
             "status": "unloaded"
+          },
+          {
+            "family": "Sunghyun Sans",
+            "weight": "800",
+            "status": "unloaded"
           }
         ]
       }
@@ -229,6 +234,11 @@
           {
             "family": "\"Geist Mono\"",
             "weight": "100 900",
+            "status": "unloaded"
+          },
+          {
+            "family": "\"Sunghyun Sans\"",
+            "weight": "800",
             "status": "unloaded"
           }
         ]
