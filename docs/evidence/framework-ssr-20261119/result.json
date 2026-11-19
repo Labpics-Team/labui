@@ -2,7 +2,7 @@
   "archives": [
     {
       "name": "@labpics/ui-tokens",
-      "sha256": "32a0c13811235938dc1cf90409ec327fcc069e063a5bcfd719d4cdf342d7dabd"
+      "sha256": "c6921c0fcb2906a127021205695e0a4d7bf54111220e8e43d928ad0c277cf7b8"
     },
     {
       "name": "@labpics/ui-shadow",
@@ -18,7 +18,7 @@
     },
     {
       "name": "@labpics/ui-core",
-      "sha256": "4312a25f8f354f1a5317b553995decb154bcce4a0237948b0c75b3e8c6b1493e"
+      "sha256": "0778ec1fdf8b2620ddc0b4eaad979945d48408c4ab6ece8ecb3be96bb6d1c0f3"
     },
     {
       "name": "@labpics/ui-vue",
