@@ -7,13 +7,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, expect, webkit } from '@playwright/test';
+import { runPnpm, writePackedConsumerProject } from './packed-consumer-project.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const output = join(root, 'docs/evidence/textarea-20261118');
 const consumer = await mkdtemp(join(tmpdir(), 'labui-textarea-'));
-const corepack = join(dirname(process.execPath), 'node_modules/corepack/dist/corepack.js');
-const pnpm = (args, cwd = root) =>
-  execFileSync(process.execPath, [corepack, 'pnpm', ...args], { cwd, stdio: 'pipe' });
 const packages = [
   'tokens',
   'shadow',
@@ -45,7 +43,7 @@ try {
   for (const folder of packages) {
     const location = join(root, 'packages', folder);
     const pkg = JSON.parse(await readFile(join(location, 'package.json'), 'utf8'));
-    pnpm(['pack', '--pack-destination', join(consumer, 'packs')], location);
+    runPnpm(['pack', '--pack-destination', join(consumer, 'packs')], location);
     const name = `${pkg.name.replace('@', '').replace('/', '-')}-${pkg.version}.tgz`;
     dependencies[pkg.name] = `file:./packs/${name}`;
     overrides[pkg.name] = `file:./packs/${name}`;
@@ -56,17 +54,12 @@ try {
         .digest('hex'),
     });
   }
-  await writeFile(
-    join(consumer, 'package.json'),
-    JSON.stringify({
-      name: 'textarea-consumer',
-      private: true,
-      type: 'module',
-      dependencies,
-      pnpm: { overrides },
-    }),
-  );
-  pnpm(
+  await writePackedConsumerProject(consumer, {
+    name: 'textarea-consumer',
+    dependencies,
+    overrides,
+  });
+  runPnpm(
     ['install', '--ignore-scripts', '--config.auto-install-peers=false', '--prefer-offline'],
     consumer,
   );

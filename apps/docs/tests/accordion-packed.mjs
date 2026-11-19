@@ -7,13 +7,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, expect, webkit } from '@playwright/test';
+import { runPnpm, writePackedConsumerProject } from './packed-consumer-project.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const output = join(root, 'docs/evidence/accordion-20261119');
 const consumer = await mkdtemp(join(tmpdir(), 'labui-accordion-'));
-const corepack = join(dirname(process.execPath), 'node_modules/corepack/dist/corepack.js');
-const pnpm = (args, cwd = root) =>
-  execFileSync(process.execPath, [corepack, 'pnpm', ...args], { cwd, stdio: 'pipe' });
 const records = [];
 let server;
 try {
@@ -46,7 +44,7 @@ try {
   ]) {
     const location = join(root, 'packages', folder);
     const pkg = JSON.parse(await readFile(join(location, 'package.json'), 'utf8'));
-    pnpm(['pack', '--pack-destination', join(consumer, 'packs')], location);
+    runPnpm(['pack', '--pack-destination', join(consumer, 'packs')], location);
     const name = `${pkg.name.replace('@', '').replace('/', '-')}-${pkg.version}.tgz`;
     dependencies[pkg.name] = `file:./packs/${name}`;
     overrides[pkg.name] = `file:./packs/${name}`;
@@ -57,17 +55,12 @@ try {
         .digest('hex'),
     });
   }
-  await writeFile(
-    join(consumer, 'package.json'),
-    JSON.stringify({
-      name: 'accordion-consumer',
-      private: true,
-      type: 'module',
-      dependencies,
-      pnpm: { overrides },
-    }),
-  );
-  pnpm(
+  await writePackedConsumerProject(consumer, {
+    name: 'accordion-consumer',
+    dependencies,
+    overrides,
+  });
+  runPnpm(
     ['install', '--ignore-scripts', '--config.auto-install-peers=false', '--prefer-offline'],
     consumer,
   );
@@ -154,7 +147,7 @@ try {
       include: ['types.tsx'],
     }),
   );
-  pnpm(['exec', 'tsc'], consumer);
+  runPnpm(['exec', 'tsc'], consumer);
   execFileSync(process.execPath, ['server.mjs'], { cwd: consumer, stdio: 'pipe' });
   await writeFile(
     join(consumer, 'build.mjs'),

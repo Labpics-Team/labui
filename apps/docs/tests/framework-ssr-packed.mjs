@@ -13,18 +13,11 @@ import {
   normalizedServerFieldValue,
 } from './fixtures/framework-ssr/field-values.mjs';
 import { checkClientMount } from './framework-client-mount.mjs';
+import { runPnpm, writePackedConsumerProject } from './packed-consumer-project.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const output = join(root, 'docs/evidence/framework-ssr-20261119');
 const consumer = await mkdtemp(join(tmpdir(), 'labui-framework-ssr-'));
-const corepack = join(
-  dirname(process.execPath),
-  process.platform === 'win32'
-    ? 'node_modules/corepack/dist/pnpm.js'
-    : '../lib/node_modules/corepack/dist/pnpm.js',
-);
-const pnpm = (args, cwd) =>
-  execFileSync(process.execPath, [corepack, ...args], { cwd, stdio: 'pipe', encoding: 'utf8' });
 const records = [];
 const clientMount = [];
 const archives = [];
@@ -57,7 +50,7 @@ try {
   ]) {
     const location = join(root, 'packages', folder);
     const pkg = JSON.parse(await readFile(join(location, 'package.json'), 'utf8'));
-    pnpm(['pack', '--pack-destination', join(consumer, 'packs')], location);
+    runPnpm(['pack', '--pack-destination', join(consumer, 'packs')], location);
     const archive = `${pkg.name.replace('@', '').replace('/', '-')}-${pkg.version}.tgz`;
     dependencies[pkg.name] = overrides[pkg.name] = `file:./packs/${archive}`;
     archives.push({
@@ -67,18 +60,13 @@ try {
         .digest('hex'),
     });
   }
-  await writeFile(
-    join(consumer, 'package.json'),
-    JSON.stringify({
-      name: 'framework-ssr-consumer',
-      private: true,
-      type: 'module',
-      dependencies,
-      pnpm: { overrides },
-    }),
-  );
+  await writePackedConsumerProject(consumer, {
+    name: 'framework-ssr-consumer',
+    dependencies,
+    overrides,
+  });
   console.info('Installing packed native framework adapters');
-  pnpm(
+  runPnpm(
     ['install', '--ignore-scripts', '--config.auto-install-peers=false', '--prefer-offline'],
     consumer,
   );
@@ -105,7 +93,7 @@ try {
       include: ['types.cts', 'types.mts'],
     }),
   );
-  pnpm(['exec', 'tsc'], consumer);
+  runPnpm(['exec', 'tsc'], consumer);
   // Svelte's resolver reads the packaged component declarations; plain tsc falls
   // back to its ambient *.svelte module and cannot qualify snippet prop types.
   await writeFile(
@@ -126,7 +114,7 @@ try {
       include: ['Types.svelte'],
     }),
   );
-  pnpm(['exec', 'svelte-check', '--tsconfig', 'tsconfig.svelte.json'], consumer);
+  runPnpm(['exec', 'svelte-check', '--tsconfig', 'tsconfig.svelte.json'], consumer);
   execFileSync(process.execPath, ['--conditions=development', 'build-consumer.mjs'], {
     cwd: consumer,
     stdio: 'inherit',
