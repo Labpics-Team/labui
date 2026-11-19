@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve, sep } from 'node:path';
@@ -33,12 +33,16 @@ try {
     const archive = `${pkg.name.replace('@', '').replace('/', '-')}-${pkg.version}.tgz`;
     dependencies[pkg.name] = overrides[pkg.name] = `file:./packs/${archive}`;
   }
+  if (process.env.LAB_ICONS_TARBALL) {
+    await copyFile(process.env.LAB_ICONS_TARBALL, join(consumer, 'packs/icons.tgz'));
+    dependencies['@labpics/icons'] = overrides['@labpics/icons'] = 'file:./packs/icons.tgz';
+  }
   await writePackedConsumerProject(consumer, {
     name: 'pin-input-installed',
     dependencies,
     overrides,
   });
-  runPnpm(['install', '--ignore-scripts', '--offline'], consumer);
+  runPnpm(['install', '--ignore-scripts', '--prefer-offline'], consumer);
   await writeFile(
     join(consumer, 'ssr.mjs'),
     `
@@ -313,6 +317,7 @@ try {
       results.push({
         engine: name,
         installed: true,
+        publicIcons: !process.env.LAB_ICONS_TARBALL,
         geometry: metrics,
         accessibilityViolations: 0,
         hydration: {

@@ -76,3 +76,13 @@ References: [Zag Pin Input](https://zagjs.com/components/pin-input),
 [Compose text input](https://developer.android.com/develop/ui/compose/text/user-input),
 [Compose side effects](https://developer.android.com/develop/ui/compose/side-effects),
 [Figma source](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2?node-id=6202-7355).
+
+Integration check (20 November): the packed consumer passed again in Chromium
+and WebKit on the combined Icon/Drag Button/Pin Input branch. Icons came from
+release CI's exact 0.4.0 archive (SHA256
+`d4962b817d19431393131f0aebb5d70f745e103e4062a6003a52926a8362c3bb`),
+through `LAB_ICONS_TARBALL`; `publicIcons: false` records that npm publication
+is still pending. The seven Pin Input and seven Drag Button native tests passed
+together using public Icons Maven 0.4.0. Independent review also confirmed that
+multiple invalid React fields retain focus during `checkValidity()` and focus
+the first invalid field on submission without an asynchronous focus cycle.

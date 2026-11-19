@@ -2,6 +2,7 @@
   {
     "engine": "chromium",
     "installed": true,
+    "publicIcons": false,
     "geometry": [
       {
         "theme": "light",
@@ -73,6 +74,7 @@
   {
     "engine": "webkit",
     "installed": true,
+    "publicIcons": false,
     "geometry": [
       {
         "theme": "light",
