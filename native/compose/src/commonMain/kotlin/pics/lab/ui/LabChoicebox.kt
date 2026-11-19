@@ -130,7 +130,7 @@ internal fun ChoiceboxOption(
     val focused by interactions.collectIsFocusedAsState()
     val shape = RoundedCornerShape(LabComponents.SelectionChoiceboxRadius.dp)
     val border = colors[if (selected && enabled) LabComponents.SelectionChoiceboxSelectedStrokeRole else LabComponents.SelectionChoiceboxStrokeRole]
-    val labelStyle = LabType.body().copy(
+    val labelStyle = LabType.body().withTypography(
         color = colors[if (enabled) LabComponents.SelectionRolesLabel else LabComponents.SelectionRolesDisabledLabel],
         fontSize = LabComponents.SelectionChoiceboxFontSize.sp,
         lineHeight = LabComponents.SelectionChoiceboxLineHeight.sp,

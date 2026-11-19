@@ -124,7 +124,7 @@ public fun LabChip(
         isActive && isSelected -> LabComponents.ChipRolesActiveSelectedLabel
         else -> LabComponents.ChipRolesClose
     }]
-    val style = LabType.body().copy(
+    val style = LabType.body().withTypography(
         color = label, fontSize = metrics.fontSize.sp, lineHeight = metrics.lineHeight.sp,
         fontWeight = FontWeight(metrics.fontWeight.toInt()), letterSpacing = metrics.letterSpacing.sp,
         lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None, LineHeightStyle.Mode.Fixed),

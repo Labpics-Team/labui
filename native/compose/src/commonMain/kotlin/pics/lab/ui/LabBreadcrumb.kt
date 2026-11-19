@@ -133,7 +133,7 @@ public fun LabBreadcrumb(
                             layout(placeable.width, max(0, placeable.height - trim)) {
                                 placeable.placeRelative(0, -trim / 2)
                             }
-                        }, style = LabType.body().copy(color = paint, fontSize = metrics.fontSize.sp,
+                        }, style = LabType.body().withTypography(color = paint, fontSize = metrics.fontSize.sp,
                             lineHeight = metrics.multilineLineHeight.sp,
                             fontWeight = FontWeight(LabComponents.BreadcrumbFontWeight.toInt()),
                             letterSpacing = LabComponents.BreadcrumbLetterSpacing.sp,

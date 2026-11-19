@@ -125,7 +125,7 @@ public fun LabSwitch(
         isHovered -> LabComponents.SwitchColoredFillGradientTailOpacityHover
         else -> LabComponents.SwitchColoredFillGradientTailOpacityDefault
     }
-    val labelStyle = LabType.body().copy(
+    val labelStyle = LabType.body().withTypography(
         color = colors[LabComponents.SwitchLabelRole], fontSize = metrics.fontSize.sp,
         lineHeight = metrics.lineHeight.sp, letterSpacing = metrics.letterSpacing.sp,
         fontWeight = FontWeight(metrics.fontWeight.toInt()),

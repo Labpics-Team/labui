@@ -96,7 +96,7 @@ public fun LabInput(
             }]
     val caption =
         LabType.caption()
-            .copy(
+            .withTypography(
                 color =
                     colors[
                         when {
@@ -117,7 +117,7 @@ public fun LabInput(
     )
     val body =
         LabType.body()
-            .copy(
+            .withTypography(
                 color = colors[if (enabled) "label-primary"
                     else if (singleLine) "label-tertiary" else "label-quaternary"],
                 fontSize = metrics.fontSize.sp,

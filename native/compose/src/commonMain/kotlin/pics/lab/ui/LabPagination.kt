@@ -145,7 +145,7 @@ public fun LabPagination(
                                     Offset(inset, inset), Size(size.width - 2 * inset, size.height - 2 * inset), radius)
                                 if (current && ratio != null && ratio > 0) drawRoundRect(compactColor.copy(alpha = compactColor.alpha * opacity),
                                     Offset(if (rtl) size.width * (1 - ratio) else 0f, 0f), Size(size.width * ratio, size.height), radius)
-                            } else BasicText(value.toString(), style = LabType.body().copy(color = color,
+                            } else BasicText(value.toString(), style = LabType.body().withTypography(color = color,
                                 fontSize = LabComponents.PaginationFontSize.sp, lineHeight = LabComponents.PaginationLineHeight.sp,
                                 fontWeight = FontWeight(LabComponents.PaginationFontWeight.toInt()), letterSpacing = 0.sp,
                                 lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None, LineHeightStyle.Mode.Fixed)))

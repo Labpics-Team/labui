@@ -1,4 +1,4 @@
-﻿package pics.lab.ui
+package pics.lab.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -66,7 +66,7 @@ public fun LabBadge(
     }]
     val iconScope = LabBadgeIconScope(iconColor, LabComponents.BadgeIconSize.dp)
     val shape = RoundedCornerShape(LabComponents.BadgeRadius.dp)
-    val labelStyle = LabType.body().copy(
+    val labelStyle = LabType.body().withTypography(
         color = label,
         fontSize = LabComponents.BadgeFontSize.sp,
         lineHeight = LabComponents.BadgeLineHeight.sp,

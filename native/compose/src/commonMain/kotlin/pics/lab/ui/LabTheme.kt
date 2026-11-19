@@ -81,19 +81,19 @@ public fun labFontFamily(): FontFamily = FontFamily(
 
 internal object LabType {
     @Composable
-    fun body(): TextStyle = LabTextStyles.Body.copy(
+    fun body(): TextStyle = LabTextStyles.Body.withTypography(
         color = LocalLabTheme.current.colors["label-primary"], fontFamily = LocalLabFont.current,
     )
     @Composable
-    fun emphasized(): TextStyle = LabTextStyles.BodyEmphasized.copy(
+    fun emphasized(): TextStyle = LabTextStyles.BodyEmphasized.withTypography(
         color = LocalLabTheme.current.colors["label-primary"], fontFamily = LocalLabFont.current,
     )
     @Composable
-    fun caption(): TextStyle = LabTextStyles.CaptionXs.copy(
+    fun caption(): TextStyle = LabTextStyles.CaptionXs.withTypography(
         color = LocalLabTheme.current.colors["label-primary"], fontFamily = LocalLabFont.current,
     )
     @Composable
-    fun title(): TextStyle = LabTextStyles.Headline.copy(
+    fun title(): TextStyle = LabTextStyles.Headline.withTypography(
         color = LocalLabTheme.current.colors["label-primary"], fontFamily = LocalLabFont.current,
     )
 }

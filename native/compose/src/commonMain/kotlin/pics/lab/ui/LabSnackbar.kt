@@ -119,7 +119,7 @@ public fun LabSnackbar(
         withFrameNanos {}
         entered = true
     }
-    val textStyle = LabType.body().copy(
+    val textStyle = LabType.body().withTypography(
         fontSize = LabComponents.SnackbarFontSize.sp,
         lineHeight = LabComponents.SnackbarLineHeight.sp,
         fontWeight = FontWeight(LabComponents.SnackbarFontWeight.toInt()),

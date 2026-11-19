@@ -83,7 +83,7 @@ internal fun selectionMetrics(size: LabSelectionSize): LabSelectionMetrics = whe
 }
 
 @Composable
-internal fun selectionLabelStyle(metrics: LabSelectionMetrics, enabled: Boolean): TextStyle = LabType.body().copy(
+internal fun selectionLabelStyle(metrics: LabSelectionMetrics, enabled: Boolean): TextStyle = LabType.body().withTypography(
     color = LocalLabTheme.current.colors[if (enabled) LabComponents.SelectionRolesLabel else LabComponents.SelectionRolesDisabledLabel],
     fontSize = metrics.fontSize.sp, lineHeight = metrics.lineHeight.sp,
     fontWeight = FontWeight(metrics.fontWeight.toInt()), letterSpacing = metrics.letterSpacing.sp,

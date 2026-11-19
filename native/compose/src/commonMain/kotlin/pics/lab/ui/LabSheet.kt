@@ -306,7 +306,7 @@ public fun LabSheetHost(
                                             Layout(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 content = {
-                                                    BasicText(title, style = LabType.body().copy(
+                                                    BasicText(title, style = LabType.body().withTypography(
                                                         fontSize = LabComponents.SheetTypographyTitleFontSize.sp,
                                                         lineHeight = LabComponents.SheetTypographyTitleLineHeight.sp,
                                                         fontWeight = FontWeight(LabComponents.SheetTypographyTitleFontWeight.toInt()),

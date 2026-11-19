@@ -127,7 +127,7 @@ public fun LabProgress(
     val colors = LocalLabTheme.current.colors
     val active = colors[LabComponents.ProgressActiveRole]
     val track = colors[LabComponents.ProgressTrackRole]
-    val textStyle = LabType.body().copy(color = colors[LabComponents.ProgressCircularLabelRole],
+    val textStyle = LabType.body().withTypography(color = colors[LabComponents.ProgressCircularLabelRole],
         fontSize = LabComponents.ProgressCircularFontSize.sp, lineHeight = LabComponents.ProgressCircularLineHeight.sp,
         fontWeight = FontWeight(LabComponents.ProgressCircularFontWeight.toInt()),
         letterSpacing = LabComponents.ProgressCircularLetterSpacing.sp)

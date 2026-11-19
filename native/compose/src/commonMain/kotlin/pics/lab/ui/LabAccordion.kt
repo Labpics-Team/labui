@@ -207,7 +207,7 @@ private fun AccordionDisclosure(
                     measured.placeRelative(top, top)
                 }
             }, horizontalArrangement = Arrangement.spacedBy(metrics.gap.dp), verticalAlignment = Alignment.CenterVertically) {
-            AccordionText(item.label, Modifier.weight(1f), style = text.copy(color = labelColor,
+            AccordionText(item.label, Modifier.weight(1f), style = text.withTypography(color = labelColor,
                 fontWeight = FontWeight(LabComponents.AccordionTitleWeight.toInt()), letterSpacing = LabComponents.AccordionTitleTracking.sp))
             Canvas(Modifier.size(metrics.iconSize.dp).align(if (expanded) Alignment.Top else Alignment.CenterVertically)
                 .graphicsLayer { rotationZ = 180f * progress.value }.clearAndSetSemantics {}) {
@@ -221,7 +221,7 @@ private fun AccordionDisclosure(
         RetainedDisclosure(expanded, { progress.value }, focusRequester) {
             Box(Modifier.padding(start = metrics.padding.dp, end = (metrics.padding + metrics.iconSize + metrics.gap).dp,
                 bottom = metrics.padding.dp)) {
-                androidx.compose.runtime.CompositionLocalProvider(LocalLabDisclosureText provides text.copy(
+                androidx.compose.runtime.CompositionLocalProvider(LocalLabDisclosureText provides text.withTypography(
                     color = colors[LabComponents.AccordionRolesBody], fontWeight = FontWeight(LabComponents.AccordionBodyWeight.toInt()),
                     letterSpacing = (LabComponents.AccordionBodyTracking * metrics.fontSize / LabComponents.AccordionM.fontSize).sp), content = content)
             }

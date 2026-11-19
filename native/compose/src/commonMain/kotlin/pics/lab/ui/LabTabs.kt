@@ -231,7 +231,7 @@ internal fun LabTabControl(
                 val paragraph = child.measure(constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity))
                 val height = metrics.lineHeight.sp.roundToPx()
                 layout(paragraph.width, constraints.constrainHeight(height)) { paragraph.placeRelative(0, (height - paragraph.height) / 2) }
-            }, style = LabType.body().copy(
+            }, style = LabType.body().withTypography(
                 color = labelColor, fontSize = metrics.fontSize.sp, lineHeight = metrics.lineHeight.sp,
                 fontWeight = FontWeight(metrics.fontWeight.toInt()), letterSpacing = metrics.letterSpacing.sp,
                 lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None, LineHeightStyle.Mode.Fixed),

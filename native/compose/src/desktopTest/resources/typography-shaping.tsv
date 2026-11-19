@@ -1,0 +1,10 @@
+id	role	tracking	text	chromiumWidth	webkitWidth
+body	body	-0.25	Yes. It adheres to the WAI-ARIA design pattern.	334.203125	334.20166015625
+body-cyrillic	body	-0.25	Общий доступ к проекту и материалам	298.421875	298.4178161621094
+body-ligatures	body	-0.25	office affiliation efficient pattern	233.796875	233.78372192382812
+emphasized	body-emphasized	0	office affiliation efficient pattern	243.453125	243.4429473876953
+headline	headline	-0.33	office affiliation efficient pattern	300.625	300.6236267089844
+caption	caption-xs	0	office affiliation efficient pattern	182.59375	182.5821990966797
+body-zero	body	0	office affiliation efficient pattern	236	235.99974060058594
+body-positive	body	0.25	office affiliation efficient pattern	251.796875	251.78372192382812
+emphasized-negative	body-emphasized	-0.25	office affiliation efficient pattern	241.015625	241.00296020507812

@@ -1,0 +1,353 @@
+{
+  "fontSha256": "46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d",
+  "records": [
+    {
+      "id": "body",
+      "role": "body",
+      "text": "Yes. It adheres to the WAI-ARIA design pattern.",
+      "style": {
+        "sourceNode": "6225:42454",
+        "fontFamily": "Geist",
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25,
+        "sourceTextStyle": "2008:12580"
+      },
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "width": 334.203125,
+      "baseline": 17,
+      "linebox": 24
+    },
+    {
+      "id": "body-cyrillic",
+      "role": "body",
+      "text": "Общий доступ к проекту и материалам",
+      "style": {
+        "sourceNode": "6225:42454",
+        "fontFamily": "Geist",
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25,
+        "sourceTextStyle": "2008:12580"
+      },
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "width": 298.421875,
+      "baseline": 17,
+      "linebox": 24
+    },
+    {
+      "id": "body-ligatures",
+      "role": "body",
+      "text": "office affiliation efficient pattern",
+      "style": {
+        "sourceNode": "6225:42454",
+        "fontFamily": "Geist",
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25,
+        "sourceTextStyle": "2008:12580"
+      },
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "width": 233.796875,
+      "baseline": 17,
+      "linebox": 24
+    },
+    {
+      "id": "emphasized",
+      "role": "body-emphasized",
+      "text": "office affiliation efficient pattern",
+      "style": {
+        "sourceNode": "6109:5889",
+        "fontFamily": "Geist",
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 500,
+        "letterSpacing": 0,
+        "sourceTextStyle": "2008:12592"
+      },
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "width": 243.453125,
+      "baseline": 17,
+      "linebox": 24
+    },
+    {
+      "id": "headline",
+      "role": "headline",
+      "text": "office affiliation efficient pattern",
+      "style": {
+        "sourceNode": "6225:42451",
+        "fontFamily": "Geist",
+        "fontSize": 20,
+        "lineHeight": 20,
+        "fontWeight": 500,
+        "letterSpacing": -0.33,
+        "sourceTextStyle": "2008:12579"
+      },
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "width": 300.625,
+      "baseline": 17,
+      "linebox": 20
+    },
+    {
+      "id": "caption",
+      "role": "caption-xs",
+      "text": "office affiliation efficient pattern",
+      "style": {
+        "sourceNode": "I6225:42453;6225:1048",
+        "sourceTextStyle": "2008:12581",
+        "fontFamily": "Geist",
+        "fontSize": 12,
+        "lineHeight": 12,
+        "fontWeight": 500,
+        "letterSpacing": 0
+      },
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "width": 182.59375,
+      "baseline": 10,
+      "linebox": 12
+    },
+    {
+      "id": "body-zero",
+      "role": "body",
+      "text": "office affiliation efficient pattern",
+      "letterSpacing": 0,
+      "style": {
+        "sourceNode": "6225:42454",
+        "fontFamily": "Geist",
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": 0,
+        "sourceTextStyle": "2008:12580"
+      },
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "width": 236,
+      "baseline": 17,
+      "linebox": 24
+    },
+    {
+      "id": "body-positive",
+      "role": "body",
+      "text": "office affiliation efficient pattern",
+      "letterSpacing": 0.25,
+      "style": {
+        "sourceNode": "6225:42454",
+        "fontFamily": "Geist",
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": 0.25,
+        "sourceTextStyle": "2008:12580"
+      },
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "width": 251.796875,
+      "baseline": 17,
+      "linebox": 24
+    },
+    {
+      "id": "emphasized-negative",
+      "role": "body-emphasized",
+      "text": "office affiliation efficient pattern",
+      "letterSpacing": -0.25,
+      "style": {
+        "sourceNode": "6109:5889",
+        "fontFamily": "Geist",
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 500,
+        "letterSpacing": -0.25,
+        "sourceTextStyle": "2008:12592"
+      },
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "width": 241.015625,
+      "baseline": 17,
+      "linebox": 24
+    },
+    {
+      "id": "body",
+      "role": "body",
+      "text": "Yes. It adheres to the WAI-ARIA design pattern.",
+      "style": {
+        "sourceNode": "6225:42454",
+        "fontFamily": "Geist",
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25,
+        "sourceTextStyle": "2008:12580"
+      },
+      "engine": "webkit",
+      "browser": "26.0",
+      "width": 334.20166015625,
+      "baseline": 17,
+      "linebox": 24
+    },
+    {
+      "id": "body-cyrillic",
+      "role": "body",
+      "text": "Общий доступ к проекту и материалам",
+      "style": {
+        "sourceNode": "6225:42454",
+        "fontFamily": "Geist",
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25,
+        "sourceTextStyle": "2008:12580"
+      },
+      "engine": "webkit",
+      "browser": "26.0",
+      "width": 298.4178161621094,
+      "baseline": 17,
+      "linebox": 24
+    },
+    {
+      "id": "body-ligatures",
+      "role": "body",
+      "text": "office affiliation efficient pattern",
+      "style": {
+        "sourceNode": "6225:42454",
+        "fontFamily": "Geist",
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25,
+        "sourceTextStyle": "2008:12580"
+      },
+      "engine": "webkit",
+      "browser": "26.0",
+      "width": 233.78372192382812,
+      "baseline": 17,
+      "linebox": 24
+    },
+    {
+      "id": "emphasized",
+      "role": "body-emphasized",
+      "text": "office affiliation efficient pattern",
+      "style": {
+        "sourceNode": "6109:5889",
+        "fontFamily": "Geist",
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 500,
+        "letterSpacing": 0,
+        "sourceTextStyle": "2008:12592"
+      },
+      "engine": "webkit",
+      "browser": "26.0",
+      "width": 243.4429473876953,
+      "baseline": 17,
+      "linebox": 24
+    },
+    {
+      "id": "headline",
+      "role": "headline",
+      "text": "office affiliation efficient pattern",
+      "style": {
+        "sourceNode": "6225:42451",
+        "fontFamily": "Geist",
+        "fontSize": 20,
+        "lineHeight": 20,
+        "fontWeight": 500,
+        "letterSpacing": -0.33,
+        "sourceTextStyle": "2008:12579"
+      },
+      "engine": "webkit",
+      "browser": "26.0",
+      "width": 300.6236267089844,
+      "baseline": 17,
+      "linebox": 20
+    },
+    {
+      "id": "caption",
+      "role": "caption-xs",
+      "text": "office affiliation efficient pattern",
+      "style": {
+        "sourceNode": "I6225:42453;6225:1048",
+        "sourceTextStyle": "2008:12581",
+        "fontFamily": "Geist",
+        "fontSize": 12,
+        "lineHeight": 12,
+        "fontWeight": 500,
+        "letterSpacing": 0
+      },
+      "engine": "webkit",
+      "browser": "26.0",
+      "width": 182.5821990966797,
+      "baseline": 10,
+      "linebox": 12
+    },
+    {
+      "id": "body-zero",
+      "role": "body",
+      "text": "office affiliation efficient pattern",
+      "letterSpacing": 0,
+      "style": {
+        "sourceNode": "6225:42454",
+        "fontFamily": "Geist",
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": 0,
+        "sourceTextStyle": "2008:12580"
+      },
+      "engine": "webkit",
+      "browser": "26.0",
+      "width": 235.99974060058594,
+      "baseline": 17,
+      "linebox": 24
+    },
+    {
+      "id": "body-positive",
+      "role": "body",
+      "text": "office affiliation efficient pattern",
+      "letterSpacing": 0.25,
+      "style": {
+        "sourceNode": "6225:42454",
+        "fontFamily": "Geist",
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": 0.25,
+        "sourceTextStyle": "2008:12580"
+      },
+      "engine": "webkit",
+      "browser": "26.0",
+      "width": 251.78372192382812,
+      "baseline": 17,
+      "linebox": 24
+    },
+    {
+      "id": "emphasized-negative",
+      "role": "body-emphasized",
+      "text": "office affiliation efficient pattern",
+      "letterSpacing": -0.25,
+      "style": {
+        "sourceNode": "6109:5889",
+        "fontFamily": "Geist",
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 500,
+        "letterSpacing": -0.25,
+        "sourceTextStyle": "2008:12592"
+      },
+      "engine": "webkit",
+      "browser": "26.0",
+      "width": 241.00296020507812,
+      "baseline": 17,
+      "linebox": 24
+    }
+  ]
+}

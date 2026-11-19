@@ -57,7 +57,7 @@ private fun KbdKey(text: String, metrics: LabKbdMetrics, first: Boolean) {
     val end = colors[LabComponents.KbdFillEndRole]
     val border = colors[LabComponents.KbdBorderRole]
     val bottomBorder = colors[LabComponents.KbdBottomBorderRole]
-    val style = LabType.body().copy(
+    val style = LabType.body().withTypography(
         color = colors[LabComponents.KbdLabelRole],
         fontSize = metrics.fontSize.sp, lineHeight = metrics.lineHeight.sp,
         fontWeight = FontWeight(LabComponents.KbdFontWeight.toInt()),

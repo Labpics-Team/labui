@@ -1,4 +1,4 @@
-﻿package pics.lab.ui
+package pics.lab.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -149,7 +149,7 @@ public fun LabButton(
                     (if (pressed) -LabComponents.ButtonInnerShadowY else LabComponents.ButtonInnerShadowY).dp)))
         else Modifier)
     val iconScope = LabButtonIconScope(label, metrics.icon.dp)
-    val labelStyle = LabType.body().copy(color = label, fontSize = metrics.fontSize.sp,
+    val labelStyle = LabType.body().withTypography(color = label, fontSize = metrics.fontSize.sp,
         lineHeight = metrics.lineHeight.sp, letterSpacing = metrics.letterSpacing.sp,
         fontWeight = FontWeight(LabComponents.ButtonFontWeight.toInt()))
     Box(modifier.graphicsLayer { scaleX = scale.value; scaleY = scale.value }
@@ -178,7 +178,7 @@ public fun LabButton(
             if (!iconOnly) Row(Modifier.heightIn(min = metrics.icon.dp).padding(horizontal = LabComponents.ButtonLabelPaddingX.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(LabComponents.ButtonLabelGap.dp)) {
                 BasicText(text, style = labelStyle)
-                if (description != null) BasicText(description, style = labelStyle.copy(color = descriptionColor,
+                if (description != null) BasicText(description, style = labelStyle.withTypography(color = descriptionColor,
                     fontWeight = FontWeight(metrics.descriptionFontWeight.toInt()), letterSpacing = metrics.descriptionLetterSpacing.sp))
             }
             if (!iconOnly && iconEnd != null) Box(Modifier.size(metrics.icon.dp), contentAlignment = Alignment.Center) { iconScope.iconEnd() }
