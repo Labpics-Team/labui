@@ -324,7 +324,7 @@ try {
     ),
   );
   console.info(
-    'Installed Tooltip: React + four generated adapters, SSR/hydration, actual-control accessibility and both browser engines passed.',
+    'Installed Tooltip: React SSR/hydration, four adapter SSR helpers with Lit upgrade, actual-control accessibility and both browser engines passed.',
   );
 } finally {
   if (server) await new Promise((resolve) => server.close(resolve));

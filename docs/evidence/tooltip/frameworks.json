@@ -1,0 +1,725 @@
+{
+  "generatedAt": "2026-11-19T23:36:26.549Z",
+  "command": "node apps/docs/tests/tooltip-frameworks-packed.mjs",
+  "node": "v24.15.0",
+  "publicIcons": false,
+  "versions": {
+    "vue": "3.5.42",
+    "solid-js": "1.9.4",
+    "svelte": "5.19.0",
+    "astro": "7.2.8",
+    "lit": "3.3.3",
+    "@lit-labs/ssr": "4.1.0",
+    "@lit-labs/ssr-client": "1.1.8",
+    "@labpics/icons": "0.4.0",
+    "esbuild": "0.25.12"
+  },
+  "archives": [
+    {
+      "name": "@labpics/ui-tokens",
+      "version": "0.0.0",
+      "archive": "labpics-ui-tokens-0.0.0.tgz",
+      "sha256": "5ff504812f97d5ef84dd9d48c79d4345b42c1228750f8ffdf93697bff659d547"
+    },
+    {
+      "name": "@labpics/ui-shadow",
+      "version": "0.0.0",
+      "archive": "labpics-ui-shadow-0.0.0.tgz",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "@labpics/ui-materials",
+      "version": "0.0.0",
+      "archive": "labpics-ui-materials-0.0.0.tgz",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "@labpics/fonts",
+      "version": "0.0.0",
+      "archive": "labpics-fonts-0.0.0.tgz",
+      "sha256": "d0d46708a7b04e7fca9900afc5735ca7a72fa5ae1082787ea603199b632b2fef"
+    },
+    {
+      "name": "@labui/colors",
+      "version": "0.0.0",
+      "archive": "labui-colors-0.0.0.tgz",
+      "sha256": "56ba4da1572ea321215974308bf0eb76333e8b583650b69e67d69bffacee7351"
+    },
+    {
+      "name": "@labpics/ui-core",
+      "version": "0.0.0",
+      "archive": "labpics-ui-core-0.0.0.tgz",
+      "sha256": "ecb0e4a40c88d8a36ab553ad459ceeefc30d47af76793d3bbdccd8d76e2dce0d"
+    },
+    {
+      "name": "@labpics/ui-vue",
+      "version": "0.0.0",
+      "archive": "labpics-ui-vue-0.0.0.tgz",
+      "sha256": "11d044b9a3ae88542d242df2fb11f6da635fba709021b146b73573ffc79de65e"
+    },
+    {
+      "name": "@labpics/ui-solid",
+      "version": "0.0.0",
+      "archive": "labpics-ui-solid-0.0.0.tgz",
+      "sha256": "523a48fd2750a5ebde8f01f051f82c4da726b7df3de4bd80d0872a8a76874043"
+    },
+    {
+      "name": "@labpics/ui-svelte",
+      "version": "0.0.0",
+      "archive": "labpics-ui-svelte-0.0.0.tgz",
+      "sha256": "f6e80dcb04e6ca1d7425b830450c92c2e2f681a14823fe4fd6381c366f81b576"
+    },
+    {
+      "name": "@labpics/ui-astro",
+      "version": "0.0.0",
+      "archive": "labpics-ui-astro-0.0.0.tgz",
+      "sha256": "cf27d0c0b1501e67adc25ce34d7d82254b9bae2ce1cdbbe8b558caa3f21c070d"
+    },
+    {
+      "name": "@labpics/icons",
+      "version": "0.4.0",
+      "archive": "icons.tgz",
+      "sha256": "d4962b817d19431393131f0aebb5d70f745e103e4062a6003a52926a8362c3bb"
+    }
+  ],
+  "commands": [
+    {
+      "command": [
+        "pnpm",
+        "pack",
+        "--pack-destination",
+        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+      ],
+      "cwd": "<repo>\\packages\\tokens"
+    },
+    {
+      "command": [
+        "pnpm",
+        "pack",
+        "--pack-destination",
+        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+      ],
+      "cwd": "<repo>\\packages\\shadow"
+    },
+    {
+      "command": [
+        "pnpm",
+        "pack",
+        "--pack-destination",
+        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+      ],
+      "cwd": "<repo>\\packages\\materials"
+    },
+    {
+      "command": [
+        "pnpm",
+        "pack",
+        "--pack-destination",
+        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+      ],
+      "cwd": "<repo>\\packages\\fonts"
+    },
+    {
+      "command": [
+        "pnpm",
+        "pack",
+        "--pack-destination",
+        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+      ],
+      "cwd": "<repo>\\packages\\colors"
+    },
+    {
+      "command": [
+        "pnpm",
+        "pack",
+        "--pack-destination",
+        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+      ],
+      "cwd": "<repo>\\packages\\core"
+    },
+    {
+      "command": [
+        "pnpm",
+        "pack",
+        "--pack-destination",
+        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+      ],
+      "cwd": "<repo>\\packages\\vue"
+    },
+    {
+      "command": [
+        "pnpm",
+        "pack",
+        "--pack-destination",
+        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+      ],
+      "cwd": "<repo>\\packages\\solid"
+    },
+    {
+      "command": [
+        "pnpm",
+        "pack",
+        "--pack-destination",
+        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+      ],
+      "cwd": "<repo>\\packages\\svelte"
+    },
+    {
+      "command": [
+        "pnpm",
+        "pack",
+        "--pack-destination",
+        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+      ],
+      "cwd": "<repo>\\packages\\astro"
+    },
+    {
+      "command": [
+        "pnpm",
+        "install",
+        "--ignore-scripts",
+        "--config.auto-install-peers=false",
+        "--prefer-offline"
+      ],
+      "cwd": "<consumer>"
+    },
+    {
+      "command": [
+        "node",
+        "--conditions=development",
+        "build-consumer.mjs"
+      ],
+      "cwd": "<consumer>"
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "astro",
+        "build"
+      ],
+      "cwd": "<consumer>"
+    }
+  ],
+  "qualification": [
+    {
+      "framework": "vue",
+      "server": "import {createSSRApp} from 'vue';import {renderToString} from 'vue/server-renderer';import App from './VueApp.vue';export const html=await renderToString(createSSRApp(App));",
+      "client": "import {createSSRApp,nextTick} from 'vue';import App from './VueApp.vue';export async function mount(){const app=createSSRApp(App);app.mount('#app');await nextTick();window.unmountTooltip=()=>app.unmount()};",
+      "browserModules": 354,
+      "installedBindings": [
+        "node_modules/.pnpm/@labpics+ui-vue@file+packs+_2e85176b6c4614f99b0bc32c52d755e5/node_modules/@labpics/ui-vue/dist/index.js"
+      ],
+      "serverEngineInBrowser": false
+    },
+    {
+      "framework": "solid",
+      "server": "import {renderToString,generateHydrationScript} from 'solid-js/web';import {createComponent} from 'solid-js';import {App} from './solid-app.mjs';export const html=renderToString(()=>createComponent(App,{}));export const hydrationScript=generateHydrationScript();",
+      "client": "import {hydrate} from 'solid-js/web';import {createComponent} from 'solid-js';import {App} from './solid-app.mjs';export function mount(){const dispose=hydrate(()=>createComponent(App,{}),document.getElementById('app'));window.unmountTooltip=()=>dispose()};",
+      "browserModules": 351,
+      "installedBindings": [
+        "node_modules/.pnpm/@labpics+ui-solid@file+pack_6281d7cb0310e94680082c8783b2c86c/node_modules/@labpics/ui-solid/dist/index.js"
+      ],
+      "serverEngineInBrowser": false
+    },
+    {
+      "framework": "svelte",
+      "server": "import {render} from 'svelte/server';import App from './SvelteApp.svelte';export const html=render(App).body;",
+      "client": "import {hydrate,flushSync,unmount} from 'svelte';import App from './SvelteApp.svelte';export function mount(){const app=hydrate(App,{target:document.getElementById('app')});flushSync();window.unmountTooltip=async()=>{await unmount(app);flushSync()}};",
+      "browserModules": 471,
+      "installedBindings": [
+        "node_modules/.pnpm/@labpics+ui-svelte@file+pac_807e5a864ac18d91f280da4c05418dda/node_modules/@labpics/ui-svelte/dist/generated/Tooltip.svelte",
+        "node_modules/.pnpm/@labpics+ui-svelte@file+pac_807e5a864ac18d91f280da4c05418dda/node_modules/@labpics/ui-svelte/dist/generated/index.js",
+        "node_modules/.pnpm/@labpics+ui-svelte@file+pac_807e5a864ac18d91f280da4c05418dda/node_modules/@labpics/ui-svelte/dist/index.js"
+      ],
+      "serverEngineInBrowser": false
+    }
+  ],
+  "astro": {
+    "entry": "@labpics/ui-astro/Tooltip.astro",
+    "build": "astro build",
+    "client": "The public .astro wrapper hydrates the shared Lit element; reactive updates use its DOM properties, not an Astro client framework runtime."
+  },
+  "records": [
+    {
+      "engine": "chromium",
+      "framework": "vue",
+      "before": {
+        "controls": 1,
+        "registered": false,
+        "shadow": true,
+        "surfaceHidden": true,
+        "type": "neutral",
+        "size": "m"
+      },
+      "after": {
+        "controls": 1,
+        "sameHost": true,
+        "sameTrigger": true,
+        "sameSurface": true,
+        "fallbackTabindex": null
+      },
+      "metrics": {
+        "width": 200.9375,
+        "height": 48,
+        "font": "16px",
+        "lineHeight": "24px",
+        "tracking": "-0.25px",
+        "padding": "12px",
+        "radius": "12px",
+        "type": "neutral",
+        "size": "m",
+        "background": "rgb(255, 255, 255)",
+        "clip": "url(\"#lab-contour-1\")",
+        "tail": "chevron",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13.5332%208C11.3314%208%2012.0314%202.53097e-05%203.78929%200L23.277%200C15.7349%201.41942e-06%2015.7349%208%2013.5332%208Z%22%20transform%3D%22%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "interactions": {
+        "hover": true,
+        "hoverableContent": true,
+        "focus": true,
+        "escapeKeepsFocus": true,
+        "consumerClick": true,
+        "openChangeEvents": true
+      },
+      "updated": {
+        "type": "accent",
+        "tail": "bubble",
+        "placement": "left",
+        "content": "Updated framework description",
+        "background": "rgb(0, 122, 255)",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13%207C15.2091%207%2017%208.79086%2017%2011C17%2013.2091%2015.2091%2015%2013%2015C10.7909%2015%209%2013.2091%209%2011C9%208.79086%2010.7909%207%2013%207Z%20M12%200C12%203.31371%209.31371%206%206%206C2.68629%206%200%203.31371%200%200L12%200Z%22%20transform%3D%22translate(6%200)%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "cleanup": {
+        "controls": 0,
+        "hostConnected": false,
+        "describedBy": null,
+        "descriptionsRemoved": true,
+        "popoverOpen": false,
+        "eventsAfterUnmount": 0,
+        "frameworkCleanups": 1
+      },
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "framework": "solid",
+      "before": {
+        "controls": 1,
+        "registered": false,
+        "shadow": true,
+        "surfaceHidden": true,
+        "type": "neutral",
+        "size": "m"
+      },
+      "after": {
+        "controls": 1,
+        "sameHost": true,
+        "sameTrigger": true,
+        "sameSurface": true,
+        "fallbackTabindex": null
+      },
+      "metrics": {
+        "width": 200.9375,
+        "height": 48,
+        "font": "16px",
+        "lineHeight": "24px",
+        "tracking": "-0.25px",
+        "padding": "12px",
+        "radius": "12px",
+        "type": "neutral",
+        "size": "m",
+        "background": "rgb(255, 255, 255)",
+        "clip": "url(\"#lab-contour-1\")",
+        "tail": "chevron",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13.5332%208C11.3314%208%2012.0314%202.53097e-05%203.78929%200L23.277%200C15.7349%201.41942e-06%2015.7349%208%2013.5332%208Z%22%20transform%3D%22%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "interactions": {
+        "hover": true,
+        "hoverableContent": true,
+        "focus": true,
+        "escapeKeepsFocus": true,
+        "consumerClick": true,
+        "openChangeEvents": true
+      },
+      "updated": {
+        "type": "accent",
+        "tail": "bubble",
+        "placement": "left",
+        "content": "Updated framework description",
+        "background": "rgb(0, 122, 255)",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13%207C15.2091%207%2017%208.79086%2017%2011C17%2013.2091%2015.2091%2015%2013%2015C10.7909%2015%209%2013.2091%209%2011C9%208.79086%2010.7909%207%2013%207Z%20M12%200C12%203.31371%209.31371%206%206%206C2.68629%206%200%203.31371%200%200L12%200Z%22%20transform%3D%22translate(6%200)%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "cleanup": {
+        "controls": 0,
+        "hostConnected": false,
+        "describedBy": null,
+        "descriptionsRemoved": true,
+        "popoverOpen": false,
+        "eventsAfterUnmount": 0,
+        "frameworkCleanups": 1
+      },
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "framework": "svelte",
+      "before": {
+        "controls": 1,
+        "registered": false,
+        "shadow": true,
+        "surfaceHidden": true,
+        "type": "neutral",
+        "size": "m"
+      },
+      "after": {
+        "controls": 1,
+        "sameHost": true,
+        "sameTrigger": true,
+        "sameSurface": true,
+        "fallbackTabindex": null
+      },
+      "metrics": {
+        "width": 200.9375,
+        "height": 48,
+        "font": "16px",
+        "lineHeight": "24px",
+        "tracking": "-0.25px",
+        "padding": "12px",
+        "radius": "12px",
+        "type": "neutral",
+        "size": "m",
+        "background": "rgb(255, 255, 255)",
+        "clip": "url(\"#lab-contour-1\")",
+        "tail": "chevron",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13.5332%208C11.3314%208%2012.0314%202.53097e-05%203.78929%200L23.277%200C15.7349%201.41942e-06%2015.7349%208%2013.5332%208Z%22%20transform%3D%22%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "interactions": {
+        "hover": true,
+        "hoverableContent": true,
+        "focus": true,
+        "escapeKeepsFocus": true,
+        "consumerClick": true,
+        "openChangeEvents": true
+      },
+      "updated": {
+        "type": "accent",
+        "tail": "bubble",
+        "placement": "left",
+        "content": "Updated framework description",
+        "background": "rgb(0, 122, 255)",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13%207C15.2091%207%2017%208.79086%2017%2011C17%2013.2091%2015.2091%2015%2013%2015C10.7909%2015%209%2013.2091%209%2011C9%208.79086%2010.7909%207%2013%207Z%20M12%200C12%203.31371%209.31371%206%206%206C2.68629%206%200%203.31371%200%200L12%200Z%22%20transform%3D%22translate(6%200)%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "cleanup": {
+        "controls": 0,
+        "hostConnected": false,
+        "describedBy": null,
+        "descriptionsRemoved": true,
+        "popoverOpen": false,
+        "eventsAfterUnmount": 0,
+        "frameworkCleanups": 1
+      },
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "framework": "astro",
+      "before": {
+        "controls": 1,
+        "registered": false,
+        "shadow": true,
+        "surfaceHidden": true,
+        "type": "neutral",
+        "size": "m"
+      },
+      "after": {
+        "controls": 1,
+        "sameHost": true,
+        "sameTrigger": true,
+        "sameSurface": true,
+        "fallbackTabindex": null
+      },
+      "metrics": {
+        "width": 200.9375,
+        "height": 48,
+        "font": "16px",
+        "lineHeight": "24px",
+        "tracking": "-0.25px",
+        "padding": "12px",
+        "radius": "12px",
+        "type": "neutral",
+        "size": "m",
+        "background": "rgb(255, 255, 255)",
+        "clip": "url(\"#lab-contour-1\")",
+        "tail": "chevron",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13.5332%208C11.3314%208%2012.0314%202.53097e-05%203.78929%200L23.277%200C15.7349%201.41942e-06%2015.7349%208%2013.5332%208Z%22%20transform%3D%22%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "interactions": {
+        "hover": true,
+        "hoverableContent": true,
+        "focus": true,
+        "escapeKeepsFocus": true,
+        "consumerClick": true,
+        "openChangeEvents": true
+      },
+      "updated": {
+        "type": "accent",
+        "tail": "bubble",
+        "placement": "left",
+        "content": "Updated framework description",
+        "background": "rgb(0, 122, 255)",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13%207C15.2091%207%2017%208.79086%2017%2011C17%2013.2091%2015.2091%2015%2013%2015C10.7909%2015%209%2013.2091%209%2011C9%208.79086%2010.7909%207%2013%207Z%20M12%200C12%203.31371%209.31371%206%206%206C2.68629%206%200%203.31371%200%200L12%200Z%22%20transform%3D%22translate(6%200)%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "cleanup": {
+        "controls": 0,
+        "hostConnected": false,
+        "describedBy": null,
+        "descriptionsRemoved": true,
+        "popoverOpen": false,
+        "eventsAfterUnmount": 0,
+        "frameworkCleanups": 1
+      },
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "framework": "vue",
+      "before": {
+        "controls": 1,
+        "registered": false,
+        "shadow": true,
+        "surfaceHidden": true,
+        "type": "neutral",
+        "size": "m"
+      },
+      "after": {
+        "controls": 1,
+        "sameHost": true,
+        "sameTrigger": true,
+        "sameSurface": true,
+        "fallbackTabindex": null
+      },
+      "metrics": {
+        "width": 200.9375,
+        "height": 48,
+        "font": "16px",
+        "lineHeight": "24px",
+        "tracking": "-0.25px",
+        "padding": "12px",
+        "radius": "12px",
+        "type": "neutral",
+        "size": "m",
+        "background": "rgb(255, 255, 255)",
+        "clip": "url(\"#lab-contour-1\")",
+        "tail": "chevron",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13.5332%208C11.3314%208%2012.0314%202.53097e-05%203.78929%200L23.277%200C15.7349%201.41942e-06%2015.7349%208%2013.5332%208Z%22%20transform%3D%22%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "interactions": {
+        "hover": true,
+        "hoverableContent": true,
+        "focus": true,
+        "escapeKeepsFocus": true,
+        "consumerClick": true,
+        "openChangeEvents": true
+      },
+      "updated": {
+        "type": "accent",
+        "tail": "bubble",
+        "placement": "left",
+        "content": "Updated framework description",
+        "background": "rgb(0, 122, 255)",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13%207C15.2091%207%2017%208.79086%2017%2011C17%2013.2091%2015.2091%2015%2013%2015C10.7909%2015%209%2013.2091%209%2011C9%208.79086%2010.7909%207%2013%207Z%20M12%200C12%203.31371%209.31371%206%206%206C2.68629%206%200%203.31371%200%200L12%200Z%22%20transform%3D%22translate(6%200)%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "cleanup": {
+        "controls": 0,
+        "hostConnected": false,
+        "describedBy": null,
+        "descriptionsRemoved": true,
+        "popoverOpen": false,
+        "eventsAfterUnmount": 0,
+        "frameworkCleanups": 1
+      },
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "framework": "solid",
+      "before": {
+        "controls": 1,
+        "registered": false,
+        "shadow": true,
+        "surfaceHidden": true,
+        "type": "neutral",
+        "size": "m"
+      },
+      "after": {
+        "controls": 1,
+        "sameHost": true,
+        "sameTrigger": true,
+        "sameSurface": true,
+        "fallbackTabindex": null
+      },
+      "metrics": {
+        "width": 200.9375,
+        "height": 48,
+        "font": "16px",
+        "lineHeight": "24px",
+        "tracking": "-0.25px",
+        "padding": "12px",
+        "radius": "12px",
+        "type": "neutral",
+        "size": "m",
+        "background": "rgb(255, 255, 255)",
+        "clip": "url(\"#lab-contour-1\")",
+        "tail": "chevron",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13.5332%208C11.3314%208%2012.0314%202.53097e-05%203.78929%200L23.277%200C15.7349%201.41942e-06%2015.7349%208%2013.5332%208Z%22%20transform%3D%22%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "interactions": {
+        "hover": true,
+        "hoverableContent": true,
+        "focus": true,
+        "escapeKeepsFocus": true,
+        "consumerClick": true,
+        "openChangeEvents": true
+      },
+      "updated": {
+        "type": "accent",
+        "tail": "bubble",
+        "placement": "left",
+        "content": "Updated framework description",
+        "background": "rgb(0, 122, 255)",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13%207C15.2091%207%2017%208.79086%2017%2011C17%2013.2091%2015.2091%2015%2013%2015C10.7909%2015%209%2013.2091%209%2011C9%208.79086%2010.7909%207%2013%207Z%20M12%200C12%203.31371%209.31371%206%206%206C2.68629%206%200%203.31371%200%200L12%200Z%22%20transform%3D%22translate(6%200)%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "cleanup": {
+        "controls": 0,
+        "hostConnected": false,
+        "describedBy": null,
+        "descriptionsRemoved": true,
+        "popoverOpen": false,
+        "eventsAfterUnmount": 0,
+        "frameworkCleanups": 1
+      },
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "framework": "svelte",
+      "before": {
+        "controls": 1,
+        "registered": false,
+        "shadow": true,
+        "surfaceHidden": true,
+        "type": "neutral",
+        "size": "m"
+      },
+      "after": {
+        "controls": 1,
+        "sameHost": true,
+        "sameTrigger": true,
+        "sameSurface": true,
+        "fallbackTabindex": null
+      },
+      "metrics": {
+        "width": 200.9375,
+        "height": 48,
+        "font": "16px",
+        "lineHeight": "24px",
+        "tracking": "-0.25px",
+        "padding": "12px",
+        "radius": "12px",
+        "type": "neutral",
+        "size": "m",
+        "background": "rgb(255, 255, 255)",
+        "clip": "url(\"#lab-contour-1\")",
+        "tail": "chevron",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13.5332%208C11.3314%208%2012.0314%202.53097e-05%203.78929%200L23.277%200C15.7349%201.41942e-06%2015.7349%208%2013.5332%208Z%22%20transform%3D%22%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "interactions": {
+        "hover": true,
+        "hoverableContent": true,
+        "focus": true,
+        "escapeKeepsFocus": true,
+        "consumerClick": true,
+        "openChangeEvents": true
+      },
+      "updated": {
+        "type": "accent",
+        "tail": "bubble",
+        "placement": "left",
+        "content": "Updated framework description",
+        "background": "rgb(0, 122, 255)",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13%207C15.2091%207%2017%208.79086%2017%2011C17%2013.2091%2015.2091%2015%2013%2015C10.7909%2015%209%2013.2091%209%2011C9%208.79086%2010.7909%207%2013%207Z%20M12%200C12%203.31371%209.31371%206%206%206C2.68629%206%200%203.31371%200%200L12%200Z%22%20transform%3D%22translate(6%200)%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "cleanup": {
+        "controls": 0,
+        "hostConnected": false,
+        "describedBy": null,
+        "descriptionsRemoved": true,
+        "popoverOpen": false,
+        "eventsAfterUnmount": 0,
+        "frameworkCleanups": 1
+      },
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "framework": "astro",
+      "before": {
+        "controls": 1,
+        "registered": false,
+        "shadow": true,
+        "surfaceHidden": true,
+        "type": "neutral",
+        "size": "m"
+      },
+      "after": {
+        "controls": 1,
+        "sameHost": true,
+        "sameTrigger": true,
+        "sameSurface": true,
+        "fallbackTabindex": null
+      },
+      "metrics": {
+        "width": 200.9375,
+        "height": 48,
+        "font": "16px",
+        "lineHeight": "24px",
+        "tracking": "-0.25px",
+        "padding": "12px",
+        "radius": "12px",
+        "type": "neutral",
+        "size": "m",
+        "background": "rgb(255, 255, 255)",
+        "clip": "url(\"#lab-contour-1\")",
+        "tail": "chevron",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13.5332%208C11.3314%208%2012.0314%202.53097e-05%203.78929%200L23.277%200C15.7349%201.41942e-06%2015.7349%208%2013.5332%208Z%22%20transform%3D%22%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "interactions": {
+        "hover": true,
+        "hoverableContent": true,
+        "focus": true,
+        "escapeKeepsFocus": true,
+        "consumerClick": true,
+        "openChangeEvents": true
+      },
+      "updated": {
+        "type": "accent",
+        "tail": "bubble",
+        "placement": "left",
+        "content": "Updated framework description",
+        "background": "rgb(0, 122, 255)",
+        "mask": "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2228%22%20height%3D%2215%22%20viewBox%3D%220%200%2028%2015%22%3E%3Cpath%20fill%3D%22white%22%20d%3D%22M13%207C15.2091%207%2017%208.79086%2017%2011C17%2013.2091%2015.2091%2015%2013%2015C10.7909%2015%209%2013.2091%209%2011C9%208.79086%2010.7909%207%2013%207Z%20M12%200C12%203.31371%209.31371%206%206%206C2.68629%206%200%203.31371%200%200L12%200Z%22%20transform%3D%22translate(6%200)%22%2F%3E%3C%2Fsvg%3E\")"
+      },
+      "cleanup": {
+        "controls": 0,
+        "hostConnected": false,
+        "describedBy": null,
+        "descriptionsRemoved": true,
+        "popoverOpen": false,
+        "eventsAfterUnmount": 0,
+        "frameworkCleanups": 1
+      },
+      "errors": []
+    }
+  ]
+}

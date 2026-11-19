@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="TooltipConsumerTest[desktop]" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-19T22:55:38.589Z" hostname="DESKTOP-NFO26JA" time="2.999">
+<testsuite name="TooltipConsumerTest[desktop]" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-19T23:38:55.624Z" hostname="DESKTOP-NFO26JA" time="2.638">
   <properties/>
-  <testcase name="installedTooltipDescribesWithoutTakingFocus[desktop]" classname="pics.lab.ui.sample.TooltipConsumerTest" time="2.996"/>
+  <testcase name="installedTooltipDescribesWithoutTakingFocus[desktop]" classname="pics.lab.ui.sample.TooltipConsumerTest" time="2.635"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
