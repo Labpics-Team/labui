@@ -57,7 +57,7 @@ class AlertRenderTest {
             val preferences = LabPreferences(appearance = appearance, reducedMotion = true)
             val theme = LabThemeState(initialLabColors(preferences), preferences)
             val ready = AtomicBoolean(false)
-            val scene = ImageComposeScene(510, 1400, Density(1f, scale)) {
+            val scene = ImageComposeScene(510, 1800, Density(1f, scale)) {
                 val font = labFontFamily(); val resolver = LocalFontFamilyResolver.current
                 LaunchedEffect(font) { resolver.preload(font); ready.set(true) }
                 LabTheme(theme, font) {
@@ -76,7 +76,11 @@ class AlertRenderTest {
                 val png = settle(scene, ready)
                 val frames = nodes(scene).filter { it.config.getOrNull(SemanticsProperties.TestTag)?.contains('-') == true }
                 assertEquals(6, frames.size)
+                val frontHeight = frames.first().boundsInRoot.height
                 for (frame in frames) {
+                    val depth = frame.config[SemanticsProperties.TestTag].last().digitToInt() - 1
+                    assertEquals(frontHeight, frame.boundsInRoot.height - 8 * depth, "Type and decorative depth must not squeeze the text surface")
+                    assertTrue(frame.boundsInRoot.bottom <= 1776f, "Every variant must fit the capture canvas")
                     assertEquals(450f, frame.boundsInRoot.width)
                     if (scale == 1f) assertEquals(80f + 8 * (frame.config[SemanticsProperties.TestTag].last().digitToInt() - 1), frame.boundsInRoot.height)
                     val descendants = walk(frame)

@@ -43,10 +43,16 @@ leading входит в padding, а `min-block-size:1lh` сохраняет по
   scales и материала; измерение в свободном родителе, точная высота 80/88/96,
   семантика live region, настоящее keyboard interaction, скрытые элементы,
   длинное слово, reduced transparency и движущийся контрастный фон.
+  Capture canvas 1800px вмещает все шесть вариантов при 200%; инвариант равной
+  высоты front у всех вариантов не даёт последнему примеру сжать текст.
 - `AlertConsumerTest`: отдельный Maven-потребитель `ui-compose:0.1.0-alert2-20261120`
   с публичным `icons-compose:0.4.0`, без development source substitution. При
   Enter сообщения сохраняются в очереди и закрываются по одному; после последнего
   фокус возвращается к кнопке показа. Обе темы × 100/125/200%, шесть PNG.
+- Каталог: `catalog:check`, 14 catalog-тестов и docs build — PASS. Реальный
+  `/components.html?component=alert` проверен на 1440/390px в Light/Dark.
+  `alert-catalog.mjs` проходит очередь Enter/Space, возврат фокуса и повторный
+  показ трёх сообщений; `catalog-*.png` и `catalog.json` сохраняют результат.
 
 Все браузеры headless; Compose использует `-Djava.awt.headless=true` и software
 Skiko. Видимые окна, screen reader и аудио не запускались. Accessibility здесь
@@ -94,6 +100,7 @@ $env:LAB_ICONS_TARBALL = 'D:/AgentWork/.scratch/icons040-ci-npm-20261120/package
 node apps/docs/tests/alert-packed.mjs
 # Vite на 5377 либо LABUI_DOCS_URL:
 node apps/docs/tests/alert-material.mjs
+node apps/docs/tests/alert-catalog.mjs
 
 $env:JAVA_TOOL_OPTIONS = '-Djava.awt.headless=true'
 $env:SKIKO_RENDER_API = 'SOFTWARE'

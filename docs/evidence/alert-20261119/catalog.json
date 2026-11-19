@@ -1,0 +1,30 @@
+[
+  {
+    "width": 1440,
+    "theme": "light",
+    "queueDismissal": true,
+    "focusReturn": true,
+    "reopen": true
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "queueDismissal": true,
+    "focusReturn": true,
+    "reopen": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "queueDismissal": true,
+    "focusReturn": true,
+    "reopen": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "queueDismissal": true,
+    "focusReturn": true,
+    "reopen": true
+  }
+]
