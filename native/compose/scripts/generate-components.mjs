@@ -10,6 +10,10 @@ const root =
 const profile = JSON.parse(
   await readFile(new URL('packages/tokens/src/components.json', root), 'utf8'),
 );
+const { resolveTextStyles } = await import(
+  new URL('packages/tokens/src/resolve-text-styles.mjs', root)
+);
+const resolvedProfile = resolveTextStyles(profile);
 const upper = (name) =>
   name
     .split('-')
@@ -54,7 +58,7 @@ const lines = [
   'package pics.lab.ui',
   '',
 ];
-for (const [component, definition] of Object.entries(profile)) {
+for (const [component, definition] of Object.entries(resolvedProfile)) {
   if (!definition.sizes) continue;
   const properties = Object.keys(Object.values(definition.sizes)[0]);
   lines.push(
@@ -117,7 +121,7 @@ function emitConstants(prefix, definition) {
     else if (value && typeof value === 'object') emitConstants(prefix + upper(name), value);
   }
 }
-for (const [component, definition] of Object.entries(profile)) {
+for (const [component, definition] of Object.entries(resolvedProfile)) {
   if (definition.sizes) {
     const properties = Object.keys(Object.values(definition.sizes)[0]);
     for (const [size, metrics] of Object.entries(definition.sizes)) {

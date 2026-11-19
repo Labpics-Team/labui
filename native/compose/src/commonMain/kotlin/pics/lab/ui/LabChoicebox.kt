@@ -38,7 +38,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.state.ToggleableState
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.constrainHeight
@@ -130,12 +129,8 @@ internal fun ChoiceboxOption(
     val focused by interactions.collectIsFocusedAsState()
     val shape = RoundedCornerShape(LabComponents.SelectionChoiceboxRadius.dp)
     val border = colors[if (selected && enabled) LabComponents.SelectionChoiceboxSelectedStrokeRole else LabComponents.SelectionChoiceboxStrokeRole]
-    val labelStyle = LabType.body().copy(
+    val labelStyle = LabType.emphasized().copy(
         color = colors[if (enabled) LabComponents.SelectionRolesLabel else LabComponents.SelectionRolesDisabledLabel],
-        fontSize = LabComponents.SelectionChoiceboxFontSize.sp,
-        lineHeight = LabComponents.SelectionChoiceboxLineHeight.sp,
-        letterSpacing = LabComponents.SelectionChoiceboxLetterSpacing.sp,
-        fontWeight = FontWeight(LabComponents.SelectionChoiceboxFontWeight.toInt()),
     )
     val iconScope = LabChoiceboxIconScope(colors[if (enabled) LabComponents.SelectionChoiceboxIconRole else LabComponents.SelectionRolesDisabledLabel],
         LabComponents.SelectionChoiceboxIconSize.dp)

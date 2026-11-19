@@ -1,4 +1,4 @@
-import profile from '../components.json' with { type: 'json' };
+import profile from '../components.js';
 import { cssVarName } from '../domain/alias.js';
 import type { ResolvedTokens } from '../domain/build.js';
 import type { ResolvedAlias, ResolvedToken } from '../domain/token.js';
@@ -12,6 +12,7 @@ import type { ResolvedAlias, ResolvedToken } from '../domain/token.js';
  */
 export function generateCss(tokens: ResolvedTokens): string {
   const blocks: string[] = [
+    section('Typography — exact authored text roles (text-styles.json)', tokenLines(tokens.textStyles)),
     section('Shared loading shape', [
       loaderMask(),
       `  --lab-motion-loader-period: ${profile.button.loader.periodMs}ms;`,

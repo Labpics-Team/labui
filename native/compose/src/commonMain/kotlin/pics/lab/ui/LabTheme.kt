@@ -12,7 +12,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.Font
 import pics.lab.ui.resources.Res
 import pics.lab.ui.resources.geist_regular
@@ -82,18 +81,19 @@ public fun labFontFamily(): FontFamily = FontFamily(
 
 internal object LabType {
     @Composable
-    fun body(): TextStyle = TextStyle(
+    fun body(): TextStyle = LabTextStyles.Body.copy(
         color = LocalLabTheme.current.colors["label-primary"], fontFamily = LocalLabFont.current,
-        fontSize = LabTokens.FontSizeMd.sp, lineHeight = (LabTokens.FontSizeMd * LabTokens.LineHeightMd).sp,
-        letterSpacing = (LabTokens.FontSizeMd * LabTokens.LetterSpacingMd).sp,
     )
     @Composable
-    fun caption(): TextStyle = body().copy(
-        fontSize = LabTokens.FontSizeXs.sp,
-        lineHeight = (LabTokens.FontSizeXs * LabTokens.LineHeightMd).sp,
-        letterSpacing = (LabTokens.FontSizeXs * LabTokens.LetterSpacingXs).sp,
+    fun emphasized(): TextStyle = LabTextStyles.BodyEmphasized.copy(
+        color = LocalLabTheme.current.colors["label-primary"], fontFamily = LocalLabFont.current,
     )
     @Composable
-    fun title(): TextStyle = body().copy(fontSize = LabTokens.FontSizeXl.sp,
-        lineHeight = (LabTokens.FontSizeXl * 1.2f).sp, fontWeight = FontWeight.SemiBold)
+    fun caption(): TextStyle = LabTextStyles.CaptionXs.copy(
+        color = LocalLabTheme.current.colors["label-primary"], fontFamily = LocalLabFont.current,
+    )
+    @Composable
+    fun title(): TextStyle = LabTextStyles.Headline.copy(
+        color = LocalLabTheme.current.colors["label-primary"], fontFamily = LocalLabFont.current,
+    )
 }

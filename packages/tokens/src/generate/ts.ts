@@ -1,5 +1,6 @@
 import { cssVarName } from '../domain/alias.js';
 import type { ResolvedTokens } from '../domain/build.js';
+import { authoredTextStyles } from '../domain/text-styles.js';
 import type { ResolvedAlias, ResolvedToken } from '../domain/token.js';
 
 /**
@@ -13,6 +14,29 @@ import type { ResolvedAlias, ResolvedToken } from '../domain/token.js';
  */
 export function generateTs(tokens: ResolvedTokens): string {
   const parts: string[] = [banner()];
+  parts.push(
+    [
+      '/** Complete authored styles. Fluid scale steps below are a separate API. */',
+      'export const textStyle = {',
+      ...Object.keys(authoredTextStyles).map(
+        (role) =>
+          `  ${quoteKey(role)}: {\n    fontFamily: 'var(--lab-font-family)',\n${[
+            'font-size',
+            'line-height',
+            'font-weight',
+            'letter-spacing',
+          ]
+            .map(
+              (property) =>
+                `    ${property.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())}: 'var(--lab-${property}-${role})',`,
+            )
+            .join('\n')}\n  },`,
+      ),
+      '} as const;',
+      '',
+      'export type TextStyleRole = keyof typeof textStyle;',
+    ].join('\n'),
+  );
   parts.push(
     scaleConst(
       'component',

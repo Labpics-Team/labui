@@ -1,6 +1,8 @@
 // Generated from packages/tokens/src/generated/{tokens,motion}.dtcg.json. Do not edit.
 package pics.lab.ui
 
+import androidx.compose.ui.unit.sp
+
 internal object LabTokens {
     const val Space0: Float = 0f
     const val Space1: Float = 4f
@@ -48,6 +50,10 @@ internal object LabTokens {
     const val SpaceInputHelperX: Float = 4f
     const val SpaceInputAdornmentOuter: Float = 12f
     const val SpaceInputAdornmentInner: Float = 4f
+    const val SpaceTextareaTop: Float = 16f
+    const val SpaceTextareaBottom: Float = 24f
+    const val SpaceTextareaStart: Float = 20f
+    const val SpaceTextareaEnd: Float = 16f
     const val SpaceCardPadding: Float = 24f
     const val SpaceCardGap: Float = 16f
     const val SpaceCardCaptionGap: Float = 8f
@@ -64,6 +70,9 @@ internal object LabTokens {
     const val SpaceSnackbarY: Float = 8f
     const val SpaceSnackbarActionGap: Float = 24f
     const val SpaceSnackbarLabelGap: Float = 12f
+    const val SpaceBadgeX: Float = 8f
+    const val SpaceBadgeY: Float = 4f
+    const val SpaceBadgeGap: Float = 4f
     const val SizeControlS: Float = 12f
     const val SizeControlM: Float = 16f
     const val SizeControlL: Float = 20f
@@ -115,6 +124,7 @@ internal object LabTokens {
     const val SizeInputLContent: Float = 24f
     const val SizeInputAdornment: Float = 32f
     const val SizeInputIcon: Float = 16f
+    const val SizeTextarea: Float = 112f
     const val SizeCardMedia: Float = 200f
     const val SizeSheetDragArea: Float = 24f
     const val SizeSheetDragWidth: Float = 36f
@@ -123,6 +133,8 @@ internal object LabTokens {
     const val SizeSheetBodyTwoThirds: Float = 540f
     const val SizeSheetBodyOneThird: Float = 270f
     const val SizeSnackbarTimer: Float = 32f
+    const val SizeBadge: Float = 20f
+    const val SizeBadgeIcon: Float = 12f
     const val Radius0: Float = 0f
     const val RadiusXxs: Float = 2f
     const val RadiusXs: Float = 4f
@@ -146,6 +158,7 @@ internal object LabTokens {
     const val RadiusSheetTop: Float = 32f
     const val RadiusSheetDrag: Float = 4f
     const val RadiusSnackbar: Float = 9999f
+    const val RadiusBadge: Float = 9999f
     const val ZIndexPrimary: Float = 0f
     const val ZIndexSecondary: Float = 100f
     const val ZIndexTertiary: Float = 200f
@@ -171,6 +184,10 @@ internal object LabTokens {
     const val FontSize4xl: Float = 64.1194f
     const val FontSize5xl: Float = 84.6376f
     const val FontSize6xl: Float = 111.7217f
+    const val FontSizeBody: Float = 16f
+    const val FontSizeBodyEmphasized: Float = 16f
+    const val FontSizeHeadline: Float = 20f
+    const val FontSizeCaptionXs: Float = 12f
     const val FontSizeButtonS: Float = 14f
     const val FontSizeButtonM: Float = 16f
     const val FontSizeButtonL: Float = 16f
@@ -178,12 +195,14 @@ internal object LabTokens {
     const val FontSizeInputM: Float = 16f
     const val FontSizeInputL: Float = 16f
     const val FontSizeInputLabel: Float = 12f
+    const val FontSizeTextareaLabel: Float = 14f
     const val FontSizeCardTitle: Float = 20f
     const val FontSizeCardDescription: Float = 16f
     const val FontSizeCardCaption: Float = 14f
     const val FontSizeSheetTitle: Float = 20f
     const val FontSizeSheetDescription: Float = 16f
     const val FontSizeSnackbar: Float = 16f
+    const val FontSizeBadge: Float = 12f
     const val LineHeightXxs: Float = 1f
     const val LineHeightXs: Float = 1.0006f
     const val LineHeightMd: Float = 1.5f
@@ -194,6 +213,10 @@ internal object LabTokens {
     const val LineHeight4xl: Float = 1f
     const val LineHeight5xl: Float = 0.9761f
     const val LineHeight6xl: Float = 0.8582f
+    const val LineHeightBody: Float = 24f
+    const val LineHeightBodyEmphasized: Float = 24f
+    const val LineHeightHeadline: Float = 20f
+    const val LineHeightCaptionXs: Float = 12f
     const val LineHeightButtonS: Float = 0.8571f
     const val LineHeightButtonM: Float = 1.5f
     const val LineHeightButtonL: Float = 1.5f
@@ -201,16 +224,22 @@ internal object LabTokens {
     const val LineHeightInputM: Float = 1.5f
     const val LineHeightInputL: Float = 1.5f
     const val LineHeightInputLabel: Float = 1f
+    const val LineHeightTextareaLabel: Float = 12f
     const val LineHeightCardTitle: Float = 20f
     const val LineHeightCardDescription: Float = 24f
     const val LineHeightCardCaption: Float = 12f
     const val LineHeightSheetTitle: Float = 20f
     const val LineHeightSheetDescription: Float = 24f
     const val LineHeightSnackbar: Float = 1.5f
+    const val LineHeightBadge: Float = 1f
     const val FontWeightRegular: Float = 400f
     const val FontWeightMedium: Float = 500f
     const val FontWeightSemibold: Float = 600f
     const val FontWeightBold: Float = 700f
+    const val FontWeightBody: Float = 400f
+    const val FontWeightBodyEmphasized: Float = 500f
+    const val FontWeightHeadline: Float = 500f
+    const val FontWeightCaptionXs: Float = 500f
     const val FontWeightButton: Float = 500f
     const val FontWeightButtonSDescription: Float = 500f
     const val FontWeightButtonMDescription: Float = 400f
@@ -225,6 +254,7 @@ internal object LabTokens {
     const val FontWeightSheetTitle: Float = 600f
     const val FontWeightSheetDescription: Float = 400f
     const val FontWeightSnackbar: Float = 500f
+    const val FontWeightBadge: Float = 500f
     const val LetterSpacingXxs: Float = 0.0064f
     const val LetterSpacingXs: Float = -0.0009f
     const val LetterSpacingMd: Float = -0.0083f
@@ -235,6 +265,10 @@ internal object LabTokens {
     const val LetterSpacing4xl: Float = -0.0454f
     const val LetterSpacing5xl: Float = -0.0466f
     const val LetterSpacing6xl: Float = -0.0469f
+    const val LetterSpacingBody: Float = -0.25f
+    const val LetterSpacingBodyEmphasized: Float = 0f
+    const val LetterSpacingHeadline: Float = -0.33f
+    const val LetterSpacingCaptionXs: Float = 0f
     const val LetterSpacingButtonSDescription: Float = 0f
     const val LetterSpacingButtonS: Float = 0f
     const val LetterSpacingButtonMDescription: Float = -0.0156f
@@ -249,6 +283,7 @@ internal object LabTokens {
     const val LetterSpacingCardCaption: Float = 0f
     const val LetterSpacingSheetTitle: Float = -0.0165f
     const val LetterSpacingSheetDescription: Float = -0.0156f
+    const val LetterSpacingBadge: Float = 0f
     const val MeasureNarrow: Float = 45f
     const val MeasureBase: Float = 66f
     const val MeasureWide: Float = 75f
@@ -293,4 +328,35 @@ internal object LabTokens {
     const val MotionEmphasisEase1 = 1.21f
     const val MotionEmphasisEase2 = 0.22f
     const val MotionEmphasisEase3 = 1f
+}
+
+internal object LabTextStyles {
+    // Figma 6225:42454
+    val Body = androidx.compose.ui.text.TextStyle(
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        fontWeight = androidx.compose.ui.text.font.FontWeight(400),
+        letterSpacing = -0.25.sp,
+    )
+    // Figma 6109:5889
+    val BodyEmphasized = androidx.compose.ui.text.TextStyle(
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        fontWeight = androidx.compose.ui.text.font.FontWeight(500),
+        letterSpacing = 0.sp,
+    )
+    // Figma 6225:42451
+    val Headline = androidx.compose.ui.text.TextStyle(
+        fontSize = 20.sp,
+        lineHeight = 20.sp,
+        fontWeight = androidx.compose.ui.text.font.FontWeight(500),
+        letterSpacing = -0.33.sp,
+    )
+    // Figma I6225:42453;6225:1048
+    val CaptionXs = androidx.compose.ui.text.TextStyle(
+        fontSize = 12.sp,
+        lineHeight = 12.sp,
+        fontWeight = androidx.compose.ui.text.font.FontWeight(500),
+        letterSpacing = 0.sp,
+    )
 }

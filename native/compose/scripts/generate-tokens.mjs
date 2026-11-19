@@ -40,7 +40,25 @@ for (const [name, role] of Object.entries(motion.motion)) {
   lines.push(`    const val ${prefix}DurationMs = ${duration.value}f`);
   easing.forEach((value, index) => lines.push(`    const val ${prefix}Ease${index} = ${value}f`));
 }
+lines.push('}', '', 'internal object LabTextStyles {');
+for (const [name, token] of Object.entries(data.typography)) {
+  const style = token.$value;
+  const key = name
+    .split('-')
+    .map((part) => part[0].toUpperCase() + part.slice(1))
+    .join('');
+  lines.push(
+    `    // Figma ${token.$extensions['com.labpics.ui-tokens'].sourceNode}`,
+    `    val ${key} = androidx.compose.ui.text.TextStyle(`,
+    `        fontSize = ${style.fontSize.value}.sp,`,
+    `        lineHeight = ${style.fontSize.value * style.lineHeight}.sp,`,
+    `        fontWeight = androidx.compose.ui.text.font.FontWeight(${style.fontWeight}),`,
+    `        letterSpacing = ${style.letterSpacing.value}.sp,`,
+    '    )',
+  );
+}
 lines.push('}', '');
+lines.splice(2, 0, '', 'import androidx.compose.ui.unit.sp');
 const output = new URL('../src/commonMain/kotlin/pics/lab/ui/LabTokens.kt', import.meta.url);
 const source = lines.join('\n');
 if (process.argv.includes('--check')) {

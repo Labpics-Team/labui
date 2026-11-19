@@ -224,10 +224,6 @@ internal object LabComponents {
     const val SelectionChoiceboxCardContentGap = 24f
     const val SelectionChoiceboxRowContentGap = 8f
     const val SelectionChoiceboxHeaderGap = 24f
-    const val SelectionChoiceboxFontSize = 16f
-    const val SelectionChoiceboxLineHeight = 24f
-    const val SelectionChoiceboxFontWeight = 500f
-    const val SelectionChoiceboxLetterSpacing = 0f
     const val SelectionChoiceboxStrokeWidth = 1f
     const val SelectionChoiceboxSelectedStrokeWidth = 2f
     const val SelectionChoiceboxStrokeRole = "border-base"
@@ -235,6 +231,10 @@ internal object LabComponents {
     const val SelectionChoiceboxHoverFillRole = "fill-quaternary"
     const val SelectionChoiceboxIconRole = "label-brand-primary"
     const val SelectionChoiceboxDescriptionRole = "label-secondary"
+    const val SelectionChoiceboxFontSize = 16f
+    const val SelectionChoiceboxLineHeight = 24f
+    const val SelectionChoiceboxFontWeight = 500f
+    const val SelectionChoiceboxLetterSpacing = 0f
     val KbdS = LabKbdMetrics(16f, 4f, 2f, 2f, 12f, 12f, 1f)
     val KbdL = LabKbdMetrics(24f, 6f, 4f, 0f, 16f, 24f, 2f)
     const val KbdFontWeight = 500f

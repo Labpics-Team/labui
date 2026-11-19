@@ -6,6 +6,40 @@
  * rebuild. Import names give compile-time safety and autocomplete.
  */
 
+/** Complete authored styles. Fluid scale steps below are a separate API. */
+export const textStyle = {
+  body: {
+    fontFamily: 'var(--lab-font-family)',
+    fontSize: 'var(--lab-font-size-body)',
+    lineHeight: 'var(--lab-line-height-body)',
+    fontWeight: 'var(--lab-font-weight-body)',
+    letterSpacing: 'var(--lab-letter-spacing-body)',
+  },
+  'body-emphasized': {
+    fontFamily: 'var(--lab-font-family)',
+    fontSize: 'var(--lab-font-size-body-emphasized)',
+    lineHeight: 'var(--lab-line-height-body-emphasized)',
+    fontWeight: 'var(--lab-font-weight-body-emphasized)',
+    letterSpacing: 'var(--lab-letter-spacing-body-emphasized)',
+  },
+  headline: {
+    fontFamily: 'var(--lab-font-family)',
+    fontSize: 'var(--lab-font-size-headline)',
+    lineHeight: 'var(--lab-line-height-headline)',
+    fontWeight: 'var(--lab-font-weight-headline)',
+    letterSpacing: 'var(--lab-letter-spacing-headline)',
+  },
+  'caption-xs': {
+    fontFamily: 'var(--lab-font-family)',
+    fontSize: 'var(--lab-font-size-caption-xs)',
+    lineHeight: 'var(--lab-line-height-caption-xs)',
+    fontWeight: 'var(--lab-font-weight-caption-xs)',
+    letterSpacing: 'var(--lab-letter-spacing-caption-xs)',
+  },
+} as const;
+
+export type TextStyleRole = keyof typeof textStyle;
+
 export const component = {
   'font-weight-button': 'var(--lab-font-weight-button)',
   'space-button-label-x': 'var(--lab-space-button-label-x)',

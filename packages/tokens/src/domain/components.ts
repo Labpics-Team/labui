@@ -1,4 +1,4 @@
-import profile from '../components.json' with { type: 'json' };
+import profile from '../components.js';
 import { num } from './format.js';
 import type { ResolvedToken, ScaleKind } from './token.js';
 

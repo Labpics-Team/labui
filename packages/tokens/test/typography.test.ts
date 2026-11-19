@@ -28,7 +28,7 @@ describe('fluid typography — gradient model', () => {
   it('step +7 reaches ~112px at the wide anchor and is damped to ~57px at the narrow anchor', () => {
     const wide = effectiveSizePx(ty, 7, ty.maxViewportPx);
     const narrow = effectiveSizePx(ty, 7, ty.minViewportPx);
-    // Daniel's target: ~112px desktop, ~57px mobile (grows ~2x slower narrow).
+    // Preserve the existing default fluid bounds for applications using the scale.
     expect(wide).toBeGreaterThan(108);
     expect(wide).toBeLessThan(115);
     expect(narrow).toBeGreaterThan(55);
@@ -138,7 +138,7 @@ describe('fluid typography — gradient model', () => {
     expect(effectiveSizePx(steeper.typography, 0, 800)).toBeCloseTo(16, 6);
   });
 
-  it('line-height Geist: body (md) leaded 1.5, дисплей set-solid, мега-дисплей суб-solid', () => {
+  it('default fluid leading retains the base reading peak and large-size taper', () => {
     const { lineHeights } = buildTypography(ty);
     const byName = new Map(lineHeights.map((t) => [t.name, t.numeric as number]));
     // Body (16px) — читаемая проза, интерлиньяж 1.5 (отпечаток Text/M).
@@ -155,38 +155,7 @@ describe('fluid typography — gradient model', () => {
   });
 });
 
-// Отпечатки Geist [кегль px, line-height px]. Спайн = solid+body (без caption-14,
-// задокументированного −2px микро-выброса). Модель воспроизводит их из кегля.
-const LH_FP: ReadonlyArray<readonly [number, number]> = [
-  [112, 96],
-  [80, 80],
-  [64, 64],
-  [48, 48],
-  [32, 32],
-  [24, 24],
-  [20, 20],
-  [16, 24],
-  [12, 12],
-];
-
-describe('line-height — оптическая модель из отпечатков Geist', () => {
-  it('воспроизводит solid/body-отпечатки из кегля (допуск 0.01 мультипликатора)', () => {
-    for (const [z, lhPx] of LH_FP) {
-      const fit = lineHeightOptical(z, ty.basePx);
-      expect(
-        Math.abs(fit - lhPx / z),
-        `z=${z}px: fit ${fit.toFixed(4)} vs ${(lhPx / z).toFixed(4)}`,
-      ).toBeLessThanOrEqual(0.01);
-    }
-  });
-
-  it('caption-14 (0.857) — задокументированный выброс ВНЕ закона (модель даёт ~solid)', () => {
-    // 14px — не шаг эмитируемой шкалы; закон ставит его ~1.0, дизайнер нудж −2px.
-    const fit = lineHeightOptical(14, ty.basePx);
-    expect(fit).toBeCloseTo(1.0, 1); // модель — почти solid
-    expect(Math.abs(fit - 12 / 14)).toBeGreaterThan(0.1); // отпечаток 0.857 вне модели
-  });
-
+describe('line-height — legacy fluid heuristic', () => {
   it('шкало-инвариантна: при смене базы пик читаемости следует за базой', () => {
     // База 20 → body-надбавка на 20px (не на 16); 16px становится «мельче base» → solid.
     expect(lineHeightOptical(20, 20)).toBeCloseTo(1.5, 3);

@@ -1,3 +1,3 @@
-import components from './components.json' with { type: 'json' };
+import components from './components.js';
 
 export const cardProfile = components.card;

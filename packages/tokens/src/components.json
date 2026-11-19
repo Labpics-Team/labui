@@ -157,16 +157,10 @@
     "titleGap": 4,
     "text": {
       "title": {
-        "fontSize": 20,
-        "lineHeight": 20,
-        "fontWeight": 500,
-        "letterSpacing": -0.33
+        "$textStyle": "headline"
       },
       "description": {
-        "fontSize": 16,
-        "lineHeight": 24,
-        "fontWeight": 400,
-        "letterSpacing": -0.25
+        "$textStyle": "body"
       },
       "caption": {
         "fontSize": 14,
@@ -193,10 +187,7 @@
         "letterSpacing": -0.33
       },
       "description": {
-        "fontSize": 16,
-        "lineHeight": 24,
-        "fontWeight": 400,
-        "letterSpacing": -0.25
+        "$textStyle": "body"
       }
     },
     "bodyHeights": {
@@ -611,17 +602,14 @@
       "cardContentGap": 24,
       "rowContentGap": 8,
       "headerGap": 24,
-      "fontSize": 16,
-      "lineHeight": 24,
-      "fontWeight": 500,
-      "letterSpacing": 0,
       "strokeWidth": 1,
       "selectedStrokeWidth": 2,
       "strokeRole": "border-base",
       "selectedStrokeRole": "label-brand-primary",
       "hoverFillRole": "fill-quaternary",
       "iconRole": "label-brand-primary",
-      "descriptionRole": "label-secondary"
+      "descriptionRole": "label-secondary",
+      "$textStyle": "body-emphasized"
     }
   },
   "kbd": {

@@ -9,6 +9,81 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => document.fonts.ready);
 });
 
+for (const renderer of ['lit', 'react'])
+  for (const scale of [1, 2]) {
+    test(`${renderer}: authored description preserves whole-string metrics at ${scale * 100}%`, async ({
+      page,
+    }, testInfo) => {
+      await page.evaluate((scale) => {
+        document.documentElement.style.fontSize = `${16 * scale}px`;
+      }, scale);
+      const rich = page.getByTestId(`${renderer}-rich`);
+      const description = rich.locator('.lab-selection-description');
+      await expect(description).toBeVisible();
+      const result = await description.evaluate((element, scale) => {
+        const text =
+          'Shared access to original materials and project history for every member of the workspace. '.repeat(
+            3,
+          );
+        const computed = getComputedStyle(element);
+        const actual = document.createElement('span');
+        actual.textContent = text;
+        actual.style.cssText =
+          'position:absolute;display:inline-block;white-space:pre;inline-size:max-content;';
+        for (const property of [
+          'font-family',
+          'font-size',
+          'font-weight',
+          'font-feature-settings',
+          'letter-spacing',
+          'line-height',
+        ])
+          actual.style.setProperty(property, computed.getPropertyValue(property));
+        const reference = actual.cloneNode(true) as HTMLSpanElement;
+        // Independent source Text/M-Common, not values read from implementation tokens.
+        Object.assign(reference.style, {
+          fontFamily: 'Geist',
+          fontSize: `${16 * scale}px`,
+          fontWeight: '400',
+          letterSpacing: `${-0.25 * scale}px`,
+          lineHeight: `${24 * scale}px`,
+        });
+        const former = reference.cloneNode(true) as HTMLSpanElement;
+        former.style.letterSpacing = `${-0.1328 * scale}px`;
+        document.body.append(actual, reference, former);
+        const result = {
+          actual: actual.getBoundingClientRect().width,
+          reference: reference.getBoundingClientRect().width,
+          former: former.getBoundingClientRect().width,
+          fontSize: computed.fontSize,
+          fontWeight: computed.fontWeight,
+          lineHeight: computed.lineHeight,
+          letterSpacing: computed.letterSpacing,
+          family: computed.fontFamily,
+        };
+        actual.remove();
+        reference.remove();
+        former.remove();
+        return result;
+      }, scale);
+      expect(result.fontSize).toBe(`${16 * scale}px`);
+      expect(result.fontWeight).toBe('400');
+      expect(result.lineHeight).toBe(`${24 * scale}px`);
+      expect(result.letterSpacing).toBe(`${-0.25 * scale}px`);
+      expect(result.family).toContain('Geist');
+      expect(Math.abs(result.actual - result.reference)).toBeLessThan(0.05);
+      expect(Math.abs(result.former - result.reference)).toBeGreaterThan(30 * scale);
+      await testInfo.attach('whole-string-metrics', {
+        body: JSON.stringify(result, null, 2),
+        contentType: 'application/json',
+      });
+      await testInfo.attach('choicebox', {
+        body: await rich.screenshot(),
+        contentType: 'image/png',
+      });
+    });
+  }
+
 for (const renderer of ['lit', 'react']) {
   test(`${renderer}: native form values, mixed, required, reset and fieldset`, async ({ page }) => {
     const form = page.getByTestId(`${renderer}-form`);

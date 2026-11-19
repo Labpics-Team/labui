@@ -127,7 +127,7 @@ ${Object.entries(p.sizes)
 [data-lab-selection][data-variant="plain"] .lab-selection-label { display: contents; }
 [data-lab-selection][data-variant="plain"] .lab-selection-label > span { max-inline-size: 100%; }
 [data-lab-selection][data-variant="plain"] .lab-selection-label > .lab-selection-description { display: contents; }
-[data-lab-selection] .lab-selection-description { display: block; font-size: var(--lab-font-size-md); line-height: 1.5; font-weight: 400; letter-spacing: -0.015625em; color: ${role(p.choicebox.descriptionRole)}; overflow-wrap: anywhere; }
+[data-lab-selection] .lab-selection-description { display: block; font-size: var(--lab-font-size-body); line-height: var(--lab-line-height-body); font-weight: var(--lab-font-weight-body); letter-spacing: var(--lab-letter-spacing-body); color: ${role(p.choicebox.descriptionRole)}; overflow-wrap: anywhere; }
 [data-lab-selection] input { position: absolute; inline-size: 1px; block-size: 1px; margin: -1px; padding: 0; border: 0; clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
 [data-lab-selection] .lab-selection-icon { display: none; }
 [data-lab-radio-group] { display: flex; flex-wrap: wrap; gap: var(--lab-space-md); min-inline-size: 0; max-inline-size: 100%; padding: 0; margin: 0; border: 0; }

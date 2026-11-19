@@ -6,6 +6,7 @@ import { buildRadii } from './radii.js';
 import { buildSizes } from './sizes.js';
 import { buildSpacing } from './spacing.js';
 import { buildStates } from './states.js';
+import { buildTextStyleTokens } from './text-styles.js';
 import type { ResolvedAlias, ResolvedToken } from './token.js';
 import { buildTypography } from './typography.js';
 import { buildZIndex } from './zindex.js';
@@ -16,6 +17,8 @@ import { buildZIndex } from './zindex.js';
  * generator (CSS / TS / DTCG) renders from, guaranteeing no divergence.
  */
 export interface ResolvedTokens {
+  /** Exact authored styles; independent of the fluid modular scale. */
+  readonly textStyles: readonly ResolvedToken[];
   /** Authored component metrics; these are not steps of the global scales. */
   readonly components: readonly ResolvedToken[];
   readonly spacing: readonly ResolvedToken[];
@@ -52,6 +55,7 @@ export function buildTokens(config: TokensConfig): ResolvedTokens {
   const opacity = buildOpacity(config.opacity);
 
   return {
+    textStyles: buildTextStyleTokens(),
     components: buildComponentTokens(),
     spacing: spacing.tokens,
     spacingAliases: spacing.aliases,

@@ -7,19 +7,8 @@ import {
   opticalTrackingEm,
 } from '../src/domain/typography.js';
 
-/**
- * Тесты волны типографики (аудит 2026-07-03):
- *   1. Фикс инвертированного флюида: суб-базовые кегли ФИКСИРОВАНЫ (slope 0)
- *      на нарроу-якоре — расширение вьюпорта никогда не сжимает текст.
- *      RED-proof: вернуть старую формулу (ratioMin^n / ratioMax^n оба якоря)
- *      → «фикс на всех ширинах» падает (13.33px @320 против 12.12px @1240).
- *   2. Ось оптического трекинга: tracking(z) = A + B·e^(C·z), калибровка под
- *      Geist ИЗ ОТПЕЧАТКОВ Figma (не по памяти) — воспроизводит спайн-стили в
- *      пределах px-квантования дизайнера; мелкие разрежены (+), крупные ужаты
- *      (−), монотонно по кеглю. Форма (exp-к-асимптоте) выбрана честно: она
- *      бьёт reciprocal (em=A+B/z) по невязкам (SSE 0.19 против 0.35 px²).
- *   3. Мера строки: Bringhurst 45–75ch, 66 идеал.
- */
+// Compatibility checks for the configurable fluid scale. Authored role fidelity
+// is tested separately against whole rendered text, not an interval tolerance.
 
 const ty = resolveConfig({}).typography;
 
@@ -64,57 +53,7 @@ describe('фикс инвертированного флюида — суб-ба
   });
 });
 
-// Отпечатки Figma (Geist), [кегль px, letter-spacing px]. Спайн — канонический
-// прогресс Display→Text, ОДИН стиль на размер (16px = Text/M-Common, Regular).
-const TRACK_SPINE: ReadonlyArray<readonly [number, number]> = [
-  [112, -5],
-  [80, -4],
-  [64, -3],
-  [48, -2],
-  [32, -1],
-  [24, -0.5],
-  [20, -0.33],
-  [16, -0.25],
-  [14, 0],
-  [12, 0],
-];
-
-describe('ось оптического трекинга — калибровка Geist из отпечатков', () => {
-  it('воспроизводит спайн-отпечатки в пределах 0.35px (невязка = px-квантование дизайнера)', () => {
-    // Допуск 0.35px поставлен ДО фита и оправдан: он покрывает максимальную
-    // невязку 0.285px (кегли 80/112, где −4/−5px — округлённые дизайнером
-    // значения гладкой кривой), т.е. модель бьёт каждый отпечаток в пределах
-    // собственного px-округления дизайнера.
-    for (const [z, lsPx] of TRACK_SPINE) {
-      const fitPx = opticalTrackingEm(z) * z;
-      expect(
-        Math.abs(fitPx - lsPx),
-        `z=${z}px: fit ${fitPx.toFixed(3)}px vs отпечаток ${lsPx}px`,
-      ).toBeLessThanOrEqual(0.35);
-    }
-  });
-
-  it('Caption/XXS (8px, −0.25px) ЛЕЖИТ ВНЕ закона — осознанное исключение, не промах фита', () => {
-    // Ниже нуль-кроссинга (~13px) закон РАЗРЕЖАЕТ мелкое (учебная оптика); Figma
-    // же ужимает XXS на −0.25px. Расхождение большое ⇒ это микро-нудж caption,
-    // а не точка кривой размера. Он ниже эмитируемой шкалы (min-шаг ~11px),
-    // поэтому на токены не влияет.
-    const fitPx8 = opticalTrackingEm(8) * 8;
-    expect(Math.abs(fitPx8 - -0.25)).toBeGreaterThan(0.35);
-  });
-
-  it('ось веса на 16px: два отпечатка на ОДНОМ кегле — f(z) держит Common, Medium — отдельная ось', () => {
-    // z=16 несёт ДВА отпечатка: Common(Regular)=−0.25px и Emphasized(Medium)=0px,
-    // на 0.25px врозь при ОДНОМ кегле. Одна кривая f(z) физически не может держать
-    // два значения на одном z ⇒ Medium исключён СТРУКТУРНО (это ось ВЕСА, не
-    // размера), а не потому что он «далеко от кривой». Кривая держит канонический
-    // body (Common):
-    const fitPx16 = opticalTrackingEm(16) * 16;
-    expect(Math.abs(fitPx16 - -0.25)).toBeLessThanOrEqual(0.35); // Common(−0.25) на кривой
-    // Доказательство второй оси: два отпечатка на одном z врозь на 0.25px.
-    expect(Math.abs(-0.25 - 0)).toBeCloseTo(0.25, 6);
-  });
-
+describe('continuous tracking heuristic — fluid scale compatibility', () => {
   it('дисплейная асимптота −0.047em, нуль-кроссинг ~13px, знак: мелкие + / крупные −', () => {
     expect(opticalTrackingEm(400)).toBeCloseTo(-0.047, 3); // асимптота на большом кегле
     expect(opticalTrackingEm(13.05)).toBeCloseTo(0, 3); // нуль-кроссинг

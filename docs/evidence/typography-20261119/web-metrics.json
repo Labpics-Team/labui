@@ -1,0 +1,46 @@
+[
+  {
+    "name": "lit-100",
+    "actual": 1964.75,
+    "reference": 1964.75,
+    "former": 1996.75,
+    "fontSize": "16px",
+    "fontWeight": "400",
+    "lineHeight": "24px",
+    "letterSpacing": "-0.25px",
+    "family": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif"
+  },
+  {
+    "name": "lit-200",
+    "actual": 3929.484375,
+    "reference": 3929.484375,
+    "former": 3993.484375,
+    "fontSize": "32px",
+    "fontWeight": "400",
+    "lineHeight": "48px",
+    "letterSpacing": "-0.5px",
+    "family": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif"
+  },
+  {
+    "name": "react-100",
+    "actual": 1964.75,
+    "reference": 1964.75,
+    "former": 1996.75,
+    "fontSize": "16px",
+    "fontWeight": "400",
+    "lineHeight": "24px",
+    "letterSpacing": "-0.25px",
+    "family": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif"
+  },
+  {
+    "name": "react-200",
+    "actual": 3929.484375,
+    "reference": 3929.484375,
+    "former": 3993.484375,
+    "fontSize": "32px",
+    "fontWeight": "400",
+    "lineHeight": "48px",
+    "letterSpacing": "-0.5px",
+    "family": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif"
+  }
+]
