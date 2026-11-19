@@ -111,3 +111,22 @@ Dev-сервер между сборками разных профилей не�
 стилями. Первый такой прогон показал старый Medium у Lit; новый процесс после
 той же сборки дал Regular на обеих web-привязках. Обычный production-прогон
 Playwright запускает собранный сайт новым процессом.
+
+## Интеграция с общим каталогом
+
+После интеграции с Pagination и Accordion прошли общая сборка, typecheck,
+Biome, 118 тестов tokens, 12 сценариев Lit/React × Chromium/WebKit и 15
+offscreen-проверок Compose (Typography, Selection и Accordion). Native-ресурсы
+и каталог регенерированы из объединённого источника.
+
+На собранной странице `experience.html` отдельно проверен фактически рисующий
+шрифт, а не только CSS `font-family`: Chromium 140 через
+`CSS.getPlatformFontsForNode` сообщает custom Geist для русских заголовка,
+caption, подписи поля и кнопки, а также латинских заголовка и значения поля.
+SHA-256 загруженного WOFF2 совпадает с `packages/fonts/fonts/Geist-Variable.woff2`:
+`46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d`.
+Полный [browser readback](russian-font-render.json) сохраняет узлы и веса.
+Проверка cmap через FontTools также подтвердила все 64 буквы А–я и Ё/ё
+в web Geist/Geist Mono и native Regular. Эти наблюдения исключают fallback
+кириллицы для проверенного пути; совпадение метрик Accordion с Figma
+по-прежнему не объявляется.

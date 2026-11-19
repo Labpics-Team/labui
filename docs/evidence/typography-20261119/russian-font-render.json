@@ -1,0 +1,97 @@
+{
+  "browser": "140.0.7339.186",
+  "url": "http://127.0.0.1:4347/experience.html",
+  "sourceSha256": "46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d",
+  "loadedFonts": [
+    {
+      "url": "http://127.0.0.1:4347/assets/Geist-Variable-C_ya05Eu.woff2",
+      "sha256": "46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d"
+    }
+  ],
+  "results": [
+    {
+      "selector": "h1",
+      "text": "Настройки",
+      "family": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "weight": "600",
+      "fonts": [
+        {
+          "familyName": "Geist",
+          "postScriptName": "Geist-Thin",
+          "isCustomFont": true,
+          "glyphCount": 9
+        }
+      ]
+    },
+    {
+      "selector": ".lab-card-title",
+      "text": "Labpics",
+      "family": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "weight": "500",
+      "fonts": [
+        {
+          "familyName": "Geist",
+          "postScriptName": "Geist-Thin",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    {
+      "selector": ".lab-card-caption",
+      "text": "Рабочее пространство",
+      "family": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "weight": "500",
+      "fonts": [
+        {
+          "familyName": "Geist",
+          "postScriptName": "Geist-Thin",
+          "isCustomFont": true,
+          "glyphCount": 20
+        }
+      ]
+    },
+    {
+      "selector": ".workspace-details dt",
+      "text": "Почта для уведомлений",
+      "family": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "weight": "400",
+      "fonts": [
+        {
+          "familyName": "Geist",
+          "postScriptName": "Geist-Thin",
+          "isCustomFont": true,
+          "glyphCount": 21
+        }
+      ]
+    },
+    {
+      "selector": ".workspace-details dd",
+      "text": "hello@labpics.ru",
+      "family": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "weight": "400",
+      "fonts": [
+        {
+          "familyName": "Geist",
+          "postScriptName": "Geist-Thin",
+          "isCustomFont": true,
+          "glyphCount": 16
+        }
+      ]
+    },
+    {
+      "selector": ".lab-button-main",
+      "text": "Изменить настройки",
+      "family": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "weight": "500",
+      "fonts": [
+        {
+          "familyName": "Geist",
+          "postScriptName": "Geist-Thin",
+          "isCustomFont": true,
+          "glyphCount": 18
+        }
+      ]
+    }
+  ]
+}
