@@ -10,6 +10,13 @@ uncontrolled selection. Later changes to `defaultValue` do not replace a user's
 choice. Read `selectedValues` for the accepted selection in either mode; the
 uncontrolled component does not turn itself into a controlled one after a click.
 
+Once connected, the hidden native select mirrors accepted values present in `items`,
+including multiple and empty selections. Updating or reordering `items` keeps
+selection attached to values. Native input (such as autofill) follows the same
+request/accept contract; rejecting it restores the accepted native selection.
+This select lives inside the shadow root: it does not associate the custom
+element with a form outside that root.
+
 ```ts
 select.value = ['studio'];
 select.addEventListener('value-change', (event) => {

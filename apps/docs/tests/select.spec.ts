@@ -35,6 +35,16 @@ function litTrigger(page: Page, testid: string): Locator {
 function litContent(page: Page, testid: string): Locator {
   return litHost(page, testid).locator('.content');
 }
+async function expectNativeSelection(host: Locator, values: string[]): Promise<void> {
+  await expect
+    .poll(() =>
+      host.locator('select').evaluate((select: HTMLSelectElement) => ({
+        value: select.value,
+        selected: Array.from(select.selectedOptions, (option) => option.value),
+      })),
+    )
+    .toEqual({ value: values[0] ?? '', selected: values });
+}
 function reactWrap(page: Page, testid: string): Locator {
   return page.getByTestId(testid);
 }
@@ -74,54 +84,226 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/select.html');
 });
 
-for (const input of ['property', 'attribute'] as const) {
-  test(`controlled ${input}: a selection request waits for the caller to accept it`, async ({
+for (const multiple of [false, true]) {
+  for (const input of ['property', 'attribute'] as const) {
+    test(`controlled ${input}, multiple=${multiple}: a selection request waits for the caller to accept it`, async ({
+      page,
+    }) => {
+      await page.evaluate(
+        async ({ input, multiple }) => {
+          await customElements.whenDefined('lab-select');
+          const select = document.createElement('lab-select');
+          select.dataset.testid = 'controlled-select';
+          select.multiple = multiple;
+          select.items = [
+            { value: 'apple', label: 'Apple' },
+            { value: 'banana', label: 'Banana' },
+            { value: 'cherry', label: 'Cherry' },
+          ];
+          if (input === 'property') select.value = ['banana'];
+          else select.setAttribute('value', '["banana"]');
+          select.addEventListener('value-change', (event) => {
+            select.dataset.request = JSON.stringify((event as CustomEvent).detail.value);
+          });
+          document.querySelector('main')?.append(select);
+        },
+        { input, multiple },
+      );
+      const host = litHost(page, 'controlled-select');
+      const trigger = litTrigger(page, 'controlled-select');
+      await expect(trigger.locator('.value-text')).toHaveText('Banana');
+      await expectNativeSelection(host, ['banana']);
+      await trigger.click();
+      await host.locator('.item[data-value="cherry"]').click();
+      const requested = multiple ? ['banana', 'cherry'] : ['cherry'];
+      await expect(host).toHaveAttribute('data-request', JSON.stringify(requested));
+      await expect(trigger.locator('.value-text')).toHaveText('Banana');
+      expect(await host.evaluate((element) => (element as LabSelect).value)).toEqual(['banana']);
+      await expectNativeSelection(host, ['banana']);
+
+      // An unrelated render must not turn a rejected request into accepted state.
+      await host.evaluate((element) => element.setAttribute('label', 'Fruit'));
+      await expect(trigger.locator('.value-text')).toHaveText('Banana');
+      await expectNativeSelection(host, ['banana']);
+      // The hidden native input is also a request path (for example autofill).
+      // Rejecting it must restore the native state even without a machine change.
+      await host.locator('select').evaluate((select: HTMLSelectElement) => {
+        select.value = 'apple';
+        select.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      await expect(host).toHaveAttribute('data-request', '["apple"]');
+      await expectNativeSelection(host, ['banana']);
+      await expect(trigger.locator('.value-text')).toHaveText('Banana');
+      await host.evaluate((element, values) => {
+        (element as LabSelect).value = values;
+      }, requested);
+      await expect(trigger.locator('.value-text')).toHaveText(
+        multiple ? 'Banana, Cherry' : 'Cherry',
+      );
+      await expectNativeSelection(host, requested);
+      await host.evaluate((element) => {
+        (element as LabSelect).value = [];
+      });
+      await expect(trigger.locator('.value-text')).toHaveText('Select…');
+      await expectNativeSelection(host, []);
+      if (!multiple) await trigger.click();
+      await host.locator('.item[data-value="apple"]').click();
+      await expect(host).toHaveAttribute('data-request', '["apple"]');
+      await expect(trigger.locator('.value-text')).toHaveText('Select…');
+      await expectNativeSelection(host, []);
+      await host.evaluate((element) => {
+        element.addEventListener(
+          'value-change',
+          (event) => {
+            (element as LabSelect).value = (event as CustomEvent<{ value: string[] }>).detail.value;
+          },
+          { once: true },
+        );
+      });
+      await host.locator('select').evaluate((select: HTMLSelectElement) => {
+        select.value = 'cherry';
+        select.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      await expect(trigger.locator('.value-text')).toHaveText('Cherry');
+      await expectNativeSelection(host, ['cherry']);
+    });
+  }
+
+  test(`native selection, multiple=${multiple}: initial, user and collection changes agree`, async ({
     page,
   }) => {
-    await page.evaluate(async (input) => {
+    await page.evaluate(async (multiple) => {
       await customElements.whenDefined('lab-select');
       const select = document.createElement('lab-select');
-      select.dataset.testid = 'controlled-select';
+      select.dataset.testid = 'native-select';
+      select.multiple = multiple;
+      select.defaultValue = ['banana'];
       select.items = [
         { value: 'apple', label: 'Apple' },
         { value: 'banana', label: 'Banana' },
         { value: 'cherry', label: 'Cherry' },
       ];
-      if (input === 'property') select.value = ['banana'];
-      else select.setAttribute('value', '["banana"]');
-      select.addEventListener('value-change', (event) => {
-        select.dataset.request = JSON.stringify((event as CustomEvent).detail.value);
-      });
       document.querySelector('main')?.append(select);
-    }, input);
-    const host = litHost(page, 'controlled-select');
-    const trigger = litTrigger(page, 'controlled-select');
+    }, multiple);
+    const host = litHost(page, 'native-select');
+    const trigger = litTrigger(page, 'native-select');
     await expect(trigger.locator('.value-text')).toHaveText('Banana');
+    await expectNativeSelection(host, ['banana']);
     await trigger.click();
     await host.locator('.item[data-value="cherry"]').click();
-    await expect(host).toHaveAttribute('data-request', '["cherry"]');
-    await expect(trigger.locator('.value-text')).toHaveText('Banana');
-    expect(await host.evaluate((element) => (element as LabSelect).value)).toEqual(['banana']);
-    await expect(host.locator('select')).toHaveValue('banana');
+    const accepted = multiple ? ['banana', 'cherry'] : ['cherry'];
+    await expect(trigger.locator('.value-text')).toHaveText(multiple ? 'Banana, Cherry' : 'Cherry');
+    await expectNativeSelection(host, accepted);
+    expect(await host.evaluate((element) => (element as LabSelect).selectedValues)).toEqual(
+      accepted,
+    );
+    expect(await host.evaluate((element) => (element as LabSelect).value)).toBeNull();
 
-    // An unrelated render must not turn a rejected request into accepted state.
-    await host.evaluate((element) => element.setAttribute('label', 'Fruit'));
-    await expect(trigger.locator('.value-text')).toHaveText('Banana');
+    // Reusing option nodes in a new order must not move their selection to another value.
     await host.evaluate((element) => {
-      (element as LabSelect).value = ['cherry'];
+      (element as LabSelect).items = [
+        { value: 'cherry', label: 'New Cherry' },
+        { value: 'apple', label: 'New Apple' },
+        { value: 'banana', label: 'New Banana' },
+      ];
     });
-    await expect(trigger.locator('.value-text')).toHaveText('Cherry');
-    await expect(host.locator('select')).toHaveValue('cherry');
+    await expectNativeSelection(host, multiple ? ['cherry', 'banana'] : ['cherry']);
+    await host.evaluate((element) => {
+      (element as LabSelect).items = [{ value: 'apple', label: 'Apple' }];
+    });
+    await expectNativeSelection(host, []);
+    await host.evaluate((element) => {
+      (element as LabSelect).items = [
+        { value: 'apple', label: 'Apple' },
+        { value: 'banana', label: 'Banana' },
+        { value: 'cherry', label: 'Cherry' },
+      ];
+    });
+    await expectNativeSelection(host, accepted);
+    await host.locator('select').evaluate((select: HTMLSelectElement) => {
+      select.value = 'apple';
+      select.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expectNativeSelection(host, ['apple']);
+    await expect(trigger.locator('.value-text')).toHaveText('Apple');
+    expect(await host.evaluate((element) => (element as LabSelect).selectedValues)).toEqual([
+      'apple',
+    ]);
+  });
+
+  test(`native selection, multiple=${multiple}: starts empty and renders later accepted options`, async ({
+    page,
+  }) => {
+    await page.evaluate(async (multiple) => {
+      await customElements.whenDefined('lab-select');
+      const select = document.createElement('lab-select');
+      select.dataset.testid = 'native-select';
+      select.multiple = multiple;
+      select.value = [];
+      select.items = [
+        { value: '', label: 'Empty value' },
+        { value: 'apple', label: 'Apple' },
+        { value: 'banana', label: 'Banana' },
+        { value: 'cherry', label: 'Cherry' },
+      ];
+      document.querySelector('main')?.append(select);
+    }, multiple);
+    const host = litHost(page, 'native-select');
+    await expect(litTrigger(page, 'native-select').locator('.value-text')).toHaveText('Select…');
+    await expectNativeSelection(host, []);
+    const accepted = multiple ? ['banana', 'cherry'] : ['cherry'];
+    await host.evaluate((element, values) => {
+      (element as LabSelect).items = [];
+      (element as LabSelect).value = values;
+    }, accepted);
+    await expect(host.locator('select option')).toHaveCount(0);
+    await expectNativeSelection(host, []);
+    await host.evaluate((element) => {
+      (element as LabSelect).items = [
+        { value: '', label: 'Empty value' },
+        { value: 'apple', label: 'Apple' },
+        { value: 'banana', label: 'Banana' },
+        { value: 'cherry', label: 'Cherry' },
+      ];
+    });
+    await expectNativeSelection(host, accepted);
+    await host.evaluate((element) => {
+      (element as LabSelect).value = [''];
+    });
+    await expectNativeSelection(host, ['']);
+    await expect(host.locator('.value-text')).toHaveText('Empty value');
     await host.evaluate((element) => {
       (element as LabSelect).value = [];
     });
-    await expect(trigger.locator('.value-text')).toHaveText('Select…');
-    await trigger.click();
-    await host.locator('.item[data-value="apple"]').click();
-    await expect(host).toHaveAttribute('data-request', '["apple"]');
-    await expect(trigger.locator('.value-text')).toHaveText('Select…');
+    await expectNativeSelection(host, []);
+    await expect(host.locator('.value-text')).toHaveText('Select…');
   });
 }
+
+test('native multiple selection preserves every initial value for both selection modes', async ({
+  page,
+}) => {
+  await page.evaluate(async () => {
+    await customElements.whenDefined('lab-select');
+    for (const property of ['value', 'defaultValue'] as const) {
+      const select = document.createElement('lab-select');
+      select.dataset.testid = property;
+      select.multiple = true;
+      select[property] = ['banana', 'cherry'];
+      select.items = [
+        { value: 'apple', label: 'Apple' },
+        { value: 'banana', label: 'Banana' },
+        { value: 'cherry', label: 'Cherry' },
+      ];
+      document.querySelector('main')?.append(select);
+    }
+  });
+  for (const property of ['value', 'defaultValue']) {
+    const host = litHost(page, property);
+    await expect(host.locator('.value-text')).toHaveText('Banana, Cherry');
+    await expectNativeSelection(host, ['banana', 'cherry']);
+  }
+});
 
 test('uncontrolled values keep accumulating without becoming controlled after the first choice', async ({
   page,

@@ -62,7 +62,7 @@ export class LabSelect extends LabElement {
     multiple: { type: Boolean, reflect: true },
     /** Trigger non-interactive when present. */
     disabled: { type: Boolean, reflect: true },
-    /** Native form field name for the hidden `<select>`. */
+    /** Name of the hidden native `<select>`. */
     name: {},
     /** Placeholder shown in the trigger when nothing is selected. */
     placeholder: {},
@@ -143,6 +143,9 @@ export class LabSelect extends LabElement {
             composed: true,
           }),
         );
+        // Native input/autofill may already have changed the hidden select. Even
+        // a rejected controlled request needs a render to restore accepted state.
+        this.requestUpdate();
       },
       onOpenChange: (details: selectMachine.OpenChangeDetails) => {
         this.dispatchEvent(
@@ -342,7 +345,7 @@ export class LabSelect extends LabElement {
       color: ${litVar('--lab-label-accent')};
     }
 
-    /* The hidden native <select> for form submission — visually removed. */
+    /* The hidden native <select> — visually removed. */
     select {
       position: absolute;
       width: 1px;
@@ -393,7 +396,24 @@ export class LabSelect extends LabElement {
     if (content) this.machineCtl.spread(content, api.getContentProps());
 
     const hiddenSelect = root.querySelector<HTMLSelectElement>('select');
-    if (hiddenSelect) this.machineCtl.spread(hiddenSelect, api.getHiddenSelectProps());
+    if (hiddenSelect) {
+      // Vanilla normalizes Zag's defaultValue to value. A native select's value
+      // is scalar: assigning a multi-value array coerces it to a comma-joined
+      // string and clears the selection. Project accepted values onto the actual
+      // options after Lit has rendered them, including initial/collection updates
+      // that do not trigger the machine's value-change effect.
+      const { value: _value, ...selectProps } = api.getHiddenSelectProps();
+      this.machineCtl.spread(hiddenSelect, selectProps);
+      const selectedValues = new Set(api.value);
+      let hasSelection = false;
+      for (const option of hiddenSelect.options) {
+        const selected = selectedValues.has(option.value);
+        option.selected = selected;
+        hasSelection ||= selected;
+      }
+      // A single select auto-selects its first option when all are deselected.
+      if (!hasSelection) hiddenSelect.selectedIndex = -1;
+    }
 
     // Map each option's getters onto its node by the STABLE key `value`, never the
     // positional index. The machine keys its per-item getters by the value the
