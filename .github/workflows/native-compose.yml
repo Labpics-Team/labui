@@ -1,0 +1,218 @@
+name: Native Compose
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - native/compose/**
+      - packages/tokens/**
+      - packages/colors/**
+      - packages/materials/**
+      - .github/workflows/native-compose.yml
+      - .github/actions/prepare-native-icons/**
+
+permissions:
+  contents: read
+
+# Icons still uses the accepted development source; Colors resolves its public release.
+env:
+  ICONS_SOURCE: 2282d3f6f4f0628878b273c346bf77b3e7393f95
+  ORG_GRADLE_PROJECT_uiSource: ${{ github.workspace }}/native/compose
+  ORG_GRADLE_PROJECT_iconsSource: ${{ github.workspace }}/.dependencies/icons/native/compose
+  ORG_GRADLE_PROJECT_iconsVersion: '0.3.0'
+
+concurrency:
+  group: native-compose-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    name: Desktop interaction (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/prepare-native-icons
+        with:
+          source: ${{ env.ICONS_SOURCE }}
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Prepare Linux fonts and the native accessibility bridge
+        if: runner.os == 'Linux'
+        run: |
+          fc-list :lang=ja family
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-noto-cjk libatk-wrapper-java-jni python3-pyatspi orca openbox dbus-x11
+          fc-list :lang=ja family
+      - name: Compile and verify component behavior
+        shell: bash
+        env:
+          SKIKO_RENDER_API: ${{ runner.os == 'Linux' && 'SOFTWARE' || runner.os == 'Windows' && 'OPENGL' || 'METAL' }}
+        run: |
+          command=(bash native/compose/gradlew -p native/compose :desktopTest :ui-colors:desktopTest
+            --console=plain)
+          if [[ "$RUNNER_OS" == Linux ]]; then xvfb-run -a "${command[@]}"; else "${command[@]}"; fi
+      - name: Build the native desktop installer
+        shell: bash
+        run: |
+          if ! bash native/compose/gradlew -p native/compose/consumer desktopTest createDistributable packageDistributionForCurrentOS --console=plain; then
+            find native/compose/consumer/build/compose/logs -name '*-err.txt' -print -exec cat {} \;
+            exit 1
+          fi
+      - name: Verify the packaged desktop application through Java Accessibility
+        shell: bash
+        run: |
+          command=(python native/compose/scripts/verify-desktop-package.py)
+          if [[ "$RUNNER_OS" == Linux ]]; then LABUI_CAPTURE_SCREENSHOTS=true SKIKO_RENDER_API=SOFTWARE xvfb-run -a "${command[@]}"; else "${command[@]}"; fi
+      - name: Install the Linux application and its declared dependencies
+        if: runner.os == 'Linux'
+        run: |
+          # Hosted runners omit this desktop-session directory. xdg-desktop-menu
+          # requires it before jpackage's postinst can register the launcher.
+          sudo install -d -m 0755 /usr/share/desktop-directories
+          sudo apt-get install -y "$PWD"/native/compose/consumer/build/compose/binaries/main/deb/*.deb
+      - name: Exercise AT-SPI and Orca in an isolated session
+        if: runner.os == 'Linux'
+        run: dbus-run-session -- xvfb-run -a /usr/bin/python3 native/compose/scripts/verify-linux-accessibility.py
+      - name: Preserve the desktop installer
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-desktop-${{ matrix.os }}
+          path: |
+            native/compose/consumer/build/compose/binaries/main/msi/*.msi
+            native/compose/consumer/build/compose/binaries/main/dmg/*.dmg
+            native/compose/consumer/build/compose/binaries/main/deb/*.deb
+          if-no-files-found: error
+          retention-days: 7
+      - name: Preserve interaction evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-interaction-${{ matrix.os }}
+          path: |
+            native/compose/consumer/build/accessibility-events*.txt
+            native/compose/consumer/build/screenshots
+            native/compose/consumer/build/linux-accessibility
+            native/compose/consumer/build/test-results
+            native/compose/consumer/build/compose/logs
+            native/compose/build/test-results
+            native/compose/build/lineboxes
+            native/compose/build/snackbar-render
+            native/compose/build/switch-render
+            native/compose/colors/build/test-results
+          retention-days: 7
+
+  android:
+    name: Android application interaction (API ${{ matrix.api-level }})
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [33, 35]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/prepare-native-icons
+        with:
+          source: ${{ env.ICONS_SOURCE }}
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Build the consumer APK
+        run: |
+          bash native/compose/gradlew -p native/compose/consumer :androidApp:assembleDebug :androidApp:assembleDebugAndroidTest \
+            -PuiSource="$GITHUB_WORKSPACE/native/compose" \
+            --console=plain
+      - name: Enable hardware virtualization for the emulator
+        run: sudo chmod a+rw /dev/kvm
+      - name: Exercise the Android application
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.34.0
+        with:
+          api-level: ${{ matrix.api-level }}
+          arch: x86_64
+          target: google_apis
+          disable-animations: false
+          emulator-options: -no-window -gpu swangle -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: python3 native/compose/scripts/verify-android-app.py
+      - name: Preserve emulator diagnostics after a failure
+        if: failure()
+        shell: bash
+        run: |
+          diagnostics=native/compose/consumer/androidApp/build/emulator-diagnostics
+          mkdir -p "$diagnostics"
+          sudo journalctl --since '-20 minutes' > "$diagnostics/host.txt" || true
+          if [[ -d /tmp/android-runner ]]; then
+            cp -R /tmp/android-runner "$diagnostics/crashdata"
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: native-android-example-${{ matrix.api-level }}
+          path: |
+            native/compose/consumer/androidApp/build/outputs/apk/debug/*.apk
+            native/compose/consumer/androidApp/build/outputs/androidTest-results
+            native/compose/consumer/androidApp/build/reports/androidTests
+            native/compose/consumer/androidApp/build/emulator-diagnostics
+            native/compose/consumer/androidApp/build/application-evidence
+          if-no-files-found: error
+          retention-days: 7
+
+  apple:
+    name: iOS application interaction
+    runs-on: macos-15
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/prepare-native-icons
+        with:
+          source: ${{ env.ICONS_SOURCE }}
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Link Apple consumer frameworks
+        run: |
+          bash native/compose/gradlew -p native/compose/consumer linkDebugFrameworkIosSimulatorArm64 linkReleaseFrameworkIosArm64 \
+            -PuiSource="$GITHUB_WORKSPACE/native/compose" \
+            --console=plain
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Build and exercise the iOS application
+        run: |
+          python3 native/compose/consumer/iosApp/prepare.py
+          simulator=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; print(next(d["udid"] for ds in json.load(sys.stdin)["devices"].values() for d in ds if d["name"].startswith("iPhone")))')
+          xcodebuild test -project native/compose/consumer/iosApp/LabUIExample.xcodeproj \
+            -scheme LabUIExample -destination "id=$simulator" \
+            -derivedDataPath native/compose/consumer/build/xcode \
+            -resultBundlePath native/compose/consumer/build/native-ui.xcresult CODE_SIGNING_ALLOWED=NO
+      - name: Export Apple UI attachments
+        if: always()
+        run: |
+          if [[ -d native/compose/consumer/build/native-ui.xcresult ]]; then
+            xcrun xcresulttool export attachments --path native/compose/consumer/build/native-ui.xcresult \
+              --output-path native/compose/consumer/build/ui-attachments
+          fi
+      - name: Preserve Apple application evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-apple-example
+          path: |
+            native/compose/consumer/build/native-ui.xcresult
+            native/compose/consumer/build/ui-attachments
+            native/compose/consumer/build/bin/*/debugFramework/*/Headers
+            native/compose/consumer/build/xcode/Build/Products/Debug-iphonesimulator/*.app
+          retention-days: 7

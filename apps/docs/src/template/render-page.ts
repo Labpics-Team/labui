@@ -1,18 +1,8 @@
-/*
- * Page renderer — assembles a full component docs page from one `ComponentDoc`.
- *
- * This is the TEMPLATE: closed for modification (craft-arch / OCP). It renders
- * the six sections in a fixed order for ANY component, plus the cross-cutting
- * theme + material switchers that prove the documented element is theme- and
- * material-agnostic (the owner's requirement: one attribute flip on the root
- * re-skins everything below, with zero element edits).
- *
- * Documenting a new component never touches this file — you author a new
- * `ComponentDoc` and register a route. That is the whole point of the seam.
- */
+/** Renders authored live documentation inside the semantic catalog navigation. */
 import type { ComponentDoc } from './component-doc.js';
 import { el, section } from './dom.js';
-import type { Registry } from './registry.js';
+import { type Registry, findEntry } from './registry.js';
+import { renderCapabilities, renderSourceCoverage } from './render-catalog.js';
 import {
   renderAnatomy,
   renderApi,
@@ -36,23 +26,33 @@ export function renderComponentPage(
   doc: ComponentDoc,
 ): void {
   mount.replaceChildren();
+  const entry = findEntry(registry, doc.slug);
+  if (!entry) throw new Error(`Documentation outside catalog: ${doc.slug}`);
 
   const header = el('header', { class: 'doc-header' }, [
     el('div', { class: 'doc-title-row' }, [
       el('h1', { id: 'doc-title' }, [el('code', {}, [doc.tag]), ` — ${doc.title}`]),
-      renderStatusBadge(doc.status),
+      ...(entry.kind === 'internal' ? [renderStatusBadge(doc.status)] : []),
     ]),
-    el('p', { class: 'doc-summary' }, [doc.summary]),
+    el('p', { class: 'doc-summary' }, [entry.summary]),
+    renderCapabilities(entry),
     renderRootControls(),
   ]);
 
   const main = el('main', { class: 'doc-main', id: 'doc-main' }, [
     header,
-    section('sec-states', 'States matrix', [renderStatesMatrix(doc.statesMatrix)]),
-    section('sec-anatomy', 'Anatomy', [renderAnatomy(doc.liveExample.make(), doc.anatomy)]),
-    section('sec-meaning', 'Meaning & usage', [renderMeaning(doc.meaning)]),
-    section('sec-live', 'Live example', [renderLiveExample(doc.liveExample)]),
-    section('sec-api', 'Props / API', [renderApi(doc.api)]),
+    renderSourceCoverage(entry),
+    section('sec-states', 'Состояния', [renderStatesMatrix(doc.statesMatrix)]),
+    section('sec-anatomy', 'Анатомия', [renderAnatomy(doc.liveExample.make(), doc.anatomy)]),
+    section('sec-meaning', 'Применение', [renderMeaning(doc.meaning)]),
+    section('sec-live', 'Живой пример', [renderLiveExample(doc.liveExample)]),
+    section('sec-api', 'Props / API', [
+      renderApi(doc.api),
+      el('details', { class: 'catalog-example-note' }, [
+        el('summary', {}, ['Примечание к текущему примеру']),
+        el('p', {}, [doc.summary]),
+      ]),
+    ]),
   ]);
 
   const layout = el('div', { class: 'doc-layout' }, [renderSidebar(registry, doc.slug), main]);

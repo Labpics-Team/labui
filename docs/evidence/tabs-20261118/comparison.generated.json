@@ -1,0 +1,46 @@
+{
+  "chromium-tinted": {
+    "size_2x": [
+      1556,
+      112
+    ],
+    "mean_absolute_rgb_error_0_255": [
+      0.9691,
+      0.9691,
+      0.4108
+    ]
+  },
+  "webkit-tinted": {
+    "size_2x": [
+      1556,
+      112
+    ],
+    "mean_absolute_rgb_error_0_255": [
+      1.1265,
+      1.1265,
+      0.5585
+    ]
+  },
+  "chromium-underlined": {
+    "size_2x": [
+      1556,
+      96
+    ],
+    "mean_absolute_rgb_error_0_255": [
+      0.4994,
+      0.4994,
+      0.5014
+    ]
+  },
+  "webkit-underlined": {
+    "size_2x": [
+      1556,
+      96
+    ],
+    "mean_absolute_rgb_error_0_255": [
+      0.6467,
+      0.6467,
+      0.6459
+    ]
+  }
+}

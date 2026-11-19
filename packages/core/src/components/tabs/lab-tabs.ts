@@ -1,122 +1,114 @@
 import * as tabsMachine from '@zag-js/tabs';
-/**
- * `<lab-tabs>` — the first COMPOUND component that consumes a GROUP machine
- * through the Behaviors seam (core-CONTRACT §1). This is the canonical compound
- * pattern for LabUI group widgets (it lands together with Radio).
- *
- * Axes (the Figma Tabs model — Orientation × Size × Activation):
- *   - orientation: horizontal | vertical   (list axis; reflected for layout)
- *   - size:  s | m | l                      (trigger density; reflected)
- *   - activationMode: automatic | manual    (select-on-focus vs select-on-Enter)
- *   - value: machine-owned selected tab (reflected for CSS + SSR)
- *   - defaultValue: uncontrolled initial selection (read once at machine init)
- *
- * Why a machine here, when Badge/Breadcrumb opt out: tabs HAVE interaction state
- * a machine owns — a selected `value`, ROVING focus across the triggers, arrow-key
- * navigation, `role="tablist"`/`tab`/`tabpanel` wiring, and automatic-vs-manual
- * activation. Those are precisely the listed machine-eligible states in
- * core-CONTRACT §1, so this element MUST drive the seam. It runs `@zag-js/tabs`
- * (a single GROUP machine) through `ZagController`: the machine owns selection,
- * keyboard, focus and ARIA; the element only paints (DIP — it depends on the
- * injected `MachineModule`, never on a hand-written tab controller).
- *
- * The compound canon (shared with Radio): ONE element runs ONE group machine and
- * owns ALL of its nodes in a single shadow root — the list, every trigger, every
- * panel — spreading the machine's per-node prop-getters (`getTriggerProps(value)`,
- * `getContentProps(value)`) onto them, exactly as `<lab-switch>` spreads
- * `getControlProps`/`getThumbProps`. Triggers are declared as the `items` array
- * (value + label); panel CONTENT projects from light DOM via a per-value named
- * slot (`slot="<value>"`), so rich content stays in the consumer's tree while the
- * machine-wired panel wrapper lives in the shadow root where Zag's id-based DOM
- * queries and focus management resolve. A `<lab-tab>`/`<lab-tab-panel>` light-DOM
- * split was rejected: its nodes would live OUTSIDE the shadow root the machine
- * scopes its queries to, breaking roving focus — the single-element compound is
- * the robust shape for a group machine.
- *
- * Token contract (core-CONTRACT §2): ONLY semantic --lab-* roles + dimension
- * tokens via `litVar`. The active trigger reads `--lab-label-accent` + an
- * `--lab-fill-accent` underline; idle triggers read `--lab-label-secondary`; the
- * list track is `--lab-border-base`. No hex, no primitive, no invented role.
- *
- * SSR (core-CONTRACT §7): structure is always present (the machine spreads ARIA
- * in `updated()`), so the declarative shadow DOM emits a meaningful, styled tab
- * set before any JS upgrades it.
- */
-import { type TemplateResult, css, html } from 'lit';
+import { type TemplateResult, css, html, isServer, nothing, unsafeCSS } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
-import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
+import { mountTabsMotion } from './runtime.js';
+import { tabsCss } from './styles.js';
 
-/** List axis. */
 export type LabTabsOrientation = 'horizontal' | 'vertical';
-/** Trigger density. */
 export type LabTabsSize = 's' | 'm' | 'l';
-/** When a focused tab activates: on focus (automatic) or on Enter/Space (manual). */
+export type LabTabsVariant = 'tinted' | 'underlined';
+/** Indicator edge across the list axis. Vertical edges follow the text direction. */
+export type LabTabsEdge = 'start' | 'end';
 export type LabTabsActivationMode = 'automatic' | 'manual';
 
-/** One tab: a stable `value`, a visible `label`, and an optional disabled flag. */
 export interface LabTabItem {
-  /** Stable identity of the tab — the machine's selection key + the slot name. */
   readonly value: string;
-  /** Visible trigger text. */
+  /** Accessible name, kept even when iconOnly hides the visible text. */
   readonly label: string;
-  /** Whether this tab cannot be selected. */
   readonly disabled?: boolean;
+  /** Names of decorative light-DOM slots, distinct from panel slot names. */
+  readonly icon?: string;
+  readonly iconEnd?: string;
+  readonly iconOnly?: boolean;
+}
+
+/** Carry the tab model through server HTML without a second client-side data source. */
+function parseTabItems(value: string | null): ReadonlyArray<LabTabItem> {
+  if (value === null) return [];
+  try {
+    const items: unknown = JSON.parse(value);
+    return Array.isArray(items) &&
+      items.every(
+        (item) =>
+          item !== null &&
+          typeof item === 'object' &&
+          typeof item.value === 'string' &&
+          typeof item.label === 'string' &&
+          (item.disabled === undefined || typeof item.disabled === 'boolean') &&
+          (item.icon === undefined || typeof item.icon === 'string') &&
+          (item.iconEnd === undefined || typeof item.iconEnd === 'string') &&
+          (item.iconOnly === undefined || typeof item.iconOnly === 'boolean'),
+      )
+      ? items
+      : [];
+  } catch {
+    return [];
+  }
 }
 
 type TabsSchema = SchemaOf<tabsMachine.Service>;
 type TabsApi = tabsMachine.Api;
-
-/**
- * The `@zag-js/tabs` package seen through the renderer-agnostic seam — the SAME
- * binding pattern `<lab-switch>` uses for `@zag-js/switch`. No casts: the
- * namespace already matches `MachineModule` structurally.
- */
 const tabsModule: MachineModule<TabsSchema, TabsApi> = tabsMachine;
 
+/** One Zag group owns keyboard and selection. Keyed, mounted panels retain drafts. */
 export class LabTabs extends LabElement {
   static override properties = {
+    variant: { reflect: true },
+    edge: { reflect: true },
     orientation: { reflect: true },
     size: { reflect: true },
     activationMode: { attribute: 'activation-mode', reflect: true },
-    /** Controlled selected value. When set, the consumer owns the selection. */
-    value: { reflect: true },
-    /** Uncontrolled initial selection — read once by the machine at init. */
-    defaultValue: { attribute: 'default-value', reflect: true },
-    /** The tabs to render. Set as a property (not an attribute). */
-    items: { attribute: false },
+    /** undefined is uncontrolled; null is a controlled selection of no tab. */
+    value: { converter: { fromAttribute: (value: string | null) => value ?? undefined } },
+    defaultValue: { attribute: 'default-value' },
+    label: {},
+    dir: { reflect: true },
+    items: {
+      type: Array,
+      reflect: true,
+      useDefault: true,
+      converter: { fromAttribute: parseTabItems },
+    },
   };
 
+  declare variant: LabTabsVariant;
+  declare edge: LabTabsEdge;
   declare orientation: LabTabsOrientation;
   declare size: LabTabsSize;
   declare activationMode: LabTabsActivationMode;
-  declare value: string | null;
-  declare defaultValue: string | null;
+  declare value: string | null | undefined;
+  declare defaultValue: string | null | undefined;
+  declare label: string;
   declare items: ReadonlyArray<LabTabItem>;
 
   private readonly machineCtl: ZagController<TabsSchema, TabsApi>;
+  private tabsId = this.uid;
+  private motion?: ReturnType<typeof mountTabsMotion>;
 
   constructor() {
     super();
+    this.variant = 'underlined';
+    this.edge = 'end';
     this.orientation = 'horizontal';
     this.size = 'm';
     this.activationMode = 'automatic';
-    this.value = null;
-    this.defaultValue = null;
+    this.value = undefined;
+    this.defaultValue = undefined;
+    this.label = '';
     this.items = [];
-    // Wire the Zag tabs behavior. Props read from reflected attributes so the
-    // machine and the element never disagree. `value` is passed only when the
-    // consumer set it (controlled); otherwise the machine owns it from
-    // `defaultValue` (uncontrolled) — the SAME honest two-mode contract as Switch.
     this.machineCtl = this.runMachine(tabsModule, () => ({
-      value: this.hasAttribute('value') ? this.value : undefined,
+      id: this.tabsId,
+      ids: this.partIds(),
+      value: this.value,
       defaultValue: this.defaultValue ?? undefined,
       orientation: this.orientation,
       activationMode: this.activationMode,
+      dir: this.direction,
+      translations: { listLabel: this.label || this.getAttribute('aria-label') || undefined },
       onValueChange: (details: tabsMachine.ValueChangeDetails) => {
-        this.value = details.value;
         this.dispatchEvent(
           new CustomEvent<tabsMachine.ValueChangeDetails>('value-change', {
             detail: details,
@@ -128,193 +120,132 @@ export class LabTabs extends LabElement {
     }));
   }
 
-  static override styles = css`
-    :host {
-      --_gap: ${litVar('--lab-space-xs', '0.25rem')};
-      --_pad-x: ${litVar('--lab-space-md', '1rem')};
-      --_pad-y: ${litVar('--lab-space-sm', '0.5rem')};
-      --_font: ${litVar('--lab-font-size-md', '1rem')};
+  /** Current selection. `value` is only the consumer's controlled input. */
+  get selectedValue(): string | null {
+    return isServer || !this.isConnected
+      ? this.value === undefined
+        ? (this.defaultValue ?? null)
+        : this.value
+      : this.machineCtl.api.value;
+  }
 
-      display: block;
-    }
+  private get direction(): 'ltr' | 'rtl' {
+    if (this.dir === 'ltr' || this.dir === 'rtl') return this.dir;
+    if (!isServer && this.isConnected)
+      return getComputedStyle(this).direction === 'rtl' ? 'rtl' : 'ltr';
+    return 'ltr';
+  }
 
-    :host([size='s']) {
-      --_pad-x: ${litVar('--lab-space-sm', '0.5rem')};
-      --_pad-y: ${litVar('--lab-space-xs', '0.25rem')};
-      --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
-    }
-    :host([size='l']) {
-      --_pad-x: ${litVar('--lab-space-lg', '1.5rem')};
-      --_pad-y: ${litVar('--lab-space-md', '1rem')};
-      --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
-    }
+  private partIds() {
+    return {
+      root: `${this.tabsId}-root`,
+      list: `${this.tabsId}-list`,
+      trigger: (value: string) => `${this.tabsId}-tab-${encodeURIComponent(value)}`,
+      content: (value: string) => `${this.tabsId}-panel-${encodeURIComponent(value)}`,
+    };
+  }
 
-    .root {
-      display: flex;
-      flex-direction: column;
-      gap: ${litVar('--lab-space-md', '1rem')};
-    }
-    :host([orientation='vertical']) .root {
-      flex-direction: row;
-    }
+  static override styles = [
+    unsafeCSS(tabsCss),
+    css`
+    :host { display: block; min-width: 0; }
+    .lab-tabs-icon ::slotted(*) { width: 100%; height: 100%; }
+  `,
+  ];
 
-    /* The Zag list element — the tablist track. */
-    .list {
-      display: flex;
-      flex-direction: row;
-      gap: var(--_gap);
-      border-bottom: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
+  override connectedCallback(): void {
+    const existing = this.shadowRoot?.querySelector<HTMLElement>('[data-tabs-id]');
+    if (!this.hasUpdated && existing?.dataset.tabsId) {
+      this.tabsId = existing.dataset.tabsId;
+      if (this.value === undefined && existing.hasAttribute('data-tabs-controlled')) {
+        this.value = existing.getAttribute('data-tabs-value');
+      }
     }
-    :host([orientation='vertical']) .list {
-      flex-direction: column;
-      border-bottom: none;
-      border-inline-end: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
-    }
+    super.connectedCallback();
+  }
 
-    /* The Zag trigger element — one button per tab. */
-    .trigger {
-      appearance: none;
-      box-sizing: border-box;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--_gap);
-      margin: 0;
-      padding: var(--_pad-y) var(--_pad-x);
-      border: none;
-      background: transparent;
-      /* The selected underline rides on this transparent border so layout never
-         shifts between idle and selected (craft-frontend P4 / CLS). */
-      border-bottom: ${litVar('--lab-stroke-thick')} solid transparent;
-      font: inherit;
-      font-size: var(--_font);
-      line-height: ${litVar('--lab-line-height-md', '1.5')};
-      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
-      color: ${litVar('--lab-label-secondary')};
-      white-space: nowrap;
-      cursor: pointer;
-      transition: color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
-    }
-    :host([orientation='vertical']) .trigger {
-      justify-content: flex-start;
-      border-bottom: none;
-      border-inline-end: ${litVar('--lab-stroke-thick')} solid transparent;
-      margin-inline-end: calc(-1 * ${litVar('--lab-stroke-hairline', '0.0625rem')});
-    }
-
-    .trigger:hover:not([data-disabled]) {
-      color: ${litVar('--lab-label-primary')};
-    }
-
-    /* Selected: the machine sets data-selected; paint the accent label + underline. */
-    .trigger[data-selected] {
-      color: ${litVar('--lab-label-accent')};
-      border-bottom-color: ${litVar('--lab-fill-accent')};
-    }
-    :host([orientation='vertical']) .trigger[data-selected] {
-      border-bottom-color: transparent;
-      border-inline-end-color: ${litVar('--lab-fill-accent')};
-    }
-
-    .trigger[data-disabled] {
-      color: ${litVar('--lab-label-tertiary')};
-      cursor: not-allowed;
-    }
-
-    /* Focus is roving (machine-driven); draw the ring on the focused trigger. */
-    .trigger:focus-visible {
-      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
-      outline-offset: calc(-1 * ${litVar('--lab-focus-ring-offset')});
-      border-radius: ${litVar('--lab-radius-control', '0.5rem')};
-    }
-
-    /* The Zag content element — one panel per tab. */
-    .panel {
-      flex: 1 1 auto;
-      min-width: 0;
-      color: ${litVar('--lab-label-primary')};
-      font: inherit;
-      font-size: ${litVar('--lab-font-size-md', '1rem')};
-      letter-spacing: ${litVar('--lab-letter-spacing-md', '-0.0083em')};
-      line-height: ${litVar('--lab-line-height-md', '1.5')};
-    }
-    .panel:focus-visible {
-      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
-      outline-offset: ${litVar('--lab-focus-ring-offset')};
-      border-radius: ${litVar('--lab-radius-control', '0.5rem')};
-    }
-    /* Unselected panels are hidden by the machine (it sets [hidden]); this is a
-       belt-and-braces fallback so first paint never flashes every panel. */
-    .panel[hidden] {
-      display: none;
-    }
-  `;
+  override disconnectedCallback(): void {
+    this.motion?.dispose();
+    this.motion = undefined;
+    super.disconnectedCallback();
+  }
 
   override updated(): void {
-    // Apply the machine's connect props onto the real shadow nodes (roles, ARIA,
-    // roving tabindex, keyboard + click handlers). Unlike Switch we do NOT
-    // `clearSpreads()` between renders: `spreadProps` keeps a per-node diff and
-    // both swaps event listeners AND removes attributes that drop out of the props
-    // (e.g. `data-selected` when a tab is deselected). Calling its cleanup each
-    // render would reset that diff, leaving stale `data-selected` on the old tab.
-    // The accumulated cleanups run once on disconnect (ZagController.hostDisconnected).
+    // All semantic attributes are rendered below, including removals. Clear old
+    // listeners here so keyed reorders/removals do not retain stale closures.
+    this.machineCtl.clearSpreads();
     const api = this.machineCtl.api;
     const root = this.renderRoot.querySelector<HTMLElement>('.root');
     const list = this.renderRoot.querySelector<HTMLElement>('.list');
     if (root) this.machineCtl.spread(root, api.getRootProps());
     if (list) this.machineCtl.spread(list, api.getListProps());
-
-    // Map machine props onto nodes by STABLE value, not by position. `render()`
-    // keys both lists with `repeat(..., i => i.value, ...)`, so a node keeps its
-    // identity across reorders; here we resolve each node by its own
-    // `data-value` marker (the SAME identity key) rather than a fragile index —
-    // a reorder can never spread one tab's props onto another tab's node.
-    for (const item of this.items ?? []) {
-      const selector = `[data-item-value="${CSS.escape(item.value)}"]`;
-      const trigger = this.renderRoot.querySelector<HTMLElement>(`.trigger${selector}`);
-      const panel = this.renderRoot.querySelector<HTMLElement>(`.panel${selector}`);
-      if (trigger) {
-        this.machineCtl.spread(
-          trigger,
-          api.getTriggerProps({ value: item.value, disabled: item.disabled }),
-        );
-      }
-      if (panel) this.machineCtl.spread(panel, api.getContentProps({ value: item.value }));
+    const tabStop = this.tabStopValue();
+    const items = new Map(this.items.map((item) => [item.value, item]));
+    for (const node of this.renderRoot.querySelectorAll<HTMLElement>('.trigger')) {
+      const item = items.get(node.dataset.itemValue ?? '');
+      if (!item) continue;
+      this.machineCtl.spread(node, {
+        ...api.getTriggerProps(item),
+        tabIndex: item.value === tabStop ? 0 : -1,
+      });
+    }
+    for (const node of this.renderRoot.querySelectorAll<HTMLElement>('.panel')) {
+      this.machineCtl.spread(node, api.getContentProps({ value: node.dataset.itemValue ?? '' }));
+    }
+    if (root) {
+      this.motion ??= mountTabsMotion(root);
+      this.motion.update();
     }
   }
 
+  private tabStopValue(): string | undefined {
+    const focusedValue =
+      isServer || !this.isConnected ? undefined : this.machineCtl.api.focusedValue;
+    const focused = this.items.find((tab) => tab.value === focusedValue && !tab.disabled);
+    const selected = this.items.find((tab) => tab.value === this.selectedValue && !tab.disabled);
+    return (focused ?? selected ?? this.items.find((tab) => !tab.disabled))?.value;
+  }
+
   override render(): TemplateResult {
-    // Structure only; behavior (roles, aria-selected, roving focus, keyboard) is
-    // spread in `updated()` from the machine. Panel content projects from light
-    // DOM through a per-value named slot, so rich content stays in the consumer's
-    // tree while the machine-wired wrapper lives here in the shadow root.
-    // Keyed by `value` (Lit `repeat`) so a node's identity is its tab, never its
-    // position — reordering `items` moves the right DOM node instead of leaving a
-    // node to receive a sibling's machine props. `data-item-value` is the stable
-    // marker `updated()` resolves each node by (present at first paint, before any
-    // machine spread runs).
+    const ids = this.partIds();
+    const value = this.selectedValue;
+    const tabStop = this.tabStopValue();
     return html`
-      <div class="root">
-        <div class="list">
+      <div class="root" id=${ids.root} data-lab-tabs data-tabs-id=${this.tabsId}
+        data-variant=${this.variant} data-edge=${this.edge} data-orientation=${this.orientation}
+        data-size=${this.size} data-count=${this.items.length} dir=${this.dir || nothing}
+        ?data-tabs-controlled=${this.value !== undefined} data-tabs-value=${this.value ?? nothing}>
+        <div class="list lab-tabs-list" id=${ids.list} role="tablist"
+          aria-orientation=${this.orientation} aria-label=${this.label || this.getAttribute('aria-label') || nothing}>
           ${repeat(
-            this.items ?? [],
+            this.items,
             (item) => item.value,
-            (item) =>
-              html`<button class="trigger" type="button" data-item-value=${item.value}>
-                ${item.label}
-              </button>`,
+            (item) => html`
+            <button class="trigger lab-tabs-trigger" type="button" role="tab"
+              id=${ids.trigger(item.value)} data-item-value=${item.value} data-value=${item.value}
+              ?disabled=${item.disabled} ?data-disabled=${item.disabled} ?data-icon-only=${item.iconOnly}
+              ?data-selected=${item.value === value} aria-selected=${item.value === value}
+              aria-controls=${item.value === value ? ids.content(item.value) : nothing}
+              tabindex=${item.value === tabStop ? 0 : -1}>
+              <span class="lab-tabs-active" aria-hidden="true"></span>
+              ${item.icon ? html`<span class="lab-tabs-icon" aria-hidden="true"><slot name=${item.icon}></slot></span>` : nothing}
+              <span class="lab-tabs-label">${item.label}</span>
+              ${item.iconEnd ? html`<span class="lab-tabs-icon" aria-hidden="true"><slot name=${item.iconEnd}></slot></span>` : nothing}
+            </button>`,
           )}
         </div>
         ${repeat(
-          this.items ?? [],
+          this.items,
           (item) => item.value,
-          (item) =>
-            html`<div class="panel" data-item-value=${item.value}>
-              <slot name=${item.value}></slot>
-            </div>`,
+          (item) => html`
+          <div class="panel lab-tabs-panel" role="tabpanel" id=${ids.content(item.value)}
+            data-item-value=${item.value} aria-labelledby=${ids.trigger(item.value)}
+            ?data-selected=${item.value === value} ?hidden=${item.value !== value}
+            ?inert=${item.value !== value} aria-hidden=${item.value !== value ? 'true' : nothing} tabindex="0">
+            <slot name=${item.value}></slot>
+          </div>`,
         )}
-      </div>
-    `;
+      </div>`;
   }
 }
 
@@ -323,8 +254,5 @@ declare global {
     'lab-tabs': LabTabs;
   }
 }
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-tabs')) {
+if (typeof customElements !== 'undefined' && !customElements.get('lab-tabs'))
   customElements.define('lab-tabs', LabTabs);
-}

@@ -31,6 +31,166 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/button.html');
 });
 
+test('Figma button metrics survive themes, text scaling and both renderers', async ({ page }) => {
+  await expect(reactButton(page, 'react-size-m')).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  // Figma 6227:8249 / 8347 / 8445. These are component metrics, not control-scale steps.
+  for (const theme of ['light', 'dark']) {
+    await page.getByTestId('theme-select').selectOption(theme);
+    for (const scale of [1, 2]) {
+      await page.evaluate((value) => {
+        document.documentElement.style.fontSize = `${16 * value}px`;
+      }, scale);
+      for (const [size, height, font, line] of [
+        ['s', 36, 14, 12],
+        ['m', 48, 16, 24],
+        ['l', 56, 16, 24],
+      ] as const) {
+        const measurements = [];
+        for (const renderer of ['lit', 'react']) {
+          const control =
+            renderer === 'lit'
+              ? litButton(page, `lit-size-${size}`)
+              : reactButton(page, `react-size-${size}`);
+          const measured = await control.evaluate((element: HTMLElement) => {
+            const style = getComputedStyle(element);
+            return {
+              height: element.getBoundingClientRect().height,
+              font: Number.parseFloat(style.fontSize),
+              line: Number.parseFloat(style.lineHeight),
+              weight: style.fontWeight,
+              gradient: style.backgroundImage,
+              shadow: style.boxShadow,
+            };
+          });
+          expect(measured.height, `${renderer}/${size}/${theme}/${scale}`).toBeCloseTo(
+            height * scale,
+            1,
+          );
+          expect(measured.font).toBe(font * scale);
+          expect(measured.line).toBeCloseTo(line * scale, 2);
+          expect(measured.weight).toBe('500');
+          expect(measured.gradient).toContain('linear-gradient');
+          expect(measured.shadow).toContain('inset');
+          measurements.push(measured);
+        }
+        expect(measurements[0]).toEqual(measurements[1]);
+      }
+    }
+  }
+});
+
+test('Figma highlight responds to hover and press without changing the action fill', async ({
+  page,
+}) => {
+  for (const renderer of ['lit', 'react']) {
+    const control =
+      renderer === 'lit' ? litButton(page, 'lit-size-m') : reactButton(page, 'react-size-m');
+    await page.mouse.move(0, 0);
+    const before = await control.evaluate((el) => ({
+      fill: getComputedStyle(el).backgroundColor,
+      gradient: getComputedStyle(el).backgroundImage,
+    }));
+    await control.hover();
+    const hovered = await control.evaluate((el) => ({
+      fill: getComputedStyle(el).backgroundColor,
+      gradient: getComputedStyle(el).backgroundImage,
+    }));
+    expect(hovered.fill).toBe(before.fill);
+    expect(hovered.gradient).not.toBe(before.gradient);
+    await page.mouse.down();
+    const pressed = await control.evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(pressed).not.toBe(hovered.gradient);
+    expect(await control.evaluate((el) => getComputedStyle(el).boxShadow)).toMatch(/0px 1px 1px/);
+    await page.mouse.up();
+  }
+});
+
+test('anatomy: secondary label and both icons preserve geometry and name during loading', async ({
+  page,
+}) => {
+  const measured = [];
+  for (const renderer of ['lit', 'react']) {
+    const ready =
+      renderer === 'lit' ? litButton(page, 'lit-anatomy') : reactButton(page, 'react-anatomy');
+    const pending =
+      renderer === 'lit'
+        ? litButton(page, 'lit-anatomy-loading')
+        : reactButton(page, 'react-anatomy-loading');
+    await expect(ready).toHaveAccessibleName('Main Description');
+    await expect(pending).toHaveAccessibleName('Main Description');
+    await expect(pending).toBeDisabled();
+    const host = page.getByTestId(`${renderer}-anatomy`);
+    const busyHost = page.getByTestId(`${renderer}-anatomy-loading`);
+    for (const icon of await busyHost.locator('svg').all())
+      await expect(icon).toHaveCSS('visibility', 'hidden');
+    const description = host.locator('[slot="description"], .lab-button-description');
+    await expect(description).toHaveCSS('font-weight', '400');
+    await expect(description).toHaveCSS('letter-spacing', '-0.25px');
+    const busyDescription = busyHost.locator('[slot="description"], .lab-button-description');
+    const busyTextColor = await busyDescription.evaluate((el) => getComputedStyle(el).color);
+    expect(busyTextColor).not.toBe('rgba(0, 0, 0, 0)');
+    const loader = busyHost.locator('.main .spinner, .lab-button-main .lab-button-spinner');
+    await expect(loader).toHaveCSS('width', '24px');
+    await expect(loader).toHaveCSS('height', '24px');
+    expect(await loader.evaluate((el) => getComputedStyle(el).maskImage)).toContain(
+      'data:image/svg+xml',
+    );
+    const dimensions = await ready.boundingBox();
+    const busyDimensions = await pending.boundingBox();
+    expect(busyDimensions?.width).toBeCloseTo(dimensions?.width ?? 0, 1);
+    expect(busyDimensions?.height).toBe(dimensions?.height);
+    measured.push({
+      width: dimensions?.width,
+      height: dimensions?.height,
+      color: await description.evaluate((el) => getComputedStyle(el).color),
+    });
+  }
+  expect(measured[0]).toEqual(measured[1]);
+});
+
+test('Figma plain button surfaces respond to hover, press and disable', async ({ page }) => {
+  for (const renderer of ['lit', 'react']) {
+    const host = page.getByTestId(`${renderer}-anatomy`);
+    const button = renderer === 'lit' ? host.locator('button') : host;
+    await expect(button).toBeVisible();
+    for (const kind of ['border', 'ghost']) {
+      await host.evaluate(
+        (el, value) => el.setAttribute(el.localName === 'lab-button' ? 'kind' : 'data-kind', value),
+        kind,
+      );
+      await page.mouse.move(0, 0);
+      await expect(button).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+      const label = await button.evaluate(fg);
+      await host.hover();
+      await expect.poll(() => button.evaluate(bg)).not.toBe('rgba(0, 0, 0, 0)');
+      await expect(button).toHaveCSS('color', label);
+      await page.mouse.down();
+      await expect(button).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+      await page.mouse.up();
+      await host.evaluate((el) => el.setAttribute('disabled', ''));
+      await expect(button).toBeDisabled();
+      await expect(button).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+      if (kind === 'border') {
+        const border = await button.evaluate((el) => getComputedStyle(el).borderTopColor);
+        expect(border).toMatch(/rgba\(120, 120, 128,/);
+      }
+      await host.evaluate((el) => el.removeAttribute('disabled'));
+    }
+  }
+});
+
+test('Lit slot content can arrive after the icon-only first render', async ({ page }) => {
+  const host = page.getByTestId('lit-icon-only');
+  await host.evaluate((el) => {
+    el.removeAttribute('icon');
+    el.removeAttribute('aria-label');
+    el.append(document.createTextNode('Добавить строку'));
+  });
+  await expect(host.getByRole('button')).toHaveAccessibleName('Добавить строку');
+  await expect(host.locator('.label')).toBeVisible();
+});
+
 test('delivered HTML carries the Lit element (React island mounts on the client)', async ({
   request,
 }) => {

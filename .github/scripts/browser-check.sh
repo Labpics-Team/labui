@@ -23,29 +23,33 @@ pnpm install --frozen-lockfile
 if [ "$#" -eq 0 ]; then
   pnpm build
   pnpm --filter @labpics/ui-docs exec playwright install chromium webkit firefox
+  pnpm --filter @labpics/ui-docs test:framework-ssr
   pnpm --filter @labui/colors fx:render
   pnpm test:e2e
 else
   icons_root="$(cd -- "$2" && pwd -P)"
   output="$(mktemp -d "$RUNNER_TEMP/labui-icons.XXXXXX")"
-  mkdir -p "$output/icons" "$output/ui-core" "$output/ui-shadow"
+  mkdir -p "$output/icons"
   cd "$icons_root"
   pnpm install --frozen-lockfile
   pnpm pack --pack-destination "$output/icons"
   cd "$root"
   pnpm --filter @labpics/ui-core... build
-  pnpm --dir packages/core pack --pack-destination "$output/ui-core"
-  pnpm --dir packages/shadow pack --pack-destination "$output/ui-shadow"
+  ui_archives=()
+  while read -r key name option; do
+    mkdir -p "$output/$key"
+    pnpm --dir "packages/${name#@labpics/ui-}" pack --pack-destination "$output/$key"
+    archive=("$output/$key"/*.tgz)
+    ui_archives+=("$option" "${archive[0]}")
+  done < <(node --input-type=module -e 'import { consumerPackages } from "./apps/docs/tests/icons-public-provenance.mjs"; for (const {key,name,option} of consumerPackages()) if(key !== "icons") console.log(key,name,option);')
   LABUI_ICONS_GIT_DIAGNOSTICS="$output" node apps/docs/tests/prepare-icons-inputs.mjs \
     --icons-source "$icons_root" --ui-source "$root" --ui-commit "$UI_SOURCE_COMMIT" \
     --icons-tarball "$output"/icons/*.tgz \
-    --ui-core-tarball "$output"/ui-core/*.tgz \
-    --ui-shadow-tarball "$output"/ui-shadow/*.tgz --out "$output/inputs"
+    "${ui_archives[@]}" --out "$output/inputs"
   status=0
   node apps/docs/tests/icons-packed.mjs \
     --icons-tarball "$output"/icons/*.tgz \
-    --ui-core-tarball "$output"/ui-core/*.tgz \
-    --ui-shadow-tarball "$output"/ui-shadow/*.tgz \
+    "${ui_archives[@]}" \
     --subject "$output/inputs/subject.json" --out "$output/result" || status=$?
   node apps/docs/tests/prepare-icons-inputs.mjs --summarize "$output" --consumer-exit-code "$status" || {
     if [ "$status" -eq 0 ]; then status=1; fi

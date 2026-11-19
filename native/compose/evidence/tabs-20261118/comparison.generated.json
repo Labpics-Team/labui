@@ -1,0 +1,35 @@
+{
+  "tinted": {
+    "size_2x": [
+      1556,
+      112
+    ],
+    "mean_absolute_rgb_error_0_255": [
+      1.0759,
+      1.0759,
+      0.5119
+    ]
+  },
+  "underlined": {
+    "size_2x": [
+      1556,
+      96
+    ],
+    "mean_absolute_rgb_error_0_255": [
+      0.53,
+      0.53,
+      0.5314
+    ]
+  },
+  "underlined-control": {
+    "size_2x": [
+      412,
+      110
+    ],
+    "mean_absolute_rgb_error_0_255": [
+      0.7282,
+      0.7282,
+      0.7221
+    ]
+  }
+}

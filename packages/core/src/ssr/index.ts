@@ -1,29 +1,15 @@
-/**
- * Lit SSR shim — the ~10-line per-stack wiring the spike (spike-FINDINGS.md)
- * identified as the cost of WC deep-SSR on Vue/Svelte/Solid/Astro.
- *
- * WC deep-SSR is a property of `@lit-labs/ssr`, not of the host framework: every
- * SSR framework that can emit a raw HTML string carries the declarative shadow
- * DOM (DSD) through intact → styled first paint, no FOUC. This module renders a
- * Lit template to that DSD-bearing string once; each meta-framework adapter
- * injects the string with its own raw-HTML mechanism (Vue `v-html`, Svelte
- * `{@html}`, Solid `innerHTML`, Astro's built-in `@astrojs/lit`).
- *
- * It lives behind the `@labpics/ui-core/ssr` entry and lists `@lit-labs/ssr` as
- * an OPTIONAL peer, so a consumer that never server-renders the Lit path (e.g.
- * the React renderer, which SSRs natively) never pulls the SSR engine into its
- * bundle. The React path does not import this file at all.
- *
- * The DOM shim MUST be installed before any custom element module is imported,
- * so element registration works in Node. Import order is load-bearing — keep
- * the shim import first.
- */
-import '@lit-labs/ssr/lib/install-global-dom-shim.js';
+import './environment.js';
 import { render } from '@lit-labs/ssr';
+/**
+ * Low-level whole-template SSR. Native Vue/Solid/Svelte adapters instead use
+ * the conditional element-ssr entry, retaining their own hosts and light DOM.
+ * Both paths share the renderer specializations in render-context.ts.
+ */
 import { collectResultSync } from '@lit-labs/ssr/lib/render-result.js';
-import { type TemplateResult, html } from 'lit';
+import { type TemplateResult, html, noChange } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { createRenderContext } from './render-context.js';
 
 /**
  * Render a Lit template to a declarative-shadow-DOM HTML string.
@@ -34,16 +20,14 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
  * raw-HTML slot.
  */
 export function renderToString(template: TemplateResult): string {
-  return collectResultSync(render(template));
+  return collectResultSync(render(template, createRenderContext()));
 }
 
 /**
  * Re-exported so SSR callers can author templates without a direct `lit`
  * dependency — the SSR entry is the one place a non-Lit host touches Lit at all.
- * `ifDefined` (omit an attribute when its value is undefined) and `unsafeHTML`
- * (inject a pre-rendered raw HTML string as slotted light-DOM content) are the two
- * directives the framework adapters' generated SSR helpers need to author a
- * `<lab-*>` template, so they ship from this single SSR surface too.
+ * `ifDefined` omits undefined attributes, `noChange` preserves constructor defaults
+ * for omitted properties, and `unsafeHTML` injects pre-rendered slot content.
  */
-export { html, ifDefined, unsafeHTML };
+export { html, ifDefined, noChange, unsafeHTML };
 export type { TemplateResult };

@@ -1,0 +1,1340 @@
+{
+  "button": {
+    "sourceRef": {
+      "key": "component-set/Button/Button"
+    },
+    "fontWeight": 500,
+    "labelPaddingX": 8,
+    "labelGap": 8,
+    "sizes": {
+      "s": {
+        "height": 36,
+        "radius": 9999,
+        "paddingX": 12,
+        "paddingY": 8,
+        "icon": 20,
+        "fontSize": 14,
+        "lineHeight": 12,
+        "letterSpacing": 0,
+        "descriptionFontWeight": 500,
+        "descriptionLetterSpacing": 0,
+        "descriptionAccentPlainOpacity": 0.72
+      },
+      "m": {
+        "height": 48,
+        "radius": 16,
+        "paddingX": 12,
+        "paddingY": 12,
+        "icon": 24,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "letterSpacing": 0,
+        "descriptionFontWeight": 400,
+        "descriptionLetterSpacing": -0.25,
+        "descriptionAccentPlainOpacity": 1
+      },
+      "l": {
+        "height": 56,
+        "radius": 16,
+        "paddingX": 16,
+        "paddingY": 16,
+        "icon": 24,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "letterSpacing": 0,
+        "descriptionFontWeight": 400,
+        "descriptionLetterSpacing": -0.25,
+        "descriptionAccentPlainOpacity": 1
+      }
+    },
+    "descriptionOpacity": 0.72,
+    "loader": {
+      "periodMs": 800,
+      "size": 24,
+      "segment": {
+        "x": 11,
+        "y": 2,
+        "width": 2,
+        "height": 7,
+        "radius": 1
+      },
+      "count": 8
+    },
+    "fill": {
+      "highlight": 0.2,
+      "hoverHighlight": 0.32,
+      "pressedShade": 0.12
+    },
+    "innerShadow": {
+      "x": 0,
+      "y": -1,
+      "blur": 1
+    }
+  },
+  "input": {
+    "sourceRef": {
+      "key": "component-set/Input & Textarea/Input"
+    },
+    "sizes": {
+      "s": {
+        "height": 36,
+        "radius": 16,
+        "paddingX": 16,
+        "paddingY": 8,
+        "contentHeight": 20,
+        "fontSize": 14,
+        "lineHeight": 12,
+        "fontWeight": 500,
+        "letterSpacing": 0
+      },
+      "m": {
+        "height": 48,
+        "radius": 12,
+        "paddingX": 16,
+        "paddingY": 12,
+        "contentHeight": 24,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25
+      },
+      "l": {
+        "height": 56,
+        "radius": 12,
+        "paddingX": 16,
+        "paddingY": 16,
+        "contentHeight": 24,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25
+      }
+    },
+    "label": {
+      "fontSize": 12,
+      "lineHeight": 12,
+      "fontWeight": 500,
+      "paddingX": 4,
+      "overhang": 8
+    },
+    "helper": {
+      "gap": 8,
+      "paddingX": 4
+    },
+    "strokeWidth": 1,
+    "adornment": {
+      "width": 32,
+      "iconSize": 16,
+      "paddingOuter": 12,
+      "paddingInner": 4
+    }
+  },
+  "textarea": {
+    "sourceRef": {
+      "key": "component-set/Input & Textarea/Textarea"
+    },
+    "height": 112,
+    "rows": 3,
+    "labelFontSize": 14,
+    "labelLineHeight": 12,
+    "paddingTop": 16,
+    "paddingBottom": 24,
+    "paddingStart": 20,
+    "paddingEnd": 16
+  },
+  "card": {
+    "sourceRef": {
+      "key": "component/Card/Card"
+    },
+    "radius": 16,
+    "padding": 24,
+    "gap": 16,
+    "cornerSmoothing": 0.6,
+    "strokeWidth": 1,
+    "mediaHeight": 200,
+    "captionGap": 8,
+    "textGap": 2,
+    "titleGap": 4,
+    "text": {
+      "title": {
+        "$textStyle": "headline"
+      },
+      "description": {
+        "$textStyle": "body"
+      },
+      "caption": {
+        "fontSize": 14,
+        "lineHeight": 12,
+        "fontWeight": 500,
+        "letterSpacing": 0
+      }
+    }
+  },
+  "sheet": {
+    "sourceRef": {
+      "key": "component-set/Bottom Sheet/Bottom sheet"
+    },
+    "topRadius": 32,
+    "paddingX": 16,
+    "paddingBottom": 16,
+    "contentGap": 24,
+    "headerGap": 8,
+    "typography": {
+      "title": {
+        "fontSize": 20,
+        "lineHeight": 20,
+        "fontWeight": 600,
+        "letterSpacing": -0.33
+      },
+      "description": {
+        "$textStyle": "body"
+      }
+    },
+    "bodyHeights": {
+      "full": 776,
+      "two-thirds": 540,
+      "one-third": 270
+    },
+    "drag": {
+      "areaHeight": 24,
+      "width": 36,
+      "height": 4,
+      "radius": 4,
+      "top": 14,
+      "centerOffset": 0.5
+    }
+  },
+  "snackbar": {
+    "sourceRef": {
+      "key": "component/Snackbar/Snackbar",
+      "readAt": "2026-11-17"
+    },
+    "radius": 9999,
+    "paddingStart": 12,
+    "paddingEnd": 8,
+    "paddingY": 8,
+    "actionGap": 24,
+    "labelGap": 12,
+    "fontSize": 16,
+    "lineHeight": 24,
+    "fontWeight": 500,
+    "strokeWidth": 1,
+    "material": "elevated",
+    "durationMs": 5000,
+    "timer": {
+      "size": 32,
+      "strokeWidth": 3,
+      "warningSeconds": 2,
+      "sweeps": [360, 270, 225, 135, 75]
+    }
+  },
+  "switch": {
+    "sourceRef": {
+      "key": "component-set/Switch/Switch",
+      "authoredVariants": 108,
+      "activePairs": [["neutral", false], ["accent", true], ["danger", false]],
+      "disabledPairs": "all types and both values",
+      "inspected": "2026-11-17"
+    },
+    "sizes": {
+      "s": {
+        "trackWidth": 28,
+        "trackHeight": 16,
+        "controlHeight": 24,
+        "labelGap": 8,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "letterSpacing": -0.25,
+        "fontWeight": 400
+      },
+      "m": {
+        "trackWidth": 36,
+        "trackHeight": 20,
+        "controlHeight": 24,
+        "labelGap": 8,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "letterSpacing": -0.25,
+        "fontWeight": 400
+      },
+      "l": {
+        "trackWidth": 44,
+        "trackHeight": 24,
+        "controlHeight": 24,
+        "labelGap": 12,
+        "fontSize": 20,
+        "lineHeight": 20,
+        "letterSpacing": -0.33,
+        "fontWeight": 500
+      }
+    },
+    "thumb": {
+      "padding": 2,
+      "hoverPadding": 1,
+      "pressedPadding": 4,
+      "fillRole": "bg-static-light",
+      "disabledFillRole": "control-bg",
+      "shadow": "xs",
+      "hoverShadow": "s",
+      "disabledShadow": null,
+      "neutralIconHoverShadow": "xs",
+      "coloredPressedShadow": [
+        {
+          "x": 0,
+          "y": 0,
+          "blur": 1,
+          "spread": 0,
+          "colorRole": "bg-static-dark",
+          "opacity": 0.12
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "blur": 1,
+          "spread": 0,
+          "colorRole": "bg-static-dark",
+          "opacity": 0.04
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "blur": 2,
+          "spread": 0,
+          "colorRole": "bg-static-dark",
+          "opacity": 0.02
+        },
+        {
+          "x": 0,
+          "y": 6,
+          "blur": 2,
+          "spread": 0,
+          "colorRole": "bg-static-dark",
+          "opacity": 0.01
+        }
+      ],
+      "coloredPressedShadowMinimumTrackHeight": 20
+    },
+    "track": {
+      "neutralRole": "fill-secondary",
+      "neutralHoverRole": "fill-primary",
+      "accentRole": "fill-accent",
+      "dangerRole": "fill-danger",
+      "disabledRole": "fill-tertiary"
+    },
+    "labelRole": "label-primary",
+    "coloredFill": {
+      "highlight": 0.2,
+      "hoverHighlight": 0.32,
+      "pressedShade": 0.12,
+      "gradientDirection": "top-to-bottom",
+      "gradientTailOpacity": {
+        "default": 0,
+        "hover": 0.0001,
+        "pressed": 0.0001
+      }
+    },
+    "innerShadow": {
+      "x": 0,
+      "y": -1,
+      "pressedY": 1,
+      "blur": 1,
+      "colorRole": "fx-control-inner"
+    },
+    "focus": {
+      "width": 2,
+      "offset": 2,
+      "neutralRole": "label-primary",
+      "accentRole": "border-focus",
+      "dangerRole": "label-danger"
+    },
+    "cutout": {
+      "viewBox": 8,
+      "diameterRatio": 0.5,
+      "on": {
+        "sourceRef": {
+          "key": "component-set/Switch/Switch",
+          "variant": {
+            "Type": "accent",
+            "Toggle": "true",
+            "Size": "medium",
+            "State": "default",
+            "Icon": "true"
+          },
+          "path": ["switch-container", "switch", "thumb", "Check"]
+        },
+        "windingRule": "EVENODD",
+        "data": "M 7.635610517625218 0.09004448477756646 C 7.983656103329632 0.2757832909707034 8.10328593643757 0.6877623968927002 7.902811901013137 1.0102255870284567 L 3.799476721347746 7.610456581436975 C 3.4971543396331435 8.09674358769225 2.755387473545853 8.135316874720674 2.396231818043499 7.683424404152019 L 0.14168859926511418 4.84674109766281 C -0.09647133042804071 4.54708645671381 -0.027348674390513195 4.125292176841569 0.2960784184531714 3.9046376557352764 C 0.6195054679489442 3.6839828133348624 1.0747617100265714 3.7480247640656943 1.3129216397197263 4.047679405014694 L 3.0091021078268905 6.181826769133788 L 6.64242871067445 0.33760590255856143 C 6.842902746098884 0.015142692341922448 7.287565625487393 -0.09569428125380533 7.635610517625218 0.09004448477756646 Z"
+      },
+      "off": {
+        "sourceRef": {
+          "key": "component-set/Switch/Switch",
+          "variant": {
+            "Type": "neutral",
+            "Toggle": "false",
+            "Size": "medium",
+            "State": "default",
+            "Icon": "true"
+          },
+          "path": ["switch-container", "switch", "thumb", "X Mark (Stroke)"]
+        },
+        "windingRule": "NONZERO",
+        "data": "M 6.9128887406063635 0.1495871834623516 C 7.174744708699412 -0.06398525199944971 7.560755252477094 -0.048922332108651434 7.804838861833421 0.19516127724767568 C 8.048922471189748 0.4392448866040028 8.063985391080546 0.8252554502504135 7.8504129556187445 1.0871114183434614 L 7.804838861833421 1.1378939799899654 L 4.942785772115067 3.999946910758495 L 7.804838861833421 6.862000000476849 L 7.8504129556187445 6.912782562123353 C 8.063985391080546 7.174638530216401 8.048922471189748 7.560649073994084 7.804838861833421 7.804732683350411 C 7.560755252477094 8.04881629270674 7.174744708699412 8.063879212597536 6.9128887406063635 7.850306777135735 L 6.862106178959859 7.804732683350411 L 4.000053089241505 4.9426795936320564 L 1.1379998405733256 7.804732683350411 C 0.8776435839466081 8.065088939977128 0.45562345406393767 8.065088939977128 0.19526719743722018 7.804732683350411 C -0.06508905918949734 7.5443764267236935 -0.06508905918949734 7.122356257103567 0.19526719743722018 6.862000000476849 L 3.057320406367943 3.999946910758495 L 0.19526719743722018 1.1378939799899654 L 0.14969310365189606 1.0871114183434614 C -0.06387933180990524 0.8252554502504135 -0.04881641191910693 0.4392448866040028 0.19526719743722018 0.19516127724767568 C 0.4393508067935473 -0.048922332108651434 0.8253613108337736 -0.06398525199944971 1.0872172789268215 0.1495871834623516 L 1.1379998405733256 0.19516127724767568 L 4.000053089241505 3.0572142278849332 L 6.862106178959859 0.19516127724767568 L 6.9128887406063635 0.1495871834623516 Z"
+      },
+      "hideOnColoredPressed": true
+    }
+  },
+  "badge": {
+    "height": 20,
+    "radius": 9999,
+    "paddingX": 8,
+    "paddingY": 4,
+    "gap": 4,
+    "iconSize": 12,
+    "fontSize": 12,
+    "lineHeight": 12,
+    "fontWeight": 500,
+    "letterSpacing": 0,
+    "disabled": {
+      "fillRole": "badge-base-disabled-fill",
+      "labelRole": "badge-base-disabled-label"
+    },
+    "colors": {
+      "neutral": {
+        "fill": "badge-base-primary",
+        "label": "badge-base-inverted",
+        "tint": "badge-base-tint",
+        "tintLabel": "badge-base-primary"
+      },
+      "gray": {
+        "fill": "badge-base-tint",
+        "label": "badge-base-primary",
+        "tint": "badge-base-tint",
+        "tintLabel": "badge-base-secondary"
+      },
+      "blue": {
+        "anchor": "blue"
+      },
+      "red": {
+        "anchor": "red"
+      },
+      "orange": {
+        "anchor": "orange"
+      },
+      "green": {
+        "anchor": "green"
+      },
+      "yellow": {
+        "anchor": "yellow",
+        "lightLabelAnchor": "orange"
+      },
+      "teal": {
+        "anchor": "teal"
+      },
+      "mint": {
+        "anchor": "mint"
+      },
+      "indigo": {
+        "anchor": "indigo"
+      },
+      "purple": {
+        "anchor": "purple"
+      },
+      "pink": {
+        "anchor": "pink"
+      },
+      "static-dark": {
+        "fill": "bg-static-dark",
+        "label": "label-static-light-primary",
+        "tint": "badge-base-tint",
+        "tintLabel": "label-static-dark-primary"
+      },
+      "static-light": {
+        "fill": "bg-static-light",
+        "label": "label-static-dark-primary",
+        "tint": "badge-base-tint",
+        "tintLabel": "label-static-light-primary"
+      },
+      "brand": {
+        "anchor": "brand"
+      }
+    },
+    "aliases": {
+      "danger": "red",
+      "warning": "orange",
+      "success": "green",
+      "info": "blue"
+    },
+    "sourceRef": {
+      "key": "component-set/Badge/Badge"
+    },
+    "defaultColor": "blue"
+  },
+  "selection": {
+    "sourceRef": {
+      "key": "component-set/Check & Radio/Check"
+    },
+    "sizes": {
+      "tiny": {
+        "controlSize": 16,
+        "controlHeight": 24,
+        "labelGap": 8,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25,
+        "checkboxRadius": 4,
+        "glyphSize": 8,
+        "mixedHeight": 1.5,
+        "mixedY": 7,
+        "radioStroke": 0,
+        "radioFocusStroke": 0,
+        "tinyDot": 4
+      },
+      "s": {
+        "controlSize": 12,
+        "controlHeight": 24,
+        "labelGap": 8,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25,
+        "checkboxRadius": 4,
+        "glyphSize": 6,
+        "mixedHeight": 1.5,
+        "mixedY": 5,
+        "radioStroke": 3,
+        "radioFocusStroke": 3,
+        "tinyDot": 0
+      },
+      "m": {
+        "controlSize": 16,
+        "controlHeight": 24,
+        "labelGap": 8,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25,
+        "checkboxRadius": 4,
+        "glyphSize": 8,
+        "mixedHeight": 1.5,
+        "mixedY": 7,
+        "radioStroke": 4,
+        "radioFocusStroke": 4,
+        "tinyDot": 0
+      },
+      "l": {
+        "controlSize": 20,
+        "controlHeight": 20,
+        "labelGap": 12,
+        "fontSize": 20,
+        "lineHeight": 20,
+        "fontWeight": 500,
+        "letterSpacing": -0.33,
+        "checkboxRadius": 6,
+        "glyphSize": 10,
+        "mixedHeight": 2,
+        "mixedY": 9,
+        "radioStroke": 6,
+        "radioFocusStroke": 5,
+        "tinyDot": 0
+      }
+    },
+    "roles": {
+      "label": "label-primary",
+      "disabledLabel": "label-quaternary",
+      "uncheckedFill": "fill-secondary",
+      "uncheckedHoverFill": "fill-primary",
+      "uncheckedStroke": "border-base",
+      "disabledFill": "fill-tertiary",
+      "accent": "fill-accent",
+      "neutral": "bg-inverted",
+      "danger": "fill-danger",
+      "glyph": "label-static-light-primary",
+      "disabledGlyph": "control-bg",
+      "focusAccent": "fx-focus-ring-brand",
+      "focusNeutral": "fx-focus-ring-neutral",
+      "focusDanger": "fx-focus-ring-danger",
+      "neutralGlyph": "label-inverted-primary"
+    },
+    "fill": {
+      "highlight": 0.2,
+      "hoverHighlight": 0.32
+    },
+    "focus": {
+      "width": 2,
+      "offset": 2,
+      "tinyCheckboxOffset": 0,
+      "tinyRadioOffset": -2
+    },
+    "checkbox": {
+      "sourceRef": {
+        "key": "component-set/Check & Radio/Check"
+      },
+      "innerShadow": {
+        "x": 0,
+        "y": -1,
+        "blur": 1,
+        "colorRole": "fx-control-inner"
+      },
+      "glyph": {
+        "viewBox": 8,
+        "windingRule": "EVENODD",
+        "data": "M 7.635610517625218 0.09004448477756646 C 7.983656103329632 0.2757832909707034 8.10328593643757 0.6877623968927002 7.902811901013137 1.0102255870284567 L 3.799476721347746 7.610456581436975 C 3.4971543396331435 8.09674358769225 2.755387473545853 8.135316874720674 2.396231818043499 7.683424404152019 L 0.14168859926511418 4.84674109766281 C -0.09647133042804071 4.54708645671381 -0.027348674390513195 4.125292176841569 0.2960784184531714 3.9046376557352764 C 0.6195054679489442 3.6839828133348624 1.0747617100265714 3.7480247640656943 1.3129216397197263 4.047679405014694 L 3.0091021078268905 6.181826769133788 L 6.64242871067445 0.33760590255856143 C 6.842902746098884 0.015142692341922448 7.287565625487393 -0.09569428125380533 7.635610517625218 0.09004448477756646 Z"
+      },
+      "tinyDisabledNeutralGlyphRole": "label-static-dark-quaternary"
+    },
+    "radio": {
+      "sourceRef": {
+        "key": "component-set/Check & Radio/Radio"
+      }
+    },
+    "choicebox": {
+      "sourceRef": {
+        "key": "component-set/Choicebox/Choicebox"
+      },
+      "preferredWidth": 283.5,
+      "radius": 12,
+      "padding": 16,
+      "cardHeight": 104,
+      "rowHeight": 56,
+      "rowWrapWidth": 224,
+      "iconSize": 24,
+      "cardContentGap": 24,
+      "rowContentGap": 8,
+      "headerGap": 24,
+      "strokeWidth": 1,
+      "selectedStrokeWidth": 2,
+      "strokeRole": "border-base",
+      "selectedStrokeRole": "label-brand-primary",
+      "hoverFillRole": "fill-quaternary",
+      "iconRole": "label-brand-primary",
+      "descriptionRole": "label-secondary",
+      "$textStyle": "body-emphasized"
+    }
+  },
+  "kbd": {
+    "sourceRef": {
+      "key": "component-set/Kbd/Kbd",
+      "inspected": "2026-11-18"
+    },
+    "fontWeight": 500,
+    "letterSpacing": 0,
+    "gap": 2,
+    "strokeWidth": 1,
+    "labelRole": "label-secondary",
+    "borderRole": "border-base",
+    "bottomBorderRole": "border-soft",
+    "firstFillRole": "fill-tertiary",
+    "remainingFillRole": "fill-quaternary",
+    "fillEndRole": "fill-none",
+    "sizes": {
+      "s": {
+        "height": 16,
+        "radius": 4,
+        "paddingX": 2,
+        "paddingY": 2,
+        "fontSize": 12,
+        "lineHeight": 12,
+        "bottomStrokeWidth": 1
+      },
+      "l": {
+        "height": 24,
+        "radius": 6,
+        "paddingX": 4,
+        "paddingY": 0,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "bottomStrokeWidth": 2
+      }
+    }
+  },
+  "loader": {
+    "sourceRef": {
+      "key": "component-set/Loader/Loader"
+    },
+    "colorRole": "label-primary",
+    "sizes": {
+      "s": {
+        "diameter": 16
+      },
+      "m": {
+        "diameter": 24
+      },
+      "l": {
+        "diameter": 48
+      }
+    },
+    "viewBox": 24,
+    "periodMs": 800,
+    "segment": {
+      "x": 11,
+      "y": 2,
+      "width": 2,
+      "height": 7,
+      "radius": 1
+    },
+    "spokeOpacity": [0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1, 0.02],
+    "determinate": {
+      "medium": {
+        "ringRadius": 9,
+        "stroke": 2,
+        "sectorRadius": 6,
+        "secondaryRole": "label-secondary",
+        "gradient": {
+          "fromDegrees": 0,
+          "primaryStop": 0.75,
+          "secondaryStop": 1
+        }
+      },
+      "large": {
+        "ringRadius": 9,
+        "stroke": 2,
+        "trackRole": "label-quaternary",
+        "cap": "round"
+      }
+    }
+  },
+  "progress": {
+    "sourceRef": {
+      "key": "component-set/Progress/Linear progress"
+    },
+    "activeRole": "label-brand-primary",
+    "trackRole": "label-brand-quaternary",
+    "radius": 4,
+    "sizes": {
+      "s": {
+        "thickness": 2,
+        "circularDiameter": 64,
+        "circularStroke": 4
+      },
+      "m": {
+        "thickness": 4,
+        "circularDiameter": 96,
+        "circularStroke": 4
+      },
+      "l": {
+        "thickness": 8,
+        "circularDiameter": 128,
+        "circularStroke": 4
+      }
+    },
+    "circular": {
+      "sourceRef": {
+        "key": "component-set/Progress/Circular progress"
+      },
+      "cap": "round",
+      "fontSize": 16,
+      "lineHeight": 24,
+      "fontWeight": 500,
+      "letterSpacing": 0,
+      "labelRole": "label-primary"
+    },
+    "unknown": {
+      "periodMs": 1200,
+      "fraction": 0.25
+    }
+  },
+  "chip": {
+    "sourceRef": {
+      "key": "component-set/Chips/Chip",
+      "authoredVariants": 56,
+      "inspected": "2026-11-18"
+    },
+    "sizes": {
+      "s": {
+        "height": 28,
+        "radius": 9999,
+        "paddingX": 8,
+        "paddingY": 8,
+        "gap": 4,
+        "fontSize": 14,
+        "lineHeight": 12,
+        "fontWeight": 500,
+        "letterSpacing": 0,
+        "leadingSize": 12,
+        "closeSize": 12,
+        "baseline": 11
+      },
+      "m": {
+        "height": 40,
+        "radius": 12,
+        "paddingX": 12,
+        "paddingY": 8,
+        "gap": 8,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 500,
+        "letterSpacing": 0,
+        "leadingSize": 16,
+        "closeSize": 24,
+        "baseline": 18
+      }
+    },
+    "sharpRadius": 4,
+    "strokeWidth": 1,
+    "roles": {
+      "label": "label-primary",
+      "close": "label-secondary",
+      "border": "border-base",
+      "selected": "fill-tertiary",
+      "hover": "fill-quaternary",
+      "disabledSelected": "fill-quaternary",
+      "disabledLabel": "label-quaternary",
+      "activeFill": "fill-accent",
+      "activeTint": "fill-brand-primary",
+      "activeLabel": "label-brand-primary",
+      "activeSelectedLabel": "label-static-light-primary",
+      "skeleton": "fx-skeleton-base",
+      "glow": "fx-glow-inverted",
+      "focus": "fx-focus-ring-neutral",
+      "highlight": "bg-static-light"
+    },
+    "active": {
+      "tintOpacity": 0.12,
+      "highlightOpacity": 0.2
+    },
+    "disabledLeadingOpacity": 0.24,
+    "skeleton": {
+      "radius": 4,
+      "authoredMediumCloseSize": 16,
+      "roundedSmallRadius": 9999
+    },
+    "glow": {
+      "diameter": 96,
+      "blur": 36,
+      "opacity": 0.2,
+      "centerOffset": 32.5,
+      "selectedCenterOffset": 45.5
+    },
+    "focus": {
+      "width": 2,
+      "offset": 2
+    },
+    "close": {
+      "s": {
+        "viewBox": 12,
+        "x": 2.7001953125,
+        "y": 2.7001953125,
+        "data": "M 5.575625896453857 0.17573624849319458 C 5.809925898909569 -0.058563753962516785 6.189975872635841 -0.058528751134872437 6.424275875091553 0.17573624849319458 C 6.6585258692502975 0.4100562483072281 6.658575877547264 0.7900763750076294 6.424275875091553 1.0243663787841797 L 4.14837646484375 3.299776077270508 L 6.424275875091553 5.575625896453857 C 6.6585258692502975 5.809975892305374 6.658575877547264 6.189975872635841 6.424275875091553 6.424275875091553 C 6.189975872635841 6.658575877547264 5.809975892305374 6.6585258692502975 5.575625896453857 6.424275875091553 L 3.299776077270508 4.14837646484375 L 1.0243663787841797 6.424275875091553 C 0.7900763750076294 6.658575877547264 0.4100562483072281 6.6585258692502975 0.17573624849319458 6.424275875091553 C -0.058528751134872437 6.189975872635841 -0.058563753962516785 5.809925898909569 0.17573624849319458 5.575625896453857 L 2.4511260986328125 3.299776077270508 L 0.17573624849319458 1.0243663787841797 C -0.058578744530677795 0.7900513857603073 -0.058578744530677795 0.41005124151706696 0.17573624849319458 0.17573624849319458 C 0.41005124151706696 -0.058578744530677795 0.7900513857603073 -0.058578744530677795 1.0243663787841797 0.17573624849319458 L 3.299776077270508 2.4511260986328125 L 5.575625896453857 0.17573624849319458 Z"
+      },
+      "m": {
+        "viewBox": 24,
+        "x": 5.7001953125,
+        "y": 5.7001953125,
+        "data": "M 11.064403533935547 0.26360249519348145 C 11.4159035384655 -0.08744749426841736 11.985503435134888 -0.0876375138759613 12.336803436279297 0.26360249519348145 C 12.688003450632095 0.6151024997234344 12.688203424215317 1.1856723725795746 12.336803436279297 1.5370423793792725 L 7.573203086853027 6.2997026443481445 L 12.336803436279297 11.064403533935547 C 12.688003450632095 11.4159035384655 12.688203424215317 11.985503435134888 12.336803436279297 12.336803436279297 C 11.985503435134888 12.688203424215317 11.4159035384655 12.688003450632095 11.064403533935547 12.336803436279297 L 6.2997026443481445 7.573203086853027 L 1.5370423793792725 12.336803436279297 C 1.1856723725795746 12.688203424215317 0.6151024997234344 12.688003450632095 0.26360249519348145 12.336803436279297 C -0.0876375138759613 11.985503435134888 -0.08744749426841736 11.4159035384655 0.26360249519348145 11.064403533935547 L 5.0273027420043945 6.2997026443481445 L 0.26360249519348145 1.5370423793792725 C -0.08786749839782715 1.1855623722076416 -0.08786749839782715 0.61507248878479 0.26360249519348145 0.26360249519348145 C 0.61507248878479 -0.08786749839782715 1.1855623722076416 -0.08786749839782715 1.5370423793792725 0.26360249519348145 L 6.2997026443481445 5.0273027420043945 L 11.064403533935547 0.26360249519348145 Z"
+      }
+    }
+  },
+  "tabs": {
+    "sourceRef": {
+      "key": "component-set/Tab/Tab / Tinted"
+    },
+    "sizes": {
+      "s": {
+        "height": 36,
+        "radius": 10,
+        "padding": 8,
+        "gap": 6,
+        "fontSize": 14,
+        "lineHeight": 20,
+        "fontWeight": 500,
+        "letterSpacing": 0,
+        "iconSize": 16,
+        "iconOnlySize": 20,
+        "baseline": 15
+      },
+      "m": {
+        "height": 48,
+        "radius": 12,
+        "padding": 12,
+        "gap": 8,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 500,
+        "letterSpacing": 0,
+        "iconSize": 20,
+        "iconOnlySize": 24,
+        "baseline": 18
+      },
+      "l": {
+        "height": 56,
+        "radius": 12,
+        "padding": 16,
+        "gap": 8,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 500,
+        "letterSpacing": 0,
+        "iconSize": 20,
+        "iconOnlySize": 24,
+        "baseline": 18
+      }
+    },
+    "list": {
+      "radius": 16,
+      "padding": 4,
+      "fourHorizontalPadding": 2,
+      "separatorInset": 8
+    },
+    "strokeWidth": 1,
+    "activeShadow": "xs",
+    "roles": {
+      "label": "label-primary",
+      "inactiveLabel": "label-secondary",
+      "disabledLabel": "label-quaternary",
+      "track": "fill-quaternary",
+      "hover": "fill-quaternary",
+      "activeFill": "control-bg",
+      "border": "border-base",
+      "indicator": "border-strong"
+    },
+    "focus": {
+      "width": 2,
+      "offset": 2
+    },
+    "underlined": {
+      "bottomIconOnlySize": 20
+    }
+  },
+  "breadcrumb": {
+    "sourceRef": {
+      "key": "component/Breadcrumb/Breadcrumb"
+    },
+    "fontWeight": 500,
+    "letterSpacing": 0,
+    "defaultMaxItems": 4,
+    "sizes": {
+      "s": {
+        "fontSize": 12,
+        "lineHeight": 12,
+        "multilineLineHeight": 18,
+        "icon": 14,
+        "gap": 6
+      },
+      "m": {
+        "fontSize": 14,
+        "lineHeight": 12,
+        "multilineLineHeight": 20,
+        "icon": 16,
+        "gap": 8
+      },
+      "l": {
+        "fontSize": 16,
+        "lineHeight": 16,
+        "multilineLineHeight": 24,
+        "icon": 20,
+        "gap": 10
+      }
+    },
+    "roles": {
+      "label": "label-secondary",
+      "current": "label-primary",
+      "hover": "label-primary",
+      "focus": "border-focus"
+    },
+    "glyphs": {
+      "chevron": {
+        "sourceRef": {
+          "key": "component/Breadcrumb/Breadcrumb",
+          "path": ["chevron-forward", "Vector"]
+        },
+        "viewBox": 16,
+        "x": 5.734375,
+        "y": 3.3919270038604736,
+        "data": "M0.234521 0.234133C0.527434 -0.0586204 0.990701 -0.0768203 1.30483 0.179446L1.36537 0.234133L4.4253 3.29406C4.5479 3.41666 4.6747 3.54226 4.7729 3.65799C4.87717 3.78079 4.9955 3.94413 5.0659 4.16059C5.16157 4.45513 5.16163 4.77293 5.0659 5.06746L5.0379 5.14626C4.96663 5.32406 4.86417 5.46266 4.7729 5.57006C4.6747 5.68573 4.54783 5.81139 4.4253 5.93399L1.36537 8.99393L1.30483 9.04859C0.990701 9.30473 0.527381 9.28659 0.234521 8.99393C-0.0778258 8.68153 -0.0777191 8.17479 0.234521 7.86239L3.29443 4.80246C3.3615 4.73539 3.41423 4.68219 3.4591 4.63579C3.46623 4.62846 3.47297 4.62099 3.4793 4.61433C3.47283 4.60753 3.46643 4.59973 3.4591 4.59219C3.41417 4.54579 3.36157 4.49273 3.29443 4.42553L0.234521 1.36564L0.179181 1.30509C-0.0771456 0.99094 -0.0582458 0.527066 0.234521 0.234133Z"
+      },
+      "ellipsis": {
+        "sourceRef": {
+          "key": "component/Breadcrumb/Breadcrumb",
+          "path": ["ellipsis-horizontal", "Vector"]
+        },
+        "viewBox": 16,
+        "x": 2.2662761211395264,
+        "y": 6.93359375,
+        "data": "M1.06667 2.13333C1.65577 2.13333 2.13333 1.6558 2.13333 1.06667C2.13333 0.4776 1.65577 0 1.06667 0C0.477567 0 0 0.4776 0 1.06667C0 1.6558 0.477567 2.13333 1.06667 2.13333Z M5.73333 2.13333C6.32247 2.13333 6.8 1.6558 6.8 1.06667C6.8 0.4776 6.32247 0 5.73333 0C5.1442 0 4.66667 0.4776 4.66667 1.06667C4.66667 1.6558 5.1442 2.13333 5.73333 2.13333Z M10.4 2.13333C10.9891 2.13333 11.4667 1.6558 11.4667 1.06667C11.4667 0.4776 10.9891 0 10.4 0C9.81087 0 9.33333 0.4776 9.33333 1.06667C9.33333 1.6558 9.81087 2.13333 10.4 2.13333Z"
+      }
+    }
+  },
+  "pagination": {
+    "sourceRef": {
+      "key": "component/Pagination/Pagination"
+    },
+    "gap": 8,
+    "control": 40,
+    "radius": 12,
+    "padding": 12,
+    "fontSize": 16,
+    "lineHeight": 24,
+    "fontWeight": 500,
+    "stroke": 1,
+    "icon": 16,
+    "defaultSiblingCount": 1,
+    "maxSiblingCount": 4,
+    "roles": {
+      "label": "label-primary",
+      "chevron": "label-secondary",
+      "border": "border-base",
+      "active": "bg-tertiary",
+      "hover": "fill-quaternary",
+      "disabled": "label-tertiary",
+      "focus": "border-focus"
+    },
+    "glyphs": {
+      "chevron": {
+        "sourceRef": {
+          "key": "component-set/Pagination/Chevron-button",
+          "variant": {
+            "Direction": "Back",
+            "Hover": "False",
+            "Size": "Medium"
+          },
+          "path": ["chevron-back", "Vector"]
+        },
+        "viewBox": 16,
+        "x": 5.127604007720947,
+        "y": 3.3919270038604736,
+        "data": "M4.90313 0.234133C4.61026 -0.0586204 4.14699 -0.0768203 3.83286 0.179446L3.77226 0.234133L0.712394 3.29406C0.589734 3.41666 0.462974 3.54226 0.364734 3.65799C0.260468 3.78079 0.142141 3.94413 0.0717675 4.16059C-0.0239125 4.45513 -0.0239325 4.77293 0.0717675 5.06746L0.099761 5.14626C0.171014 5.32406 0.273528 5.46266 0.364734 5.57006C0.462954 5.68573 0.589808 5.81139 0.712394 5.93399L3.77226 8.99393L3.83286 9.04859C4.14699 9.30473 4.61026 9.28659 4.90313 8.99393C5.21553 8.68153 5.21539 8.17479 4.90313 7.86239L1.84326 4.80246C1.77619 4.73539 1.72346 4.68219 1.67853 4.63579C1.67139 4.62846 1.66473 4.62099 1.65833 4.61433C1.66486 4.60753 1.67126 4.59973 1.67853 4.59219C1.72346 4.54579 1.77606 4.49273 1.84326 4.42553L4.90313 1.36564L4.95846 1.30509C5.21479 0.99094 5.19593 0.527066 4.90313 0.234133Z"
+      },
+      "ellipsis": {
+        "diameter": 3,
+        "gap": 2,
+        "offsetY": 13
+      }
+    },
+    "compact": {
+      "sourceRef": {
+        "key": "component-set/Pagination/Compact Pagination",
+        "variant": {
+          "Selected": "1",
+          "Count": "2",
+          "Ambient": "False",
+          "Time-based": "False"
+        }
+      },
+      "dot": 8,
+      "recedingDot": 6,
+      "gap": 8,
+      "padding": 8,
+      "height": 24,
+      "track": 20,
+      "visiblePages": 5,
+      "inactiveOpacity": 0.08,
+      "ambientInactiveOpacity": 0.24,
+      "colorRole": "label-brand-primary",
+      "ambientColorRole": "label-primary",
+      "material": "base",
+      "radius": 9999
+    },
+    "focus": {
+      "width": 2,
+      "offset": 2
+    }
+  },
+  "accordion": {
+    "sourceRef": {
+      "key": "component-set/Accordion/Accordion"
+    },
+    "sizes": {
+      "s": {
+        "padding": 12,
+        "radius": 12,
+        "gap": 8,
+        "contentGap": 6,
+        "fontSize": 14,
+        "lineHeight": 20,
+        "iconSize": 14
+      },
+      "m": {
+        "padding": 16,
+        "radius": 16,
+        "gap": 12,
+        "contentGap": 8,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "iconSize": 16
+      },
+      "l": {
+        "padding": 20,
+        "radius": 20,
+        "gap": 14,
+        "contentGap": 10,
+        "fontSize": 18,
+        "lineHeight": 28,
+        "iconSize": 18
+      }
+    },
+    "fontFamily": "Geist",
+    "titleWeight": 500,
+    "bodyWeight": 400,
+    "titleTracking": 0,
+    "bodyTracking": -0.25,
+    "roles": {
+      "label": "label-primary",
+      "body": "label-secondary",
+      "hover": "fill-quaternary",
+      "disabled": "label-tertiary",
+      "focus": "border-focus"
+    },
+    "chevron": {
+      "sourceRef": {
+        "key": "component-set/Accordion/Accordion",
+        "path": ["chevron-down", "Vector"],
+        "variant": {
+          "Hover": "False",
+          "Expanded": "False"
+        }
+      },
+      "viewBox": 16,
+      "x": 3.3802082538604736,
+      "y": 5.734375,
+      "data": "M8.99384 0.234521C9.28658 0.527434 9.30478 0.990701 9.04851 1.30483L8.99384 1.36537L5.93391 4.4253C5.81124 4.5479 5.68571 4.6747 5.56998 4.7729C5.44718 4.87717 5.28378 4.9955 5.06738 5.0659C4.77284 5.16157 4.45504 5.16163 4.16051 5.0659L4.08171 5.0379C3.90384 4.96663 3.76531 4.86417 3.65791 4.7729C3.54224 4.6747 3.41651 4.54783 3.29398 4.4253L0.234057 1.36537L0.179364 1.30483C-0.0767561 0.990701 -0.0586359 0.527381 0.234057 0.234521C0.546417 -0.0778258 1.05314 -0.0777191 1.36556 0.234521L4.42544 3.29443C4.49258 3.3615 4.54578 3.41423 4.59211 3.4591C4.59951 3.46623 4.60698 3.47297 4.61364 3.4793C4.62038 3.47283 4.62818 3.46643 4.63578 3.4591C4.68211 3.41417 4.73524 3.36157 4.80244 3.29443L7.86231 0.234521L7.92284 0.179181C8.23705 -0.0771456 8.70091 -0.0582458 8.99384 0.234521Z"
+    }
+  },
+  "segmented": {
+    "sourceRef": {
+      "key": "component-set/Segmented Control/Segmented Control"
+    },
+    "controlSourceRef": {
+      "sourceRef": {
+        "key": "component-set/Segmented Control/control"
+      }
+    },
+    "$textStyle": "caption-s",
+    "padding": 2,
+    "controlHeight": 36,
+    "controlPadding": 12,
+    "gap": 4,
+    "iconSize": 12,
+    "iconOnlySize": 20,
+    "iconOnlyPadding": 8,
+    "separatorInset": 8,
+    "strokeWidth": 1,
+    "activeShadow": "xs",
+    "shapes": {
+      "rounded": {
+        "trackRadius": 9999,
+        "controlRadius": 9999
+      },
+      "regular": {
+        "trackRadius": 12,
+        "controlRadius": 10
+      },
+      "sharp": {
+        "trackRadius": 0,
+        "controlRadius": 4
+      }
+    },
+    "roles": {
+      "label": "label-primary",
+      "inactiveLabel": "label-secondary",
+      "disabledLabel": "label-tertiary",
+      "track": "fill-quaternary",
+      "hover": "fill-quaternary",
+      "activeFill": "control-bg",
+      "border": "border-base",
+      "focus": "border-focus"
+    },
+    "focus": {
+      "width": 2,
+      "inset": 2
+    }
+  },
+  "select": {
+    "sourceRef": {
+      "key": "component-set/Dropdown/Dropdown",
+      "authoredVariants": 12,
+      "inspected": "2026-11-19"
+    },
+    "sizes": {
+      "s": {
+        "height": 32,
+        "radius": 9999,
+        "paddingStart": 12,
+        "paddingEnd": 8,
+        "paddingY": 8,
+        "gap": 8,
+        "leadingSize": 16,
+        "fontSize": 14,
+        "lineHeight": 12,
+        "fontWeight": 500,
+        "letterSpacing": 0
+      },
+      "m": {
+        "height": 48,
+        "radius": 12,
+        "paddingStart": 16,
+        "paddingEnd": 12,
+        "paddingY": 12,
+        "gap": 12,
+        "leadingSize": 16,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25
+      },
+      "l": {
+        "height": 56,
+        "radius": 16,
+        "paddingStart": 16,
+        "paddingEnd": 16,
+        "paddingY": 16,
+        "gap": 12,
+        "leadingSize": 20,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25
+      }
+    },
+    "leadingGap": 8,
+    "chevron": {
+      "viewBox": 16,
+      "x": 3.3802490234375,
+      "y": 5.734375,
+      "data": "M8.99384 0.234521C9.28658 0.527434 9.30478 0.990701 9.04851 1.30483L8.99384 1.36537L5.93391 4.4253C5.81124 4.5479 5.68571 4.6747 5.56998 4.7729C5.44718 4.87717 5.28378 4.9955 5.06738 5.0659C4.77284 5.16157 4.45504 5.16163 4.16051 5.0659L4.08171 5.0379C3.90384 4.96663 3.76531 4.86417 3.65791 4.7729C3.54224 4.6747 3.41651 4.54783 3.29398 4.4253L0.234057 1.36537L0.179364 1.30483C-0.0767561 0.990701 -0.0586359 0.527381 0.234057 0.234521C0.546417 -0.0778258 1.05314 -0.0777191 1.36556 0.234521L4.42544 3.29443C4.49258 3.3615 4.54578 3.41423 4.59211 3.4591C4.59951 3.46623 4.60698 3.47297 4.61364 3.4793C4.62038 3.47283 4.62818 3.46643 4.63578 3.4591C4.68211 3.41417 4.73524 3.36157 4.80244 3.29443L7.86231 0.234521L7.92284 0.179181C8.23705 -0.0771456 8.70091 -0.0582458 8.99384 0.234521Z"
+    },
+    "stroke": 1,
+    "multiple": {
+      "sourceRef": {
+        "key": "component-set/Multiselect/Multiselect",
+        "authoredVariants": 14,
+        "inspected": "2026-11-19"
+      },
+      "height": 48,
+      "radius": 12,
+      "paddingStart": 10,
+      "paddingEnd": 32,
+      "paddingY": 10,
+      "gap": 8,
+      "placeholderStart": 20,
+      "labelStart": 20,
+      "labelFontSize": 12,
+      "labelLineHeight": 12,
+      "labelWeight": 500,
+      "labelOverhang": 8,
+      "labelGap": 4,
+      "chevronEnd": 12,
+      "showLabel": true,
+      "hover": {
+        "centerX": 0.13548386378449973,
+        "centerY": 0,
+        "radiusX": 0.3662704874799413,
+        "radiusY": 0.821945539573786
+      }
+    },
+    "roles": {
+      "label": "label-primary",
+      "caption": "label-secondary",
+      "placeholder": "label-tertiary",
+      "disabled": "label-quaternary",
+      "border": "border-base",
+      "hover": "fill-quaternary",
+      "focus": "border-focus"
+    }
+  },
+  "avatar": {
+    "sourceRef": {
+      "key": "component-set/Avatar/Avatar"
+    },
+    "defaultColor": "blue",
+    "defaultFallback": "initials",
+    "sizes": {
+      "s": {
+        "diameter": 24,
+        "fontSize": 10.5,
+        "lineHeight": 9,
+        "statusSize": 6,
+        "statusGap": 1.5
+      },
+      "m": {
+        "diameter": 32,
+        "fontSize": 14,
+        "lineHeight": 12,
+        "statusSize": 8,
+        "statusGap": 2
+      },
+      "l": {
+        "diameter": 48,
+        "fontSize": 21,
+        "lineHeight": 18,
+        "statusSize": 12,
+        "statusGap": 3
+      }
+    },
+    "fontFamily": "Sunghyun Sans",
+    "letterBoxHeightRatio": 0.9375,
+    "fontWeight": 800,
+    "letterSpacing": 0,
+    "letterRole": "label-static-light-primary",
+    "highlightRole": "bg-static-light",
+    "highlightAlpha": 0.5,
+    "colors": {
+      "red": {
+        "anchor": "red",
+        "role": "avatar-fill-red"
+      },
+      "orange": {
+        "anchor": "orange",
+        "role": "avatar-fill-orange"
+      },
+      "yellow": {
+        "anchor": "yellow",
+        "role": "avatar-fill-yellow"
+      },
+      "green": {
+        "anchor": "green",
+        "role": "avatar-fill-green"
+      },
+      "teal": {
+        "anchor": "teal",
+        "role": "avatar-fill-teal"
+      },
+      "mint": {
+        "anchor": "mint",
+        "role": "avatar-fill-mint"
+      },
+      "blue": {
+        "anchor": "blue",
+        "role": "avatar-fill-blue"
+      },
+      "indigo": {
+        "anchor": "indigo",
+        "role": "avatar-fill-indigo"
+      },
+      "purple": {
+        "anchor": "purple",
+        "role": "avatar-fill-purple"
+      },
+      "pink": {
+        "anchor": "pink",
+        "role": "avatar-fill-pink"
+      }
+    },
+    "aliases": {
+      "neutral": "blue",
+      "brand": "blue",
+      "danger": "red",
+      "warning": "orange",
+      "success": "green",
+      "info": "teal"
+    },
+    "statuses": {
+      "online": {
+        "role": "label-info-primary",
+        "label": "В сети"
+      },
+      "offline": {
+        "role": "label-quaternary",
+        "label": "Не в сети"
+      },
+      "away": {
+        "role": "label-warning-primary",
+        "label": "Нет на месте"
+      },
+      "dnd": {
+        "role": "label-danger-primary",
+        "label": "Не беспокоить"
+      }
+    }
+  }
+}

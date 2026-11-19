@@ -67,6 +67,126 @@
         "light": [0, 80, 207],
         "dark": [149, 192, 255]
       }
+    },
+    "blue": {
+      "light": [31, 109, 237],
+      "dark": [38, 120, 255],
+      "increased": {
+        "light": [0, 80, 207],
+        "dark": [149, 192, 255]
+      }
+    },
+    "red": {
+      "light": [255, 59, 48],
+      "dark": [255, 58, 58],
+      "increased": {
+        "light": [215, 0, 21],
+        "dark": [255, 97, 97]
+      }
+    },
+    "orange": {
+      "light": [237, 110, 0],
+      "dark": [242, 121, 0],
+      "increased": {
+        "light": [201, 52, 0],
+        "dark": [255, 169, 64]
+      }
+    },
+    "green": {
+      "light": [52, 199, 89],
+      "dark": [48, 209, 88],
+      "increased": {
+        "light": [36, 138, 61],
+        "dark": [48, 219, 91]
+      }
+    },
+    "yellow": {
+      "light": [255, 208, 0],
+      "dark": [255, 214, 10],
+      "increased": {
+        "light": [178, 80, 0],
+        "dark": [255, 212, 38]
+      }
+    },
+    "teal": {
+      "light": [90, 200, 250],
+      "dark": [100, 210, 255],
+      "increased": {
+        "light": [0, 113, 164],
+        "dark": [112, 215, 255]
+      }
+    },
+    "mint": {
+      "light": [0, 199, 190],
+      "dark": [99, 230, 226],
+      "increased": {
+        "light": [12, 129, 123],
+        "dark": [108, 235, 231]
+      }
+    },
+    "indigo": {
+      "light": [88, 86, 214],
+      "dark": [94, 92, 230],
+      "increased": {
+        "light": [54, 52, 163],
+        "dark": [125, 122, 255]
+      }
+    },
+    "purple": {
+      "light": [175, 82, 222],
+      "dark": [191, 90, 242],
+      "increased": {
+        "light": [137, 68, 171],
+        "dark": [218, 143, 255]
+      }
+    },
+    "pink": {
+      "light": [255, 45, 85],
+      "dark": [255, 45, 85],
+      "increased": {
+        "light": [211, 15, 69],
+        "dark": [255, 100, 130]
+      }
+    },
+    "neutral-12": {
+      "light": [16, 16, 18],
+      "dark": [246, 248, 250],
+      "increased": {
+        "light": [0, 0, 0],
+        "dark": [255, 255, 255]
+      }
+    },
+    "neutral-0": {
+      "light": [255, 255, 255],
+      "dark": [16, 16, 18],
+      "increased": {
+        "light": [255, 255, 255],
+        "dark": [0, 0, 0]
+      }
+    },
+    "neutral-6": {
+      "light": [120, 120, 128],
+      "dark": [120, 120, 128],
+      "increased": {
+        "light": [114, 114, 122],
+        "dark": [114, 114, 122]
+      }
+    },
+    "neutral-8": {
+      "light": [60, 60, 67],
+      "dark": [176, 176, 185],
+      "increased": {
+        "light": [53, 53, 60],
+        "dark": [196, 197, 205]
+      }
+    },
+    "skeleton-neutral": {
+      "light": [120, 120, 128],
+      "dark": [120, 120, 128],
+      "increased": {
+        "light": [114, 114, 122],
+        "dark": [114, 114, 122]
+      }
     }
   },
   "roles": {
@@ -240,7 +360,7 @@
     },
     "fill-none": {
       "anchor": "neutral-fill",
-      "opacity": 0.0
+      "opacity": 0
     },
     "fill-static-dark-primary": {
       "anchor": "neutral-fill",
@@ -344,7 +464,7 @@
     },
     "border-none": {
       "anchor": "neutral-fill",
-      "opacity": 0.0
+      "opacity": 0
     },
     "border-static-dark-base": {
       "anchor": "neutral-fill",
@@ -436,8 +556,6 @@
     "bg-tone-1": "@bg-primary",
     "bg-tone-2": "@bg-secondary",
     "bg-tone-3": "@bg-tertiary",
-    "badge-fill-brand": "@border-brand-strong",
-    "badge-label-on-brand": "@label-static-light-primary",
     "badge-fill-danger": "@border-danger-strong",
     "badge-label-on-danger": "@label-static-light-primary",
     "badge-fill-warning": "@border-warning-strong",
@@ -446,10 +564,6 @@
     "badge-label-on-success": "@label-static-light-primary",
     "badge-fill-info": "@border-info-strong",
     "badge-label-on-info": "@label-static-light-primary",
-    "badge-fill-static-dark": "@bg-static-dark",
-    "badge-label-on-static-dark": "@label-static-light-primary",
-    "badge-fill-static-light": "@bg-static-light",
-    "badge-label-on-static-light": "@label-static-dark-primary",
     "fx-glow-neutral-core": {
       "anchor": "paper",
       "opacity": 1
@@ -657,7 +771,7 @@
       },
       "bg-overlay-ghost": {
         "anchor": "paper",
-        "opacity": 0.0
+        "opacity": 0
       },
       "bg-overlay-soft": {
         "anchor": "paper",
@@ -751,24 +865,33 @@
         "anchor": "ink",
         "opacity": 1
       },
-      "fx-glow-neutral-alpha": 0.0,
-      "fx-glow-neutral-subtle-alpha": 0.0,
-      "fx-glow-neutral-bloom-alpha": 0.0,
-      "fx-glow-brand-alpha": 0.0,
-      "fx-glow-brand-subtle-alpha": 0.0,
-      "fx-glow-brand-bloom-alpha": 0.0,
-      "fx-glow-danger-alpha": 0.0,
-      "fx-glow-danger-subtle-alpha": 0.0,
-      "fx-glow-danger-bloom-alpha": 0.0,
-      "fx-glow-warning-alpha": 0.0,
-      "fx-glow-warning-subtle-alpha": 0.0,
-      "fx-glow-warning-bloom-alpha": 0.0,
-      "fx-glow-success-alpha": 0.0,
-      "fx-glow-success-subtle-alpha": 0.0,
-      "fx-glow-success-bloom-alpha": 0.0,
-      "fx-glow-info-alpha": 0.0,
-      "fx-glow-info-subtle-alpha": 0.0,
-      "fx-glow-info-bloom-alpha": 0.0
+      "fx-glow-neutral-alpha": 0,
+      "fx-glow-neutral-subtle-alpha": 0,
+      "fx-glow-neutral-bloom-alpha": 0,
+      "fx-glow-brand-alpha": 0,
+      "fx-glow-brand-subtle-alpha": 0,
+      "fx-glow-brand-bloom-alpha": 0,
+      "fx-glow-danger-alpha": 0,
+      "fx-glow-danger-subtle-alpha": 0,
+      "fx-glow-danger-bloom-alpha": 0,
+      "fx-glow-warning-alpha": 0,
+      "fx-glow-warning-subtle-alpha": 0,
+      "fx-glow-warning-bloom-alpha": 0,
+      "fx-glow-success-alpha": 0,
+      "fx-glow-success-subtle-alpha": 0,
+      "fx-glow-success-bloom-alpha": 0,
+      "fx-glow-info-alpha": 0,
+      "fx-glow-info-subtle-alpha": 0,
+      "fx-glow-info-bloom-alpha": 0,
+      "fx-control-inner": {
+        "anchor": "ink",
+        "opacity": 0.12
+      },
+      "fx-skeleton-base": {
+        "anchor": "skeleton-neutral",
+        "opacity": 0.08,
+        "increasedOpacity": 0.12
+      }
     },
     "dark": {
       "bg-material-base-01": {
@@ -845,7 +968,7 @@
       },
       "bg-overlay-ghost": {
         "anchor": "ink",
-        "opacity": 0.0
+        "opacity": 0
       },
       "bg-overlay-soft": {
         "anchor": "ink",
@@ -956,7 +1079,68 @@
       "fx-glow-success-bloom-alpha": 0.1761,
       "fx-glow-info-alpha": 0.0356,
       "fx-glow-info-subtle-alpha": 0.0119,
-      "fx-glow-info-bloom-alpha": 0.2015
+      "fx-glow-info-bloom-alpha": 0.2015,
+      "fx-control-inner": {
+        "anchor": "ink",
+        "opacity": 0.2
+      },
+      "fx-skeleton-base": {
+        "anchor": "skeleton-neutral",
+        "opacity": 0.12,
+        "increasedOpacity": 0.16
+      }
+    }
+  },
+  "authoredPaints": {
+    "onFill": {
+      "dodge": 0.5512821674346924,
+      "tint": 0.11999999731779099
+    },
+    "tinted": {
+      "light": {
+        "blend": "linear-burn",
+        "gray": 0.20000000298023224,
+        "opacity": 0.36000001430511475
+      },
+      "dark": {
+        "blend": "linear-dodge",
+        "gray": 0.1987178474664688,
+        "opacity": 0.36000001430511475
+      }
+    },
+    "source": {
+      "publicUrl": "https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1",
+      "page": "Badge",
+      "name": "Badge",
+      "role": "root"
+    },
+    "neutral": {
+      "primaryAnchor": "neutral-12",
+      "invertedAnchor": "neutral-0",
+      "secondaryAnchor": "neutral-8",
+      "tintAnchor": "neutral-6",
+      "tintOpacity": 0.12,
+      "secondaryOpacity": 0.72,
+      "disabledFillOpacity": {
+        "normal": {
+          "light": 0.08,
+          "dark": 0.16
+        },
+        "more": {
+          "light": 0.16,
+          "dark": 0.24
+        }
+      },
+      "disabledLabelOpacity": {
+        "normal": {
+          "light": 0.32,
+          "dark": 0.32
+        },
+        "more": {
+          "light": 0.32,
+          "dark": 0.52
+        }
+      }
     }
   }
 }

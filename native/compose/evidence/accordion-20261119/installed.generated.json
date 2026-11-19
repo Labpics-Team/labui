@@ -1,0 +1,27 @@
+{
+  "uiVersion": "0.1.0-accordion-20261119.1",
+  "iconsVersion": "0.4.0-semantic.6",
+  "uiSource": false,
+  "tests": [
+    "AccordionRenderTest: 4",
+    "AccordionConsumerTest: 1 (light/dark \u00d7 100/200%)"
+  ],
+  "artifacts": [
+    {
+      "artifact": "pics/lab/ui-colors/0.1.0-accordion-20261119.1/ui-colors-0.1.0-accordion-20261119.1.jar",
+      "sha256": "fa63a86a2ed1b5450216ed085dd1a73b5236432340e7cd64180fc496c03c219d"
+    },
+    {
+      "artifact": "pics/lab/ui-colors-desktop/0.1.0-accordion-20261119.1/ui-colors-desktop-0.1.0-accordion-20261119.1.jar",
+      "sha256": "0309c3881c5e8d4d0acbfba01b6b5cf730cf022c4d208823a1c8ab4ef4583263"
+    },
+    {
+      "artifact": "pics/lab/ui-compose/0.1.0-accordion-20261119.1/ui-compose-0.1.0-accordion-20261119.1.jar",
+      "sha256": "2473ae7f503e5c4e692826807a98dc19c8eff1619cbb2a4cf972d55e63a22fad"
+    },
+    {
+      "artifact": "pics/lab/ui-compose-desktop/0.1.0-accordion-20261119.1/ui-compose-desktop-0.1.0-accordion-20261119.1.jar",
+      "sha256": "e3b9d7fee07979ffb177b82afac6620fcc499918e9adf3fc6f2eb0d4600d78ae"
+    }
+  ]
+}

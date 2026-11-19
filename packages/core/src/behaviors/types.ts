@@ -44,7 +44,8 @@ export interface MachineBaseProps {
 }
 
 /** The props a machine accepts, as seen by a renderer wiring it up. */
-export type MachineProps<T extends MachineSchema> = Partial<T['props']> & MachineBaseProps;
+export type MachineProps<T extends MachineSchema> = Partial<T['props']> &
+  Omit<MachineBaseProps, keyof T['props']>;
 
 /**
  * Recover a machine's schema from its `Service` type. Zag component packages

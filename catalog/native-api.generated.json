@@ -1,0 +1,130 @@
+{
+  "revision": "4c20a0896c102544f6fa179107fdb4bedea353a8",
+  "sourceDigest": "sha256:3c38af02c2fd96a49be3ef0abbac7afb4216fc0a55421a832253727d39ae0462",
+  "symbols": [
+    {
+      "name": "LabAccordion",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabAccordion.kt"
+    },
+    {
+      "name": "LabAccordionText",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabAccordion.kt"
+    },
+    {
+      "name": "LabAvatar",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabAvatar.kt"
+    },
+    {
+      "name": "LabBadge",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabBadge.kt"
+    },
+    {
+      "name": "LabBreadcrumb",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabBreadcrumb.kt"
+    },
+    {
+      "name": "LabButton",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabButton.kt"
+    },
+    {
+      "name": "LabCheckbox",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabCheckbox.kt"
+    },
+    {
+      "name": "LabChip",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChip.kt"
+    },
+    {
+      "name": "LabChoicebox",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChoicebox.kt"
+    },
+    {
+      "name": "LabChoicebox",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChoicebox.kt"
+    },
+    {
+      "name": "LabInput",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabInput.kt"
+    },
+    {
+      "name": "LabKbd",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabKbd.kt"
+    },
+    {
+      "name": "LabKbd",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabKbd.kt"
+    },
+    {
+      "name": "LabLoader",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabLoader.kt"
+    },
+    {
+      "name": "LabMaterials",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt"
+    },
+    {
+      "name": "LabShadows",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt"
+    },
+    {
+      "name": "LabVeils",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt"
+    },
+    {
+      "name": "LabPagination",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabPagination.kt"
+    },
+    {
+      "name": "LabProgress",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabProgress.kt"
+    },
+    {
+      "name": "LabRadioGroup",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabRadioGroup.kt"
+    },
+    {
+      "name": "LabSegmentedControl",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSegmentedControl.kt"
+    },
+    {
+      "name": "LabSelect",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSelect.kt"
+    },
+    {
+      "name": "LabSheetHost",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSheet.kt"
+    },
+    {
+      "name": "LabSnackbarDefaults",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSnackbar.kt"
+    },
+    {
+      "name": "LabSnackbar",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSnackbar.kt"
+    },
+    {
+      "name": "LabScene",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSurface.kt"
+    },
+    {
+      "name": "LabCard",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSurface.kt"
+    },
+    {
+      "name": "LabSwitch",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSwitch.kt"
+    },
+    {
+      "name": "LabTabs",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabTabs.kt"
+    },
+    {
+      "name": "LabText",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabText.kt"
+    },
+    {
+      "name": "LabTheme",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabTheme.kt"
+    }
+  ]
+}

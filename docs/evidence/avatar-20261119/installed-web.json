@@ -1,0 +1,26 @@
+{
+  "browser": "157.0.8103.51",
+  "installed": true,
+  "cases": [
+    {
+      "avatars": 2,
+      "textureRequests": 1,
+      "textureBytes": 106760,
+      "decodedBytes": 262144,
+      "decodeMs": {
+        "median": 1.6999999284744263,
+        "p95": 1.8000000715255737
+      }
+    },
+    {
+      "avatars": 200,
+      "textureRequests": 1,
+      "textureBytes": 106760,
+      "decodedBytes": 262144,
+      "decodeMs": {
+        "median": 1.5,
+        "p95": 1.7000000476837158
+      }
+    }
+  ]
+}

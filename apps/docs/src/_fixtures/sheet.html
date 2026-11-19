@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru" class="lab-scope" data-theme="light" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sheet — проверка компонентов</title>
+    <link rel="stylesheet" href="../experience.css" />
+  </head>
+  <body>
+    <main class="lab-scope" id="sheet-scope" data-theme="dark" style="transform:translateX(8px);overflow:hidden;padding:32px;background:var(--lab-bg-primary);color:var(--lab-label-primary)">
+      <button type="button" id="outside">Внешнее действие</button>
+      <input id="outside-input" aria-label="Внешний ввод" />
+      <lab-sheet id="sheet" heading="Настройки пространства" closable>
+        <lab-button slot="trigger">Изменить настройки</lab-button>
+        <div slot="content" id="sheet-form" style="display:grid;gap:24px">
+          <lab-input label="Название пространства" value="Labpics"></lab-input>
+          <lab-button type="neutral" kind="tinted" id="cancel">Отмена</lab-button>
+        </div>
+      </lab-sheet>
+    </main>
+    <script type="module" src="./sheet.ts"></script>
+  </body>
+</html>

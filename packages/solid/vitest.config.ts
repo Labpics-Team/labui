@@ -6,6 +6,9 @@ export default defineConfig({
   resolve: {
     conditions: ['development', 'browser'],
   },
+  // Keep transitive solid-js/web imports under the same browser resolver. An
+  // externalized web build otherwise imports Node's server reactive runtime.
+  ssr: { noExternal: ['solid-js'] },
   test: {
     include: ['test/**/*.test.ts'],
     environment: 'node',

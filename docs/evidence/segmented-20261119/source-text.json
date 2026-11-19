@@ -1,0 +1,30 @@
+{
+  "source": "https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1",
+  "version": "2423213750570316842",
+  "text": [
+    {
+      "id": "7555:14405",
+      "characters": "Label",
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Medium",
+        "fontStyle": "Medium",
+        "fontWeight": 500,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "textTruncation": "ENDING",
+        "maxLines": 1,
+        "fontSize": 14,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "TOP",
+        "letterSpacing": 0,
+        "lineHeightPx": 12,
+        "lineHeightPercent": 65.93406677246094,
+        "lineHeightPercentFontSize": 85.71428680419922,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "6178:9032"
+      }
+    }
+  ]
+}

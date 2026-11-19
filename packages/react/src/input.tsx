@@ -1,22 +1,4 @@
-/**
- * <Input> — the native-React twin of the Lit `<lab-input>` (ADR-0001).
- *
- * Same axes, same form-field a11y wiring computed by the SAME shared `field-a11y`
- * helper from @labpics/ui-core — so the label/helper/error association is ONE
- * source of truth across both renderers, not a second implementation. No Lit in
- * this path.
- *
- * Presentational (no machine): `@zag-js` has no plain text-input machine because
- * the native `<input>` owns value/caret/editing — the Lit element opts out of the
- * Behaviors seam for the same reason, and this twin opts out identically. It is
- * marked a Client Component only so the shared package boundary is consistent and
- * the scoped stylesheet ships with it; it renders as a leaf under a Server
- * Component shell, never a `'use client'` page (dive-next P1).
- *
- * Parity is CSS: the Lit element scopes its styles via `:host([type])` in a shadow
- * root; this twin paints the SAME --lab-* roles via `input.css` against the matching
- * `[data-lab-input]` + `data-*`. Same roles, same structure, same states ⇒ same paint.
- */
+/** React DOM-ввод: общие с Lit CSS, размеры и связи подписи/helper/error. */
 'use client';
 
 import {
@@ -32,11 +14,15 @@ import {
   type InputHTMLAttributes,
   type ReactNode,
   forwardRef,
+  useEffect,
   useId,
+  useLayoutEffect,
+  useRef,
 } from 'react';
-import './input.css';
+import '@labpics/ui-core/input.css';
 
 export type { LabFieldSize as LabInputSize, LabFieldType as LabInputType };
+const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 /** Native input attributes a field forwards but never overrides. */
 type ForwardedInputAttrs = Omit<
@@ -92,6 +78,9 @@ export interface InputProps extends ForwardedInputAttrs {
   invalid?: boolean;
   /** Fires on every edit with the current value. */
   onValueChange?: (value: string) => void;
+  /** Штатные слоты по краям поля: знак или короткое действие. */
+  leading?: ReactNode;
+  trailing?: ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
@@ -112,6 +101,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     required = false,
     invalid = false,
     onValueChange,
+    leading,
+    trailing,
     ...rest
   },
   ref,
@@ -122,6 +113,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   const hasError = error != null && error !== '';
   const a11y = fieldControlAria({ id: baseId, invalid, required, hasHelper, hasError });
   const showError = fieldErrorIsActive({ invalid, hasError });
+  const root = useRef<HTMLDivElement>(null);
+  useClientLayoutEffect(() => {
+    const input = root.current?.querySelector('input');
+    input?.setCustomValidity(
+      showError ? (root.current?.querySelector('.lab-field-error')?.textContent ?? '') : '',
+    );
+  }, [showError, error]);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
     onValueChange?.(event.target.value);
@@ -129,40 +127,58 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
   return (
     <div
+      ref={root}
       className="lab-field"
       data-lab-input=""
       data-type={type}
       data-size={size}
       data-label-hidden={labelHidden || undefined}
+      data-unlabelled={!label || undefined}
+      data-leading={leading != null || undefined}
+      data-trailing={trailing != null || undefined}
       data-readonly={readOnly || undefined}
       data-disabled={disabled || undefined}
       data-required={required || undefined}
       data-invalid={invalid || undefined}
     >
-      <label id={ids.label} className="lab-field-label" htmlFor={ids.control}>
-        <span className="lab-field-label-text">{label}</span>
-        {required ? (
-          <span className="lab-field-required-mark" aria-hidden="true">
-            {' *'}
-          </span>
+      <div className="lab-input-frame">
+        <label id={ids.label} className="lab-field-label" htmlFor={ids.control}>
+          <span className="lab-field-label-text">{label}</span>
+          {required ? (
+            <span className="lab-field-required-mark" aria-hidden="true">
+              {' *'}
+            </span>
+          ) : null}
+        </label>
+        {leading != null ? (
+          <span className="lab-input-adornment lab-input-leading">{leading}</span>
         ) : null}
-      </label>
-      <input
-        {...rest}
-        {...fieldControlAriaProps(a11y)}
-        ref={ref}
-        id={ids.control}
-        className="lab-field-control"
-        type={inputType}
-        value={value}
-        defaultValue={defaultValue}
-        name={name}
-        placeholder={placeholder}
-        disabled={disabled}
-        readOnly={readOnly}
-        required={required}
-        onChange={handleChange}
-      />
+        <input
+          {...rest}
+          {...fieldControlAriaProps(a11y)}
+          ref={ref}
+          id={ids.control}
+          className="lab-field-control"
+          type={inputType}
+          value={value}
+          defaultValue={defaultValue}
+          name={name}
+          placeholder={placeholder}
+          disabled={disabled}
+          readOnly={readOnly}
+          required={required}
+          onChange={handleChange}
+        />
+        {trailing != null ? (
+          <span className="lab-input-adornment lab-input-trailing">{trailing}</span>
+        ) : null}
+        <fieldset className="lab-input-outline" aria-hidden="true">
+          <legend>
+            {label}
+            {required ? ' *' : ''}
+          </legend>
+        </fieldset>
+      </div>
       {hasHelper ? (
         <span id={ids.helper} className="lab-field-helper">
           {helper}

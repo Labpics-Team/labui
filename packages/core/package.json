@@ -2,66 +2,352 @@
   "name": "@labpics/ui-core",
   "version": "0.0.0",
   "private": true,
-  "description": "Компоненты Lab UI на Lit, общие типы и поведение, темы, материалы и серверный рендеринг для веб-привязок.",
+  "description": "РљРѕРјРїРѕРЅРµРЅС‚С‹ Lab UI РЅР° Lit, РѕР±С‰РёРµ С‚РёРїС‹ Рё РїРѕРІРµРґРµРЅРёРµ, С‚РµРјС‹, РјР°С‚РµСЂРёР°Р»С‹ Рё СЃРµСЂРІРµСЂРЅС‹Р№ СЂРµРЅРґРµСЂРёРЅРі РґР»СЏ РІРµР±-РїСЂРёРІСЏР·РѕРє.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./element-ssr": {
+      "browser": {
+        "import": {
+          "types": "./dist/ssr/element-browser.d.ts",
+          "default": "./dist/ssr/element-browser.js"
+        },
+        "require": {
+          "types": "./dist/ssr/element-browser.d.cts",
+          "default": "./dist/ssr/element-browser.cjs"
+        }
+      },
+      "import": {
+        "types": "./dist/ssr/element.d.ts",
+        "default": "./dist/ssr/element.js"
+      },
+      "require": {
+        "types": "./dist/ssr/element.d.cts",
+        "default": "./dist/ssr/element.cjs"
+      }
+    },
+    "./adapter-runtime": {
+      "import": {
+        "types": "./dist/adapter-runtime.d.ts",
+        "default": "./dist/adapter-runtime.js"
+      },
+      "require": {
+        "types": "./dist/adapter-runtime.d.cts",
+        "default": "./dist/adapter-runtime.cjs"
+      }
+    },
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./ssr": {
-      "types": "./dist/ssr/index.d.ts",
-      "import": "./dist/ssr/index.js",
-      "require": "./dist/ssr/index.cjs"
+      "import": {
+        "types": "./dist/ssr/index.d.ts",
+        "default": "./dist/ssr/index.js"
+      },
+      "require": {
+        "types": "./dist/ssr/index.d.cts",
+        "default": "./dist/ssr/index.cjs"
+      }
     },
     "./proof": {
-      "types": "./dist/proof/lab-proof.d.ts",
-      "import": "./dist/proof/lab-proof.js",
-      "require": "./dist/proof/lab-proof.cjs"
+      "import": {
+        "types": "./dist/proof/lab-proof.d.ts",
+        "default": "./dist/proof/lab-proof.js"
+      },
+      "require": {
+        "types": "./dist/proof/lab-proof.d.cts",
+        "default": "./dist/proof/lab-proof.cjs"
+      }
     },
     "./*": {
-      "types": "./dist/components/*/index.d.ts",
-      "import": "./dist/components/*/index.js",
-      "require": "./dist/components/*/index.cjs"
+      "import": {
+        "types": "./dist/components/*/index.d.ts",
+        "default": "./dist/components/*/index.js"
+      },
+      "require": {
+        "types": "./dist/components/*/index.d.cts",
+        "default": "./dist/components/*/index.cjs"
+      }
     },
     "./theme.css": "./dist/theme.css",
     "./selection.css": "./dist/selection.css",
     "./shadow.css": "./dist/shadow.css",
-    "./package.json": "./package.json"
+    "./tokens.css": "./dist/tokens.css",
+    "./sheet.css": "./dist/sheet.css",
+    "./input.css": "./dist/input.css",
+    "./snackbar.css": "./dist/snackbar.css",
+    "./card.css": "./dist/card.css",
+    "./switch.css": "./dist/switch.css",
+    "./switch/runtime": {
+      "import": {
+        "types": "./dist/components/switch/runtime.d.ts",
+        "default": "./dist/components/switch/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/switch/runtime.d.cts",
+        "default": "./dist/components/switch/runtime.cjs"
+      }
+    },
+    "./package.json": "./package.json",
+    "./dialog/shared": {
+      "import": {
+        "types": "./dist/components/dialog/shared.d.ts",
+        "default": "./dist/components/dialog/shared.js"
+      },
+      "require": {
+        "types": "./dist/components/dialog/shared.d.cts",
+        "default": "./dist/components/dialog/shared.cjs"
+      }
+    },
+    "./sheet/positions": {
+      "import": {
+        "types": "./dist/components/sheet/positions.d.ts",
+        "default": "./dist/components/sheet/positions.js"
+      },
+      "require": {
+        "types": "./dist/components/sheet/positions.d.cts",
+        "default": "./dist/components/sheet/positions.cjs"
+      }
+    },
+    "./motion/sheet": {
+      "import": {
+        "types": "./dist/motion/sheet.d.ts",
+        "default": "./dist/motion/sheet.js"
+      },
+      "require": {
+        "types": "./dist/motion/sheet.d.cts",
+        "default": "./dist/motion/sheet.cjs"
+      }
+    },
+    "./snackbar/runtime": {
+      "import": {
+        "types": "./dist/components/snackbar/runtime.d.ts",
+        "default": "./dist/components/snackbar/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/snackbar/runtime.d.cts",
+        "default": "./dist/components/snackbar/runtime.cjs"
+      }
+    },
+    "./card/runtime": {
+      "import": {
+        "types": "./dist/components/card/runtime.d.ts",
+        "default": "./dist/components/card/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/card/runtime.d.cts",
+        "default": "./dist/components/card/runtime.cjs"
+      }
+    },
+    "./sheet/measure": {
+      "import": {
+        "types": "./dist/components/sheet/measure.d.ts",
+        "default": "./dist/components/sheet/measure.js"
+      },
+      "require": {
+        "types": "./dist/components/sheet/measure.d.cts",
+        "default": "./dist/components/sheet/measure.cjs"
+      }
+    },
+    "./badge.css": "./dist/badge.css",
+    "./badge/contract": {
+      "import": {
+        "types": "./dist/components/badge/contract.d.ts",
+        "default": "./dist/components/badge/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/badge/contract.d.cts",
+        "default": "./dist/components/badge/contract.cjs"
+      }
+    },
+    "./selection/runtime": {
+      "import": {
+        "types": "./dist/components/selection/runtime.d.ts",
+        "default": "./dist/components/selection/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/selection/runtime.d.cts",
+        "default": "./dist/components/selection/runtime.cjs"
+      }
+    },
+    "./selection-controls.css": "./dist/selection-controls.css",
+    "./kbd.css": "./dist/kbd.css",
+    "./kbd/contract": {
+      "import": {
+        "types": "./dist/components/kbd/contract.d.ts",
+        "default": "./dist/components/kbd/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/kbd/contract.d.cts",
+        "default": "./dist/components/kbd/contract.cjs"
+      }
+    },
+    "./progress/runtime": {
+      "import": {
+        "types": "./dist/components/progress/runtime.d.ts",
+        "default": "./dist/components/progress/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/progress/runtime.d.cts",
+        "default": "./dist/components/progress/runtime.cjs"
+      }
+    },
+    "./progress.css": "./dist/progress.css",
+    "./textarea/runtime": {
+      "import": {
+        "types": "./dist/components/textarea/runtime.d.ts",
+        "default": "./dist/components/textarea/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/textarea/runtime.d.cts",
+        "default": "./dist/components/textarea/runtime.cjs"
+      }
+    },
+    "./chip.css": "./dist/chip.css",
+    "./chip/contract": {
+      "import": {
+        "types": "./dist/components/chip/contract.d.ts",
+        "default": "./dist/components/chip/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/chip/contract.d.cts",
+        "default": "./dist/components/chip/contract.cjs"
+      }
+    },
+    "./tabs.css": "./dist/tabs.css",
+    "./tabs/runtime": {
+      "import": {
+        "types": "./dist/components/tabs/runtime.d.ts",
+        "default": "./dist/components/tabs/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/tabs/runtime.d.cts",
+        "default": "./dist/components/tabs/runtime.cjs"
+      }
+    },
+    "./breadcrumb.css": "./dist/breadcrumb.css",
+    "./breadcrumb/contract": {
+      "import": {
+        "types": "./dist/components/breadcrumb/contract.d.ts",
+        "default": "./dist/components/breadcrumb/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/breadcrumb/contract.d.cts",
+        "default": "./dist/components/breadcrumb/contract.cjs"
+      }
+    },
+    "./pagination.css": "./dist/pagination.css",
+    "./pagination/contract": {
+      "import": {
+        "types": "./dist/components/pagination/contract.d.ts",
+        "default": "./dist/components/pagination/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/pagination/contract.d.cts",
+        "default": "./dist/components/pagination/contract.cjs"
+      }
+    },
+    "./accordion.css": "./dist/accordion.css",
+    "./accordion/runtime": {
+      "types": "./dist/components/accordion/runtime.d.ts",
+      "import": "./dist/components/accordion/runtime.js",
+      "require": "./dist/components/accordion/runtime.cjs"
+    },
+    "./segmented-control.css": "./dist/segmented-control.css",
+    "./segmented-control/runtime": {
+      "import": {
+        "types": "./dist/components/segmented-control/runtime.d.ts",
+        "default": "./dist/components/segmented-control/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/segmented-control/runtime.d.cts",
+        "default": "./dist/components/segmented-control/runtime.cjs"
+      }
+    },
+    "./select.css": "./dist/select.css",
+    "./select/behavior": {
+      "import": {
+        "types": "./dist/components/select/behavior.d.ts",
+        "default": "./dist/components/select/behavior.js"
+      },
+      "require": {
+        "types": "./dist/components/select/behavior.d.cts",
+        "default": "./dist/components/select/behavior.cjs"
+      }
+    },
+    "./avatar.css": "./dist/avatar.css",
+    "./avatar/contract": {
+      "import": {
+        "types": "./dist/components/avatar/contract.d.ts",
+        "default": "./dist/components/avatar/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/avatar/contract.d.cts",
+        "default": "./dist/components/avatar/contract.cjs"
+      }
+    }
   },
   "files": ["dist"],
   "sideEffects": [
+    "./src/ssr/environment.ts",
+    "./src/components/*/index.ts",
     "./dist/theme.css",
     "./dist/selection.css",
     "./dist/shadow.css",
+    "./dist/tokens.css",
+    "./dist/sheet.css",
+    "./dist/input.css",
+    "./dist/snackbar.css",
+    "./dist/card.css",
+    "./dist/switch.css",
     "./dist/proof/lab-proof.js",
     "./dist/proof/lab-proof.cjs",
-    "./dist/components/**"
+    "./dist/components/**",
+    "./dist/chunk-*.js",
+    "./dist/chunk-*.cjs",
+    "./dist/badge.css",
+    "./dist/selection-controls.css",
+    "./dist/kbd.css",
+    "./dist/progress.css",
+    "./dist/chip.css",
+    "./dist/tabs.css",
+    "./dist/breadcrumb.css",
+    "./dist/pagination.css",
+    "./dist/accordion.css",
+    "./dist/segmented-control.css",
+    "./dist/select.css",
+    "./dist/avatar.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "test": "vitest run"
   },
   "dependencies": {
+    "@labpics/motion": "0.5.0",
+    "@labpics/ui-materials": "workspace:*",
     "@labpics/ui-shadow": "workspace:*",
+    "@labpics/ui-tokens": "workspace:*",
     "@zag-js/accordion": "1.41.2",
-    "@zag-js/checkbox": "1.41.2",
     "@zag-js/combobox": "1.41.2",
     "@zag-js/core": "1.41.2",
     "@zag-js/dialog": "1.41.2",
+    "@zag-js/dom-query": "1.41.2",
     "@zag-js/menu": "1.41.2",
     "@zag-js/number-input": "1.41.2",
+    "@zag-js/pagination": "1.41.2",
     "@zag-js/pin-input": "1.41.2",
     "@zag-js/popover": "1.41.2",
-    "@zag-js/pagination": "1.41.2",
-    "@zag-js/progress": "1.41.2",
-    "@zag-js/radio-group": "1.41.2",
     "@zag-js/select": "1.41.2",
     "@zag-js/slider": "1.41.2",
     "@zag-js/switch": "1.41.2",

@@ -1,84 +1,54 @@
-import * as switchMachine from '@zag-js/switch';
-/**
- * `<lab-switch>` — the first PRODUCTION component that CONSUMES a Zag machine
- * through the Behaviors seam (core-CONTRACT §1, the inverse of Button).
- *
- * Axes (the Figma model — Type × Toggle × Size × State × Icon):
- *   - type:  accent | neutral | danger   (semantic intent of the ON state)
- *   - size:  s | m | l
- *   - checked: machine-owned toggle state (reflected for CSS + SSR)
- *   - defaultChecked: uncontrolled initial state (read once at machine init)
- *   - disabled: non-interactive
- *
- * Why a machine here, when Button opted out: a Switch HAS interaction state a
- * state machine owns — a `checked` lifecycle, `role="switch"` + `aria-checked`,
- * Space/Enter activation, focus management, and a hidden form input. Hand-rolling
- * those is exactly the "machinery the platform/Zag ships" Button declined to
- * rebuild. So this element runs `@zag-js/switch` through `ZagController`: the
- * machine owns checked-state, keyboard, focus and ARIA; the element only paints
- * (DIP — it depends on the injected `MachineModule`, never on a hand-written
- * toggle).
- *
- * Token contract (core-CONTRACT §2): ONLY semantic --lab-* roles + dimension
- * tokens via `litVar`. The ON track is `--lab-fill-{accent|neutral|danger}`; the
- * OFF track is `--lab-fill-primary`; the thumb is `--lab-control-bg`. No
- * hex, no primitive, no invented role. A theme is a different binding of those
- * roles on an ancestor — the element never knows which theme is active.
- *
- * SSR (core-CONTRACT §7): structure is always present (the machine spreads ARIA
- * in `updated()`), so `@lit-labs/ssr` emits a meaningful, styled control in the
- * declarative shadow DOM before any JS upgrades it.
- */
-import { type TemplateResult, css, html } from 'lit';
-import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
-import { litVar } from '../../css.js';
+import { type PropertyValues, type TemplateResult, css, html, nothing, unsafeCSS } from 'lit';
 import { LabElement } from '../../lit/lab-element.js';
-import type { ZagController } from '../../lit/zag-controller.js';
+import { type LabSwitchSize, type LabSwitchType, switchAppearance } from './contract.js';
+import { type SwitchMotion, mountSwitchMotion } from './runtime.js';
+import { switchCss } from './styles.js';
 
-/** Semantic intent of the switch's ON state. */
-export type LabSwitchType = 'accent' | 'neutral' | 'danger';
-/** Control size. */
-export type LabSwitchSize = 's' | 'm' | 'l';
+export type { LabSwitchSize, LabSwitchType } from './contract.js';
 
-type SwitchSchema = SchemaOf<switchMachine.Service>;
-type SwitchApi = switchMachine.Api;
-
-/**
- * The `@zag-js/switch` package seen through the renderer-agnostic seam. The
- * namespace already matches `MachineModule` structurally (a `machine` + a
- * `connect`); this binding names that fact so the controller is fully typed
- * with no casts — the SAME pattern the proof used for `@zag-js/toggle`.
- */
-const switchModule: MachineModule<SwitchSchema, SwitchApi> = switchMachine;
-
+/** Native checkbox and form-associated host; the same profile and Motion as React. */
 export class LabSwitch extends LabElement {
+  static formAssociated = true;
   static override properties = {
     type: { reflect: true },
     size: { reflect: true },
-    /** Controlled checked state. When set, the consumer owns the value. */
     checked: { type: Boolean, reflect: true },
-    /** Uncontrolled initial state — read once by the machine at init. */
     defaultChecked: { type: Boolean, attribute: 'default-checked', reflect: true },
+    /** Explicit controlled mode: checked-change requests a value, checked supplies it. */
+    controlled: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
-    /**
-     * Accessible name for the no-visible-label case (e.g. an icon-only switch).
-     * When set, it names the hidden input directly; a visible slotted label is
-     * preferred over it via the machine's `aria-labelledby` when present.
-     */
+    required: { type: Boolean, reflect: true },
+    icon: { type: Boolean, reflect: true },
     ariaLabel: { attribute: 'aria-label', reflect: true },
-    /** Native form field name for the hidden input (form participation). */
     name: { reflect: true },
+    value: { reflect: true },
+    disabledByForm: { state: true },
+    hasStart: { state: true },
+    hasEnd: { state: true },
+    hasIconOn: { state: true },
+    hasIconOff: { state: true },
   };
-
   declare type: LabSwitchType;
   declare size: LabSwitchSize;
   declare checked: boolean;
   declare defaultChecked: boolean;
+  declare controlled: boolean;
   declare disabled: boolean;
+  declare required: boolean;
+  declare icon: boolean;
   declare ariaLabel: string | null;
-  declare name: string | null;
-
-  private readonly machineCtl: ZagController<SwitchSchema, SwitchApi>;
+  declare name: string;
+  declare value: string;
+  private declare disabledByForm: boolean;
+  private declare hasStart: boolean;
+  private declare hasEnd: boolean;
+  private declare hasIconOn: boolean;
+  private declare hasIconOff: boolean;
+  private readonly internals?: ElementInternals;
+  private motion?: SwitchMotion;
+  private resetChecked?: boolean;
+  private labelObserver?: MutationObserver;
+  private observedLabels: Node[] = [];
 
   constructor() {
     super();
@@ -86,250 +56,194 @@ export class LabSwitch extends LabElement {
     this.size = 'm';
     this.checked = false;
     this.defaultChecked = false;
+    this.controlled = false;
     this.disabled = false;
+    this.required = false;
+    this.icon = false;
     this.ariaLabel = null;
-    this.name = null;
-    // Wire the Zag switch behavior. Props read from reflected attributes so the
-    // machine and the element never disagree. `checked` is passed only when the
-    // consumer set it (controlled); otherwise the machine owns it from
-    // `defaultChecked` (uncontrolled) — an honest two-mode contract, not a fake.
-    // `id` is a stable per-instance value (mirrors React's `useId`) so the
-    // machine's scoped ids — including the label id the input references — are
-    // unique and real, never the colliding `switch:undefined:*`.
-    this.machineCtl = this.runMachine(switchModule, () => ({
-      id: this.uid,
-      name: this.name ?? undefined,
-      defaultChecked: this.defaultChecked,
-      checked: this.hasAttribute('checked') ? this.checked : undefined,
-      disabled: this.disabled,
-      onCheckedChange: (details: switchMachine.CheckedChangeDetails) => {
-        this.checked = details.checked;
-        this.dispatchEvent(
-          new CustomEvent<switchMachine.CheckedChangeDetails>('checked-change', {
-            detail: details,
-            bubbles: true,
-            composed: true,
-          }),
-        );
-      },
-    }));
+    this.name = '';
+    this.value = 'on';
+    this.disabledByForm = false;
+    this.hasStart = false;
+    this.hasEnd = false;
+    this.hasIconOn = false;
+    this.hasIconOff = false;
+    if (typeof ElementInternals !== 'undefined') this.internals = this.attachInternals();
+    // FACE makes the host labelable; its activation forwards to the real checkbox.
+    this.addEventListener('click', (event) => {
+      if (event.composedPath()[0] === this && !event.defaultPrevented) {
+        this.renderRoot.querySelector<HTMLInputElement>('input')?.click();
+      }
+    });
   }
-
-  static override styles = css`
-    :host {
-      /* Size knobs the size axis maps onto. Dimension tokens may carry a literal
-         fallback so the control is usable before tokens load; colour roles never
-         do (css.ts rule). */
-      --_track-w: ${litVar('--lab-size-switch-track-m', '2.75rem')};
-      --_track-h: ${litVar('--lab-size-switch-track-h-m', '1.5rem')};
-      /* derivation per ADR-0006 §2: thumb = track-h − 6px (0.375rem); expressed as token-backed calc using radius-md (no bare literal, no duplicate number) */
-      --_thumb: calc(var(--_track-h) - var(--lab-radius-s, 0.375rem));
-      --_gap: ${litVar('--lab-space-sm', '0.5rem')};
-      --_font: ${litVar('--lab-font-size-md', '1rem')};
-
-      display: inline-flex;
-      vertical-align: middle;
+  static override styles = [
+    unsafeCSS(switchCss),
+    css`
+    :host { display: inline-flex; max-inline-size: 100%; min-inline-size: 0; vertical-align: middle; }
+    .lab-switch-label-start { display: contents; }
+    ::slotted([slot='label-start']) { min-inline-size: 0; max-inline-size: 100%; overflow-wrap: anywhere; }
+    ::slotted(svg), ::slotted(img), ::slotted(lab-icon) { inline-size: 100%; block-size: 100%; }
+  `,
+  ];
+  protected override willUpdate(changed: PropertyValues): void {
+    if (this.resetChecked === undefined) {
+      this.resetChecked = this.controlled ? this.checked : this.checked || this.defaultChecked;
+      this.checked = this.resetChecked;
+    } else if (changed.has('defaultChecked')) {
+      this.resetChecked = this.defaultChecked;
     }
-
-    :host([size='s']) {
-      --_track-w: ${litVar('--lab-size-switch-track-s', '2.25rem')};
-      --_track-h: ${litVar('--lab-size-switch-track-h-s', '1.25rem')};
-      /* derivation per ADR-0006 §2: thumb = track-h − 6px (0.375rem) expressed token-backed */
-      --_thumb: calc(var(--_track-h) - var(--lab-radius-s, 0.375rem));
-      --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
-    }
-    :host([size='l']) {
-      --_track-w: ${litVar('--lab-size-switch-track-l', '3.25rem')};
-      --_track-h: ${litVar('--lab-size-switch-track-h-l', '1.75rem')};
-      /* derivation per ADR-0006 §2: thumb = track-h − 6px (0.375rem) expressed token-backed */
-      --_thumb: calc(var(--_track-h) - var(--lab-radius-s, 0.375rem));
-      --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
-    }
-
-    /* Root is the Zag label element: the whole control is one click/label target. */
-    .root {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--_gap);
-      font: inherit;
-      font-size: var(--_font);
-      line-height: ${litVar('--lab-line-height-md', '1.5')};
-      color: ${litVar('--lab-label-primary')};
-      cursor: pointer;
-    }
-
-    /* The track — the Zag control element. OFF surface is a neutral tint. */
-    .control {
-      box-sizing: border-box;
-      position: relative;
-      flex: 0 0 auto;
-      display: inline-flex;
-      align-items: center;
-      width: var(--_track-w);
-      height: var(--_track-h);
-      padding: var(--lab-radius-xxs, 0.125rem);
-      border-radius: ${litVar('--lab-radius-full', '9999px')};
-      background-color: ${litVar('--lab-fill-primary')};
-      transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
-    }
-
-    /* ON track surface, per type. Driven by the reflected checked attribute,
-       which is driven by the machine — one source of truth. The longhand is set
-       DIRECTLY (no var()->var() chain across the shadow boundary, which can go
-       stale in Chromium on theme swap — proto-A note). */
-    :host([checked][type='accent']) .control {
-      background-color: ${litVar('--lab-fill-accent')};
-    }
-    :host([checked][type='neutral']) .control {
-      background-color: ${litVar('--lab-fill-neutral')};
-    }
-    :host([checked][type='danger']) .control {
-      background-color: ${litVar('--lab-fill-danger')};
-    }
-
-    /* The thumb — the Zag thumb element. Slides on the checked attribute. */
-    .thumb {
-      box-sizing: border-box;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: var(--_thumb);
-      height: var(--_thumb);
-      border-radius: ${litVar('--lab-radius-full', '9999px')};
-      background-color: ${litVar('--lab-control-bg')};
-      box-shadow: var(--lab-elevation-raised);
-      transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
-      transform: translateX(0);
-    }
-    :host([checked]) .thumb {
-      transform: translateX(calc(var(--_track-w) - var(--_thumb) - var(--lab-space-xs, 0.25rem)));
-    }
-
-    /* Icon slots ride inside the track, revealed by checked state. */
-    .icon {
-      position: absolute;
-      top: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: calc(var(--_track-h) - var(--lab-space-xs, 0.25rem));
-      height: calc(var(--_track-h) - var(--lab-space-xs, 0.25rem));
-      font-size: calc(var(--_track-h) * 0.5);
-      color: ${litVar('--lab-label-on-accent')};
-      transform: translateY(-50%);
-      opacity: 0;
-      transition: opacity var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
-      pointer-events: none;
-    }
-    .icon-on {
-      left: var(--lab-radius-xxs, 0.125rem);
-    }
-    .icon-off {
-      right: var(--lab-radius-xxs, 0.125rem);
-      color: ${litVar('--lab-label-tertiary')};
-    }
-    :host([checked]) .icon-on {
-      opacity: 1;
-    }
-    :host(:not([checked])) .icon-off {
-      opacity: 1;
-    }
-
-    /* Focus is delegated to the hidden input via the machine; draw the ring on
-       the visible track when that input is focus-visible. The input is now a
-       SIBLING of the control (so it stays in the a11y tree), so match it from
-       the shared root rather than as a descendant of the control. */
-    .root:has(input:focus-visible) .control {
-      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
-      outline-offset: ${litVar('--lab-focus-ring-offset')};
-    }
-
-    :host([disabled]) .root {
-      cursor: not-allowed;
-      opacity: 0.45;
-    }
-
-    /* The Zag hidden input — visually removed but kept in the a11y + form tree. */
-    input {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      margin: -1px;
-      padding: 0;
-      border: 0;
-      clip: rect(0 0 0 0);
-      clip-path: inset(50%);
-      overflow: hidden;
-      white-space: nowrap;
-    }
-  `;
-
-  override updated(): void {
-    // Apply the machine's connect props onto the real shadow nodes (role,
-    // aria-checked, click/keyboard handlers, hidden input). Clear prior spreads
-    // first to avoid stacking listeners across renders.
-    this.machineCtl.clearSpreads();
-    const api = this.machineCtl.api;
-    const root = this.renderRoot.querySelector<HTMLElement>('.root');
-    const control = this.renderRoot.querySelector<HTMLElement>('.control');
-    const thumb = this.renderRoot.querySelector<HTMLElement>('.thumb');
-    const label = this.renderRoot.querySelector<HTMLElement>('.label');
+  }
+  private readonly onSlotChange = (event: Event): void => {
+    const slot = event.target as HTMLSlotElement;
+    const present = slot
+      .assignedNodes()
+      .some((node) => node.nodeType === 1 || node.textContent?.trim());
+    if (slot.name === 'label-start') this.hasStart = present;
+    else if (slot.name === 'icon-on') this.hasIconOn = present;
+    else if (slot.name === 'icon-off') this.hasIconOff = present;
+    else this.hasEnd = present;
+  };
+  private syncForm(input: HTMLInputElement): void {
+    this.internals?.setFormValue(
+      input.disabled || !input.checked ? null : this.value,
+      input.checked ? 'true' : 'false',
+    );
+    this.internals?.setValidity(input.validity, input.validationMessage, input);
+  }
+  private readonly onChange = (event: Event): void => {
+    const input = event.target as HTMLInputElement;
+    const checked = input.checked;
+    if (!this.controlled) this.checked = checked;
+    this.dispatchEvent(
+      new CustomEvent<{ checked: boolean }>('checked-change', {
+        detail: { checked },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    input.checked = this.checked;
+    this.syncForm(input);
+    this.requestUpdate();
+  };
+  formDisabledCallback(disabled: boolean): void {
+    this.disabledByForm = disabled;
+  }
+  formResetCallback(): void {
+    if (!this.controlled) this.restoreChecked(this.resetChecked ?? false);
+  }
+  formStateRestoreCallback(state: string | File | FormData): void {
+    if (!this.controlled && typeof state === 'string') this.restoreChecked(state === 'true');
+  }
+  private restoreChecked(checked: boolean): void {
+    this.checked = checked;
     const input = this.renderRoot.querySelector<HTMLInputElement>('input');
-    if (root) this.machineCtl.spread(root, api.getRootProps());
-    if (control) this.machineCtl.spread(control, api.getControlProps());
-    if (thumb) this.machineCtl.spread(thumb, api.getThumbProps());
-    // Spread the label part so the id the machine's `aria-labelledby` targets
-    // actually exists — without this the reference dangles and the name is lost.
-    if (label) this.machineCtl.spread(label, api.getLabelProps());
     if (input) {
-      this.machineCtl.spread(input, api.getHiddenInputProps());
-      this.nameHiddenInput(input);
+      input.checked = checked;
+      this.syncForm(input);
     }
   }
-
-  /**
-   * Reconcile the input's accessible name. With a visible label the machine's
-   * `aria-labelledby` (→ the `.label` part) names it. With NO visible label, that
-   * reference would resolve to empty and (per ARIA) outrank `aria-label`, leaving
-   * the control unnamed — so drop the dangling reference and apply `aria-label`.
-   */
-  private nameHiddenInput(input: HTMLInputElement): void {
-    if (this.hasDefaultSlotContent()) {
-      input.removeAttribute('aria-label');
-      return;
-    }
-    input.removeAttribute('aria-labelledby');
-    if (this.ariaLabel) input.setAttribute('aria-label', this.ariaLabel);
-    else input.removeAttribute('aria-label');
+  get form(): HTMLFormElement | null {
+    return this.internals?.form ?? null;
   }
-
+  get validity(): ValidityState | undefined {
+    return this.internals?.validity;
+  }
+  get validationMessage(): string {
+    return this.internals?.validationMessage ?? '';
+  }
+  checkValidity(): boolean {
+    return this.internals?.checkValidity() ?? true;
+  }
+  reportValidity(): boolean {
+    return this.internals?.reportValidity() ?? true;
+  }
+  override updated(): void {
+    const input = this.renderRoot.querySelector<HTMLInputElement>('input');
+    const root = this.renderRoot.querySelector<HTMLElement>('[data-lab-switch]');
+    if (!input || !root) return;
+    const labels = Array.from(this.internals?.labels ?? []);
+    if (
+      labels.length !== this.observedLabels.length ||
+      labels.some((label, index) => label !== this.observedLabels[index])
+    ) {
+      this.labelObserver?.disconnect();
+      this.observedLabels = labels;
+      if (labels.length) {
+        this.labelObserver ??= new MutationObserver(() => this.requestUpdate());
+        // Only associated labels are observed. No document scan or idle work.
+        for (const label of labels)
+          this.labelObserver.observe(label, {
+            childList: true,
+            characterData: true,
+            subtree: true,
+          });
+      }
+    }
+    // Property writes belong to the client: Lit SSR serializes .checked=false
+    // as the present HTML boolean attribute checked="false" (which means ON).
+    input.checked = this.checked;
+    // ARIA element references can cross the shadow boundary, unlike IDREF strings.
+    // The string in render() also names the control on older browser engines.
+    if ('ariaLabelledByElements' in input) {
+      const accessible = input as HTMLInputElement & { ariaLabelledByElements: Element[] | null };
+      const externalLabels = Array.from(this.internals?.labels ?? []).filter(
+        (node): node is Element => node.nodeType === 1,
+      );
+      if (!this.ariaLabel && !this.hasStart && !this.hasEnd && externalLabels.length) {
+        accessible.ariaLabelledByElements = externalLabels;
+      } else if (input.getAttribute('aria-labelledby') === '') {
+        accessible.ariaLabelledByElements = null;
+      }
+    }
+    this.syncForm(input);
+    this.motion ??= mountSwitchMotion(root, input);
+    this.motion.update();
+  }
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (this.hasUpdated) this.requestUpdate();
+  }
+  override disconnectedCallback(): void {
+    this.labelObserver?.disconnect();
+    this.observedLabels = [];
+    this.motion?.dispose();
+    this.motion = undefined;
+    super.disconnectedCallback();
+  }
   override render(): TemplateResult {
-    // Structure only; behavior (role=switch, aria-checked, keyboard, focus) is
-    // spread in `updated()` from the machine. SSR emits this real markup so first
-    // paint is meaningful before any JS upgrades the element. The hidden input is
-    // a SIBLING of the (aria-hidden) control — NOT a descendant — so it stays in
-    // the accessibility tree (an aria-hidden ancestor would erase it).
+    const checked = this.checked || (!this.controlled && !this.hasUpdated && this.defaultChecked);
+    const disabled = this.disabled || this.disabledByForm;
+    const externalName = Array.from(this.internals?.labels ?? [])
+      .map((label) => label.textContent ?? '')
+      .join(' ')
+      .trim();
+    const accessibleName = this.ariaLabel || externalName;
+    const labels =
+      this.hasStart || this.hasEnd || !accessibleName ? `${this.uid}-start ${this.uid}-label` : '';
     return html`
-      <label class="root">
-        <span class="control">
-          <span class="icon icon-on" aria-hidden="true"><slot name="icon-on"></slot></span>
-          <span class="icon icon-off" aria-hidden="true"><slot name="icon-off"></slot></span>
-          <span class="thumb"></span>
+      <label data-lab-switch data-type=${this.type} data-size=${this.size}
+        data-appearance=${switchAppearance(this.type, checked)}
+        ?data-checked=${checked} ?data-disabled=${disabled} ?data-icon=${this.icon}
+        ?data-custom-on=${this.hasIconOn} ?data-custom-off=${this.hasIconOff}>
+        <span class="lab-switch-label lab-switch-label-start" id=${`${this.uid}-start`}><slot name="label-start" @slotchange=${this.onSlotChange}></slot></span>
+        <span class="lab-switch-control" part="control" aria-hidden="true">
+          <span class="lab-switch-thumb" part="thumb">
+            <span class="lab-switch-icon lab-switch-icon-on"><slot name="icon-on" @slotchange=${this.onSlotChange}></slot></span>
+            <span class="lab-switch-icon lab-switch-icon-off"><slot name="icon-off" @slotchange=${this.onSlotChange}></slot></span>
+          </span>
         </span>
-        <input type="checkbox" />
-        <span class="label"><slot></slot></span>
-      </label>
-    `;
+        <input id=${`${this.uid}-input`} type="checkbox" role="switch" ?checked=${checked}
+          ?disabled=${disabled} ?required=${this.required} name=${this.name || nothing} value=${this.value}
+          aria-labelledby=${labels || nothing} aria-label=${labels ? nothing : accessibleName || nothing}
+          @change=${this.onChange} />
+        <span class="lab-switch-label" part="label" id=${`${this.uid}-label`}><slot @slotchange=${this.onSlotChange}></slot></span>
+      </label>`;
   }
 }
-
 declare global {
   interface HTMLElementTagNameMap {
     'lab-switch': LabSwitch;
   }
 }
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-switch')) {
+if (typeof customElements !== 'undefined' && !customElements.get('lab-switch'))
   customElements.define('lab-switch', LabSwitch);
-}

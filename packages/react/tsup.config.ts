@@ -68,11 +68,20 @@ export default libraryPreset({
   // bundling (the source directive is hoisted below the imports); the output is
   // corrected here, so the warning is expected noise, not a failure.
   onSuccess: preserveUseClientDirective,
-  external: ['react', 'react-dom', 'react/jsx-runtime', /^@zag-js\//, /^@labpics\//],
+  external: ['react', 'react-dom', 'react/jsx-runtime', /^@zag-js\//, /^@labpics\/(?!.*\.css$)/],
+  noExternal: [/^@labpics\/.*\.css$/],
   // Inline the component CSS (`button.css`) into the JS as a runtime-injected
   // <style>, so importing the component brings its styles with it in ANY bundler
   // — no separate stylesheet-import step. Without this, tsup emits a sibling
   // .css file but does NOT re-link it from the ESM output, so consumers silently
   // lose the styles (caught by the Lit↔React parity test).
-  injectStyle: true,
+  // Lit SSR installs a minimal document shim, not a browser head. Shared
+  // React/Lit server entrypoints must not try to insert styles into that shim.
+  injectStyle: (css) => `
+    if (typeof document !== 'undefined' && document.head?.appendChild) {
+      const style = document.createElement('style');
+      style.textContent = ${css};
+      document.head.appendChild(style);
+    }
+  `,
 });

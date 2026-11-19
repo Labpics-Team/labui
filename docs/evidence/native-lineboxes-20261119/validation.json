@@ -1,0 +1,11 @@
+{
+  "tests": 83,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "testSeconds": 103.713,
+  "wallSeconds": 107,
+  "fontResourceCheck": "PASS",
+  "negativeControl": "First paint step 1.0/1.0/(16,24) expected24 actual26",
+  "scope": "Windows headless SOFTWARE; final custom-family style preservation verified by targeted render test after full suite"
+}

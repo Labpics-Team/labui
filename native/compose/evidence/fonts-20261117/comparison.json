@@ -1,0 +1,229 @@
+{
+  "date": "2026-11-17",
+  "method": "HarfBuzz normal shaping and per-glyph outline bounds; normalize only the tight integer SVG export viewport. Runtime typography is never stretched. Bounds comparison is not a full Hausdorff contour comparison.",
+  "sources": {
+    "1.400": {
+      "upstreamCommit": "4d655731f83507f0258ce5541c297b6553d5d081",
+      "release": "1.4.2",
+      "url": "https://github.com/vercel/geist-font/tree/4d655731f83507f0258ce5541c297b6553d5d081/packages/next/dist/fonts/geist-sans"
+    },
+    "1.800": {
+      "upstreamCommit": "a73329da8fc62afc917f796555202e4997f79b7c",
+      "release": "v1.7.2",
+      "url": "https://github.com/vercel/geist-font/tree/a73329da8fc62afc917f796555202e4997f79b7c/fonts/Geist"
+    },
+    "publicSource": "https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1",
+    "figmaExport": "REST SVG svg_outline_text=true; no Figma changes"
+  },
+  "fonts": [
+    {
+      "name": "1.400 static",
+      "sha256": "0987db2030200a6b4a45d03398057c27733977b09bde67b8d0afc26b8b8d0768",
+      "fontVersion": "Version 1.400",
+      "russianLettersPresent": 66,
+      "russianLettersExpected": 66,
+      "cyrillicBlockPresent": 134,
+      "unicodeMappings": 649
+    },
+    {
+      "name": "1.400 variable",
+      "sha256": "eb87b65261ab770efddb3965a61a2659300822980811b6ec57d61cf1e33a37e2",
+      "fontVersion": "Version 1.400;Glyphs 3.3 (3316)",
+      "russianLettersPresent": 66,
+      "russianLettersExpected": 66,
+      "cyrillicBlockPresent": 134,
+      "unicodeMappings": 649
+    },
+    {
+      "name": "1.800 static",
+      "sha256": "3a3b36f0d0b981f4857f7f00eeef4a5ee123605575d362ab31ee7c19e3d11f2f",
+      "fontVersion": "Version 1.800; ttfautohint (v1.8.4.16-eb64)",
+      "russianLettersPresent": 66,
+      "russianLettersExpected": 66,
+      "cyrillicBlockPresent": 134,
+      "unicodeMappings": 728
+    },
+    {
+      "name": "1.800 variable",
+      "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1",
+      "fontVersion": "Version 1.800",
+      "russianLettersPresent": 66,
+      "russianLettersExpected": 66,
+      "cyrillicBlockPresent": 134,
+      "unicodeMappings": 728
+    }
+  ],
+  "comparisons": [
+    {
+      "sourceNode": "6109-5889",
+      "text": "The file.png was deleted",
+      "fontSize": 16,
+      "sourceContours": 32,
+      "comparisons": {
+        "1.400 static": {
+          "advancePx": 185.104,
+          "svgScale": 0.016041847966547514,
+          "maxGlyphBoundsErrorPx": 0.017998992055012764,
+          "meanGlyphBoundsErrorPx": 0.003788626753721275
+        },
+        "1.400 variable": {
+          "advancePx": 185.104,
+          "svgScale": 0.016041566699507293,
+          "maxGlyphBoundsErrorPx": 0.020015406136593583,
+          "meanGlyphBoundsErrorPx": 0.0035417021530219986
+        },
+        "1.800 static": {
+          "advancePx": 181.744,
+          "svgScale": 0.01632363344360362,
+          "maxGlyphBoundsErrorPx": 0.8337681931576171,
+          "meanGlyphBoundsErrorPx": 0.21957921435128372
+        },
+        "1.800 variable": {
+          "advancePx": 181.744,
+          "svgScale": 0.016323342208591142,
+          "maxGlyphBoundsErrorPx": 0.8346060302389091,
+          "meanGlyphBoundsErrorPx": 0.21624008557321917
+        }
+      },
+      "letterSpacing": 0,
+      "fontWeight": 500
+    },
+    {
+      "sourceNode": "I7101-54738_6109-5889",
+      "text": "The file.png was deleted",
+      "fontSize": 16,
+      "sourceContours": 34,
+      "comparisons": {
+        "1.400 static": {
+          "advancePx": 185.104,
+          "svgScale": 0.015780297874141237,
+          "maxGlyphBoundsErrorPx": 0.5920089634218968,
+          "meanGlyphBoundsErrorPx": 0.16249018237033516
+        },
+        "1.400 variable": {
+          "advancePx": 185.104,
+          "svgScale": 0.015780021192945522,
+          "maxGlyphBoundsErrorPx": 0.5911844639549173,
+          "meanGlyphBoundsErrorPx": 0.1626340657238493
+        },
+        "1.800 static": {
+          "advancePx": 181.744,
+          "svgScale": 0.016057489053974448,
+          "maxGlyphBoundsErrorPx": 0.2416353825551525,
+          "meanGlyphBoundsErrorPx": 0.06374262157592583
+        },
+        "1.800 variable": {
+          "advancePx": 181.744,
+          "svgScale": 0.01605720256732666,
+          "maxGlyphBoundsErrorPx": 0.23864720828022,
+          "meanGlyphBoundsErrorPx": 0.06141986069821204
+        }
+      },
+      "letterSpacing": 0,
+      "fontWeight": 500
+    },
+    {
+      "sourceNode": "6225-42451",
+      "text": "Title",
+      "fontSize": 20,
+      "sourceContours": 7,
+      "comparisons": {
+        "1.400 static": {
+          "advancePx": 40.21,
+          "svgScale": 0.02040817468642857,
+          "maxGlyphBoundsErrorPx": 0.0068582371749990045,
+          "meanGlyphBoundsErrorPx": 0.0018328620139284727
+        },
+        "1.400 variable": {
+          "advancePx": 40.21,
+          "svgScale": 0.02041232928051294,
+          "maxGlyphBoundsErrorPx": 0.011761388178474164,
+          "meanGlyphBoundsErrorPx": 0.004666171913072638
+        },
+        "1.800 static": {
+          "advancePx": 38.81,
+          "svgScale": 0.02101945474797688,
+          "maxGlyphBoundsErrorPx": 0.4422304625791895,
+          "meanGlyphBoundsErrorPx": 0.21067239170260127
+        },
+        "1.800 variable": {
+          "advancePx": 38.81,
+          "svgScale": 0.021012817720654137,
+          "maxGlyphBoundsErrorPx": 0.43320765374975423,
+          "meanGlyphBoundsErrorPx": 0.2077611781756318
+        }
+      },
+      "letterSpacing": -0.33,
+      "fontWeight": 500
+    },
+    {
+      "sourceNode": "6227-8350",
+      "text": "Button",
+      "fontSize": 16,
+      "sourceContours": 9,
+      "comparisons": {
+        "1.400 static": {
+          "advancePx": 50.288,
+          "svgScale": 0.01609653802401073,
+          "maxGlyphBoundsErrorPx": 0.011133767427363495,
+          "meanGlyphBoundsErrorPx": 0.004108200982022542
+        },
+        "1.400 variable": {
+          "advancePx": 50.288,
+          "svgScale": 0.016097610822717823,
+          "maxGlyphBoundsErrorPx": 0.012052429316202762,
+          "meanGlyphBoundsErrorPx": 0.00455733687551067
+        },
+        "1.800 static": {
+          "advancePx": 49.952,
+          "svgScale": 0.01621069786815265,
+          "maxGlyphBoundsErrorPx": 0.15510196523606723,
+          "meanGlyphBoundsErrorPx": 0.050867756117498567
+        },
+        "1.800 variable": {
+          "advancePx": 49.952,
+          "svgScale": 0.016211785938337994,
+          "maxGlyphBoundsErrorPx": 0.1498365890947717,
+          "meanGlyphBoundsErrorPx": 0.05209023603723828
+        }
+      },
+      "letterSpacing": 0,
+      "fontWeight": 500
+    },
+    {
+      "sourceNode": "6050-2314",
+      "text": "Input text|",
+      "fontSize": 16,
+      "sourceContours": 12,
+      "comparisons": {
+        "1.400 static": {
+          "advancePx": 72.706,
+          "svgScale": 0.016225828763069185,
+          "maxGlyphBoundsErrorPx": 0.01421579630978087,
+          "meanGlyphBoundsErrorPx": 0.00299704248810371
+        },
+        "1.400 variable": {
+          "advancePx": 72.706,
+          "svgScale": 0.016225828763069185,
+          "maxGlyphBoundsErrorPx": 0.01421579630978087,
+          "meanGlyphBoundsErrorPx": 0.00299704248810371
+        },
+        "1.800 static": {
+          "advancePx": 72.226,
+          "svgScale": 0.01633784046712305,
+          "maxGlyphBoundsErrorPx": 0.48735237060317615,
+          "meanGlyphBoundsErrorPx": 0.16202575819866127
+        },
+        "1.800 variable": {
+          "advancePx": 72.226,
+          "svgScale": 0.01633784046712305,
+          "maxGlyphBoundsErrorPx": 0.48735237060317615,
+          "meanGlyphBoundsErrorPx": 0.16202575819866127
+        }
+      },
+      "letterSpacing": -0.25,
+      "fontWeight": 400
+    }
+  ],
+  "decision": "Use Geist 1.400 consistently in web/native, all themes, from commit 4d655731f83507f0258ce5541c297b6553d5d081; no theme-dependent font revision."
+}

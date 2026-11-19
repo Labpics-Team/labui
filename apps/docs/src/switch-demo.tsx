@@ -11,7 +11,7 @@
  */
 import '@labpics/ui-core/switch';
 import { Switch } from '@labpics/ui-react';
-import { StrictMode } from 'react';
+import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { wireThemeSwitch } from './theme-switch.js';
 
@@ -19,6 +19,31 @@ wireThemeSwitch();
 
 const mount = document.querySelector<HTMLElement>('#react-root');
 if (!mount) throw new Error('Missing #react-root mount node in switch.html');
+
+function ControlledSwitch() {
+  const [value, setValue] = useState(false);
+  return (
+    <>
+      <Switch checked={value} onCheckedChange={setValue}>
+        Согласованное значение
+      </Switch>
+      <Switch checked={false}>Закреплённое значение</Switch>
+    </>
+  );
+}
+
+function ChangingDefaults() {
+  const [initial, setInitial] = useState(true);
+  return (
+    <form data-testid="react-changing-default">
+      <Switch defaultChecked={initial}>Значение по умолчанию</Switch>
+      <button type="button" onClick={() => setInitial(false)}>
+        Обновить исходное значение
+      </button>
+      <button type="reset">Сбросить</button>
+    </form>
+  );
+}
 
 // The Switch owns its public prop API (no arbitrary prop passthrough — a clean,
 // composable surface, craft-frontend P1), so the test id rides on a wrapper. The
@@ -48,8 +73,46 @@ createRoot(mount).render(
         Off
       </Switch>
     </span>
-    <span data-testid="react-icon-only">
-      <Switch type="accent" iconOn="🔔" iconOff="🔕" aria-label="Mute" />
+    <form data-testid="react-form">
+      <Switch name="alerts" value="yes" required defaultChecked>
+        Уведомления
+      </Switch>
+      <button type="reset">Сбросить</button>
+      <fieldset disabled>
+        <Switch name="disabled" defaultChecked>
+          Недоступно
+        </Switch>
+      </fieldset>
+    </form>
+    <span data-testid="react-controlled">
+      <ControlledSwitch />
     </span>
+    <ChangingDefaults />
+    <span data-testid="react-long">
+      <Switch size="l" icon labelStart="Включить">
+        Отправлять уведомления о завершении обработки фотографий автоматически
+      </Switch>
+    </span>
+    <span data-testid="react-icon-only">
+      <Switch type="accent" icon aria-label="Mute" />
+    </span>
+    <div data-testid="react-matrix">
+      {(['s', 'm', 'l'] as const).flatMap((size) =>
+        (['neutral', 'accent', 'danger'] as const).flatMap((type) =>
+          [false, true].map((checked) => (
+            <Switch
+              key={`${size}-${type}-${checked}`}
+              size={size}
+              type={type}
+              checked={checked}
+              icon
+              labelStart="Label"
+            >
+              Label
+            </Switch>
+          )),
+        ),
+      )}
+    </div>
   </StrictMode>,
 );

@@ -5,12 +5,12 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/textarea';
 import type { LabTextarea } from '@labpics/ui-core/textarea';
 
 /** SSR-пропы <lab-textarea> (атрибуты/свойства), взяты из класса ядра (LabTextarea). */
-export type TextareaSsrProps = Partial<Pick<LabTextarea, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'placeholder' | 'rows' | 'autoResize' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>>;
+export type TextareaSsrProps = Partial<Pick<LabTextarea, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'placeholder' | 'rows' | 'autoResize' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name' | 'autocomplete' | 'maxLength' | 'minLength'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-textarea> — предрендеренные строки контента. */
 export type TextareaSsrSlots = Record<never, never>;
 
@@ -26,17 +26,22 @@ export function renderTextarea(
       type=${ifDefined(props.type)}
       size=${ifDefined(props.size)}
       label=${ifDefined(props.label)}
-      ?label-hidden=${Boolean(props.labelHidden)}
+      .labelHidden=${props.labelHidden === undefined ? noChange : props.labelHidden}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
       value=${ifDefined(props.value)}
       placeholder=${ifDefined(props.placeholder)}
       rows=${ifDefined(props.rows)}
-      ?auto-resize=${Boolean(props.autoResize)}
-      ?readonly=${Boolean(props.readonly)}
-      ?disabled=${Boolean(props.disabled)}
-      ?required=${Boolean(props.required)}
-      ?invalid=${Boolean(props.invalid)}
+      .autoResize=${props.autoResize === undefined ? noChange : props.autoResize}
+      .readonly=${props.readonly === undefined ? noChange : props.readonly}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
+      .required=${props.required === undefined ? noChange : props.required}
+      .invalid=${props.invalid === undefined ? noChange : props.invalid}
       name=${ifDefined(props.name)}
+      autocomplete=${ifDefined(props.autocomplete)}
+      maxlength=${ifDefined(props.maxLength)}
+      minlength=${ifDefined(props.minLength)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-textarea>`);
 }

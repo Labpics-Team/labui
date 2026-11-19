@@ -5,12 +5,12 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/breadcrumb';
 import type { LabBreadcrumb } from '@labpics/ui-core/breadcrumb';
-import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-breadcrumb>, взятые прямо из класса ядра (LabBreadcrumb). */
-export type BreadcrumbProps = Pick<LabBreadcrumb, 'size' | 'separator' | 'items'>;
+export type BreadcrumbProps = Pick<LabBreadcrumb, 'size' | 'separator' | 'items' | 'maxItems' | 'label' | 'expandLabel'>;
 
 /** <Breadcrumb> — тонкая Solid-обёртка над <lab-breadcrumb>. */
 export const Breadcrumb: LabSolidComponent<BreadcrumbProps, never> = createLabComponent<
@@ -21,6 +21,9 @@ export const Breadcrumb: LabSolidComponent<BreadcrumbProps, never> = createLabCo
     { name: 'size', attr: 'size', kind: 'string' },
     { name: 'separator', attr: 'separator', kind: 'string' },
     { name: 'items', attr: 'items', kind: 'prop' },
+    { name: 'maxItems', attr: 'max-items', kind: 'string' },
+    { name: 'label', attr: 'label', kind: 'string' },
+    { name: 'expandLabel', attr: 'expand-label', kind: 'string' },
   ],
   events: [],
 });

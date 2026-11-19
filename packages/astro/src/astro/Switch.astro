@@ -12,6 +12,7 @@ const dsd = renderSwitch(Astro.props, {
   default: Astro.slots.has('default') ? await Astro.slots.render('default') : undefined,
   iconOff: Astro.slots.has('icon-off') ? await Astro.slots.render('icon-off') : undefined,
   iconOn: Astro.slots.has('icon-on') ? await Astro.slots.render('icon-on') : undefined,
+  labelStart: Astro.slots.has('label-start') ? await Astro.slots.render('label-start') : undefined,
 });
 ---
 <Fragment set:html={dsd} />

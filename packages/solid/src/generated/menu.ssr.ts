@@ -5,12 +5,12 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/menu';
 import type { LabMenu } from '@labpics/ui-core/menu';
 
 /** SSR-пропы <lab-menu> (атрибуты/свойства), взяты из класса ядра (LabMenu). */
-export type MenuSsrProps = Partial<Pick<LabMenu, 'size' | 'placement' | 'disabled' | 'label' | 'items'>>;
+export type MenuSsrProps = Partial<Pick<LabMenu, 'size' | 'placement' | 'disabled' | 'label' | 'items'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-menu> — предрендеренные строки контента. */
 export type MenuSsrSlots = Record<never, never>;
 
@@ -25,8 +25,10 @@ export function renderMenu(
   return renderToString(html`<lab-menu
       size=${ifDefined(props.size)}
       placement=${ifDefined(props.placement)}
-      ?disabled=${Boolean(props.disabled)}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
       label=${ifDefined(props.label)}
-      .items=${props.items}
+      .items=${props.items === undefined ? noChange : props.items}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-menu>`);
 }

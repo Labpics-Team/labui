@@ -33,18 +33,14 @@
  */
 'use client';
 
-import type { MachineModule, PropTypes, SchemaOf } from '@labpics/ui-core';
 import type { LabSelectItem, LabSelectPlacement, LabSelectSize } from '@labpics/ui-core/select';
+import { selectBehavior } from '@labpics/ui-core/select/behavior';
 import * as selectMachine from '@zag-js/select';
-import { type ReactNode, useEffect, useId, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Chip } from './chip.js';
 import { useZag } from './use-zag.js';
-import './select.css';
-
-type SelectSchema = SchemaOf<selectMachine.Service<LabSelectItem>>;
-type SelectApi = selectMachine.Api<PropTypes, LabSelectItem>;
-
-const selectModule: MachineModule<SelectSchema, SelectApi> = selectMachine;
+import '@labpics/ui-core/select.css';
 
 export interface SelectProps {
   /** The options. The machine resolves value/label/disabled through the collection. */
@@ -59,6 +55,15 @@ export interface SelectProps {
   disabled?: boolean;
   /** Native form field name for the hidden `<select>`. */
   name?: string;
+  form?: string;
+  required?: boolean;
+  dir?: 'ltr' | 'rtl';
+  /** Internal Multiselect caption; false retains its accessible name. */
+  showLabel?: boolean;
+  /** Decorative icon before a Dropdown value. */
+  leading?: ReactNode;
+  /** Verb announced by a chip removal button. */
+  removeLabel?: string;
   /** Placeholder shown in the trigger when nothing is selected. */
   placeholder?: string;
   /** Optional control label, wired as the machine's label part (accessible name). */
@@ -80,6 +85,12 @@ export function Select({
   multiple = false,
   disabled = false,
   name,
+  form,
+  required = false,
+  dir,
+  showLabel = true,
+  leading,
+  removeLabel = 'Remove',
   placeholder = 'Select…',
   label,
   value,
@@ -100,16 +111,27 @@ export function Select({
     [items],
   );
 
-  const api = useZag(selectModule, {
-    id: useId(),
+  const hiddenSelect = useRef<HTMLSelectElement>(null);
+  const [, refresh] = useState(0);
+  const id = useId();
+  const api = useZag(selectBehavior, {
+    id,
+    ids: { hiddenSelect: `${id}-native` },
     collection,
     multiple,
     disabled,
     name,
+    form,
+    required,
+    dir,
     value,
     defaultValue,
     positioning: { placement, strategy: 'fixed' },
-    onValueChange: onValueChange ? (details) => onValueChange(details.value) : undefined,
+    onValueChange: (details) => {
+      onValueChange?.(details.value);
+      // Rejected native/autofill requests must restore the accepted DOM selection.
+      refresh((revision) => revision + 1);
+    },
     onOpenChange: onOpenChange ? (details) => onOpenChange(details.open) : undefined,
   });
 
@@ -117,6 +139,21 @@ export function Select({
   // emit nothing for the floating listbox.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // The collection may change without a value-change effect. Always project the
+  // accepted array, including [] and [''], instead of assigning it to scalar value.
+  useEffect(() => {
+    const select = hiddenSelect.current;
+    if (!select) return;
+    const selected = new Set(api.value);
+    let hasSelection = false;
+    for (const option of select.options) {
+      option.selected = selected.has(option.value);
+      if (value !== undefined) option.defaultSelected = option.selected;
+      hasSelection ||= option.selected;
+    }
+    if (!hasSelection) select.selectedIndex = -1;
+  });
 
   const listbox = (
     <div {...api.getPositionerProps()} className="lab-select-positioner">
@@ -143,26 +180,81 @@ export function Select({
     </div>
   );
 
+  const caption =
+    label != null ? (
+      <span
+        {...api.getLabelProps()}
+        className={`lab-select-label ${multiple && showLabel ? '' : 'lab-select-label-hidden'}`}
+      >
+        {label}
+      </span>
+    ) : null;
+  const triggerProps = api.getTriggerProps();
   return (
-    <div {...api.getRootProps()} className="lab-select-root" data-size={size}>
-      {label != null && (
-        <span {...api.getLabelProps()} className="lab-select-label">
-          {label}
-        </span>
-      )}
+    <div
+      {...api.getRootProps()}
+      className="lab-select-root"
+      data-lab-select=""
+      data-size={size}
+      data-multiple={multiple || undefined}
+      data-disabled={api.disabled || undefined}
+      data-label-visible={(label != null && multiple && showLabel) || undefined}
+    >
+      {!multiple && caption}
       <div {...api.getControlProps()} className="lab-select-control">
-        <button {...api.getTriggerProps()} className="lab-select-trigger">
-          <span {...api.getValueTextProps()} className="lab-select-value-text">
-            {api.valueAsString || placeholder}
+        {multiple && caption}
+        <button
+          {...triggerProps}
+          className="lab-select-trigger"
+          aria-label={label == null ? placeholder : undefined}
+        >
+          <span className="lab-select-value">
+            {!multiple && leading != null && (
+              <span className="lab-select-leading" aria-hidden="true">
+                {leading}
+              </span>
+            )}
+            <span
+              {...api.getValueTextProps()}
+              className="lab-select-value-text"
+              hidden={multiple && api.value.length > 0}
+            >
+              {api.valueAsString || placeholder}
+            </span>
           </span>
-          <span {...api.getIndicatorProps()} className="lab-select-indicator" aria-hidden="true">
-            ▾
-          </span>
+          <span {...api.getIndicatorProps()} className="lab-select-indicator" aria-hidden="true" />
         </button>
+        {multiple && api.value.length > 0 && (
+          <div className="lab-select-chips">
+            {api.value.map((selected) => {
+              const item = items.find((item) => item.value === selected);
+              const text = item?.label ?? selected;
+              return (
+                <Chip
+                  key={selected}
+                  mode="remove"
+                  size="s"
+                  sharp
+                  disabled={api.disabled || item?.disabled}
+                  aria-label={`${removeLabel} ${text}`}
+                  onRemove={() => {
+                    api.setValue(api.value.filter((entry) => entry !== selected));
+                    api.focus();
+                  }}
+                >
+                  {text}
+                </Chip>
+              );
+            })}
+          </div>
+        )}
+        {multiple && (
+          <fieldset className="lab-select-outline" aria-hidden="true">
+            <legend>{label}</legend>
+          </fieldset>
+        )}
       </div>
-      {/* The hidden native <select> rides in the root for form submission; its
-          <option> children mirror the items so the chosen value really submits. */}
-      <select {...api.getHiddenSelectProps()} className="lab-select-hidden">
+      <select {...api.getHiddenSelectProps()} ref={hiddenSelect} className="lab-select-hidden">
         {items.map((item) => (
           <option key={item.value} value={item.value} disabled={item.disabled}>
             {item.label}

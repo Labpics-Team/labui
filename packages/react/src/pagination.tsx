@@ -1,119 +1,262 @@
-/**
- * <Pagination> — the native-React twin of the Lit `<lab-pagination>` (ADR-0001).
- *
- * Same axes, same `@zag-js/pagination` machine through the SAME Behaviors seam —
- * here via `useZag` instead of the Lit `ZagController`. No Lit in this path. The
- * machine owns the page value, derives the page range (with ellipses) from
- * `count` + `pageSize`, wires `aria-current` and the prev/next disabled states;
- * the component only spreads the machine's prop-getters onto native `<button>`s
- * and paints with the SAME --lab-* roles, so parity is CSS, not a second
- * behaviour. `boundaryCount` is intentionally NOT exposed — the machine fixes it
- * at 1, and faking a knob would be a misleading stop-gap.
- *
- * Client Component: pagination is interactive (page navigation). It renders as a
- * leaf under a Server Component shell — never a `'use client'` page (dive-next P1).
- *
- * Axis types come from @labpics/ui-core (type-only — no Lit runtime), so the Lit
- * and React APIs share ONE source of truth and cannot drift.
- */
 'use client';
 
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
-import type { LabPaginationSize } from '@labpics/ui-core/pagination';
+import {
+  type LabPaginationVariant,
+  compactPages,
+  paginationCount,
+  paginationHref,
+  paginationKeyPage,
+  paginationPage,
+  paginationPageSize,
+  paginationProgress,
+  paginationSiblings,
+} from '@labpics/ui-core/pagination/contract';
+import { mountMaterialRuntime } from '@labpics/ui-materials';
 import * as paginationMachine from '@zag-js/pagination';
-import { type ReactNode, useId } from 'react';
+import {
+  Component,
+  Fragment,
+  type HTMLAttributes,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { useZag } from './use-zag.js';
-import './pagination.css';
+import '@labpics/ui-core/pagination.css';
+import '@labpics/ui-materials/material.css';
 
-type PaginationSchema = SchemaOf<paginationMachine.Service>;
-type PaginationApi = paginationMachine.Api;
-
-const paginationModule: MachineModule<PaginationSchema, PaginationApi> = paginationMachine;
-
-export interface PaginationProps {
-  /** Total number of data items the pages are derived from. */
+const module: MachineModule<
+  SchemaOf<paginationMachine.Service>,
+  paginationMachine.Api
+> = paginationMachine;
+export interface PaginationProps
+  extends Omit<HTMLAttributes<HTMLElement>, 'onChange' | 'defaultValue'> {
   count: number;
-  /** Items per page — `count / pageSize` gives the page total. */
   pageSize?: number;
-  /** Controlled current page — when set, the consumer owns it. */
   page?: number;
-  /** Uncontrolled initial page — read once by the machine at init. */
   defaultPage?: number;
-  /** Pages shown either side of the current page. */
   siblingCount?: number;
-  /** Control density. */
-  size?: LabPaginationSize;
-  /** Fires when the machine changes the page (machine is source of truth). */
+  variant?: LabPaginationVariant;
+  disabled?: boolean;
+  ambient?: boolean;
+  /** Compact progress is supplied by the application's media clock, 0…1. */
+  progress?: number;
+  /** Native destination template with {page} and optional {pageSize}. */
+  href?: string;
+  label?: string;
+  previousLabel?: string;
+  nextLabel?: string;
+  pageLabel?: string;
   onPageChange?: (page: number) => void;
+}
+
+interface NavigationProps extends HTMLAttributes<HTMLElement> {
+  rootRef: RefObject<HTMLElement>;
+  selectedPage: number;
+  followPageFocus: boolean;
+}
+
+/** Read focus in React's pre-mutation phase, before a page window removes it. */
+class PaginationNavigation extends Component<NavigationProps, object, boolean> {
+  override getSnapshotBeforeUpdate(previous: NavigationProps): boolean {
+    const { rootRef, selectedPage, followPageFocus } = this.props;
+    const nav = rootRef.current;
+    return !!(
+      followPageFocus &&
+      previous.selectedPage !== selectedPage &&
+      nav?.matches(':focus-within')
+    );
+  }
+  override componentDidUpdate(_previous: NavigationProps, _state: object, focused: boolean): void {
+    if (focused)
+      this.props.rootRef.current
+        ?.querySelector<HTMLElement>(`[data-page='${this.props.selectedPage}']`)
+        ?.focus();
+  }
+  override render(): ReactNode {
+    const { rootRef, selectedPage: _page, followPageFocus: _follow, ...attributes } = this.props;
+    return <nav {...attributes} ref={rootRef} />;
+  }
 }
 
 export function Pagination({
   count,
   pageSize = 10,
   page,
-  defaultPage,
+  defaultPage = 1,
   siblingCount = 1,
-  size = 'm',
+  variant = 'numbered',
+  disabled = false,
+  ambient = false,
+  progress,
+  href = '',
+  label = 'Pagination',
+  previousLabel = 'Previous page',
+  nextLabel = 'Next page',
+  pageLabel = 'Page {page}',
   onPageChange,
+  ...rest
 }: PaginationProps): ReactNode {
-  const api = useZag(paginationModule, {
+  const total = Math.ceil(paginationCount(count) / paginationPageSize(pageSize));
+  const [internal, setInternal] = useState(() => paginationPage(defaultPage, total));
+  const selected = paginationPage(page ?? internal, total);
+  const root = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (page === undefined) setInternal((value) => paginationPage(value, total));
+  }, [page, total]);
+  useEffect(() => {
+    if (variant === 'compact' && ambient && root.current) return mountMaterialRuntime(root.current);
+  }, [variant, ambient]);
+  const api = useZag(module, {
     id: useId(),
-    count,
-    pageSize,
-    page,
-    defaultPage,
-    siblingCount,
-    onPageChange: onPageChange ? (details) => onPageChange(details.page) : undefined,
+    count: paginationCount(count),
+    pageSize: paginationPageSize(pageSize),
+    page: selected,
+    siblingCount: paginationSiblings(siblingCount),
+    onPageChange: (details) => {
+      if (disabled) return;
+      if (page === undefined) setInternal(details.page);
+      onPageChange?.(details.page);
+    },
   });
-
-  let ellipsisIndex = 0;
-  return (
-    <nav {...api.getRootProps()} data-lab-pagination="" data-size={size}>
-      <button
-        {...api.getPrevTriggerProps()}
-        className="lab-pagination-trigger"
-        // Capitalized accessible name, kept IDENTICAL to the Lit twin
-        // (PREV_LABEL in lab-pagination.ts). It MUST stay after the spread: Zag's
-        // getPrevTriggerProps emits a lowercase 'previous page' aria-label, and
-        // last-wins JSX lets this override it. Reordering would resurrect the drift.
-        aria-label="Previous page"
+  const compact = variant === 'compact';
+  const pages = compact
+    ? compactPages(selected, total).map((value) => ({ type: 'page' as const, value }))
+    : api.pages;
+  const request = (event: MouseEvent, next: number, unavailable: boolean) => {
+    if (unavailable) {
+      event.preventDefault();
+      return;
+    }
+    if (
+      !event.defaultPrevented &&
+      event.button === 0 &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      !event.shiftKey
+    )
+      api.setPage(next);
+  };
+  const keyPage = (event: KeyboardEvent<HTMLElement>) => {
+    rest.onKeyDown?.(event);
+    if (
+      event.defaultPrevented ||
+      !compact ||
+      href ||
+      disabled ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey
+    )
+      return;
+    const next = paginationKeyPage(
+      event.key,
+      selected,
+      total,
+      getComputedStyle(event.currentTarget).direction === 'rtl',
+    );
+    if (next === undefined) return;
+    event.preventDefault();
+    api.setPage(next);
+  };
+  const control = (value: number, kind: 'page' | 'prev' | 'next', receding = false) => {
+    const current = kind === 'page' && value === selected;
+    const unavailable = disabled || value < 1 || value > total;
+    const ratio = current && compact ? paginationProgress(progress) : undefined;
+    const props = {
+      className: `lab-pagination-control ${kind === 'page' ? 'lab-pagination-item' : `lab-pagination-trigger lab-pagination-${kind}`}`,
+      'aria-label':
+        kind === 'prev'
+          ? previousLabel
+          : kind === 'next'
+            ? nextLabel
+            : pageLabel.replaceAll('{page}', String(value)),
+      'aria-current': current ? ('page' as const) : undefined,
+      'data-page': kind === 'page' ? value : undefined,
+      'data-receding': receding ? '' : undefined,
+      'data-progress': ratio !== undefined ? '' : undefined,
+      tabIndex: unavailable || (compact && !href && !current) ? -1 : 0,
+      onClick: (event: MouseEvent) => request(event, value, unavailable),
+    };
+    const content =
+      kind !== 'page' ? (
+        <span className="lab-pagination-chevron" aria-hidden="true" />
+      ) : compact ? (
+        <span className="lab-pagination-dot" aria-hidden="true">
+          {ratio !== undefined && (
+            <span className="lab-pagination-progress" style={{ inlineSize: `${ratio * 100}%` }} />
+          )}
+        </span>
+      ) : (
+        value
+      );
+    return href ? (
+      <a
+        {...props}
+        href={unavailable ? undefined : paginationHref(href, value, paginationPageSize(pageSize))}
+        aria-disabled={unavailable || undefined}
       >
-        ‹
+        {content}
+      </a>
+    ) : (
+      <button {...props} type="button" disabled={unavailable}>
+        {content}
       </button>
-      {api.pages.map((entry) => {
-        if (entry.type === 'page') {
-          return (
-            <button
-              key={`page-${entry.value}`}
-              {...api.getItemProps({ type: 'page', value: entry.value })}
-              className="lab-pagination-item"
-            >
-              {entry.value}
-            </button>
-          );
-        }
-        const index = ellipsisIndex;
-        ellipsisIndex += 1;
-        return (
+    );
+  };
+  return (
+    <PaginationNavigation
+      {...rest}
+      rootRef={root}
+      selectedPage={selected}
+      followPageFocus={compact && !href && !disabled}
+      data-lab-pagination=""
+      data-variant={compact ? 'compact' : 'numbered'}
+      data-ambient={compact && ambient ? '' : undefined}
+      data-disabled={disabled ? '' : undefined}
+      aria-label={label}
+      onKeyDown={keyPage}
+    >
+      {compact && ambient && (
+        <span
+          className="lab-pagination-surface lab-material lab-material--base"
+          aria-hidden="true"
+        />
+      )}
+      {!compact && control(selected - 1, 'prev')}
+      {pages.map((entry, index) =>
+        entry.type === 'page' ? (
+          <Fragment key={`page-${entry.value}`}>
+            {control(
+              entry.value,
+              'page',
+              compact &&
+                ((index === 0 && entry.value > 1) ||
+                  (index === pages.length - 1 && entry.value < total)),
+            )}
+          </Fragment>
+        ) : (
           <span
-            key={`ellipsis-${index}`}
-            {...api.getEllipsisProps({ index })}
             className="lab-pagination-ellipsis"
+            key={`ellipsis-${index === 1 ? 'start' : 'end'}`}
             aria-hidden="true"
           >
-            …
+            <span className="lab-pagination-dots">
+              <i />
+              <i />
+              <i />
+            </span>
           </span>
-        );
-      })}
-      <button
-        {...api.getNextTriggerProps()}
-        className="lab-pagination-trigger"
-        // Capitalized accessible name, kept IDENTICAL to the Lit twin (NEXT_LABEL).
-        // Must stay after the spread — see the prev trigger note above.
-        aria-label="Next page"
-      >
-        ›
-      </button>
-    </nav>
+        ),
+      )}
+      {!compact && control(selected + 1, 'next')}
+    </PaginationNavigation>
   );
 }

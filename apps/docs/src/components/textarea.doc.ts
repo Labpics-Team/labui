@@ -3,8 +3,7 @@
  * shares Input's form-field a11y wiring (the same shared `field-a11y` helper: a real
  * <label for>, helper via aria-describedby, error via aria-invalid + aria-errormessage
  * + role="alert" only when invalid) and adds the multi-line extras: rows and an
- * honest auto-resize (a height that tracks scrollHeight — local view state, not a
- * machine).
+ * content-based sizing through the browser, with a shared fallback.
  */
 import '@labpics/ui-core/textarea';
 import type { ComponentDoc } from '../template/component-doc.js';
@@ -31,7 +30,7 @@ export const textareaDoc: ComponentDoc = {
   tag: 'lab-textarea',
   title: 'Textarea',
   summary:
-    'A multi-line text field: a native <textarea> wired to a label, an optional helper, and an optional error via the same genuine ARIA as Input, plus rows and an optional honest auto-resize. Presentational (no machine — the native control owns value/caret/editing); the a11y wiring is the shared field-a11y helper, identical on Lit and React.',
+    'A multiline text field with a transparent outline and a persistent label. Supports forms, validation, reset and optional content-based resizing.',
   status: { kind: 'stable' },
 
   statesMatrix: {
@@ -78,7 +77,7 @@ export const textareaDoc: ComponentDoc = {
       index: 2,
       name: 'Control (textarea)',
       description:
-        'The native <textarea>, vertically resizable by default. Resting border --lab-border-base; hover --lab-border-strong; sentiment re-points to --lab-border-{danger|warning|success}. Text --lab-label-primary over --lab-bg-primary; placeholder --lab-label-tertiary.',
+        'The native <textarea>, vertically resizable by default. The outline leaves a transparent gap for the label; state changes its border. Text uses --lab-label-primary and placeholder --lab-label-tertiary.',
     },
     {
       index: 3,
@@ -96,7 +95,7 @@ export const textareaDoc: ComponentDoc = {
 
   meaning: {
     purpose:
-      'A textarea collects multiple lines of free text inside a form. It shares Input’s a11y contract and adds rows + an honest auto-resize that tracks scrollHeight — a height computed from content, never a faked machine.',
+      'A textarea collects multiple lines of free text inside a form. Its visible label stays available while editing. Choose rows for the initial area or auto-resize to fit the content.',
     dos: [
       'Always pass a label; use label-hidden only when an adjacent visual label is impossible.',
       'Set invalid together with an error message — the error is announced and referenced only when both are present.',
@@ -178,7 +177,7 @@ export const textareaDoc: ComponentDoc = {
         name: 'auto-resize',
         type: 'boolean',
         default: 'false',
-        description: 'Grow the control to fit its content (local view state, tracks scrollHeight).',
+        description: 'Grow and shrink with content, keeping rows as the minimum.',
       },
       {
         name: 'required',
@@ -205,6 +204,17 @@ export const textareaDoc: ComponentDoc = {
         description: 'Non-interactive and dimmed.',
       },
       { name: 'name', type: 'string', description: 'Native form field name.' },
+      {
+        name: 'minlength',
+        type: 'number',
+        description: 'Minimum length checked after user input.',
+      },
+      {
+        name: 'maxlength',
+        type: 'number',
+        description: 'Maximum length accepted by native editing.',
+      },
+      { name: 'autocomplete', type: 'string', description: 'Native autocomplete hint.' },
     ],
     events: [
       {

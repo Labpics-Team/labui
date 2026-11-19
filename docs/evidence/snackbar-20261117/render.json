@@ -1,0 +1,138 @@
+{
+  "browser": "140.0.7339.186",
+  "errors": [],
+  "measurements": [
+    {
+      "theme": "light",
+      "material": "solid",
+      "renderer": "lit",
+      "rect": {
+        "x": 32,
+        "y": 237.5625,
+        "width": 347.734375,
+        "height": 52
+      }
+    },
+    {
+      "theme": "light",
+      "material": "solid",
+      "renderer": "react",
+      "rect": {
+        "x": 32,
+        "y": 380.375,
+        "width": 347.734375,
+        "height": 52
+      }
+    },
+    {
+      "theme": "light",
+      "material": "acrylic",
+      "renderer": "lit",
+      "rect": {
+        "x": 32,
+        "y": 237.5625,
+        "width": 347.734375,
+        "height": 52
+      }
+    },
+    {
+      "theme": "light",
+      "material": "acrylic",
+      "renderer": "react",
+      "rect": {
+        "x": 32,
+        "y": 380.375,
+        "width": 347.734375,
+        "height": 52
+      }
+    },
+    {
+      "theme": "light",
+      "material": "glass",
+      "renderer": "lit",
+      "rect": {
+        "x": 32,
+        "y": 237.5625,
+        "width": 347.734375,
+        "height": 52
+      }
+    },
+    {
+      "theme": "light",
+      "material": "glass",
+      "renderer": "react",
+      "rect": {
+        "x": 32,
+        "y": 380.375,
+        "width": 347.734375,
+        "height": 52
+      }
+    },
+    {
+      "theme": "dark",
+      "material": "solid",
+      "renderer": "lit",
+      "rect": {
+        "x": 32,
+        "y": 237.5625,
+        "width": 347.734375,
+        "height": 52
+      }
+    },
+    {
+      "theme": "dark",
+      "material": "solid",
+      "renderer": "react",
+      "rect": {
+        "x": 32,
+        "y": 380.375,
+        "width": 347.734375,
+        "height": 52
+      }
+    },
+    {
+      "theme": "dark",
+      "material": "acrylic",
+      "renderer": "lit",
+      "rect": {
+        "x": 32,
+        "y": 237.5625,
+        "width": 347.734375,
+        "height": 52
+      }
+    },
+    {
+      "theme": "dark",
+      "material": "acrylic",
+      "renderer": "react",
+      "rect": {
+        "x": 32,
+        "y": 380.375,
+        "width": 347.734375,
+        "height": 52
+      }
+    },
+    {
+      "theme": "dark",
+      "material": "glass",
+      "renderer": "lit",
+      "rect": {
+        "x": 32,
+        "y": 237.5625,
+        "width": 347.734375,
+        "height": 52
+      }
+    },
+    {
+      "theme": "dark",
+      "material": "glass",
+      "renderer": "react",
+      "rect": {
+        "x": 32,
+        "y": 380.375,
+        "width": 347.734375,
+        "height": 52
+      }
+    }
+  ]
+}

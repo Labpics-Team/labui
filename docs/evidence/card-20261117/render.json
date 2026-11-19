@@ -1,0 +1,138 @@
+{
+  "browser": "140.0.7339.186",
+  "errors": [],
+  "measurements": [
+    {
+      "theme": "light",
+      "material": "solid",
+      "renderer": "lit",
+      "rect": {
+        "x": 32,
+        "y": 265,
+        "width": 400,
+        "height": 294
+      }
+    },
+    {
+      "theme": "light",
+      "material": "solid",
+      "renderer": "react",
+      "rect": {
+        "x": 32,
+        "y": 706,
+        "width": 400,
+        "height": 294
+      }
+    },
+    {
+      "theme": "light",
+      "material": "acrylic",
+      "renderer": "lit",
+      "rect": {
+        "x": 32,
+        "y": 218,
+        "width": 400,
+        "height": 294
+      }
+    },
+    {
+      "theme": "light",
+      "material": "acrylic",
+      "renderer": "react",
+      "rect": {
+        "x": 32,
+        "y": 706,
+        "width": 400,
+        "height": 294
+      }
+    },
+    {
+      "theme": "light",
+      "material": "glass",
+      "renderer": "lit",
+      "rect": {
+        "x": 32,
+        "y": 218,
+        "width": 400,
+        "height": 294
+      }
+    },
+    {
+      "theme": "light",
+      "material": "glass",
+      "renderer": "react",
+      "rect": {
+        "x": 32,
+        "y": 706,
+        "width": 400,
+        "height": 294
+      }
+    },
+    {
+      "theme": "dark",
+      "material": "solid",
+      "renderer": "lit",
+      "rect": {
+        "x": 32,
+        "y": 218,
+        "width": 400,
+        "height": 294
+      }
+    },
+    {
+      "theme": "dark",
+      "material": "solid",
+      "renderer": "react",
+      "rect": {
+        "x": 32,
+        "y": 706,
+        "width": 400,
+        "height": 294
+      }
+    },
+    {
+      "theme": "dark",
+      "material": "acrylic",
+      "renderer": "lit",
+      "rect": {
+        "x": 32,
+        "y": 218,
+        "width": 400,
+        "height": 294
+      }
+    },
+    {
+      "theme": "dark",
+      "material": "acrylic",
+      "renderer": "react",
+      "rect": {
+        "x": 32,
+        "y": 706,
+        "width": 400,
+        "height": 294
+      }
+    },
+    {
+      "theme": "dark",
+      "material": "glass",
+      "renderer": "lit",
+      "rect": {
+        "x": 32,
+        "y": 218,
+        "width": 400,
+        "height": 294
+      }
+    },
+    {
+      "theme": "dark",
+      "material": "glass",
+      "renderer": "react",
+      "rect": {
+        "x": 32,
+        "y": 706,
+        "width": 400,
+        "height": 294
+      }
+    }
+  ]
+}

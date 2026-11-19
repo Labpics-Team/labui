@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/dialog';
 import type { LabDialog } from '@labpics/ui-core/dialog';
-import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-dialog>, взятые прямо из класса ядра (LabDialog). */
 export type DialogProps = Pick<LabDialog, 'size' | 'modal' | 'closable' | 'heading' | 'description'>;

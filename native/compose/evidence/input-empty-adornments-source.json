@@ -1,0 +1,67 @@
+{
+  "publicSource": "https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1",
+  "observedAt": "2026-11-17",
+  "readOnly": true,
+  "nodes": [
+    {
+      "id": "6044:2115",
+      "name": "State=Default, Size=Small, Show Left-icon=false",
+      "width": 16,
+      "height": 36,
+      "layoutSizingHorizontal": "FIXED",
+      "paddingLeft": 12,
+      "paddingRight": 0,
+      "children": []
+    },
+    {
+      "id": "6044:2109",
+      "name": "State=Default, Size=Medium, Show Left-icon=false",
+      "width": 16,
+      "height": 48,
+      "layoutSizingHorizontal": "FIXED",
+      "paddingLeft": 12,
+      "paddingRight": 0,
+      "children": []
+    },
+    {
+      "id": "6044:2103",
+      "name": "State=Default, Size=Large, Show Left-icon=false",
+      "width": 16,
+      "height": 56,
+      "layoutSizingHorizontal": "FIXED",
+      "paddingLeft": 12,
+      "paddingRight": 0,
+      "children": []
+    },
+    {
+      "id": "6045:8130",
+      "name": "State=Default, Size=Small, Show Right-icon=false",
+      "width": 16,
+      "height": 36,
+      "layoutSizingHorizontal": "FIXED",
+      "paddingLeft": 12,
+      "paddingRight": 0,
+      "children": []
+    },
+    {
+      "id": "6045:8136",
+      "name": "State=Default, Size=Medium, Show Right-icon=false",
+      "width": 16,
+      "height": 48,
+      "layoutSizingHorizontal": "FIXED",
+      "paddingLeft": 12,
+      "paddingRight": 0,
+      "children": []
+    },
+    {
+      "id": "6045:8143",
+      "name": "State=Default, Size=Large, Show Right-icon=false",
+      "width": 16,
+      "height": 56,
+      "layoutSizingHorizontal": "FIXED",
+      "paddingLeft": 12,
+      "paddingRight": 0,
+      "children": []
+    }
+  ]
+}

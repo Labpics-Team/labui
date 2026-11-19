@@ -1,0 +1,58 @@
+﻿<!doctype html>
+<html class="lab-scope" lang="ru" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Loader и Progress — проверка авторских состояний</title>
+    <style>
+      body { margin: 32px; background: var(--lab-bg-primary); color: var(--lab-label-primary); font-family: var(--lab-font-family); }
+      main { display: grid; gap: 32px; }
+      .line { display: flex; gap: 24px; align-items: center; }
+      .linear { display: grid; gap: 16px; max-width: 628px; }
+      h2 { font-size: 16px; font-weight: 500; }
+      .circles { display: grid; grid-template-columns: repeat(5, max-content); gap: 24px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section id="lit">
+        <h2>Loader · Lit</h2>
+        <div class="line" id="loaders">
+          <lab-loader size="m"></lab-loader>
+          <lab-loader size="l"></lab-loader>
+          <lab-loader value="75" size="m"></lab-loader>
+          <lab-loader value="75" size="l"></lab-loader>
+        </div>
+        <h2>Linear · Lit</h2>
+        <div class="linear">
+          <lab-progress value="0"></lab-progress>
+          <lab-progress value="25"></lab-progress>
+          <lab-progress value="50"></lab-progress>
+          <lab-progress value="75"></lab-progress>
+          <lab-progress value="100"></lab-progress>
+        </div>
+        <h2>Circular · Lit</h2>
+        <div class="circles">
+          <lab-progress variant="circular" value="0"></lab-progress>
+          <lab-progress variant="circular" value="25"></lab-progress>
+          <lab-progress variant="circular" value="50"></lab-progress>
+          <lab-progress variant="circular" value="75"></lab-progress>
+          <lab-progress variant="circular" value="100"></lab-progress>
+          <lab-progress variant="circular" value="0" show-value-text></lab-progress>
+          <lab-progress variant="circular" value="25" show-value-text></lab-progress>
+          <lab-progress variant="circular" value="50" show-value-text></lab-progress>
+          <lab-progress variant="circular" value="75" show-value-text></lab-progress>
+          <lab-progress variant="circular" value="100" show-value-text></lab-progress>
+        </div>
+      </section>
+      <section id="react"></section>
+      <section id="changes">
+        <lab-progress data-testid="lit-change" label="Изменение" variant="circular" value="25" show-value-text></lab-progress>
+        <lab-loader data-testid="lit-loader-change" label="Изменение загрузки" value="25"></lab-loader>
+      </section>
+      <section data-testid="ssr-progress"><!-- @@PROGRESS_SSR@@ --></section>
+      <section data-testid="ssr-loader"><!-- @@LOADER_SSR@@ --></section>
+    </main>
+    <script type="module" src="./progress-author.tsx"></script>
+  </body>
+</html>

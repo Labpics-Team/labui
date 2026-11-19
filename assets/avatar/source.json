@@ -1,0 +1,52 @@
+{
+  "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+  "componentSet": "6107:10719",
+  "version": "2423213750570316842",
+  "exportedAt": "2026-11-18",
+  "sourcePixels": 512,
+  "outputPixels": 256,
+  "nativeDensities": { "": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi": 4 },
+  "layers": {
+    "image": {
+      "node": "7719:58822",
+      "file": "source/image.png",
+      "sha256": "20061de6f91eefc889e3a6d13ed86a14de338cefd544cda7a6d02e76c2fdc6ea"
+    },
+    "texture": {
+      "node": "7719:58823",
+      "file": "source/texture.png",
+      "sha256": "459651bb4accceed2b0719a87c58bc8136e590bd7515aea802adacd248b6cb4f"
+    }
+  },
+  "textureDark": {
+    "variable": "VariableID:7651:353",
+    "normal": [16, 16, 18],
+    "more": [0, 0, 0]
+  },
+  "modes": {
+    "light-normal": {
+      "appearance": "light",
+      "contrast": "normal",
+      "sourceMode": "7644:0",
+      "selector": ":root, [data-theme=\"light\"]"
+    },
+    "dark-normal": {
+      "appearance": "dark",
+      "contrast": "normal",
+      "sourceMode": "7644:2",
+      "selector": "[data-theme=\"dark\"]"
+    },
+    "light-more": {
+      "appearance": "light",
+      "contrast": "more",
+      "sourceMode": "7644:3",
+      "selector": ":root[data-contrast=\"more\"], [data-theme=\"light\"][data-contrast=\"more\"]"
+    },
+    "dark-more": {
+      "appearance": "dark",
+      "contrast": "more",
+      "sourceMode": "7644:4",
+      "selector": "[data-theme=\"dark\"][data-contrast=\"more\"]"
+    }
+  }
+}

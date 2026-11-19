@@ -1,0 +1,19 @@
+/* Top layer сохраняет CSS scope панели и не зависит от stacking context host. */
+.lab-dialog-portal-plane {
+  position: fixed;
+  inset: 0;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  overflow: visible;
+  pointer-events: none;
+}
+.lab-dialog-portal-plane::backdrop {
+  background: transparent;
+}

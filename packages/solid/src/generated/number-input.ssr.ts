@@ -5,12 +5,12 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/number-input';
 import type { LabNumberInput } from '@labpics/ui-core/number-input';
 
 /** SSR-пропы <lab-number-input> (атрибуты/свойства), взяты из класса ядра (LabNumberInput). */
-export type NumberInputSsrProps = Partial<Pick<LabNumberInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'placeholder' | 'min' | 'max' | 'step' | 'scrubber' | 'allowMouseWheel' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>>;
+export type NumberInputSsrProps = Partial<Pick<LabNumberInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'placeholder' | 'min' | 'max' | 'step' | 'scrubber' | 'allowMouseWheel' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-number-input> — предрендеренные строки контента. */
 export type NumberInputSsrSlots = Record<never, never>;
 
@@ -26,7 +26,7 @@ export function renderNumberInput(
       type=${ifDefined(props.type)}
       size=${ifDefined(props.size)}
       label=${ifDefined(props.label)}
-      ?label-hidden=${Boolean(props.labelHidden)}
+      .labelHidden=${props.labelHidden === undefined ? noChange : props.labelHidden}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
       value=${ifDefined(props.value)}
@@ -35,12 +35,14 @@ export function renderNumberInput(
       min=${ifDefined(props.min)}
       max=${ifDefined(props.max)}
       step=${ifDefined(props.step)}
-      ?scrubber=${Boolean(props.scrubber)}
-      ?allow-mouse-wheel=${Boolean(props.allowMouseWheel)}
-      ?readonly=${Boolean(props.readonly)}
-      ?disabled=${Boolean(props.disabled)}
-      ?required=${Boolean(props.required)}
-      ?invalid=${Boolean(props.invalid)}
+      .scrubber=${props.scrubber === undefined ? noChange : props.scrubber}
+      .allowMouseWheel=${props.allowMouseWheel === undefined ? noChange : props.allowMouseWheel}
+      .readonly=${props.readonly === undefined ? noChange : props.readonly}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
+      .required=${props.required === undefined ? noChange : props.required}
+      .invalid=${props.invalid === undefined ? noChange : props.invalid}
       name=${ifDefined(props.name)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-number-input>`);
 }

@@ -4,10 +4,11 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/slider';
   import type { LabSlider } from '@labpics/ui-core/slider';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-slider> — типы взяты прямо из класса ядра (LabSlider). */
   interface Props {
@@ -31,10 +32,11 @@
     onValueChange?: (event: CustomEvent) => void;
     onValueChangeEnd?: (event: CustomEvent) => void;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { size, orientation, label, labelHidden, helper, error, value, defaultValue, min, max, step, marks, showValue, readonly, disabled, invalid, name, onValueChange, onValueChangeEnd, children, ...rest }: Props = $props();
+  let { size, orientation, label, labelHidden, helper, error, value, defaultValue, min, max, step, marks, showValue, readonly, disabled, invalid, name, onValueChange, onValueChangeEnd, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
@@ -56,13 +58,19 @@
     { name: 'name', attr: 'name', kind: 'string' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-slider', {
+    specs, props: { size, orientation, label, labelHidden, helper, error, value, defaultValue, min, max, step, marks, showValue, readonly, disabled, invalid, name }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
+
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { size, orientation, label, labelHidden, helper, error, value, defaultValue, min, max, step, marks, showValue, readonly, disabled, invalid, name });
-  });
   $effect(() => forwardEvents(el, { 'value-change': onValueChange, 'value-change-end': onValueChangeEnd }));
 </script>
 
-<lab-slider bind:this={el} {...rest}>
+<lab-slider bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, orientation, label, labelHidden, helper, error, value, defaultValue, min, max, step, marks, showValue, readonly, disabled, invalid, name } } }}>
+  {@html server?.shadowHtml ?? ''}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-slider>

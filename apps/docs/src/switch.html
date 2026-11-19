@@ -1,23 +1,18 @@
 <!doctype html>
-<html class="lab-scope" lang="en" data-theme="dark" data-material="ambient">
+<html class="lab-scope" lang="ru" data-theme="dark" data-material="ambient">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LabUI — Switch parity (Lit ↔ React)</title>
     <link rel="stylesheet" href="./button-demo.css" />
+    <style>main { min-width: 0; } .specimens > span { max-width: 100%; } [data-testid="react-matrix"] { display: grid; grid-template-columns: repeat(3, max-content); gap: 1.5rem; } @media(max-width: 600px) { body:has([data-testid="switch-title"]) { padding: 1rem; } .renderer[data-testid] { padding: .5rem; } h1 { font-size: 1.5rem; overflow-wrap: anywhere; } [data-testid="react-matrix"] { grid-template-columns: 1fr; } }</style>
   </head>
   <body>
     <main>
       <h1 data-testid="switch-title">
         Switch parity — <code>&lt;lab-switch&gt;</code> (Lit) ↔ <code>&lt;Switch&gt;</code> (React)
       </h1>
-      <p>
-        Two renderers, one <code>@zag-js/switch</code> machine through the same
-        seam. The machine owns checked-state, keyboard, focus, and
-        <code>aria-checked</code>; both renderers paint with the same semantic
-        <code>--lab-*</code> roles. This page mounts both so the Playwright suite
-        can assert machine behaviour and visual parity on each.
-      </p>
+      <p>Авторский Switch: нативный ввод, общая геометрия и движение Lit / React.</p>
 
       <div class="row">
         <label for="theme-select">Theme</label>
@@ -37,11 +32,13 @@
           <lab-switch data-testid="lit-danger-on" type="danger" checked>Airplane</lab-switch>
           <lab-switch data-testid="lit-disabled" type="accent" disabled>Off</lab-switch>
           <!-- Icon-only specimen: no visible label, named only via aria-label. -->
-          <lab-switch data-testid="lit-icon-only" type="accent" aria-label="Mute">
-            <span slot="icon-on" aria-hidden="true">🔔</span>
-            <span slot="icon-off" aria-hidden="true">🔕</span>
+          <lab-switch data-testid="lit-icon-only" type="accent" icon aria-label="Mute">
+
           </lab-switch>
         </div>
+        <form data-testid="lit-form"><lab-switch name="alerts" value="yes" required default-checked>Уведомления</lab-switch><button type="reset">Сбросить</button><fieldset disabled><lab-switch name="disabled" checked>Недоступно</lab-switch></fieldset></form>
+        <lab-switch data-testid="lit-controlled" controlled>Закреплённое значение</lab-switch>
+        <lab-switch data-testid="lit-long" size="l" icon><span slot="label-start">Включить</span>Отправлять уведомления о завершении обработки фотографий автоматически</lab-switch>
       </section>
 
       <!-- React renderer: native, mounted from switch-demo.tsx into this node. -->

@@ -5,10 +5,11 @@
  * checkbox (кастом-событие).
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createApp, h } from 'vue';
+import { createApp, h, nextTick, ref } from 'vue';
 import { Button } from '../src/generated/button.js';
 import { Checkbox } from '../src/generated/checkbox.js';
 import { Input } from '../src/generated/input.js';
+import { Tooltip } from '../src/generated/tooltip.js';
 
 function mount(node: ReturnType<typeof h>): { host: HTMLElement; unmount: () => void } {
   const host = document.createElement('div');
@@ -23,11 +24,12 @@ afterEach(() => {
 });
 
 describe('Vue mount (проброс на <lab-*>)', () => {
-  it('button: строковые оси → атрибуты, false-булев снят, слот в light DOM', () => {
+  it('button: строковые оси → атрибуты, false-булев снят, слот в light DOM', async () => {
     const { host } = mount(
       h(Button, { type: 'accent', size: 'l', disabled: false, loading: true }, () => 'Сохранить'),
     );
     const el = host.querySelector('lab-button');
+    await el?.updateComplete;
     expect(el).toBeTruthy();
     expect(el?.getAttribute('type')).toBe('accent');
     expect(el?.getAttribute('size')).toBe('l');
@@ -36,6 +38,29 @@ describe('Vue mount (проброс на <lab-*>)', () => {
     // loading=true → атрибут-флаг присутствует.
     expect(el?.hasAttribute('loading')).toBe(true);
     expect(el?.textContent).toContain('Сохранить');
+  });
+
+  it('explicit false overrides a true default and subsequent boolean updates reach the render', async () => {
+    const arrow = ref(false);
+    const { host } = mount(
+      h({ render: () => h(Tooltip, { arrow: arrow.value, content: 'Help' }, () => 'Trigger') }),
+    );
+    const el = host.querySelector('lab-tooltip');
+    await el?.updateComplete;
+    expect(el?.arrow).toBe(false);
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).toBeNull();
+    arrow.value = true;
+    await nextTick();
+    await el?.updateComplete;
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).not.toBeNull();
+    arrow.value = false;
+    await nextTick();
+    await el?.updateComplete;
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).toBeNull();
+    const omitted = mount(h(Tooltip, { content: 'Default' }, () => 'Trigger'));
+    const defaultEl = omitted.host.querySelector('lab-tooltip');
+    await defaultEl?.updateComplete;
+    expect(defaultEl?.arrow).toBe(true);
   });
 
   it('button: html-type маппится на атрибут html-type (camelCase проп)', () => {

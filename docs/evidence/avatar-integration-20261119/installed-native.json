@@ -1,0 +1,87 @@
+{
+  "coordinate": "pics.lab:ui-compose-desktop:0.1.0-avatar-integrated-20261119",
+  "jarOnly": true,
+  "tests": 2,
+  "files": [
+    {
+      "path": "../avatar-20261119/native-installed-dark-more-100.png",
+      "sha256": "4a449496d69a1af2b086a926799074d0214241c227f0899638afa00501739d41",
+      "identicalToPreintegration": true
+    },
+    {
+      "path": "../avatar-20261119/native-installed-dark-more-200.png",
+      "sha256": "a974ec2a8ad18839375271824bef902d4f23cb256bd0e0a592de3393c3e13411",
+      "identicalToPreintegration": true
+    },
+    {
+      "path": "../avatar-20261119/native-installed-dark-more-400.png",
+      "sha256": "eb03231d5331a9f53b510d27b196ad0fa2d9dbf27ba854aa89d3bc7e11f65e5c",
+      "identicalToPreintegration": true
+    },
+    {
+      "path": "../avatar-20261119/native-installed-dark-normal-100.png",
+      "sha256": "cc9f89947a97682c48b9a05fd46a00e05a6279f8e506c30ca76c88b1a237757e",
+      "identicalToPreintegration": true
+    },
+    {
+      "path": "../avatar-20261119/native-installed-dark-normal-200.png",
+      "sha256": "b041c14377c6a976dc3f242a0136ed570ade55f605c78a02ebca70c366f371be",
+      "identicalToPreintegration": true
+    },
+    {
+      "path": "../avatar-20261119/native-installed-dark-normal-400.png",
+      "sha256": "9263b3defd2881a9b8493b850c62f033e14db1f9d1e28af3f76c800d2e859bf9",
+      "identicalToPreintegration": true
+    },
+    {
+      "path": "../avatar-20261119/native-installed-light-more-100.png",
+      "sha256": "b3060d6b0a37492d44bded170ad204e02fc38041b31fe6057b24f93c6ec0f44c",
+      "identicalToPreintegration": true
+    },
+    {
+      "path": "../avatar-20261119/native-installed-light-more-200.png",
+      "sha256": "178814c192b65ed977ae341c113e493cdc480af0aedb76ad6990a9137da07bb4",
+      "identicalToPreintegration": true
+    },
+    {
+      "path": "../avatar-20261119/native-installed-light-more-400.png",
+      "sha256": "bd101ced1ddb06fc36bf83cb2bfad2d9b2b4589ea039e4ad05a57e48ca0f4be2",
+      "identicalToPreintegration": true
+    },
+    {
+      "path": "../avatar-20261119/native-installed-light-normal-100.png",
+      "sha256": "fcb547ae36cb241d06f88d030de892e4f97eb52142061121f9fd1dd237a78fc9",
+      "identicalToPreintegration": true
+    },
+    {
+      "path": "../avatar-20261119/native-installed-light-normal-200.png",
+      "sha256": "ca4992b0b9d118ca943c37d7e101391c5c97a7fb71ca6191d89340e418cbe2dc",
+      "identicalToPreintegration": true
+    },
+    {
+      "path": "../avatar-20261119/native-installed-light-normal-400.png",
+      "sha256": "6c44788f93d61e16dfa1c19b54d41f878f763e6b0b347d626a23da23e419066c",
+      "identicalToPreintegration": true
+    },
+    {
+      "path": "native-letters-dark-100.png",
+      "sha256": "a690fa1a6c0871d896cd057d21b74d093fb0d81b055d8ec5a661543ebfde3178",
+      "identicalToPreintegration": false
+    },
+    {
+      "path": "native-letters-dark-200.png",
+      "sha256": "cc5441605e9bdc3f5f697a351ae74ffa156a9197704cd8d047e9586fdd6d4636",
+      "identicalToPreintegration": false
+    },
+    {
+      "path": "native-letters-light-100.png",
+      "sha256": "5d5dac382056631c9637202e315304bc9c66c37832604c6d858efdcf1a938537",
+      "identicalToPreintegration": false
+    },
+    {
+      "path": "native-letters-light-200.png",
+      "sha256": "a4799bb33f35b7758dafb347d951afb5aaefe0ac92bfdd4abaa108713e5433c3",
+      "identicalToPreintegration": false
+    }
+  ]
+}

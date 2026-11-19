@@ -10,7 +10,15 @@
     "./fonts/*": "./fonts/*",
     "./package.json": "./package.json"
   },
-  "files": ["fonts.css", "fonts", "OFL.txt", "PROVENANCE.md"],
+  "files": [
+    "fonts.css",
+    "fonts",
+    "OFL.txt",
+    "OFL-NotoSymbols.txt",
+    "OFL-SunghyunSans.txt",
+    "PROVENANCE.md",
+    "symbols.json"
+  ],
   "sideEffects": ["./fonts.css"],
   "scripts": {
     "test": "vitest run"

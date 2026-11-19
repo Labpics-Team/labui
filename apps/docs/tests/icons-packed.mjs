@@ -14,6 +14,7 @@ import {
   PUBLIC_SCENARIO,
   PUBLIC_STATE_GROUPS,
   assertPublicProvenance,
+  consumerPackages,
   parseIconsJson,
   projectPublicProvenance,
   publicApiRefusal,
@@ -38,16 +39,16 @@ export function stateReferenceContract(group) {
 }
 
 export function consumerPublicEntries(schemaVersion) {
-  assert.ok([1, 2, 3].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4].includes(schemaVersion));
   return [
     ...REQUIRED_PUBLIC_ENTRIES,
     ...(schemaVersion >= 2 ? [STATE_ENTRY] : []),
-    ...(schemaVersion === 3 ? [EXPRESSION_ENTRY] : []),
+    ...(schemaVersion >= 3 ? [EXPRESSION_ENTRY] : []),
   ];
 }
 
 export function subjectStateReferences(subject) {
-  return subject.schemaVersion === 3
+  return subject.schemaVersion >= 3
     ? subject.stateReferences
     : subject.schemaVersion === 2
       ? { 'status-circle': subject.stateReference }
@@ -138,13 +139,13 @@ export function assertActionsRunner(env = process.env) {
 
 export function validateSubject(subject) {
   assertPublicProvenance(subject, 'subject');
-  assert.ok([1, 2, 3].includes(subject?.schemaVersion));
-  assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
-  for (const [key, name] of [
-    ['icons', '@labpics/icons'],
-    ['uiCore', '@labpics/ui-core'],
-    ['uiShadow', '@labpics/ui-shadow'],
-  ]) {
+  assert.ok([1, 2, 3, 4].includes(subject?.schemaVersion));
+  const packages = consumerPackages(subject.schemaVersion);
+  assert.deepEqual(
+    Object.keys(subject.packages ?? {}).sort(),
+    packages.map(({ key }) => key).sort(),
+  );
+  for (const { key, name } of packages) {
     const item = subject.packages?.[key];
     assert.equal(item?.name, name);
     assert.ok(typeof item.version === 'string' && item.version.length > 0);
@@ -228,7 +229,7 @@ export function validateSubject(subject) {
       );
     }
   }
-  if (subject.schemaVersion === 3) {
+  if (subject.schemaVersion >= 3) {
     assert.equal(subject.stateReference, undefined);
     assert.deepEqual(
       Object.keys(subject.stateReferences ?? {}).sort(),
@@ -352,7 +353,7 @@ export function validateStateReference(reference, author, group = 'status-circle
 
 // Проверенные bytes переходят в собственный snapshot; input path больше не читается.
 export async function snapshotArchive(consumer, key, inputPath, expected) {
-  assert.ok(['icons', 'uiCore', 'uiShadow'].includes(key));
+  assert.ok(consumerPackages().some((item) => item.key === key));
   const bytes = await readFile(inputPath);
   assert.equal(hash(bytes), expected.archiveSha256, key);
   assert.equal(bytes.length, expected.archiveBytes, key);
@@ -395,6 +396,7 @@ section { margin-top:48px; } h2 { margin:0 0 20px; font-size:18px; font-weight:6
 
 const FIXTURE = `import '@labpics/ui-core/button';
 import '@labpics/ui-core/theme.css';
+import '@labpics/ui-core/tokens.css';
 import { glyph, glyphCapabilities } from '@labpics/icons/symbols/reload';
 import { renderGlyphSvg } from '@labpics/icons/ir/render';
 import { compileSymbolEffect } from '@labpics/icons/motion';
@@ -408,7 +410,7 @@ for (const variant of ['outline', 'filled']) {
   const capabilities = glyphCapabilities(variant);
   const figure = document.createElement('figure');
   const button = document.createElement('lab-button');
-  button.setAttribute('size', 'l');
+  button.setAttribute('size', 'm');
   button.setAttribute('icon', '');
   button.setAttribute('type', 'neutral');
   button.setAttribute('aria-label', 'Обновить');
@@ -534,7 +536,7 @@ const stateHeading = document.createElement('h2');
 stateHeading.id = stateCapabilitiesValue.group + '-heading'; stateHeading.textContent = configuration.buttonLabel;
 const stateSample = document.createElement('div'); stateSample.className = 'state-sample';
 const stateButton = document.createElement('lab-button');
-for (const [name, value] of Object.entries({ size: 'l', icon: '', type: 'neutral',
+for (const [name, value] of Object.entries({ size: 'm', icon: '', type: 'neutral',
   'aria-label': configuration.buttonLabel,
   'data-state-group': stateCapabilitiesValue.group })) stateButton.setAttribute(name, value);
 const initialState = renderStateSvg(stateCapabilitiesValue.defaultState);
@@ -762,11 +764,11 @@ window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expression
 `;
 
 export function consumerFixture(schemaVersion) {
-  assert.ok([1, 2, 3].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4].includes(schemaVersion));
   return (
     FIXTURE +
     (schemaVersion >= 2 ? STATE_FIXTURE : '') +
-    (schemaVersion === 3 ? EXPRESSION_FIXTURE : '')
+    (schemaVersion >= 3 ? EXPRESSION_FIXTURE : '')
   );
 }
 
@@ -1501,9 +1503,7 @@ export async function main(args = process.argv.slice(2)) {
   for (let index = 0; index < args.length; index += 2) {
     assert.ok(
       [
-        '--icons-tarball',
-        '--ui-core-tarball',
-        '--ui-shadow-tarball',
+        ...consumerPackages().map(({ option }) => option),
         '--subject',
         '--out',
         '--browser-channel',
@@ -1514,8 +1514,8 @@ export async function main(args = process.argv.slice(2)) {
     options.set(args[index], args[index + 1]);
   }
   assert.ok(
-    ['--icons-tarball', '--ui-core-tarball', '--ui-shadow-tarball', '--subject', '--out'].every(
-      (key) => options.has(key),
+    [...consumerPackages().map(({ option }) => option), '--subject', '--out'].every((key) =>
+      options.has(key),
     ),
     'Нужны три tarball, --subject и новый --out',
   );
@@ -1567,11 +1567,7 @@ export async function main(args = process.argv.slice(2)) {
     consumer = await mkdtemp(join(tmpdir(), 'labui-icons-consumer-'));
     assert.ok(outside(relative(ROOT, await realpath(consumer))));
     const archives = [];
-    for (const [key, option] of [
-      ['icons', '--icons-tarball'],
-      ['uiCore', '--ui-core-tarball'],
-      ['uiShadow', '--ui-shadow-tarball'],
-    ]) {
+    for (const { key, option } of consumerPackages(subject.schemaVersion)) {
       archives.push(
         await snapshotArchive(consumer, key, resolve(options.get(option)), subject.packages[key]),
       );
@@ -1619,6 +1615,17 @@ export async function main(args = process.argv.slice(2)) {
       const manifest = JSON.parse(bytes);
       assert.equal(manifest.name, expected.name);
       assert.equal(manifest.version, expected.version);
+      if (expected.runtimeDependencies) {
+        assert.deepEqual(
+          Object.fromEntries(
+            ['dependencies', 'optionalDependencies', 'peerDependencies'].map((field) => [
+              field,
+              manifest[field] ?? {},
+            ]),
+          ),
+          expected.runtimeDependencies,
+        );
+      }
       assert.ok(
         Object.values(manifest.dependencies ?? {}).every(
           (value) => !value.startsWith('workspace:'),

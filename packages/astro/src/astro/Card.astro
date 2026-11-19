@@ -10,6 +10,7 @@ import { renderCard } from '@labpics/ui-astro/ssr';
 
 const dsd = renderCard(Astro.props, {
   default: Astro.slots.has('default') ? await Astro.slots.render('default') : undefined,
+  badge: Astro.slots.has('badge') ? await Astro.slots.render('badge') : undefined,
   footer: Astro.slots.has('footer') ? await Astro.slots.render('footer') : undefined,
   header: Astro.slots.has('header') ? await Astro.slots.render('header') : undefined,
   media: Astro.slots.has('media') ? await Astro.slots.render('media') : undefined,

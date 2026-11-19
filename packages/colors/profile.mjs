@@ -1,3 +1,4 @@
+import { authoredAvatarRoles, authoredBadgeRoles } from './authored-paints.mjs';
 import config from './labui.config.json' with { type: 'json' };
 
 export const THEMES = Object.freeze(Object.keys(config.themes));
@@ -21,10 +22,11 @@ export function themeProfile(theme = 'light', contrast = 'normal', source = conf
       roles[name] = value;
       continue;
     }
-    const labelContrast = name.startsWith('label-') ? contrast : 'normal';
+    const labelContrast =
+      name.startsWith('label-') || value.increasedOpacity !== undefined ? contrast : 'normal';
     roles[name] = [
       ...anchorColor(source, value.anchor, theme, labelContrast),
-      labelContrast === 'more' ? 1 : value.opacity,
+      labelContrast === 'more' ? (value.increasedOpacity ?? 1) : value.opacity,
     ];
   }
   const resolve = (name, seen = new Set()) => {
@@ -43,5 +45,10 @@ export function themeProfile(theme = 'light', contrast = 'normal', source = conf
     }
     roles['border-strong'] = '@label-primary';
   }
+  Object.assign(
+    roles,
+    authoredBadgeRoles(theme, contrast, source),
+    authoredAvatarRoles(theme, contrast, source),
+  );
   return { theme, contrast, roles, resolve, background: resolve('bg-primary').slice(0, 3) };
 }

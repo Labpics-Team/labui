@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/number-input';
 import type { LabNumberInput } from '@labpics/ui-core/number-input';
-import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-number-input>, взятые прямо из класса ядра (LabNumberInput). */
 export type NumberInputProps = Pick<LabNumberInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'placeholder' | 'min' | 'max' | 'step' | 'scrubber' | 'allowMouseWheel' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>;

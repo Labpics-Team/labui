@@ -1,0 +1,61 @@
+{
+  "inspected": "2026-11-18",
+  "source": "packages/tokens/src/components.json#selection",
+  "sourceFamilies": ["Check", "Radio", "Choicebox"],
+  "renderer": "Compose ImageComposeScene, CPU offscreen, Geist, density 1",
+  "verification": {
+    "command": "./gradlew :desktopTest --tests pics.lab.ui.SelectionRenderTest",
+    "tests": 9,
+    "failures": 0,
+    "checks": [
+      "Mixed checkbox activates once and becomes checked; native Space and disabled behavior",
+      "Radio arrows, Home, End, wrapping, disabled skipping, and one group tab stop",
+      "Choicebox has one whole-option native action for single and multiple selection",
+      "All 96 Check and 64 Radio variants remain within render bounds at text scales 1 and 2",
+      "All 20 Choicebox chrome variants and decorative slot colors",
+      "Long labels and descriptions retain whole words at text scale 2 in RTL",
+      "Neutral checked and mixed glyph pixels contrast in dark and increased-contrast dark modes",
+      "Constraint-aware descriptive content uses ordinary measurement; BoxWithConstraints does not trigger intrinsic measurement",
+      "Check and Radio render intermediate selected-mark poses through LabMotion and settle directly with reduced motion"
+    ]
+  },
+  "selectionSheets": {
+    "columns": ["tiny", "small", "medium", "large"],
+    "stateBlocks": ["default", "hover", "focus", "disabled"],
+    "typesWithinState": ["accent", "neutral"],
+    "checkToggleRowsWithinType": ["true", "false", "mixed"],
+    "radioToggleRowsWithinType": ["false", "true"],
+    "checkVariants": 96,
+    "radioVariants": 64,
+    "focus": "Third state block of each Check/Radio sheet"
+  },
+  "choiceboxSheets": {
+    "columns": ["card", "row"],
+    "stateBlocks": ["default", "default hover", "active", "active hover", "disabled"],
+    "rowsWithinState": ["single selection", "multiple selection"],
+    "variants": 20,
+    "decorativeSlot": "A 24 dp circle demonstrates consumer-supplied content and the authored icon color role; it is not the Figma sample flash icon."
+  },
+  "reviewedSourceCorrections": [
+    {
+      "case": "enabled selected or mixed neutral Check, excluding tiny",
+      "authoredRole": "label-static-light-primary",
+      "implementedRole": "label-inverted-primary",
+      "reason": "The authored static white mark disappears on the light bg-inverted surface in dark mode. The inverse label role retains the selection mark in both themes."
+    }
+  ],
+  "runtimeExtensions": [
+    "Unselected tiny controls retain keyboard focus paint although their authored focus frame is empty.",
+    "Choicebox receives a whole-option keyboard focus outline; its Figma family does not contain focus variants.",
+    "Choicebox row changes to a header plus full-width text when a word cannot fit beside the icon and indicator. The native action remains the same node.",
+    "Choicebox reflow measures only its authored label and description intrinsically; arbitrary descriptive content remains free to use subcomposition.",
+    "The shared selection indicator reveals and dismisses selected marks through one LabMotion scope, including the user's reduced-motion preference.",
+    "Danger intent remains a semantic extension of the shared selection drawing; the authored Check and Radio families contain accent and neutral only."
+  ],
+  "preservedSourceDetails": [
+    "Tiny is an unboxed 16 dp mark, not the smallest boxed control.",
+    "Radio large accent focus stroke is 5 dp; other large selected strokes are 6 dp.",
+    "Tiny neutral disabled Check keeps its authored static dark quaternary mark.",
+    "Choicebox card and row both reuse the large 20 dp Check or Radio indicator."
+  ]
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "engine": "chromium",
+    "browser": "140.0.7339.186",
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "fontScales": [
+      1,
+      1.25,
+      2
+    ],
+    "materials": [
+      "solid",
+      "glass",
+      "acrylic"
+    ],
+    "sourceComparisonScale": 2,
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "browser": "26.0",
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "fontScales": [
+      1,
+      1.25,
+      2
+    ],
+    "materials": [
+      "solid",
+      "glass",
+      "acrylic"
+    ],
+    "sourceComparisonScale": 2,
+    "errors": []
+  }
+]

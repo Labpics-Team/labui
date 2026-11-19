@@ -5,12 +5,12 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/progress';
 import type { LabProgress } from '@labpics/ui-core/progress';
 
 /** SSR-пропы <lab-progress> (атрибуты/свойства), взяты из класса ядра (LabProgress). */
-export type ProgressSsrProps = Partial<Pick<LabProgress, 'size' | 'value' | 'min' | 'max' | 'label' | 'showValueText'>>;
+export type ProgressSsrProps = Partial<Pick<LabProgress, 'size' | 'variant' | 'value' | 'min' | 'max' | 'label' | 'showValueText'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-progress> — предрендеренные строки контента. */
 export type ProgressSsrSlots = Record<never, never>;
 
@@ -24,10 +24,13 @@ export function renderProgress(
 ): string {
   return renderToString(html`<lab-progress
       size=${ifDefined(props.size)}
-      .value=${props.value}
+      variant=${ifDefined(props.variant)}
+      .value=${props.value === undefined ? noChange : props.value}
       min=${ifDefined(props.min)}
       max=${ifDefined(props.max)}
       label=${ifDefined(props.label)}
-      ?show-value-text=${Boolean(props.showValueText)}
+      .showValueText=${props.showValueText === undefined ? noChange : props.showValueText}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-progress>`);
 }

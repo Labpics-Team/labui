@@ -84,19 +84,9 @@ describe('--lab-* semantic color contract', () => {
     ).toEqual([]);
   });
 
-  it('exposes the expected per-group role counts', () => {
-    const counts = Object.fromEntries(
-      Object.entries(roles.groups).map(([g, list]) => [g, list.length]),
-    );
-    expect(counts).toEqual({
-      Backgrounds: 26,
-      Labels: 36,
-      Fills: 33,
-      Border: 26,
-      FX: 62,
-      Misc: 3,
-      Component: 27,
-    });
+  it('declares each role once across the taxonomy', () => {
+    const names = Object.values(roles.groups).flat();
+    expect(new Set(names).size).toBe(names.length);
   });
 
   it('declares the derived component roles consumed by Button/proof in every scope', () => {

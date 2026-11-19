@@ -19,6 +19,9 @@ import { discoverComponents } from './scripts/discover-components';
  * target them with a single `*`/`components/**` wildcard — the only form
  * TypeScript and esbuild both resolve — so neither this file NOR `package.json`
  * grows per component.
+ * Shared chunks can contain custom-element registration too (for example the
+ * Button used inside Snackbar). package.json preserves their side effects so
+ * a consumer bundler does not discard a nested component's registration.
  *
  * Zag and Lit stay external: they are real dependencies, deduped by the consumer,
  * not inlined into every build.
@@ -26,6 +29,34 @@ import { discoverComponents } from './scripts/discover-components';
 const componentEntries = discoverComponents().map(({ entry }) => entry);
 
 export default libraryPreset({
-  entry: ['src/index.ts', 'src/ssr/index.ts', 'src/proof/lab-proof.ts', ...componentEntries],
+  entry: [
+    'src/index.ts',
+    'src/adapter-runtime.ts',
+    'src/components/badge/contract.ts',
+    'src/components/kbd/contract.ts',
+    'src/components/chip/contract.ts',
+    'src/components/select/behavior.ts',
+    'src/components/breadcrumb/contract.ts',
+    'src/components/pagination/contract.ts',
+    'src/components/avatar/contract.ts',
+    'src/ssr/index.ts',
+    'src/ssr/element.ts',
+    'src/ssr/element-browser.ts',
+    'src/proof/lab-proof.ts',
+    'src/components/dialog/shared.ts',
+    'src/components/sheet/positions.ts',
+    'src/components/sheet/measure.ts',
+    'src/components/snackbar/runtime.ts',
+    'src/components/card/runtime.ts',
+    'src/components/switch/runtime.ts',
+    'src/components/selection/runtime.ts',
+    'src/components/progress/runtime.ts',
+    'src/components/textarea/runtime.ts',
+    'src/components/tabs/runtime.ts',
+    'src/components/accordion/runtime.ts',
+    'src/components/segmented-control/runtime.ts',
+    'src/motion/sheet.ts',
+    ...componentEntries,
+  ],
   external: [/^@zag-js\//, /^@lit-labs\//, 'lit'],
 });

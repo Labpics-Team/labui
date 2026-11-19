@@ -1,0 +1,24 @@
+{
+  "baseCommit": "656479d",
+  "native": {
+    "compose": "1.12.2",
+    "headless": true,
+    "renderer": "SOFTWARE",
+    "task": ":desktopTest",
+    "tests": 79,
+    "failures": 0,
+    "seconds": 105.352
+  },
+  "negativeControl": "Without resolved feature settings, TypographyShapingRenderTest fails: body at 1.0 native=332.94812, Chromium=334.20312, WebKit=334.20166",
+  "browserCases": 18,
+  "nativeMatrixCases": 18,
+  "publicAccordionChecks": [
+    "nonzero body tracking disables optional ligatures",
+    "zero-tracking heading restores normal ligatures"
+  ],
+  "remaining": [
+    "Figma source mixes glyph geometry",
+    "Browser and Compose baseline/linebox difference is recorded, not fixed by this shaping change",
+    "Android and Apple runtime rendering not repeated for this patch"
+  ]
+}

@@ -1,61 +1,43 @@
-/*
- * `lab-switch` documentation config — the FIRST production component that
- * CONSUMES a Zag machine through the Behaviors seam (the inverse of Button).
- *
- * The states matrix and live controls render REAL `<lab-switch>` elements. The
- * machine reads the reflected `checked` / `disabled` / `size` attributes, so the
- * live controls genuinely drive it — toggling `disabled` really blocks the
- * machine, switching `size` really re-lays-out, and toggling `checked` flips the
- * controlled state. Nothing is faked (no misleading stop-gaps).
- */
 import '@labpics/ui-core/switch';
 import type { ComponentDoc } from '../template/component-doc.js';
 
-/** Build a real `<lab-switch>` with the given attribute map applied. */
 function makeSwitch(attrs: Readonly<Record<string, string | boolean>>): HTMLElement {
-  const el = document.createElement('lab-switch');
-  el.textContent = 'Wi-Fi';
+  const element = document.createElement('lab-switch');
+  element.textContent = 'Уведомления';
   for (const [key, value] of Object.entries(attrs)) {
-    if (value === false) continue;
-    if (value === true) {
-      el.setAttribute(key, '');
-    } else {
-      el.setAttribute(key, String(value));
-    }
+    if (value !== false) element.setAttribute(key, value === true ? '' : value);
   }
-  return el;
+  return element;
 }
 
 export const switchDoc: ComponentDoc = {
   slug: 'switch',
   order: 6,
   tag: 'lab-switch',
-  title: 'Switch',
-  summary:
-    'A binary on/off control for an immediate, self-applying setting. Runs the @zag-js/switch machine through the LabUI seam: the machine owns checked-state, keyboard, focus, role="switch" and aria-checked — the element only paints with semantic --lab-* roles.',
+  title: 'Переключатель',
+  summary: 'Включает и выключает настройку. Подпись называет её и сохраняется при смене состояния.',
   status: { kind: 'stable' },
-
   statesMatrix: {
     axes: [
       {
-        name: 'State',
+        name: 'Значение',
         attribute: 'checked',
         options: [
-          { label: 'Off', value: false },
-          { label: 'On', value: true },
+          { label: 'Выключен', value: false },
+          { label: 'Включён', value: true },
         ],
       },
       {
-        name: 'Type',
+        name: 'Тип',
         attribute: 'type',
         options: [
-          { label: 'Accent', value: 'accent' },
-          { label: 'Neutral', value: 'neutral' },
-          { label: 'Danger', value: 'danger' },
+          { label: 'Акцент', value: 'accent' },
+          { label: 'Нейтральный', value: 'neutral' },
+          { label: 'Опасность', value: 'danger' },
         ],
       },
       {
-        name: 'Size',
+        name: 'Размер',
         attribute: 'size',
         options: [
           { label: 'S', value: 's' },
@@ -64,77 +46,79 @@ export const switchDoc: ComponentDoc = {
         ],
       },
       {
-        name: 'Disabled',
+        name: 'Доступность',
         attribute: 'disabled',
         options: [
-          { label: 'Enabled', value: false },
-          { label: 'Disabled', value: true },
+          { label: 'Доступен', value: false },
+          { label: 'Недоступен', value: true },
+        ],
+      },
+      {
+        name: 'Знак',
+        attribute: 'icon',
+        options: [
+          { label: 'Без знака', value: false },
+          { label: 'Со знаком', value: true },
         ],
       },
     ],
     make: makeSwitch,
   },
-
   anatomy: [
     {
       index: 1,
-      name: 'Root (label)',
+      name: 'Подписи',
       description:
-        'The Zag root element — a <label> wrapping the whole control, so clicking the track OR the text toggles it. Reads --lab-label-primary for the label text.',
+        'Одна подпись после дорожки и необязательная перед ней. Вся область нажимается; длинные подписи переносятся.',
     },
     {
       index: 2,
-      name: 'Track (control)',
+      name: 'Дорожка',
       description:
-        'The Zag control element. Off uses --lab-fill-primary; on uses --lab-fill-accent / -neutral / -danger by type. A pill via --lab-radius-full.',
+        'S — 28×16, M — 36×20, L — 44×24 при корневом размере 16 px. Акцентный выключенный переключатель нейтрален; опасный остаётся красным в обоих положениях.',
     },
     {
       index: 3,
-      name: 'Thumb',
+      name: 'Бегунок',
       description:
-        'The Zag thumb element. A circle filled with --lab-control-bg that slides across the track on the machine-driven checked state.',
+        'Белый круг: отступ 2 px, при наведении 1 px, при нажатии 4 px. Движение следует общему LabMotion; при уменьшении движения значение меняется сразу.',
     },
     {
       index: 4,
-      name: 'Icon slots',
+      name: 'Знак',
       description:
-        'Optional icon-on / icon-off slots inside the track, revealed by the checked state. Decorative (aria-hidden); the role + aria-checked carry the meaning.',
+        'Галочка или крестик вырезаны в бегунке: в отверстии видна дорожка. Пользовательские icon-on / icon-off заменяют знак для своего положения.',
     },
     {
       index: 5,
-      name: 'Hidden input + focus ring',
+      name: 'Ввод и фокус',
       description:
-        'The Zag hidden checkbox input keeps the control in the form + a11y tree. Focus is delegated to it; a :focus-visible ring drawn from --lab-border-focus shows on the track.',
+        'Нативный checkbox с ролью switch. Space переключает значение, Tab перемещает фокус. Контур фокуса следует типу настройки.',
     },
   ],
-
   meaning: {
     purpose:
-      'A switch toggles a single setting that takes effect immediately, with no separate confirm step — like a physical light switch. Use it for instant, reversible on/off state (notifications on, dark mode on). It is NOT a checkbox: a checkbox selects an item or stages a choice for later submission; a switch applies right now.',
+      'Бинарная настройка с устойчивой подписью. Может применяться сразу или сохраняться вместе с формой, если момент применения понятен из интерфейса.',
     dos: [
-      'Use for an immediate, self-applying binary setting (on now, off now).',
-      'Pair it with a short, static label that names the thing being toggled.',
-      'Let the machine own the state — read checked-change, never fight aria-checked by hand.',
+      'Называйте настройку, а не действие «включить / выключить».',
+      'Оставляйте подпись одинаковой для обоих положений.',
+      'Для переключателя без видимой подписи задавайте aria-label.',
     ],
     donts: [
-      "Don't use it inside a form that needs an explicit Save — that is a checkbox's job.",
-      "Don't use it for more than two states; a switch is strictly binary (a checkbox carries the mixed state).",
-      "Don't hardcode colours against it — it only ever reads --lab-* roles bound by an ancestor.",
+      'Не используйте для трёх значений.',
+      'Не передавайте значение одним цветом.',
+      'Не помещайте ссылки и кнопки внутрь подписи.',
     ],
   },
-
   liveExample: {
-    make: () => makeSwitch({ checked: true }),
-    // Honest live controls. `disabled` is reflected and re-renders the machine;
-    // `size` and `checked` are reflected attributes the machine reads on update,
-    // so flipping them really drives the element. Clicking the switch itself runs
-    // the Zag machine (Space/Enter/click) — that is the primary interaction.
+    make: () => makeSwitch({ checked: true, icon: true }),
     controls: [
-      { kind: 'toggle', label: 'Checked', attribute: 'checked' },
-      { kind: 'toggle', label: 'Disabled', attribute: 'disabled' },
+      { kind: 'toggle', label: 'Включён', attribute: 'checked' },
+      { kind: 'toggle', label: 'Недоступен', attribute: 'disabled' },
+      { kind: 'toggle', label: 'Знак', attribute: 'icon' },
       {
         kind: 'select',
-        label: 'Size',
+        label: 'Размер',
         attribute: 'size',
         options: [
           { label: 'S', value: 's' },
@@ -144,62 +128,96 @@ export const switchDoc: ComponentDoc = {
       },
       {
         kind: 'select',
-        label: 'Type',
+        label: 'Тип',
         attribute: 'type',
         options: [
-          { label: 'Accent', value: 'accent' },
-          { label: 'Neutral', value: 'neutral' },
-          { label: 'Danger', value: 'danger' },
+          { label: 'Акцент', value: 'accent' },
+          { label: 'Нейтральный', value: 'neutral' },
+          { label: 'Опасность', value: 'danger' },
         ],
       },
     ],
   },
-
   api: {
     props: [
       {
         name: 'type',
         type: "'accent' | 'neutral' | 'danger'",
         default: "'accent'",
-        description: 'Semantic intent of the ON track surface.',
+        description: 'Назначение настройки и её цвет.',
       },
       {
         name: 'size',
         type: "'s' | 'm' | 'l'",
         default: "'m'",
-        description: 'Control size.',
+        description: 'Размер дорожки и типографика.',
       },
       {
         name: 'checked',
         type: 'boolean',
         default: 'false',
         description:
-          'Controlled checked state. Reflected for CSS + SSR. When present, the consumer owns the value; otherwise the machine owns it from default-checked.',
+          'Текущее значение. Lit отражает изменения в атрибут; React при переданном checked ожидает обновления от приложения.',
       },
       {
         name: 'default-checked',
         type: 'boolean',
         default: 'false',
-        description: 'Uncontrolled initial state — read once by the machine at init.',
+        description:
+          'Начальное значение и значение для reset. Изменение default-checked меняет следующий сброс, сохраняя текущий ввод. В React — defaultChecked.',
+      },
+      {
+        name: 'controlled',
+        type: 'boolean',
+        default: 'false',
+        description:
+          'Lit: приложение принимает checked-change и само устанавливает checked. Пока обновления нет, значение сохраняется.',
       },
       {
         name: 'disabled',
         type: 'boolean',
         default: 'false',
-        description: 'Whether the switch is non-interactive. Reflected for styling and a11y.',
+        description:
+          'Запрещает изменение и исключает значение из формы. disabled fieldset действует также.',
+      },
+      {
+        name: 'required',
+        type: 'boolean',
+        default: 'false',
+        description: 'Форма валидна, когда переключатель включён.',
+      },
+      {
+        name: 'name / value',
+        type: 'string',
+        default: "value='on'",
+        description:
+          'FormData содержит поле только во включённом доступном состоянии. Lit поддерживает внешний form-атрибут.',
+      },
+      {
+        name: 'icon',
+        type: 'boolean',
+        default: 'false',
+        description: 'Авторский вырезанный знак в бегунке.',
       },
     ],
     events: [
       {
         name: 'checked-change',
         description:
-          'CustomEvent<{ checked: boolean }> fired when the Zag machine flips the state via click or Space/Enter. The machine is the source of truth.',
+          'CustomEvent<{ checked: boolean }> после действия пользователя. Reset и программное обновление не создают событие. В React — onCheckedChange(boolean).',
       },
     ],
     slots: [
-      { name: '(default)', description: 'The label text projected next to the track.' },
-      { name: 'icon-on', description: 'Optional icon shown inside the track when ON.' },
-      { name: 'icon-off', description: 'Optional icon shown inside the track when OFF.' },
+      { name: '(default)', description: 'Подпись после дорожки; React children.' },
+      {
+        name: 'label-start',
+        description: 'Необязательная подпись перед дорожкой; React labelStart.',
+      },
+      { name: 'icon-on', description: 'Содержимое бегунка во включённом состоянии; React iconOn.' },
+      {
+        name: 'icon-off',
+        description: 'Содержимое бегунка в выключенном состоянии; React iconOff.',
+      },
     ],
   },
 };

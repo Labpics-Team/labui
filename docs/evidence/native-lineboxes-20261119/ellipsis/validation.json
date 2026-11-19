@@ -1,0 +1,16 @@
+{
+  "tests": 13,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "testSeconds": 38.622,
+  "wallSeconds": 45,
+  "suites": [
+    "BadgeRenderTest[desktop]",
+    "InputRenderTest[desktop]",
+    "TextEllipsisInkRenderTest[desktop]",
+    "TextLineBoxRenderTest[desktop]"
+  ],
+  "negativeControl": "Frozen3f22a8c loses11,14,33,33,30,84 prefix pixels; final helper loses0 for all6 cases",
+  "platform": "Windows headless SOFTWARE"
+}

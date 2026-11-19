@@ -1,138 +1,260 @@
-/**
- * <RadioGroup> + <Radio> — the native-React twin of the Lit `<lab-radio-group>`
- * (ADR-0001), and the FIRST COMPOUND React component.
- *
- * Same axes, same `@zag-js/radio-group` machine through the SAME Behaviors seam —
- * here via `useZag`. The machine owns the single selected value, roving focus,
- * Arrow-key selection, `role="radiogroup"`, `aria-checked`, and a hidden native
- * radio input per item. The components only spread the machine's prop-getters
- * onto native elements and paint with the SAME --lab-* roles, so parity is CSS,
- * not a second behaviour implementation.
- *
- * Compound shape — the RENDERER-NATIVE composition (and why it differs from Lit):
- *   A Zag group machine is ONE instance with per-item getters. In React the
- *   idiomatic compound is a context-provider parent (`RadioGroup`) that owns the
- *   machine, plus leaf children (`Radio`) that read the shared `api` from context
- *   and call the per-value getters for their own node. React composition is
- *   functions sharing context — there is no shared DOM query root to honour — so,
- *   unlike the Lit element (one custom element rendering all parts from an
- *   `items` config in one shadow scope), the React twin is genuinely
- *   parent-plus-children. Same machine, two idiomatic compositions, one paint.
- *
- * Client Component: a radio group is interactive (selection + roving focus). It
- * renders as a leaf under a Server Component shell — never a `'use client'` page
- * (dive-next P1).
- *
- * The axis types come from @labpics/ui-core/radio-group (type-only — no Lit
- * runtime), so the Lit and React APIs share ONE source of truth and cannot drift.
- */
-'use client';
-
-import type { MachineModule, SchemaOf } from '@labpics/ui-core';
+﻿'use client';
 import type {
   LabRadioGroupOrientation,
   LabRadioGroupSize,
   LabRadioGroupType,
 } from '@labpics/ui-core/radio-group';
-import * as radioGroupMachine from '@zag-js/radio-group';
-import { type ReactNode, createContext, useContext, useId } from 'react';
-import { useZag } from './use-zag.js';
-import './radio-group.css';
+import {
+  type LabSelectionVariant,
+  type SelectionMotion,
+  listenSelectionReset,
+  mountSelectionMotion,
+  navigateRadio,
+} from '@labpics/ui-core/selection/runtime';
+import {
+  type ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import '@labpics/ui-core/selection-controls.css';
 
-type RadioGroupSchema = SchemaOf<radioGroupMachine.Service>;
-type RadioGroupApi = radioGroupMachine.Api;
-
-const radioGroupModule: MachineModule<RadioGroupSchema, RadioGroupApi> = radioGroupMachine;
-
-/**
- * The shared machine API, handed from the `RadioGroup` provider down to each
- * `Radio` leaf. Null outside a provider — a `Radio` rendered alone is a usage
- * bug we surface loudly rather than render a dead control.
- */
-const RadioGroupContext = createContext<RadioGroupApi | null>(null);
+const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 export interface RadioGroupProps {
-  /** Semantic intent of the selected dot + ring. */
   type?: LabRadioGroupType;
-  /** Control size. */
   size?: LabRadioGroupSize;
-  /** Layout direction; the machine maps it to the roving Arrow keys. */
   orientation?: LabRadioGroupOrientation;
-  /** Controlled selected value — when set, the consumer owns the value. */
   value?: string | null;
-  /** Uncontrolled initial value — read once by the machine at init. */
   defaultValue?: string | null;
-  /** Disables the whole group — every item becomes non-interactive. */
   disabled?: boolean;
-  /** Native form field name for the hidden radio inputs. */
+  required?: boolean;
   name?: string;
-  /** Optional group label, rendered as the machine's label part (accessible name). */
+  form?: string;
   label?: ReactNode;
-  /** Fires when the machine changes the selected value (machine is source of truth). */
+  'aria-label'?: string;
+  variant?: LabSelectionVariant;
   onValueChange?: (value: string | null) => void;
-  /** The `<Radio>` children. */
   children?: ReactNode;
 }
+interface RadioContext {
+  type: LabRadioGroupType;
+  size: LabRadioGroupSize;
+  variant: LabSelectionVariant;
+  value: string | null;
+  resetValue: string | null;
+  disabled: boolean;
+  required: boolean;
+  name?: string;
+  form?: string;
+  select(value: string): void;
+}
+const RadioGroupContext = createContext<RadioContext | null>(null);
 
 export function RadioGroup({
   type = 'accent',
   size = 'm',
   orientation = 'horizontal',
   value,
-  defaultValue,
+  defaultValue = null,
   disabled = false,
+  required = false,
   name,
+  form,
   label,
+  'aria-label': ariaLabel,
+  variant = 'plain',
   onValueChange,
   children,
 }: RadioGroupProps): ReactNode {
-  const api = useZag(radioGroupModule, {
-    id: useId(),
-    value,
-    defaultValue,
-    disabled,
-    orientation,
-    name,
-    onValueChange: onValueChange ? (details) => onValueChange(details.value) : undefined,
+  const id = useId();
+  const root = useRef<HTMLDivElement>(null);
+  const mounted = useRef(false);
+  const [localValue, setLocalValue] = useState(defaultValue);
+  const selected = value !== undefined ? value : localValue;
+  const current = useRef({ value, defaultValue });
+  useClientLayoutEffect(() => {
+    current.current = { value, defaultValue };
+    const inputs = Array.from(root.current?.querySelectorAll<HTMLInputElement>('input') ?? []);
+    const next =
+      !mounted.current && value === undefined
+        ? (inputs.find((input) => input.checked)?.value ?? null)
+        : selected;
+    if (!mounted.current && value === undefined) setLocalValue(next);
+    mounted.current = true;
+    for (const input of inputs) input.checked = input.value === next;
+    const enabled = inputs.filter((input) => !input.matches(':disabled'));
+    const tabStop = enabled.find((input) => input.checked) ?? enabled[0];
+    for (const input of inputs) input.tabIndex = input === tabStop ? 0 : -1;
+    const missing = required && !enabled.some((input) => input.checked);
+    for (const input of inputs)
+      input.setCustomValidity(missing && enabled.includes(input) ? 'Выберите один вариант.' : '');
   });
-
+  // biome-ignore lint/correctness/useExhaustiveDependencies: form and child topology can change the first native input.
+  useEffect(() => {
+    const input = root.current?.querySelector<HTMLInputElement>('input');
+    if (!input) return;
+    return listenSelectionReset(
+      input,
+      () => {
+        const next =
+          current.current.value !== undefined
+            ? current.current.value
+            : current.current.defaultValue;
+        for (const item of root.current?.querySelectorAll<HTMLInputElement>('input') ?? [])
+          item.checked = item.value === next;
+        if (current.current.value === undefined) setLocalValue(next);
+      },
+      root.current ?? input,
+    );
+  }, [form, name, children]);
+  const context: RadioContext = {
+    type,
+    size,
+    variant,
+    value: selected,
+    resetValue: value !== undefined ? value : defaultValue,
+    disabled,
+    required,
+    name: name || `${id}-radio`,
+    form: name ? form : '',
+    select(next) {
+      if (value === undefined) setLocalValue(next);
+      onValueChange?.(next);
+      const committed = current.current.value;
+      if (committed !== undefined)
+        for (const input of root.current?.querySelectorAll<HTMLInputElement>('input') ?? [])
+          input.checked = input.value === committed;
+    },
+  };
   return (
-    <div {...api.getRootProps()} data-lab-radio-group="" data-type={type} data-size={size}>
+    <div
+      ref={root}
+      data-lab-radio-group=""
+      data-type={type}
+      data-size={size}
+      data-orientation={orientation}
+      data-disabled={disabled ? '' : undefined}
+      role="radiogroup"
+      aria-required={required}
+      aria-labelledby={label != null ? `${id}-label` : undefined}
+      aria-label={label == null ? ariaLabel : undefined}
+      onKeyDown={(event) =>
+        navigateRadio(event.nativeEvent, Array.from(root.current?.querySelectorAll('input') ?? []))
+      }
+    >
       {label != null && (
-        <span {...api.getLabelProps()} className="lab-radio-group-label">
+        <span id={`${id}-label`} className="lab-selection-group-label">
           {label}
         </span>
       )}
-      <RadioGroupContext.Provider value={api}>{children}</RadioGroupContext.Provider>
+      <RadioGroupContext.Provider value={context}>{children}</RadioGroupContext.Provider>
     </div>
   );
 }
-
 export interface RadioProps {
-  /** The value selected when this radio is chosen. Unique within the group. */
   value: string;
-  /** Whether THIS item is non-interactive (independent of group `disabled`). */
   disabled?: boolean;
-  /** The label text shown next to the dot. */
+  labelStart?: ReactNode;
+  description?: ReactNode;
+  icon?: ReactNode;
+  'aria-label'?: string;
   children?: ReactNode;
 }
-
-export function Radio({ value, disabled, children }: RadioProps): ReactNode {
-  const api = useContext(RadioGroupContext);
-  if (api === null) {
-    throw new Error('<Radio> must be rendered inside a <RadioGroup>.');
-  }
-  const itemProps = { value, disabled };
-
+export function Radio({
+  value,
+  disabled = false,
+  labelStart,
+  description,
+  icon,
+  'aria-label': ariaLabel,
+  children,
+}: RadioProps): ReactNode {
+  const group = useContext(RadioGroupContext);
+  const id = useId();
+  const root = useRef<HTMLLabelElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const motion = useRef<SelectionMotion>();
+  useEffect(() => {
+    if (root.current && input.current)
+      motion.current = mountSelectionMotion(root.current, input.current);
+    return () => {
+      motion.current?.dispose();
+      motion.current = undefined;
+    };
+  }, []);
+  useEffect(() => {
+    motion.current?.update();
+  });
+  if (!group) throw new Error('<Radio> must be rendered inside a <RadioGroup>.');
+  const checked = group.value === value;
+  const blocked = disabled || group.disabled;
+  const hasStart = labelStart != null && labelStart !== false && labelStart !== '';
+  const hasEnd = children != null && children !== false && children !== '';
+  const labels = [hasStart ? `${id}-start` : '', hasEnd ? `${id}-label` : '']
+    .filter(Boolean)
+    .join(' ');
   return (
-    <label {...api.getItemProps(itemProps)} className="lab-radio-item">
-      <span {...api.getItemControlProps(itemProps)} className="lab-radio-control">
-        <span className="lab-radio-dot" />
+    <label
+      ref={root}
+      className="lab-radio-item"
+      data-lab-selection=""
+      data-kind="radio"
+      data-type={group.type}
+      data-size={group.variant === 'plain' ? group.size : 'l'}
+      data-variant={group.variant}
+      data-value={value}
+      data-selected={checked || undefined}
+      data-disabled={blocked || undefined}
+    >
+      {hasStart && (
+        <span id={`${id}-start`} className="lab-selection-label-start">
+          {labelStart}
+        </span>
+      )}
+      {group.variant !== 'plain' && (
+        <span className="lab-selection-icon" aria-hidden="true">
+          {icon}
+        </span>
+      )}
+      <span
+        className="lab-selection-control lab-radio-control"
+        aria-hidden="true"
+        data-state={checked ? 'checked' : 'unchecked'}
+        data-disabled={blocked ? '' : undefined}
+      >
+        <span className="lab-selection-mark lab-radio-dot" />
       </span>
-      <span {...api.getItemTextProps(itemProps)} className="lab-radio-text">
-        {children}
+      <span className="lab-selection-label lab-radio-text">
+        {hasEnd && <span id={`${id}-label`}>{children}</span>}
+        {description != null && (
+          <span id={`${id}-description`} className="lab-selection-description">
+            {description}
+          </span>
+        )}
       </span>
-      <input {...api.getItemHiddenInputProps(itemProps)} />
+      <input
+        ref={input}
+        id={id}
+        type="radio"
+        name={group.name}
+        value={value}
+        defaultChecked={group.resetValue === value}
+        disabled={blocked}
+        required={group.required}
+        form={group.form}
+        tabIndex={checked ? 0 : group.value !== null ? -1 : undefined}
+        aria-labelledby={labels || undefined}
+        aria-label={labels ? undefined : ariaLabel}
+        aria-describedby={description != null ? `${id}-description` : undefined}
+        onInput={(event) => {
+          if (event.currentTarget.checked) group.select(value);
+        }}
+      />
     </label>
   );
 }

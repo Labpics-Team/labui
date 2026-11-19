@@ -1,0 +1,50 @@
+<svg width="346" height="52" viewBox="0 0 346 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_7101_54738)">
+<g clip-path="url(#clip1_7101_54738)">
+<rect width="346" height="52" fill="#828282" fill-opacity="0.8"/>
+<rect width="346" height="52" fill="url(#paint0_linear_7101_54738)" style="mix-blend-mode:overlay"/>
+<foreignObject x="-128" y="-128" width="602" height="308"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(64px);clip-path:url(#bgblur_2_7101_54738_clip_path);height:100%;width:100%"></div></foreignObject><g filter="url(#filter0_n_7101_54738)" data-figma-bg-blur-radius="128">
+<rect width="346" height="52" fill="white" fill-opacity="0.01"/>
+</g>
+</g>
+<g clip-path="url(#clip3_7101_54738)">
+<path d="M42.5 26C42.5 28.8678 41.6496 31.6713 40.0563 34.0558C38.463 36.4403 36.1984 38.2988 33.5489 39.3963C30.8994 40.4937 27.9839 40.7809 25.1712 40.2214C22.3585 39.6619 19.7748 38.2809 17.747 36.253C15.7191 34.2252 14.3381 31.6415 13.7786 28.8288C13.2191 26.0161 13.5063 23.1006 14.6037 20.4511C15.7012 17.8016 17.5597 15.537 19.9442 13.9437C22.3287 12.3504 25.1322 11.5 28 11.5" stroke-width="3" stroke-linecap="round" stroke="#4A8FFF"/>
+<text fill="#4A8FFF" style="white-space: pre" xml:space="preserve" font-family="Geist" font-size="16" font-weight="500" letter-spacing="0px"><tspan x="22.9688" y="31.68">4</tspan></text>
+</g>
+<text fill="#F6F8FA" style="white-space: pre" xml:space="preserve" font-family="Geist" font-size="16" font-weight="500" letter-spacing="0px"><tspan x="56" y="31.68">The file.png was deleted</tspan></text>
+<text fill="#4A8FFF" style="white-space: pre" xml:space="preserve" font-family="Geist" font-size="14" font-weight="500" letter-spacing="0px"><tspan x="283.28" y="30.97">Undo</tspan></text>
+</g>
+<path d="M26 0.5H320C334.083 0.5 345.5 11.9167 345.5 26C345.5 40.0833 334.083 51.5 320 51.5H26C11.9167 51.5 0.5 40.0833 0.5 26C0.5 11.9167 11.9167 0.5 26 0.5Z" stroke="#787880" stroke-opacity="0.2"/>
+<defs>
+<filter id="filter0_n_7101_54738" x="-128" y="-128" width="602" height="308" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="5 5" stitchTiles="stitch" numOctaves="3" result="noise" seed="1149" />
+<feColorMatrix in="noise" type="luminanceToAlpha" result="alphaNoise" />
+<feComponentTransfer in="alphaNoise" result="coloredNoise1">
+<feFuncA type="discrete" tableValues="1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "/>
+</feComponentTransfer>
+<feComposite operator="in" in2="shape" in="coloredNoise1" result="noise1Clipped" />
+<feFlood flood-color="rgba(1, 2, 5, 0.04)" result="color1Flood" />
+<feComposite operator="in" in2="noise1Clipped" in="color1Flood" result="color1" />
+<feMerge result="effect1_noise_7101_54738">
+<feMergeNode in="shape" />
+<feMergeNode in="color1" />
+</feMerge>
+</filter>
+<clipPath id="bgblur_2_7101_54738_clip_path" transform="translate(128 128)"><rect width="346" height="52"/>
+</clipPath><linearGradient id="paint0_linear_7101_54738" x1="0" y1="26" x2="346" y2="26" gradientUnits="userSpaceOnUse">
+<stop stop-color="#1F1F1F"/>
+<stop offset="1" stop-color="#1F1F1F"/>
+</linearGradient>
+<clipPath id="clip0_7101_54738">
+<path d="M0 26C0 11.6406 11.6406 0 26 0H320C334.359 0 346 11.6406 346 26C346 40.3594 334.359 52 320 52H26C11.6406 52 0 40.3594 0 26Z" fill="white"/>
+</clipPath>
+<clipPath id="clip1_7101_54738">
+<rect width="346" height="52" fill="white"/>
+</clipPath>
+<clipPath id="clip3_7101_54738">
+<path d="M12 26C12 17.1634 19.1634 10 28 10V10C36.8366 10 44 17.1634 44 26V26C44 34.8366 36.8366 42 28 42V42C19.1634 42 12 34.8366 12 26V26Z" fill="white"/>
+</clipPath>
+</defs>
+</svg>

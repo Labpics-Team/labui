@@ -1,0 +1,26 @@
+<!doctype html>
+<html class="lab-scope" lang="ru" data-theme="light" data-material="solid">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI · Snackbar</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Snackbar</h1>
+      <p>Короткое сообщение о результате действия.</p>
+      <section aria-label="Lit" data-testid="lit-snackbar">
+        <h2>Lit</h2>
+        <button id="show-lit" type="button">Показать Lit</button>
+        <lab-snackbar message="The file.png was deleted" action-label="Undo"></lab-snackbar>
+      </section>
+      <section aria-label="React" data-testid="react-snackbar">
+        <h2>React</h2>
+        <div id="react-root"></div>
+      </section>
+      <button type="button" id="outside">Следующее действие</button>
+    </main>
+    <script type="module" src="./snackbar.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,85 @@
+{
+  "sourceKey": "component-set/Switch/Switch",
+  "variants": [
+    {
+      "name": "Type=neutral, Toggle=false, Size=medium, State=default, Icon=true",
+      "type": "COMPONENT",
+      "children": [
+        {
+          "name": "Label",
+          "type": "TEXT"
+        },
+        {
+          "name": "switch-container",
+          "type": "FRAME",
+          "children": [
+            {
+              "name": "switch",
+              "type": "FRAME",
+              "children": [
+                {
+                  "name": "thumb",
+                  "type": "BOOLEAN_OPERATION",
+                  "children": [
+                    {
+                      "name": "thumb",
+                      "type": "ELLIPSE"
+                    },
+                    {
+                      "name": "X Mark (Stroke)",
+                      "type": "VECTOR"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Label",
+          "type": "TEXT"
+        }
+      ]
+    },
+    {
+      "name": "Type=accent, Toggle=true, Size=medium, State=default, Icon=true",
+      "type": "COMPONENT",
+      "children": [
+        {
+          "name": "Label",
+          "type": "TEXT"
+        },
+        {
+          "name": "switch-container",
+          "type": "FRAME",
+          "children": [
+            {
+              "name": "switch",
+              "type": "FRAME",
+              "children": [
+                {
+                  "name": "thumb",
+                  "type": "BOOLEAN_OPERATION",
+                  "children": [
+                    {
+                      "name": "thumb",
+                      "type": "ELLIPSE"
+                    },
+                    {
+                      "name": "Check",
+                      "type": "VECTOR"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Label",
+          "type": "TEXT"
+        }
+      ]
+    }
+  ]
+}

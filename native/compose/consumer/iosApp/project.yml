@@ -1,0 +1,52 @@
+name: LabUIExample
+options:
+  bundleIdPrefix: pics.lab
+  deploymentTarget:
+    iOS: "15.0"
+packages:
+  LabColors:
+    path: ${LAB_COLORS_PACKAGE}
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    GENERATE_INFOPLIST_FILE: YES
+targets:
+  LabUIExampleApp:
+    type: application
+    platform: iOS
+    sources: [App.swift, LabColorsProgramHost.swift]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: pics.lab.ui.example
+        INFOPLIST_FILE: Info.plist
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        FRAMEWORK_SEARCH_PATHS: "$(inherited) $(SRCROOT)/../build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"
+        OTHER_LDFLAGS: "$(inherited) -framework LabUIExample"
+    dependencies:
+      - package: LabColors
+    preBuildScripts:
+      - name: Build shared Compose application
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ "$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED" = YES ]; then exit 0; fi
+          cd "$SRCROOT/.."
+          bash ../gradlew embedAndSignAppleFrameworkForXcode --console=plain
+  LabUIExampleUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: LabUIExampleApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: pics.lab.ui.example.tests
+schemes:
+  LabUIExample:
+    build:
+      targets:
+        LabUIExampleApp: all
+        LabUIExampleUITests: [test]
+    test:
+      targets: [LabUIExampleUITests]

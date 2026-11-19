@@ -1,0 +1,159 @@
+{
+  "sourceRevision": "394a3d995978ce115695e60a29fbcf530c9da087",
+  "typographyDependency": "e1affb90f8b25b12f45cab119cb376237d1df7c1",
+  "supersedesVersion": "0.1.0-select-20261119.2",
+  "version": "0.1.0-select-20261119.3",
+  "runtime": "Zulu Java 21 / Compose desktop / Skiko SOFTWARE",
+  "headless": true,
+  "sourceSubstitution": false,
+  "resolvedRuntime": "pics.lab:ui-compose-desktop:0.1.0-select-20261119.3",
+  "resolvedVariant": "desktopRuntimeElements-published",
+  "themes": [
+    "light",
+    "dark"
+  ],
+  "textScales": [
+    1,
+    1.25,
+    2
+  ],
+  "renderDensity": 2,
+  "consumerDensity": 1,
+  "imageChangesSincePreviousRun": [],
+  "artifacts": [
+    {
+      "path": "pics/lab/ui-colors/0.1.0-select-20261119.3/ui-colors-0.1.0-select-20261119.3-sources.jar",
+      "sha256": "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3"
+    },
+    {
+      "path": "pics/lab/ui-colors/0.1.0-select-20261119.3/ui-colors-0.1.0-select-20261119.3.jar",
+      "sha256": "fa63a86a2ed1b5450216ed085dd1a73b5236432340e7cd64180fc496c03c219d"
+    },
+    {
+      "path": "pics/lab/ui-colors/0.1.0-select-20261119.3/ui-colors-0.1.0-select-20261119.3.module",
+      "sha256": "68d486f7f0257c093465ab719868a99c57c8361918f26352c7d5ba6b374e09d3"
+    },
+    {
+      "path": "pics/lab/ui-colors/0.1.0-select-20261119.3/ui-colors-0.1.0-select-20261119.3.pom",
+      "sha256": "c698e7c96992c7763e317458fd828db4fe43d97f99113473e43f0f91773e92c6"
+    },
+    {
+      "path": "pics/lab/ui-colors-desktop/0.1.0-select-20261119.3/ui-colors-desktop-0.1.0-select-20261119.3-sources.jar",
+      "sha256": "9ac32d299e180afd3985501406dd52f071d1a54a18df176774da3fba83e501b1"
+    },
+    {
+      "path": "pics/lab/ui-colors-desktop/0.1.0-select-20261119.3/ui-colors-desktop-0.1.0-select-20261119.3.jar",
+      "sha256": "0309c3881c5e8d4d0acbfba01b6b5cf730cf022c4d208823a1c8ab4ef4583263"
+    },
+    {
+      "path": "pics/lab/ui-colors-desktop/0.1.0-select-20261119.3/ui-colors-desktop-0.1.0-select-20261119.3.module",
+      "sha256": "1a11eba163be83007c6ce4ddc9711a90e0d4323afeaad337839e9e37d107fd45"
+    },
+    {
+      "path": "pics/lab/ui-colors-desktop/0.1.0-select-20261119.3/ui-colors-desktop-0.1.0-select-20261119.3.pom",
+      "sha256": "c581f634605880ebd9bd313d2d40025738f3c80ebc356f74b4b8d05a6a6acf88"
+    },
+    {
+      "path": "pics/lab/ui-compose/0.1.0-select-20261119.3/ui-compose-0.1.0-select-20261119.3-sources.jar",
+      "sha256": "fd182d772010297258215088c8d1b4c2a72c9dc32d5e2dc4b4152fce38c978f2"
+    },
+    {
+      "path": "pics/lab/ui-compose/0.1.0-select-20261119.3/ui-compose-0.1.0-select-20261119.3.jar",
+      "sha256": "41d242a6a1d1b8672740b7a9e627f2524163a8d546abd0d9551402ffb4912d08"
+    },
+    {
+      "path": "pics/lab/ui-compose/0.1.0-select-20261119.3/ui-compose-0.1.0-select-20261119.3.module",
+      "sha256": "136e19529281b95fee238b9a1a7d55711bc72d5143060b1fba187419f3ef8d92"
+    },
+    {
+      "path": "pics/lab/ui-compose/0.1.0-select-20261119.3/ui-compose-0.1.0-select-20261119.3.pom",
+      "sha256": "9e49d20997b6bc4a1e01d3c5484fbd7e2184aa616cced0a0aaf53409b51330ba"
+    },
+    {
+      "path": "pics/lab/ui-compose-desktop/0.1.0-select-20261119.3/ui-compose-desktop-0.1.0-select-20261119.3-sources.jar",
+      "sha256": "8d98451101bea13725b39a7e593ee8a088a711673c7cad85345bf14aece37e05"
+    },
+    {
+      "path": "pics/lab/ui-compose-desktop/0.1.0-select-20261119.3/ui-compose-desktop-0.1.0-select-20261119.3.jar",
+      "sha256": "2708c4c87c99d55bf77d0e12424ca1b35b38ae2cbbb7e622ae463b07f9bd805f"
+    },
+    {
+      "path": "pics/lab/ui-compose-desktop/0.1.0-select-20261119.3/ui-compose-desktop-0.1.0-select-20261119.3.module",
+      "sha256": "4d72100bee824f4621effd879e2126debf8d1bd761a7f2a3cf5b686c47f046d7"
+    },
+    {
+      "path": "pics/lab/ui-compose-desktop/0.1.0-select-20261119.3/ui-compose-desktop-0.1.0-select-20261119.3.pom",
+      "sha256": "085ed46fbf88adadb3e4311e0c4ebbd4bd960a1a1cac2a6878be7f9c5dffcbc0"
+    }
+  ],
+  "tests": [
+    {
+      "name": "SelectRenderTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-19T18:52:50.791Z",
+      "time": "5.3"
+    },
+    {
+      "name": "SelectConsumerTest[desktop]",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-19T18:54:15.535Z",
+      "time": "7.476"
+    }
+  ],
+  "images": [
+    {
+      "file": "native-dark-1.0.png",
+      "sha256": "c3ed66197b5e3e4327c15ecdb8ae5f634660c196a26c19b7fb929935cb4187f5"
+    },
+    {
+      "file": "native-dark-1.25.png",
+      "sha256": "2feb82b1b01a090b2339c718506dbec7c215d063c89b52333e00641806c2d186"
+    },
+    {
+      "file": "native-dark-2.0.png",
+      "sha256": "f589eaad8deeeb585cda5e3e9af94c8508b6e074c44ddc5157d5ee75258ea7a5"
+    },
+    {
+      "file": "native-light-1.0.png",
+      "sha256": "1d8b984efed0448bda777fcc992f8fe29eb7bf0d9a95f71665dc8a5e816af86e"
+    },
+    {
+      "file": "native-light-1.25.png",
+      "sha256": "719cad11c4ffc85f21ec00d255e0a464188e31fe0b70ddc3d365c890adf28e75"
+    },
+    {
+      "file": "native-light-2.0.png",
+      "sha256": "ca220e9b8876b0a951156a61dd461130e99c0dd6ed0e30fb4ba2d433a17e607d"
+    },
+    {
+      "file": "consumer-dark-1.0.png",
+      "sha256": "61a9337aa315270602060be6fba6ab15058676be10d8c5baf101c75ecc18a399"
+    },
+    {
+      "file": "consumer-dark-1.25.png",
+      "sha256": "080326b5af6796c1cc56a366df3f191d5fccb7544c2c752f64224c7bae1dae9d"
+    },
+    {
+      "file": "consumer-dark-2.0.png",
+      "sha256": "440051f23f030568dfed0e13448246486f70e617941688a9641f42cf07e39ed3"
+    },
+    {
+      "file": "consumer-light-1.0.png",
+      "sha256": "04edce2c0bba15d4a603d038eccb01d95f3f1e9c955807d5622277ec4a6f648c"
+    },
+    {
+      "file": "consumer-light-1.25.png",
+      "sha256": "aa31e8645d9f346c8b7cd4894a297a43f66db11c56810c0ec5c0dbf41db61561"
+    },
+    {
+      "file": "consumer-light-2.0.png",
+      "sha256": "542c6ac75936f027711554c7b3c3bb1730f0b3894d01f4ce4acd3f40f6a98e64"
+    }
+  ]
+}

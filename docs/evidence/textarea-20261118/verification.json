@@ -1,0 +1,39 @@
+{
+  "observed": "2026-11-18",
+  "scope": "Textarea core, React, generated SSR adapters and shared Input outline",
+  "browserTests": {
+    "passed": 85,
+    "skipped": 1,
+    "skip": "Input reduced-transparency requires Chromium CDP; WebKit skips it",
+    "engines": ["chromium", "webkit"]
+  },
+  "serverTests": { "lit": 5, "reactEsmAndCjs": 2 },
+  "independentReview": {
+    "status": "clear",
+    "confirmed": [
+      "Input and Textarea retain label/helper/error targets with a shifted server render counter",
+      "CRLF, CR and LF match the native value setter before JavaScript",
+      "Controlled StrictMode and uncontrolled hydration preserve edits, selection and native node identity",
+      "Late CSS font growth and shrink work in Chromium and WebKit without FontFaceSet events",
+      "Fallback performs one scrollHeight read per stable edit and none for helper updates or idle time",
+      "Native field-sizing creates no probe; fallback removes its probe on disable and disconnect"
+    ]
+  },
+  "packedConsumer": "packed.json",
+  "render": "render.generated.json",
+  "source": "author-source.json",
+  "checks": [
+    "core/react/docs typecheck",
+    "core/react/docs build",
+    "catalog:check",
+    "targeted Biome check",
+    "git diff --check"
+  ],
+  "commands": [
+    "node node_modules/@playwright/test/cli.js test 'tests[/\\\\](input|textarea)\\.spec\\.ts$' --project=chromium --project=webkit --workers=4 (cwd apps/docs, PW_PORT=43579)",
+    "node apps/docs/tests/textarea-packed.mjs",
+    "node apps/docs/tests/textarea-render.mjs http://127.0.0.1:43579",
+    "pnpm --filter @labpics/ui-core exec vitest run test/textarea-ssr.test.ts",
+    "node --test packages/react/test/textarea-ssr.test.mjs"
+  ]
+}

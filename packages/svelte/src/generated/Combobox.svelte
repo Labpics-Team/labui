@@ -4,10 +4,11 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/combobox';
   import type { LabCombobox } from '@labpics/ui-core/combobox';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-combobox> — типы взяты прямо из класса ядра (LabCombobox). */
   interface Props {
@@ -32,10 +33,11 @@
     onOpenChange?: (event: CustomEvent) => void;
     onValueChange?: (event: CustomEvent) => void;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { type, size, placement, multiple, disabled, readonly, required, invalid, name, placeholder, label, labelHidden, helper, error, value, defaultValue, items, onInputValueChange, onOpenChange, onValueChange, children, ...rest }: Props = $props();
+  let { type, size, placement, multiple, disabled, readonly, required, invalid, name, placeholder, label, labelHidden, helper, error, value, defaultValue, items, onInputValueChange, onOpenChange, onValueChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -57,13 +59,19 @@
     { name: 'items', attr: 'items', kind: 'prop' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-combobox', {
+    specs, props: { type, size, placement, multiple, disabled, readonly, required, invalid, name, placeholder, label, labelHidden, helper, error, value, defaultValue, items }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
+
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { type, size, placement, multiple, disabled, readonly, required, invalid, name, placeholder, label, labelHidden, helper, error, value, defaultValue, items });
-  });
   $effect(() => forwardEvents(el, { 'input-value-change': onInputValueChange, 'open-change': onOpenChange, 'value-change': onValueChange }));
 </script>
 
-<lab-combobox bind:this={el} {...rest}>
+<lab-combobox bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, placement, multiple, disabled, readonly, required, invalid, name, placeholder, label, labelHidden, helper, error, value, defaultValue, items } } }}>
+  {@html server?.shadowHtml ?? ''}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-combobox>

@@ -1,0 +1,19 @@
+{
+  "screenshots": [
+    {
+      "sourceCommit": "56becf2",
+      "file": "installed-web-dark-normal-100.png",
+      "sha256": "729040c86193b2b22fcfa0c9738dc1e3f811095e83d5d3e9a5750b8475b6598e",
+      "verifierRejected": true,
+      "failingCropDistinctRgb": 1
+    },
+    {
+      "sourceCommit": "56becf2",
+      "file": "installed-web-dark-more-100.png",
+      "sha256": "2fa75c55a2737201a8c44fd3a0fee4395e4b5351919b2a0854875ae1255ff4d9",
+      "verifierRejected": true,
+      "failingCropDistinctRgb": 1
+    }
+  ],
+  "unrecordedScreenshotRejected": true
+}

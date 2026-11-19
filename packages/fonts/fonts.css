@@ -1,34 +1,6 @@
-/*
- * @labpics/fonts — self-host Geist и Geist Mono (вариативные woff2).
- * СГЕНЕРИРОВАНО вручную, но провенанс строгий: см. PROVENANCE.md
- * (источник vercel/geist-font@v1.7.2, лицензия OFL 1.1 — OFL.txt рядом).
- *
- * ПОЧЕМУ вариативный шрифт одним файлом на семейство: ось `wght` 100..900
- * непрерывна — один woff2 покрывает все начертания (Thin..Black), поэтому
- * весовая шкала токенов (--lab-font-weight-*) отдаёт ЛЮБОЙ вес без догрузки
- * отдельных файлов. Диапазон `font-weight: 100 900` в @font-face — это и есть
- * объявление вариативной оси браузеру (значения вне диапазона он зажимает).
- *
- * ПОЧЕМУ `font-display: swap`: текст рисуется немедленно системным фолбэком и
- * бесшовно подменяется на Geist по загрузке — ноль «невидимого текста» (FOIT),
- * критично для первого рендера. Фолбэк-стек живёт в токене --lab-font-family
- * (@labpics/ui-tokens), метрически близкий, поэтому подмена почти незаметна.
- *
- * Пути к woff2 — относительные к этому файлу; они разрешаются от места, куда
- * потребитель положил пакет (экспорт `./fonts/*` в package.json).
- *
- * БЕЗ ITALIC (решение владельца, 2026-07-08, окончательное). Italic у Geist
- * существует — апстрим vercel/geist-font@v1.7.2 поставляет наклон ОТДЕЛЬНЫМИ
- * файлами (в т.ч. вариативный Geist-Italic[wght].woff2); у вендоримого прямого
- * Geist[wght].woff2 своей оси наклона нет (единственная ось — `wght`, fvar). ДС
- * italic НЕ использует и потому его файлы НЕ вендорит: эмфаза — ВЕСОМ и ЦВЕТОМ,
- * не наклоном (осознанный системный выбор, не следствие отсутствия ассета).
- * Чтобы браузер не подделал наклон молча (реального italic-фейса в документе
- * нет), базовый слой типографики ставит `font-synthesis: none` на скоупе
- * [data-theme] (@labpics/ui-core theme.css). Оба @font-face ниже — только
- * `font-style: normal`. Подробности и провенанс — в PROVENANCE.md.
+/* Self-hosted author Geist 1.400, keyboard symbols, and Geist Mono.
+ * Exact sources in PROVENANCE.md. The theme disables synthetic styles.
  */
-
 @font-face {
   font-family: "Geist";
   font-style: normal;
@@ -37,10 +9,33 @@
   src: url("./fonts/Geist-Variable.woff2") format("woff2");
 }
 
+/* Geist does not contain Command. The small supplemental face has matching
+ * line metrics and a fixed authored symbol contour at every text weight.
+ */
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/LabUI-Symbols.woff2") format("woff2");
+  unicode-range: U+2318;
+}
+
 @font-face {
   font-family: "Geist Mono";
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
   src: url("./fonts/GeistMono-Variable.woff2") format("woff2");
+}
+
+/* Rounded Avatar initials. An OFL substitute for the source's SF Pro Rounded;
+ * its name and metrics stay separate from the product's main Geist family.
+ */
+@font-face {
+  font-family: "Sunghyun Sans";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./fonts/SunghyunSans-ExtraBold.woff2") format("woff2");
 }

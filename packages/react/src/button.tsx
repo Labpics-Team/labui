@@ -55,6 +55,10 @@ export interface ButtonProps
   htmlType?: LabButtonHtmlType;
   /** Leading icon content (parity with the Lit `icon` slot). */
   iconSlot?: ReactNode;
+  /** Trailing decorative symbol (Lit: icon-end slot). */
+  iconEnd?: ReactNode;
+  /** Secondary label placed beside the action (Lit: description slot). */
+  description?: ReactNode;
   /** Label content (parity with the Lit default slot). */
   children?: ReactNode;
 }
@@ -69,6 +73,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     disabled = false,
     htmlType = 'button',
     iconSlot,
+    iconEnd,
+    description,
     children,
     ...rest
   },
@@ -91,11 +97,29 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       data-size={size}
       data-icon={icon || undefined}
       data-loading={loading || undefined}
+      data-empty-label={(children == null && description == null) || undefined}
     >
-      <span className="lab-button-spinner" aria-hidden="true" />
+      <span className="lab-button-spinner lab-button-icon-spinner" aria-hidden="true" />
       <span className="lab-button-label">
-        {iconSlot}
-        {children}
+        {iconSlot && (
+          <span className="lab-button-icon" aria-hidden="true">
+            {iconSlot}
+          </span>
+        )}
+        {(children != null || description != null) && (
+          <span className="lab-button-text">
+            <span className="lab-button-main">
+              {children}
+              <span className="lab-button-spinner" aria-hidden="true" />
+            </span>
+            {description && <span className="lab-button-description">{description}</span>}
+          </span>
+        )}
+        {iconEnd && (
+          <span className="lab-button-icon" aria-hidden="true">
+            {iconEnd}
+          </span>
+        )}
       </span>
     </button>
   );

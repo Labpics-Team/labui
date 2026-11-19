@@ -5,12 +5,12 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/card';
 import type { LabCard } from '@labpics/ui-core/card';
-import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-card>, взятые прямо из класса ядра (LabCard). */
-export type CardProps = Pick<LabCard, 'variant' | 'padding' | 'interactive'>;
+export type CardProps = Pick<LabCard, 'variant' | 'padding' | 'interactive' | 'image' | 'imageAlt' | 'heading' | 'headingHint' | 'description' | 'caption' | 'lowerCaption'>;
 
 /**
  * <Card> — тонкая Vue-обёртка над <lab-card>.
@@ -23,6 +23,13 @@ export const Card: LabComponent<CardProps, never> = createLabComponent<
       { name: 'variant', attr: 'variant', kind: 'string' },
       { name: 'padding', attr: 'padding', kind: 'string' },
       { name: 'interactive', attr: 'interactive', kind: 'boolean' },
+      { name: 'image', attr: 'image', kind: 'string' },
+      { name: 'imageAlt', attr: 'image-alt', kind: 'string' },
+      { name: 'heading', attr: 'heading', kind: 'string' },
+      { name: 'headingHint', attr: 'heading-hint', kind: 'string' },
+      { name: 'description', attr: 'description', kind: 'string' },
+      { name: 'caption', attr: 'caption', kind: 'string' },
+      { name: 'lowerCaption', attr: 'lower-caption', kind: 'string' },
   ],
   events: [],
 });

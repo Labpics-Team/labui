@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru" class="lab-scope" data-theme="light">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Selection verification</title>
+<style>body{margin:24px;background:var(--lab-bg-primary);color:var(--lab-label-primary);font-family:var(--lab-font-family)} main{display:grid;gap:24px;max-width:100%}section,form{display:grid;gap:16px;min-width:0}fieldset{min-width:0}.matrix{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}.long{max-width:280px}@media(max-width:600px){.matrix{grid-template-columns:1fr}}</style></head>
+<body><main>
+<section id="lit">
+  <form data-testid="lit-form"><lab-checkbox name="check" value="yes" required default-checked>Условия</lab-checkbox><lab-checkbox name="mixed" default-indeterminate>Часть</lab-checkbox>
+    <lab-radio-group label="Доставка" name="radio" required default-value="a" items='[{"value":"a","label":"Обычная"},{"value":"b","label":"Недоступная","disabled":true},{"value":"c","label":"Срочная"}]'></lab-radio-group>
+    <lab-choicebox name="single" label="План" required default-value='["a"]' items='[{"value":"a","label":"Личный"},{"value":"b","label":"Командный"}]'></lab-choicebox>
+    <lab-choicebox name="multi" label="Дополнения" multiple required default-value='["a"]' items='[{"value":"a","label":"История"},{"value":"b","label":"Архив"}]'></lab-choicebox>
+    <fieldset disabled><lab-checkbox name="blocked" checked>Недоступно</lab-checkbox></fieldset>
+    <button type="reset">Сбросить</button>
+  </form>
+  <lab-checkbox data-testid="lit-controlled" controlled checked>Закреплённый</lab-checkbox>
+  <lab-radio-group data-testid="lit-controlled-radio" controlled value="a" items='[{"value":"a","label":"Первый"},{"value":"b","label":"Второй"}]'></lab-radio-group>
+  <lab-checkbox class="long" data-testid="lit-long" size="l"><span slot="label-start">Включить</span>Отправлять уведомления о завершении обработки фотографий автоматически</lab-checkbox>
+  <lab-choicebox class="long" layout="row" data-testid="lit-rich" default-value='["a"]' items='[{"value":"a","label":"План","description":"Описание"}]'><strong slot="label-a">Совместная обработка изображений</strong><span slot="description-a">Доступ участников рабочего пространства к исходным материалам</span><svg slot="icon-a" viewBox="0 0 24 24" fill="currentColor"><path d="M13 1 4 14h7l-1 9 10-14h-7z"/></svg></lab-choicebox>
+</section>
+<section id="react"></section>
+<section id="react-hydrate"><!-- @@REACT_SELECTION@@ --></section>
+<form data-testid="adapter-ssr"><!-- @@ADAPTER_SELECTION@@ --><button type="reset">Сбросить</button></form>
+<section id="matrix" class="matrix"></section>
+</main><script type="module" src="./selection.tsx"></script></body></html>

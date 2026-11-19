@@ -1,43 +1,24 @@
 <!doctype html>
-<html class="lab-scope" lang="en" data-theme="dark" data-material="ambient">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LabUI — Kbd parity (Lit ↔ React)</title>
-    <link rel="stylesheet" href="./primitives-demo.css" />
-  </head>
-  <body>
-    <main>
-      <h1 data-testid="kbd-title">
-        Kbd parity — <code>&lt;lab-kbd&gt;</code> (Lit) ↔ <code>&lt;Kbd&gt;</code> (React)
-      </h1>
-      <p>
-        Two renderers, one design system. Same sizes, same <code>--lab-*</code> roles, same
-        raised-cap structure on a real <code>&lt;kbd&gt;</code>.
-      </p>
-
-      <div class="row">
-        <label for="theme-select">Theme</label>
-        <select id="theme-select" data-testid="theme-select">
-          <option value="dark">Dark</option>
-          <option value="light">Light</option>
-        </select>
-      </div>
-
-      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
-        <h2>Lit</h2>
-        <div class="specimens">
-          <lab-kbd data-testid="lit-s" size="s">Esc</lab-kbd>
-          <lab-kbd data-testid="lit-m" size="m">⌘</lab-kbd>
-          <lab-kbd data-testid="lit-l" size="l">Enter</lab-kbd>
-        </div>
-      </section>
-
-      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
-        <h2>React</h2>
-        <div id="react-root" class="specimens"></div>
-      </section>
-    </main>
-    <script type="module" src="./kbd-demo.tsx"></script>
-  </body>
+<html class="lab-scope" lang="en" data-theme="light" data-material="ambient">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LabUI - Kbd</title>
+  <link rel="stylesheet" href="./primitives-demo.css" />
+  <style>.kbd-row { display:flex; align-items:center; gap:24px; padding:12px 0; } .kbd-matrix { display:flex; flex-direction:column; gap:12px; }</style>
+</head>
+<body>
+<main>
+  <h1>Kbd</h1>
+  <p>Keyboard keys and shortcuts in small and large sizes.</p>
+  <div class="row"><label for="theme-select">Theme</label><select id="theme-select" data-testid="theme-select"><option value="light">Light</option><option value="dark">Dark</option></select></div>
+  <section class="renderer" aria-label="Lit renderer"><h2>Lit</h2><div class="kbd-matrix" data-testid="lit-renderer">
+<div class="kbd-row"><lab-kbd data-testid="lit-s-1" size="s" keys='["&#x2318;"]'></lab-kbd><lab-kbd data-testid="lit-s-2" size="s" keys='["&#x2318;", "&#x21e7;"]'></lab-kbd><lab-kbd data-testid="lit-s-3" size="s" keys='["&#x2318;", "&#x21e7;", "C"]'></lab-kbd><lab-kbd data-testid="lit-s-4" size="s" keys='["&#x2318;", "&#x21e7;", "C", "V"]'></lab-kbd></div>
+<div class="kbd-row"><lab-kbd data-testid="lit-l-1" size="l" keys='["&#x2318;"]'></lab-kbd><lab-kbd data-testid="lit-l-2" size="l" keys='["&#x2318;", "&#x21e7;"]'></lab-kbd><lab-kbd data-testid="lit-l-3" size="l" keys='["&#x2318;", "&#x21e7;", "C"]'></lab-kbd><lab-kbd data-testid="lit-l-4" size="l" keys='["&#x2318;", "&#x21e7;", "C", "V"]'></lab-kbd></div>
+    <div class="kbd-row"><lab-kbd data-testid="lit-slot">Esc</lab-kbd><lab-kbd data-testid="lit-long" size="l" keys='["Ctrl", "Shift", "Enter"]'></lab-kbd><lab-kbd data-testid="lit-alias" size="m">M</lab-kbd></div>
+  </div></section>
+  <section class="renderer" aria-label="React renderer"><h2>React</h2><div id="react-root" data-testid="react-renderer" class="kbd-matrix"></div></section>
+</main>
+<script type="module" src="./kbd-demo.tsx"></script>
+</body>
 </html>

@@ -1,0 +1,22 @@
+[
+  {
+    "state": "open-rest",
+    "meanChannelDifference": 6.978517154647871,
+    "pixelsOver24": 0.06455584673775529
+  },
+  {
+    "state": "open-hover",
+    "meanChannelDifference": 7.383936908849931,
+    "pixelsOver24": 0.06481000361467558
+  },
+  {
+    "state": "closed-rest",
+    "meanChannelDifference": 3.52764662027833,
+    "pixelsOver24": 0.025117154217551833
+  },
+  {
+    "state": "closed-hover",
+    "meanChannelDifference": 4.023623142099782,
+    "pixelsOver24": 0.02509940357852883
+  }
+]
