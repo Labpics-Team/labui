@@ -6,16 +6,16 @@ const selected = ':is(:has(input:checked), [data-indeterminate])';
 const mark = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${p.checkbox.glyph.viewBox} ${p.checkbox.glyph.viewBox}"><path fill-rule="${p.checkbox.glyph.windingRule.toLowerCase()}" d="${p.checkbox.glyph.data}"/></svg>`)}")`;
 // Image masks consume alpha, so their opaque coverage does not depend on theme.
 const radioMask = `
-[data-lab-selection][data-kind="radio"]${selected}:not([data-size="tiny"]) .lab-selection-control::before {
+[data-lab-selection][data-kind="radio"]:not([data-size="tiny"]) .lab-selection-control::before {
   mask: radial-gradient(circle closest-side, transparent calc(100% - var(--_selection-radio-stroke)), black 0);
 }
 `;
 const forcedColors = `
 @media (forced-colors: active) {
   [data-lab-selection] .lab-selection-control { forced-color-adjust: none; background: Canvas; border: 1px solid ButtonText; }
-  [data-lab-selection]${selected} .lab-selection-control { background: Highlight; }
+  [data-lab-selection]:is(:has(input:checked), [data-indeterminate]) .lab-selection-control { background: Highlight; }
   [data-lab-selection] .lab-selection-mark { background: HighlightText; }
-  [data-lab-selection][data-kind="radio"]${selected} .lab-selection-control { background: Canvas; border-color: Highlight; }
+  [data-lab-selection][data-kind="radio"]:is(:has(input:checked), [data-indeterminate]) .lab-selection-control { background: Canvas; border-color: Highlight; }
   [data-lab-selection]:has(input:focus-visible) { --_selection-focus: Highlight; }
 }
 `;
