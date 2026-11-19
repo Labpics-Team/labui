@@ -52,6 +52,7 @@ export default libraryPreset({
     'src/components/snackbar/runtime.ts',
     'src/components/card/runtime.ts',
     'src/components/switch/runtime.ts',
+    'src/components/slider/runtime.ts',
     'src/components/selection/runtime.ts',
     'src/components/progress/runtime.ts',
     'src/components/textarea/runtime.ts',

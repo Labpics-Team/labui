@@ -338,6 +338,17 @@
         "types": "./dist/components/pin-input/behavior.d.cts",
         "default": "./dist/components/pin-input/behavior.cjs"
       }
+    },
+    "./slider.css": "./dist/slider.css",
+    "./slider/runtime": {
+      "import": {
+        "types": "./dist/components/slider/runtime.d.ts",
+        "default": "./dist/components/slider/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/slider/runtime.d.cts",
+        "default": "./dist/components/slider/runtime.cjs"
+      }
     }
   },
   "files": ["dist"],
@@ -372,7 +383,8 @@
     "./dist/avatar.css",
     "./dist/drag-button.css",
     "./dist/button-fill.css",
-    "./dist/pin-input.css"
+    "./dist/pin-input.css",
+    "./dist/slider.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

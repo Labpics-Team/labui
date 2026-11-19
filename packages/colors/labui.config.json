@@ -542,6 +542,9 @@
       "anchor": "paper",
       "opacity": 1
     },
+    "slider-track": { "anchor": "brand", "opacity": 0.12, "increasedOpacity": 0.32 },
+    "slider-large-track": { "anchor": "blue", "opacity": 0.12, "increasedOpacity": 0.24 },
+    "slider-large-label": { "anchor": "brand", "opacity": 0.32, "increasedOpacity": 1 },
     "fill-accent": "@border-brand-strong",
     "fill-danger": "@border-danger-strong",
     "fill-accent-tinted": "@fill-brand-primary",

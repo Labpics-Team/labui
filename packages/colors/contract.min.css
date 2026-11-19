@@ -87,6 +87,9 @@
   --lab-fx-glow-warning: rgb(255 161 0 / 0.522);
   --lab-badge-label-contrast: rgb(16 16 18);
   --lab-badge-label-default: rgb(255 255 255);
+  --lab-slider-track: rgb(0 122 255 / 0.12);
+  --lab-slider-large-track: rgb(31 109 237 / 0.12);
+  --lab-slider-large-label: rgb(0 122 255 / 0.32);
   --lab-fx-glow-neutral-core: rgb(255 255 255);
   --lab-fx-glow-neutral-subtle: rgb(255 255 255 / 0.522);
   --lab-fx-glow-neutral-subtle-core: rgb(255 255 255);
@@ -389,6 +392,9 @@
   --lab-fx-glow-warning: rgb(255 144 8 / 0.522);
   --lab-badge-label-contrast: rgb(16 16 18);
   --lab-badge-label-default: rgb(255 255 255);
+  --lab-slider-track: rgb(74 143 255 / 0.12);
+  --lab-slider-large-track: rgb(38 120 255 / 0.12);
+  --lab-slider-large-label: rgb(74 143 255 / 0.32);
   --lab-fx-glow-neutral-core: rgb(255 255 255);
   --lab-fx-glow-neutral-subtle: rgb(255 255 255 / 0.522);
   --lab-fx-glow-neutral-subtle-core: rgb(255 255 255);
@@ -692,6 +698,9 @@
   --lab-fx-glow-warning: rgb(255 144 8 / 0.522);
   --lab-badge-label-contrast: rgb(16 16 18);
   --lab-badge-label-default: rgb(255 255 255);
+  --lab-slider-track: rgb(74 143 255 / 0.12);
+  --lab-slider-large-track: rgb(38 120 255 / 0.12);
+  --lab-slider-large-label: rgb(74 143 255 / 0.32);
   --lab-fx-glow-neutral-core: rgb(255 255 255);
   --lab-fx-glow-neutral-subtle: rgb(255 255 255 / 0.522);
   --lab-fx-glow-neutral-subtle-core: rgb(255 255 255);
@@ -996,6 +1005,9 @@
   --lab-fx-glow-warning: rgb(255 161 0 / 0.522);
   --lab-badge-label-contrast: rgb(16 16 18);
   --lab-badge-label-default: rgb(255 255 255);
+  --lab-slider-track: rgb(0 64 221 / 0.32);
+  --lab-slider-large-track: rgb(0 80 207 / 0.24);
+  --lab-slider-large-label: rgb(0 64 221);
   --lab-fx-glow-neutral-core: rgb(255 255 255);
   --lab-fx-glow-neutral-subtle: rgb(255 255 255 / 0.522);
   --lab-fx-glow-neutral-subtle-core: rgb(255 255 255);
@@ -1298,6 +1310,9 @@
   --lab-fx-glow-warning: rgb(255 144 8 / 0.522);
   --lab-badge-label-contrast: rgb(16 16 18);
   --lab-badge-label-default: rgb(255 255 255);
+  --lab-slider-track: rgb(64 156 255 / 0.32);
+  --lab-slider-large-track: rgb(149 192 255 / 0.24);
+  --lab-slider-large-label: rgb(64 156 255);
   --lab-fx-glow-neutral-core: rgb(255 255 255);
   --lab-fx-glow-neutral-subtle: rgb(255 255 255 / 0.522);
   --lab-fx-glow-neutral-subtle-core: rgb(255 255 255);
@@ -1601,6 +1616,9 @@
   --lab-fx-glow-warning: rgb(255 144 8 / 0.522);
   --lab-badge-label-contrast: rgb(16 16 18);
   --lab-badge-label-default: rgb(255 255 255);
+  --lab-slider-track: rgb(64 156 255 / 0.32);
+  --lab-slider-large-track: rgb(149 192 255 / 0.24);
+  --lab-slider-large-label: rgb(64 156 255);
   --lab-fx-glow-neutral-core: rgb(255 255 255);
   --lab-fx-glow-neutral-subtle: rgb(255 255 255 / 0.522);
   --lab-fx-glow-neutral-subtle-core: rgb(255 255 255);

@@ -220,10 +220,14 @@
       "title": "Slider",
       "group": "input",
       "kind": "control",
-      "summary": "Выбор значения на непрерывной шкале.",
+      "summary": "Линейная, круговая и большая шкалы с авторской геометрией и точным вводом значений.",
       "web": {
         "subpath": "slider",
         "reactExport": "Slider"
+      },
+      "profile": "slider",
+      "native": {
+        "symbol": "LabSlider"
       }
     },
     {

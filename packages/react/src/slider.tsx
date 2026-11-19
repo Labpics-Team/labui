@@ -1,224 +1,203 @@
-/**
- * <Slider> — the native-React twin of the Lit `<lab-slider>` (ADR-0001).
- *
- * Same axes, same `@zag-js/slider` machine through the SAME Behaviors seam — here via
- * `useZag` (the React side) instead of the Lit `ZagController`. No Lit in this path;
- * Next's shallow WC-SSR never touches React. The machine owns the value (tuple for a
- * range), min/max/step, each thumb's `role="slider"` + value ARIA
- * (`aria-valuenow/valuemin/valuemax/valuetext/orientation`), Arrow/Home/End/PageUp-Down
- * keyboard stepping, pointer drag + track-click, multi-thumb collision, and a hidden
- * input per thumb for forms — the component only spreads the machine's prop-getters
- * onto native elements and paints with the SAME --lab-* roles, so parity is CSS, not a
- * second behaviour implementation.
- *
- * REUSES the field a11y seam: the GROUP label / helper / error association is the
- * SAME shared `field-a11y` helper from @labpics/ui-core that the Lit element and the
- * other fields use. The machine owns each thumb's slider role + value ARIA and points
- * the thumb's `aria-labelledby` at the label part; this twin renders the label as the
- * machine's label part (giving the thumbs their name) and ADDS the field's
- * describedby/errormessage on each focusable `role="slider"` THUMB — the element a
- * reader lands on, mirroring number-input's field ARIA on its `<input>` — so the
- * helper/error is actually announced. (On the inert group label it never would be: the
- * label never receives focus.) ONE source of truth across both renderers.
- *
- * Compound, keyed by INDEX (the slider's stable thumb key): `getThumbProps({ index })`
- * is spread per thumb; React's key and the machine's index agree, so a thumb never
- * gets another's props.
- *
- * Client Component: a slider is interactive (value + drag + keyboard). It renders as a
- * leaf under a Server Component shell — never a `'use client'` page (dive-next P1).
- *
- * The axis types come from @labpics/ui-core (type-only — no Lit runtime), so the Lit
- * and React APIs share ONE source of truth and cannot drift.
- */
 'use client';
-
 import {
   type LabSliderOrientation,
   type LabSliderSize,
-  fieldControlAria,
-  fieldControlAriaProps,
-  fieldErrorIsActive,
-  fieldPartIds,
-} from '@labpics/ui-core';
-import type { MachineModule, SchemaOf } from '@labpics/ui-core';
-import * as sliderMachine from '@zag-js/slider';
-import { type ReactNode, useId } from 'react';
-import { useZag } from './use-zag.js';
-import './slider.css';
-
-export type { LabSliderOrientation, LabSliderSize };
-
-type SliderSchema = SchemaOf<sliderMachine.Service>;
-type SliderApi = sliderMachine.Api;
-
-const sliderModule: MachineModule<SliderSchema, SliderApi> = sliderMachine;
-
+  type LabSliderVariant,
+  type SliderRuntime,
+  SliderState,
+  sliderCircleGeometry as circle,
+  mountSlider,
+  sliderArc,
+  sliderBounds,
+  sliderFraction,
+  sliderThumbStyle,
+} from '@labpics/ui-core/slider/runtime';
+import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import '@labpics/ui-core/slider.css';
+export type { LabSliderOrientation, LabSliderSize, LabSliderVariant };
 export interface SliderProps {
-  /** Control size — drives track thickness and thumb diameter. */
-  size?: LabSliderSize;
-  /** Slider orientation. */
+  variant?: LabSliderVariant;
   orientation?: LabSliderOrientation;
-  /** Visible group label text — rendered as the machine's label part (thumb name). */
+  /** @deprecated Authored geometry is selected by variant. */
+  size?: LabSliderSize;
   label: string;
-  /** Visually hide the label, keeping it in the a11y tree. */
   labelHidden?: boolean;
-  /** Helper / description text linked to the group via aria-describedby. */
   helper?: ReactNode;
-  /** Error message; announced (role="alert") and linked only when `invalid`. */
   error?: ReactNode;
-  /** Controlled value(s) — when set, the consumer owns the value. */
   value?: number[];
-  /** Uncontrolled initial value(s) — read once by the machine at init. */
   defaultValue?: number[];
-  /** Minimum value. */
   min?: number;
-  /** Maximum value. */
   max?: number;
-  /** Step the drag and Arrow keys move by. */
   step?: number;
-  /** Value markers along the track. */
-  marks?: number[];
-  /** Show the live value text above the control. */
   showValue?: boolean;
-  /** Non-editable: reads its value but cannot be changed. */
   readOnly?: boolean;
-  /** Non-interactive and dimmed. */
   disabled?: boolean;
-  /** Invalid — drives aria-invalid / aria-errormessage and danger styling. */
   invalid?: boolean;
-  /** Native form field name for the hidden input(s). */
   name?: string;
-  /** Fires when the machine changes the value (machine is source of truth). */
+  form?: string;
+  dir?: 'ltr' | 'rtl';
+  thumbLabels?: string[];
   onValueChange?: (value: number[]) => void;
-  /** Fires when a value change gesture ends (drag release / key commit). */
   onValueChangeEnd?: (value: number[]) => void;
 }
-
-export function Slider({
-  size = 'm',
-  orientation = 'horizontal',
-  label,
-  labelHidden = false,
-  helper,
-  error,
-  value,
-  defaultValue = [50],
-  min = 0,
-  max = 100,
-  step = 1,
-  marks = [],
-  showValue = false,
-  readOnly = false,
-  disabled = false,
-  invalid = false,
-  name,
-  onValueChange,
-  onValueChangeEnd,
-}: SliderProps): ReactNode {
-  const baseId = useId();
-  const ids = fieldPartIds(baseId);
-  const hasHelper = helper != null && helper !== '';
-  const hasError = error != null && error !== '';
-  const showError = fieldErrorIsActive({ invalid, hasError });
-  // A slider group is never `required` (no empty state); only the description wiring
-  // is the field's responsibility — the machine owns the thumb role + value ARIA.
-  const fieldAria = fieldControlAria({
-    id: baseId,
-    invalid,
-    required: false,
-    hasHelper,
-    hasError,
-  });
-
-  const api = useZag(sliderModule, {
-    id: baseId,
-    value,
-    defaultValue,
-    min,
-    max,
-    step,
-    orientation,
-    // Centre the thumb on the value point (our CSS translates -50%): the standard
-    // slider look, and — unlike the "contain" default — it does NOT hide the thumb
-    // behind a thumb-size measurement (parity with the Lit element).
-    thumbAlignment: 'center',
-    disabled,
+function thumbStyle(source: string): CSSProperties {
+  return Object.fromEntries(
+    source.split(';').map((part) => {
+      const index = part.indexOf(':');
+      return [
+        part.slice(0, index).replace(/-([a-z])/g, (_, char: string) => char.toUpperCase()),
+        part.slice(index + 1),
+      ];
+    }),
+  );
+}
+export function Slider(props: SliderProps): ReactNode {
+  const {
+    variant = 'linear',
+    orientation = 'horizontal',
+    label,
+    labelHidden = false,
+    helper,
+    error,
+    min = 0,
+    max = 100,
+    step = 1,
+    showValue,
     readOnly,
+    disabled,
     invalid,
     name,
-    onValueChange: onValueChange ? (details) => onValueChange(details.value) : undefined,
-    onValueChangeEnd: onValueChangeEnd ? (details) => onValueChangeEnd(details.value) : undefined,
-  });
-
+    form,
+    dir,
+    thumbLabels = [],
+  } = props;
+  const [state] = useState(() => new SliderState());
+  const root = useRef<HTMLDivElement>(null);
+  const runtime = useRef<SliderRuntime>();
+  const current = useRef(props);
+  current.current = props;
+  const [, refresh] = useState(0);
+  const id = useId();
+  const input = { ...props, min, max, step, variant, orientation };
+  const values = state.values(input);
+  const fractions = values.map((value) => sliderFraction(value, input));
+  const bounds = sliderBounds(input);
+  const start = values.length === 2 ? (fractions[0] ?? 0) : 0;
+  const end = fractions.at(-1) ?? 0;
+  const large = variant === 'large';
+  useEffect(() => {
+    if (!root.current) return;
+    runtime.current = mountSlider(root.current, state, () => ({
+      ...current.current,
+      onValueChange(value) {
+        current.current.onValueChange?.(value);
+        refresh((revision) => revision + 1);
+      },
+      onValueChangeEnd(value) {
+        current.current.onValueChangeEnd?.(value);
+      },
+    }));
+    return () => {
+      runtime.current?.dispose();
+      runtime.current = undefined;
+    };
+  }, [state]);
+  useEffect(() => runtime.current?.update());
+  const description = [helper ? `${id}-helper` : '', invalid && error ? `${id}-error` : '']
+    .filter(Boolean)
+    .join(' ');
   return (
     <div
-      {...api.getRootProps()}
-      className="lab-slider"
+      ref={root}
       data-lab-slider=""
-      data-size={size}
+      data-variant={variant}
       data-orientation={orientation}
-      data-label-hidden={labelHidden || undefined}
-      data-readonly={readOnly || undefined}
       data-disabled={disabled || undefined}
+      data-readonly={readOnly || undefined}
       data-invalid={invalid || undefined}
+      data-range={values.length === 2 || undefined}
+      data-empty={end === 0 || undefined}
+      dir={dir}
+      style={
+        { '--_slider-start': `${start * 100}%`, '--_slider-end': `${end * 100}%` } as CSSProperties
+      }
     >
-      <div className="lab-slider-label-row">
-        {/* biome-ignore lint/a11y/noLabelWithoutControl: getLabelProps() spreads htmlFor → the first thumb's hidden input (the machine owns the association); Biome can't see through the spread. */}
-        <label {...api.getLabelProps()} className="lab-slider-label">
-          {label}
-        </label>
-        {showValue ? (
-          <span {...api.getValueTextProps()} className="lab-slider-value-text">
-            {api.value.join(' – ')}
-          </span>
-        ) : null}
-      </div>
-      <div {...api.getControlProps()} className="lab-slider-control">
-        <div {...api.getTrackProps()} className="lab-slider-track">
-          <div {...api.getRangeProps()} className="lab-slider-range" />
-          {marks.length > 0 ? (
-            <div {...api.getMarkerGroupProps()} className="lab-slider-marker-group">
-              {marks.map((markValue) => (
-                <span
-                  key={markValue}
-                  {...api.getMarkerProps({ value: markValue })}
-                  className="lab-slider-marker"
-                />
-              ))}
-            </div>
-          ) : null}
-          {api.value.map((_thumbValue, index) => (
-            // Keyed by the STABLE thumb index: the machine keys its per-thumb getters
-            // by index and the id it puts on the thumb is what aria-labelledby/roving
-            // target. React's key and the machine's index agree, so a thumb never gets
-            // another thumb's props — the index IS the thumb's identity here, not an
-            // incidental list position. The field description (helper/error) is spread
-            // onto the focusable role="slider" thumb — the element a reader lands on,
-            // not the inert group label — mirroring number-input's field ARIA on its
-            // <input>; spread AFTER getThumbProps so the machine's ARIA cannot clobber it.
-            <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: the thumb index is the machine's stable thumb key (getThumbProps keys by index), not an incidental list order.
-              key={index}
-              {...api.getThumbProps({ index })}
-              {...fieldControlAriaProps(fieldAria)}
-              className="lab-slider-thumb"
-            >
-              <input {...api.getHiddenInputProps({ index })} />
-            </div>
-          ))}
+      {!large && ((!labelHidden && label) || showValue) && (
+        <div className="lab-slider-label-row">
+          <span className={labelHidden ? 'lab-slider-hidden' : 'lab-slider-label'}>{label}</span>
+          {showValue && <span className="lab-slider-value-text">{values.join(' – ')}</span>}
         </div>
+      )}
+      <div className="lab-slider-control">
+        {variant === 'circular' ? (
+          <svg
+            className="lab-slider-circle"
+            viewBox={`0 0 ${circle.diameter} ${circle.diameter}`}
+            aria-hidden="true"
+          >
+            <circle cx={circle.center} cy={circle.center} r={circle.radius} />
+            <path className="lab-slider-arc" d={sliderArc(start, end)} />
+          </svg>
+        ) : large ? (
+          <>
+            <span className="lab-slider-large-label" aria-hidden="true">
+              <span>{label}</span>
+            </span>
+            <div className="lab-slider-large-fill" aria-hidden="true">
+              <span className="lab-slider-large-label">
+                <span>{label}</span>
+              </span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="lab-slider-track" />
+            <div className="lab-slider-range" />
+          </>
+        )}
+        {values.map((value, index) => (
+          <span
+            key={index === 0 ? 'lower' : 'upper'}
+            className="lab-slider-thumb"
+            data-thumb-index={index}
+            style={thumbStyle(
+              sliderThumbStyle(fractions[index] ?? 0, variant, orientation === 'vertical'),
+            )}
+          >
+            {large && <span className="lab-slider-large-mask" aria-hidden="true" />}
+            <span className="lab-slider-thumb-visual" aria-hidden="true" />
+            <input
+              type="range"
+              aria-label={
+                thumbLabels[index] ||
+                (values.length === 1 ? label : `${label} ${index === 0 ? 'minimum' : 'maximum'}`)
+              }
+              aria-orientation={orientation}
+              aria-readonly={readOnly || undefined}
+              aria-invalid={invalid || undefined}
+              aria-describedby={description || undefined}
+              aria-errormessage={invalid && error ? `${id}-error` : undefined}
+              min={index ? values[index - 1] : bounds.min}
+              max={index < values.length - 1 ? values[index + 1] : bounds.max}
+              step={step}
+              defaultValue={value}
+              disabled={disabled}
+              name={name}
+              form={form}
+            />
+          </span>
+        ))}
       </div>
-      {hasHelper ? (
-        <span id={ids.helper} className="lab-slider-helper">
+      {helper && (
+        <span className="lab-slider-helper" id={`${id}-helper`}>
           {helper}
         </span>
-      ) : null}
-      {showError ? (
-        <span id={ids.error} className="lab-slider-error" role="alert">
+      )}
+      {invalid && error && (
+        <span className="lab-slider-error" id={`${id}-error`} role="alert">
           {error}
         </span>
-      ) : null}
+      )}
     </div>
   );
 }

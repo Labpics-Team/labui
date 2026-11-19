@@ -1782,13 +1782,18 @@
       "className": "LabSlider",
       "props": [
         {
-          "name": "size",
-          "attr": "size",
+          "name": "variant",
+          "attr": "variant",
           "kind": "string"
         },
         {
           "name": "orientation",
           "attr": "orientation",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
           "kind": "string"
         },
         {
@@ -1809,6 +1814,16 @@
         {
           "name": "error",
           "attr": "error",
+          "kind": "string"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "form",
+          "attr": "form",
           "kind": "string"
         },
         {
@@ -1837,11 +1852,6 @@
           "kind": "string"
         },
         {
-          "name": "marks",
-          "attr": "marks",
-          "kind": "prop"
-        },
-        {
           "name": "showValue",
           "attr": "show-value",
           "kind": "boolean"
@@ -1862,9 +1872,9 @@
           "kind": "boolean"
         },
         {
-          "name": "name",
-          "attr": "name",
-          "kind": "string"
+          "name": "thumbLabels",
+          "attr": "thumb-labels",
+          "kind": "prop"
         }
       ],
       "events": [

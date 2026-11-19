@@ -122,7 +122,11 @@ export type {
   LabNumberInputSize,
   LabNumberInputType,
 } from './components/number-input/lab-number-input.js';
-export type { LabSliderOrientation, LabSliderSize } from './components/slider/lab-slider.js';
+export type {
+  LabSliderOrientation,
+  LabSliderSize,
+  LabSliderVariant,
+} from './components/slider/lab-slider.js';
 export {
   type FieldA11yInput,
   type FieldControlAria,

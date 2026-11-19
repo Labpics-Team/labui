@@ -32,6 +32,7 @@ import { segmentedCss } from '../src/components/segmented-control/styles.js';
 import { selectCss } from '../src/components/select/styles.js';
 import { selectionCss } from '../src/components/selection/styles.js';
 import { sheetCss } from '../src/components/sheet/styles.js';
+import { sliderCss } from '../src/components/slider/styles.js';
 import { snackbarCss } from '../src/components/snackbar/styles.js';
 import { switchCss } from '../src/components/switch/styles.js';
 import { tabsCss } from '../src/components/tabs/styles.js';
@@ -78,6 +79,7 @@ function main(): void {
   writeFileSync(join(dist, 'accordion.css'), accordionCss);
   writeFileSync(join(dist, 'segmented-control.css'), segmentedCss);
   writeFileSync(join(dist, 'switch.css'), switchCss);
+  writeFileSync(join(dist, 'slider.css'), sliderCss);
   writeFileSync(join(dist, 'tabs.css'), tabsCss);
   writeFileSync(join(dist, 'selection-controls.css'), selectionCss);
   writeFileSync(join(dist, 'badge.css'), badgeCss);

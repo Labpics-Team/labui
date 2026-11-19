@@ -20,15 +20,7 @@
       <h1 data-testid="slider-title">
         Slider parity — <code>&lt;lab-slider&gt;</code> (Lit) ↔ <code>&lt;Slider&gt;</code> (React)
       </h1>
-      <p>
-        Two renderers, one <code>@zag-js/slider</code> machine through the same seam.
-        The machine owns the value, min/max/step, each thumb's <code>role="slider"</code> +
-        <code>aria-valuenow/valuemin/valuemax/valuetext</code>, Arrow/Home/End/PageUp-Down
-        keyboard stepping, pointer drag + track-click, multi-thumb collision, and a hidden
-        input per thumb. The group label/helper/error wiring is computed by the SAME shared
-        <code>field-a11y</code> helper on both renderers, and both paint the same
-        <code>--lab-*</code> roles.
-      </p>
+      <p>Linear, Circular and Large sliders share value, form and gesture behavior.</p>
 
       <div class="row">
         <label for="theme-select">Theme</label>
@@ -64,8 +56,8 @@
             error="Out of allowed range."
           ></lab-slider>
           <lab-slider data-testid="lit-disabled" label="Locked" default-value="30" disabled></lab-slider>
-          <lab-slider data-testid="lit-size-s" size="s" label="Small" default-value="40"></lab-slider>
-          <lab-slider data-testid="lit-size-l" size="l" label="Large" default-value="40"></lab-slider>
+          <lab-slider data-testid="lit-circular" variant="circular" label="Angle" default-value="0,40"></lab-slider>
+          <lab-slider data-testid="lit-large" variant="large" label="Large" default-value="40"></lab-slider>
         </div>
       </section>
 

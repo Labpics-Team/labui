@@ -1,243 +1,150 @@
-/*
- * `lab-slider` documentation config — a MACHINE-DRIVEN value slider. It runs the
- * @zag-js/slider machine through the LabUI seam (the machine owns the value, min/max/
- * step, each thumb's role="slider" + aria-valuenow/valuemin/valuemax/valuetext,
- * Arrow/Home/End/PageUp-Down keyboard stepping, pointer drag + track-click, multi-thumb
- * collision, and a hidden input per thumb) AND reuses the SAME shared `field-a11y`
- * helper for the group label / helper / error association — so the matrix below
- * documents real ARIA, not a faked role.
- */
 import '@labpics/ui-core/slider';
 import type { ComponentDoc } from '../template/component-doc.js';
-
-/** Build a real `<lab-slider>` with the given attribute map applied. */
-function makeSlider(attrs: Readonly<Record<string, string | boolean>>): HTMLElement {
-  const el = document.createElement('lab-slider');
-  el.setAttribute('label', 'Volume');
-  el.setAttribute('default-value', '40');
-  for (const [key, value] of Object.entries(attrs)) {
-    if (value === false) continue;
-    if (value === true) {
-      el.setAttribute(key, '');
-    } else {
-      el.setAttribute(key, String(value));
-    }
-  }
-  return el;
+function make(attrs: Readonly<Record<string, string | boolean>>): HTMLElement {
+  const element = document.createElement('lab-slider');
+  element.label = 'Насыщенность';
+  element.defaultValue = [40];
+  for (const [key, value] of Object.entries(attrs))
+    if (value !== false) element.setAttribute(key, value === true ? '' : value);
+  return element;
 }
-
+const variants = ['linear', 'circular', 'large'].map((value) => ({ label: value, value }));
 export const sliderDoc: ComponentDoc = {
   slug: 'slider',
   order: 9,
   tag: 'lab-slider',
   title: 'Slider',
   summary:
-    'A value slider: a track with a filled range and one or more draggable thumbs. Runs the @zag-js/slider machine through the LabUI seam (the machine owns the value, min/max/step, each thumb\'s role="slider" + aria-valuenow/valuemin/valuemax/valuetext, Arrow/Home/End/PageUp-Down keyboard stepping, pointer drag + track-click, multi-thumb collision, and a hidden input per thumb) and reuses the shared field-a11y helper for the group label/helper/error association.',
+    'Точное значение или диапазон. Линейная, круговая и большая шкалы сохраняют авторские дорожки, бегунки и окраску подписи.',
   status: { kind: 'stable' },
-
   statesMatrix: {
     axes: [
+      { name: 'Представление', attribute: 'variant', options: variants },
       {
-        name: 'Size',
-        attribute: 'size',
-        options: [
-          { label: 'S', value: 's' },
-          { label: 'M', value: 'm' },
-          { label: 'L', value: 'l' },
-        ],
-      },
-      {
-        name: 'Orientation',
-        attribute: 'orientation',
-        options: [
-          { label: 'Horizontal', value: 'horizontal' },
-          { label: 'Vertical', value: 'vertical' },
-        ],
-      },
-      {
-        name: 'State',
+        name: 'Состояние',
         attribute: 'disabled',
         options: [
-          { label: 'Enabled', value: false },
-          { label: 'Disabled', value: true },
+          { label: 'Обычное', value: false },
+          { label: 'Недоступное', value: true },
         ],
       },
     ],
-    make: makeSlider,
+    make,
   },
-
   anatomy: [
     {
       index: 1,
-      name: 'Label',
+      name: 'Шкала',
       description:
-        "The group label — the Zag label part. The machine spreads htmlFor → the first thumb's hidden input, and each thumb's aria-labelledby → this label id, so the slider has an accessible name. The field-a11y helper adds aria-describedby → helper/error here.",
+        'Linear: дорожка 4 px, бегунок 12 px с внутренней обводкой 3 px. Circular: диаметр 96 px, начало сверху, рост по часовой стрелке.',
     },
     {
       index: 2,
-      name: 'Value text',
+      name: 'Большая шкала',
       description:
-        'An optional live readout (show-value) — the Zag valueText part, --lab-label-primary, tabular-nums so the number does not jitter as it changes.',
+        'Высота 56 px, радиус 16 px, контрастная подпись и индикатор 3 × 16 px. Подпись меняет цвет точно на границе заполнения.',
     },
     {
       index: 3,
-      name: 'Track',
+      name: 'Значение',
       description:
-        'The Zag track — the full rail the value runs along, --lab-fill-primary. The control reserves room around it so the thumb never clips at the ends.',
-    },
-    {
-      index: 4,
-      name: 'Range',
-      description:
-        'The filled portion from the origin to the thumb — the Zag range part, --lab-fill-accent (--lab-fill-danger when invalid). The machine writes its inset, so it always matches the value.',
-    },
-    {
-      index: 5,
-      name: 'Thumb',
-      description:
-        'The draggable handle — the Zag thumb, role="slider" with aria-valuenow/valuemin/valuemax/valuetext/orientation. --lab-control-bg with a --lab-border-base ring; the focus ring is --lab-border-focus. A range slider renders one thumb per value, keyed by index.',
-    },
-    {
-      index: 6,
-      name: 'Markers',
-      description:
-        'Optional value markers along the track — the Zag marker-group + marker parts, keyed by value, --lab-border-strong.',
+        'Один бегунок выбирает число. Два бегунка задают упорядоченный диапазон и сохраняют порядок при работе клавиатурой.',
     },
   ],
-
   meaning: {
-    purpose:
-      'A slider lets a user pick a value (or a range, with two thumbs) from a continuous span by dragging a thumb or stepping with the keyboard. The machine owns the value, the slider/thumb ARIA, keyboard stepping, drag and collision; the field owns the group label/helper/error association. Use it for a continuous, directly-manipulated value (volume, brightness, a price range) — not for a precise typed number (use Number Input) and not for a closed list (use Select).',
+    purpose: 'Позволить человеку непосредственно настроить числовое значение.',
     dos: [
-      'Give it a label so each thumb gets an accessible name (the machine wires aria-labelledby → the label).',
-      'Set min, max and step to bound the value; pass an array value with two entries for a range.',
-      'Let the machine own keyboard stepping (Arrow/Home/End/PageUp-Down), drag and collision — never re-implement them.',
+      'Задайте понятное название и действительные границы.',
+      'Для точного ввода рядом можно показать Number Input.',
+      'У диапазона используйте понятные имена нижней и верхней границы.',
     ],
     donts: [
-      "Don't hand-roll roving focus or aria-valuenow — the machine owns the thumb role + value ARIA.",
-      "Don't use it for a precise typed number; that is a Number Input.",
-      "Don't key thumbs by anything but their index — the machine keys its per-thumb getters by index.",
+      'Не используйте шкалу для неизвестного хода работы: это Progress.',
+      'Не превращайте круговую шкалу в бесконечно вращающийся регулятор.',
     ],
   },
-
   liveExample: {
-    make: () => makeSlider({ helper: 'Drag or use the arrow keys.', 'show-value': true }),
+    make: () => make({ 'show-value': true }),
     controls: [
-      { kind: 'toggle', label: 'Show value', attribute: 'show-value' },
-      { kind: 'toggle', label: 'Invalid', attribute: 'invalid' },
-      { kind: 'toggle', label: 'Disabled', attribute: 'disabled' },
-      { kind: 'toggle', label: 'Read-only', attribute: 'readonly' },
-      {
-        kind: 'select',
-        label: 'Size',
-        attribute: 'size',
-        options: [
-          { label: 'S', value: 's' },
-          { label: 'M', value: 'm' },
-          { label: 'L', value: 'l' },
-        ],
-      },
-      {
-        kind: 'select',
-        label: 'Orientation',
-        attribute: 'orientation',
-        options: [
-          { label: 'Horizontal', value: 'horizontal' },
-          { label: 'Vertical', value: 'vertical' },
-        ],
-      },
+      { kind: 'select', label: 'Представление', attribute: 'variant', options: variants },
+      { kind: 'toggle', label: 'Значение', attribute: 'show-value' },
+      { kind: 'toggle', label: 'Только чтение', attribute: 'readonly' },
     ],
   },
-
   api: {
     props: [
-      { name: 'size', type: "'s' | 'm' | 'l'", default: "'m'", description: 'Control size.' },
       {
-        name: 'orientation',
-        type: "'horizontal' | 'vertical'",
-        default: "'horizontal'",
-        description: 'Slider orientation.',
-      },
-      {
-        name: 'label',
-        type: 'string',
-        description: 'Group label — the thumbs’ accessible name (aria-labelledby).',
-      },
-      {
-        name: 'helper',
-        type: 'string',
-        description: 'Description below the control, linked via aria-describedby.',
-      },
-      {
-        name: 'error',
-        type: 'string',
-        description: 'Error message; announced + referenced only when invalid.',
+        name: 'variant',
+        type: "'linear' | 'circular' | 'large'",
+        default: "'linear'",
+        description: 'Авторское представление. Large принимает одно значение.',
       },
       {
         name: 'value',
-        type: 'number[]',
+        type: 'number[] | null',
+        default: 'null',
         description:
-          'Controlled value(s) — a JS property; a JSON / comma attribute is parsed for HTML/SSR. Two entries make a range.',
+          'Заданное значение управляется приложением, включая JS property. null возвращает внутреннее состояние.',
       },
       {
         name: 'default-value',
         type: 'number[]',
         default: '[50]',
-        description: 'Uncontrolled initial value(s), read once by the machine at init.',
+        description:
+          'Начальное внутреннее значение и цель сброса формы. Один элемент — число, два — упорядоченный диапазон.',
       },
-      { name: 'min', type: 'number', default: '0', description: 'Minimum value.' },
-      { name: 'max', type: 'number', default: '100', description: 'Maximum value.' },
       {
-        name: 'step',
+        name: 'min / max / step',
         type: 'number',
-        default: '1',
-        description: 'Amount the drag and Arrow keys move by.',
+        default: '0 / 100 / 1',
+        description:
+          'Конечные возрастающие границы и положительный шаг. Шаг отсчитывается от min; диапазон не пересекается.',
       },
       {
-        name: 'marks',
-        type: 'number[]',
-        description: 'Value markers along the track (JSON / comma attribute or property).',
+        name: 'label / thumb-labels',
+        type: 'string / string[]',
+        description: 'Название контроля и необязательные отдельные имена двух бегунков.',
       },
       {
-        name: 'show-value',
+        name: 'label-hidden / show-value',
         type: 'boolean',
         default: 'false',
-        description: 'Show the live value readout above the control.',
+        description:
+          'Скрыть внешнюю подпись или показать текущее значение. Доступное имя сохраняется.',
       },
       {
-        name: 'invalid',
-        type: 'boolean',
-        default: 'false',
-        description: 'Drives aria-invalid / aria-errormessage and danger styling.',
-      },
-      {
-        name: 'readonly',
-        type: 'boolean',
-        default: 'false',
-        description: 'Reads its value but cannot be changed.',
-      },
-      {
-        name: 'disabled',
-        type: 'boolean',
-        default: 'false',
-        description: 'Non-interactive and dimmed.',
-      },
-      {
-        name: 'name',
+        name: 'name / form',
         type: 'string',
-        description: 'Native form field name for the hidden input(s).',
+        description: 'Имя поля и внешняя форма. Диапазон передаёт два значения с одним именем.',
+      },
+      {
+        name: 'orientation',
+        type: "'horizontal' | 'vertical'",
+        default: "'horizontal'",
+        description: 'Вертикальная ориентация доступна линейной шкале.',
+      },
+      {
+        name: 'readonly / disabled / invalid',
+        type: 'boolean',
+        default: 'false',
+        description: 'Чтение без изменений, недоступный контроль или ошибка в значении.',
+      },
+      {
+        name: 'helper / error',
+        type: 'string',
+        description: 'Пояснение и текст ошибки, связанные с каждым бегунком.',
       },
     ],
     events: [
       {
         name: 'value-change',
         description:
-          'CustomEvent<ValueChangeDetails> fired as the machine changes the value. The machine is the source of truth.',
+          'CustomEvent<{ value: number[] }> — новое значение при вводе; Escape и pointercancel возвращают исходное.',
       },
       {
         name: 'value-change-end',
         description:
-          'CustomEvent<ValueChangeDetails> fired when a change gesture ends (drag release / key commit).',
+          'Подтверждённое изменённое значение после отпускания указателя или клавиатурного ввода.',
       },
     ],
     slots: [],

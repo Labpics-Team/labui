@@ -1,14 +1,3 @@
-/*
- * Slider parity demo — the React half.
- *
- * Mounts the native-React <Slider> with the SAME specimens as the Lit `<lab-slider>`
- * markup in slider.html, so the Playwright suite can drive each renderer's machine
- * (keyboard stepping, drag, multi-thumb) and read both renderers' computed styles
- * (visual parity, ADR-0001) and the SAME field-a11y wiring.
- *
- * It registers the Lit element (side-effect import) and wires the theme switcher, so
- * the page carries both renderers under one [data-theme].
- */
 import '@labpics/ui-core/slider';
 import { Slider } from '@labpics/ui-react/slider';
 import { StrictMode } from 'react';
@@ -39,11 +28,11 @@ createRoot(mount).render(
     <span data-testid="react-disabled">
       <Slider label="Locked" defaultValue={[30]} disabled />
     </span>
-    <span data-testid="react-size-s">
-      <Slider size="s" label="Small" defaultValue={[40]} />
+    <span data-testid="react-circular">
+      <Slider variant="circular" label="Angle" defaultValue={[0, 40]} />
     </span>
-    <span data-testid="react-size-l">
-      <Slider size="l" label="Large" defaultValue={[40]} />
+    <span data-testid="react-large">
+      <Slider variant="large" label="Large" defaultValue={[40]} />
     </span>
   </StrictMode>,
 );

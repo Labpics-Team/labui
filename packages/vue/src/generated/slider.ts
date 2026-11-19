@@ -10,7 +10,7 @@ import '@labpics/ui-core/slider';
 import type { LabSlider } from '@labpics/ui-core/slider';
 
 /** Пропы <lab-slider>, взятые прямо из класса ядра (LabSlider). */
-export type SliderProps = Pick<LabSlider, 'size' | 'orientation' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'min' | 'max' | 'step' | 'marks' | 'showValue' | 'readonly' | 'disabled' | 'invalid' | 'name'>;
+export type SliderProps = Pick<LabSlider, 'variant' | 'orientation' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'name' | 'form' | 'value' | 'defaultValue' | 'min' | 'max' | 'step' | 'showValue' | 'readonly' | 'disabled' | 'invalid' | 'thumbLabels'>;
 
 /**
  * <Slider> — тонкая Vue-обёртка над <lab-slider>.
@@ -21,23 +21,25 @@ export const Slider: LabComponent<SliderProps, 'value-change' | 'value-change-en
   'value-change' | 'value-change-end'
 >('lab-slider', {
   specs: [
-      { name: 'size', attr: 'size', kind: 'string' },
+      { name: 'variant', attr: 'variant', kind: 'string' },
       { name: 'orientation', attr: 'orientation', kind: 'string' },
+      { name: 'size', attr: 'size', kind: 'string' },
       { name: 'label', attr: 'label', kind: 'string' },
       { name: 'labelHidden', attr: 'label-hidden', kind: 'boolean' },
       { name: 'helper', attr: 'helper', kind: 'string' },
       { name: 'error', attr: 'error', kind: 'string' },
+      { name: 'name', attr: 'name', kind: 'string' },
+      { name: 'form', attr: 'form', kind: 'string' },
       { name: 'value', attr: 'value', kind: 'prop' },
       { name: 'defaultValue', attr: 'default-value', kind: 'prop' },
       { name: 'min', attr: 'min', kind: 'string' },
       { name: 'max', attr: 'max', kind: 'string' },
       { name: 'step', attr: 'step', kind: 'string' },
-      { name: 'marks', attr: 'marks', kind: 'prop' },
       { name: 'showValue', attr: 'show-value', kind: 'boolean' },
       { name: 'readonly', attr: 'readonly', kind: 'boolean' },
       { name: 'disabled', attr: 'disabled', kind: 'boolean' },
       { name: 'invalid', attr: 'invalid', kind: 'boolean' },
-      { name: 'name', attr: 'name', kind: 'string' },
+      { name: 'thumbLabels', attr: 'thumb-labels', kind: 'prop' },
   ],
   events: ['value-change', 'value-change-end'],
 });

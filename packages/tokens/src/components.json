@@ -1427,5 +1427,54 @@
       "key": "component-set/Input Pin/Input Pin / Cell",
       "authoredVariants": 6
     }
+  },
+  "slider": {
+    "sourceRef": {
+      "key": "component-set/Slider/Linear slider",
+      "authoredVariants": 5,
+      "inspected": "2026-11-19"
+    },
+    "track": 4,
+    "thumb": 12,
+    "thumbStroke": 3,
+    "thumbRole": "bg-static-light",
+    "activeRole": "label-brand-primary",
+    "trackRole": "slider-track",
+    "focusRole": "border-focus",
+    "disabledOpacity": 0.4,
+    "hitSize": 44,
+    "circular": {
+      "sourceRef": {
+        "key": "component-set/Slider/Circular slider",
+        "authoredVariants": 5
+      },
+      "diameter": 96,
+      "stroke": 4,
+      "startAngle": -90
+    },
+    "large": {
+      "sourceRef": {
+        "key": "component-set/Slider/Large slider",
+        "authoredVariants": 5
+      },
+      "height": 56,
+      "radius": 16,
+      "labelInset": 24,
+      "fontSize": 16,
+      "lineHeight": 24,
+      "fontWeight": 500,
+      "letterSpacing": 0,
+      "labelRole": "slider-large-label",
+      "activeLabelRole": "label-on-accent",
+      "trackRole": "slider-large-track",
+      "activeRole": "fill-accent",
+      "highlightRole": "bg-static-light",
+      "highlightOpacity": 0.2,
+      "indicatorWidth": 3,
+      "indicatorHeight": 16,
+      "indicatorInset": 12,
+      "maskWidth": 7,
+      "maskBlur": 2
+    }
   }
 }
