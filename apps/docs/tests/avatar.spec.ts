@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import type { AvatarProps } from '@labpics/ui-react/avatar';
 import { type Page, expect, test } from '@playwright/test';
@@ -16,6 +17,14 @@ const colors = [
   'purple',
   'pink',
 ];
+const sourceTextures = (
+  JSON.parse(
+    readFileSync(
+      new URL('../../../assets/avatar/manifest.generated.json', import.meta.url),
+      'utf8',
+    ),
+  ) as { variants: { color: string; mode: string; webSha256: string }[] }
+).variants;
 const svg =
   '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#3586da"/></svg>';
 const state = (page: Page, renderer: string) => page.getByTestId(`${renderer}-state`);
@@ -85,7 +94,8 @@ test('texture URLs retain an external stylesheet base through Lit and React styl
 test('texture resources paint in both renderers across appearance, contrast and nested scopes', async ({
   page,
 }) => {
-  const urls = new Set<string>();
+  const checksums = new Map<string, string>();
+  let checked = 0;
   for (const theme of ['light', 'dark'])
     for (const contrast of ['normal', 'more']) {
       await page.evaluate(
@@ -125,14 +135,32 @@ test('texture resources paint in both renderers across appearance, contrast and 
               }),
           ),
         );
-        expect(paints[0]).toEqual(paints[1]);
-        expect(paints[0].width).toBe(256);
-        expect(paints[0].height).toBe(256);
-        expect(paints[0].distinct).toBeGreaterThan(250);
-        urls.add(paints[0].url);
+        const [litPaint, reactPaint] = paints;
+        if (!litPaint || !reactPaint) throw new Error('Expected both Lit and React Avatar paints');
+        expect(litPaint).toEqual(reactPaint);
+        expect(litPaint.width).toBe(256);
+        expect(litPaint.height).toBe(256);
+        expect(litPaint.distinct).toBeGreaterThan(250);
+        const source = sourceTextures.find(
+          (variant) => variant.color === color && variant.mode === `${theme}-${contrast}`,
+        );
+        if (!source) throw new Error(`Missing authored texture ${color}/${theme}/${contrast}`);
+        let checksum = checksums.get(litPaint.url);
+        if (!checksum) {
+          const response = await page.request.get(litPaint.url);
+          expect(response.ok()).toBe(true);
+          checksum = createHash('sha256')
+            .update(await response.body())
+            .digest('hex');
+          checksums.set(litPaint.url, checksum);
+        }
+        // Bundlers may share a URL for byte-identical variants. Every semantic
+        // color/mode must still resolve to its own authored resource bytes.
+        expect(checksum).toBe(source.webSha256);
+        checked++;
       }
     }
-  expect(urls.size).toBe(40);
+  expect(checked).toBe(sourceTextures.length);
   await page.getByTestId('lit-texture-l-blue').evaluate((el) => {
     el.setAttribute('data-theme', 'light');
     el.setAttribute('data-contrast', 'normal');

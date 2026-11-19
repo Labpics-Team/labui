@@ -1195,7 +1195,7 @@
         "symbol": "LabSnackbar"
       },
       "profile": "snackbar",
-      "documentation": null,
+      "documentation": "snackbar.doc.ts",
       "capabilities": {
         "web": {
           "tag": "lab-snackbar",
@@ -1911,7 +1911,7 @@
         "symbol": "LabSheetHost"
       },
       "profile": "sheet",
-      "documentation": null,
+      "documentation": "sheet.doc.ts",
       "capabilities": {
         "web": {
           "tag": "lab-sheet",
