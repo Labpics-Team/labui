@@ -31,6 +31,8 @@ const componentEntries = discoverComponents().map(({ entry }) => entry);
 export default libraryPreset({
   entry: [
     'src/index.ts',
+    'src/components/alert/contract.ts',
+    'src/components/alert/runtime.ts',
     'src/adapter-runtime.ts',
     'src/typography.ts',
     'src/components/icon/runtime.ts',
@@ -63,5 +65,5 @@ export default libraryPreset({
   external: [/^@zag-js\//, /^@lit-labs\//, 'lit', '@labpics/ui-core/icon/runtime'],
   // Icons exposes import-only ESM. Bundle its small pure renderer once into our
   // shared dual-format runtime; the optional motion entry remains lazy/external.
-  noExternal: ['@labpics/icons/render'],
+  noExternal: ['@labpics/icons/render', /^@labpics\/icons\/symbols\//],
 });

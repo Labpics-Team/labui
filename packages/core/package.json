@@ -315,6 +315,27 @@
         "types": "./dist/components/icon/runtime.d.cts",
         "default": "./dist/components/icon/runtime.cjs"
       }
+    },
+    "./alert.css": "./dist/alert.css",
+    "./alert/contract": {
+      "import": {
+        "types": "./dist/components/alert/contract.d.ts",
+        "default": "./dist/components/alert/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/alert/contract.d.cts",
+        "default": "./dist/components/alert/contract.cjs"
+      }
+    },
+    "./alert/runtime": {
+      "import": {
+        "types": "./dist/components/alert/runtime.d.ts",
+        "default": "./dist/components/alert/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/alert/runtime.d.cts",
+        "default": "./dist/components/alert/runtime.cjs"
+      }
     }
   },
   "files": ["dist"],
@@ -346,7 +367,8 @@
     "./dist/accordion.css",
     "./dist/segmented-control.css",
     "./dist/select.css",
-    "./dist/avatar.css"
+    "./dist/avatar.css",
+    "./dist/alert.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

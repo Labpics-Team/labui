@@ -63,3 +63,5 @@ export { segmentedProfile } from './segmented.js';
 export { selectProfile } from './select.js';
 
 export { avatarProfile } from './avatar.js';
+
+export { alertProfile } from './alert.js';

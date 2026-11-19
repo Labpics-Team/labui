@@ -202,3 +202,5 @@ export { tagsInputTranslations } from './components/tags-input/lab-tags-input.js
 export const PACKAGE_NAME = '@labpics/ui-core';
 
 export type { LabChipMode, LabChipSize } from './components/chip/contract.js';
+
+export type { LabAlertType, LabAlertAnnouncement } from './components/alert/contract.js';

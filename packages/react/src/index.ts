@@ -150,3 +150,5 @@ export {
   type SegmentedItem,
 } from './segmented-control.js';
 export { Icon, type IconProps, type IconHandle } from './icon.js';
+
+export { Alert, type AlertProps, type LabAlertType, type LabAlertAnnouncement } from './alert.js';

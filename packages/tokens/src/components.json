@@ -1336,5 +1336,49 @@
         "label": "Не беспокоить"
       }
     }
+  },
+  "alert": {
+    "sourceRef": {
+      "key": "component-set/Alert/Alert",
+      "readAt": "2026-11-19",
+      "authoredVariants": 6
+    },
+    "radius": 24,
+    "padding": 16,
+    "actionGap": 24,
+    "labelGap": 4,
+    "contentPaddingStart": 4,
+    "iconSize": 24,
+    "strokeWidth": 1,
+    "material": "elevated",
+    "heading": {
+      "$textStyle": "body-emphasized"
+    },
+    "description": {
+      "$textStyle": "body"
+    },
+    "roles": {
+      "heading": "label-primary",
+      "description": "label-secondary",
+      "icon": "label-primary",
+      "dangerIcon": "label-danger",
+      "close": "label-secondary",
+      "border": "border-base",
+      "focus": "border-focus"
+    },
+    "stack": {
+      "height": 8,
+      "radius": 8,
+      "first": {
+        "inset": 24,
+        "opacity": 0.76,
+        "material": "base"
+      },
+      "second": {
+        "inset": 48,
+        "opacity": 0.52,
+        "material": "muted"
+      }
+    }
   }
 }

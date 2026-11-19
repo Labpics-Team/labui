@@ -68,8 +68,14 @@ export default libraryPreset({
   // bundling (the source directive is hoisted below the imports); the output is
   // corrected here, so the warning is expected noise, not a failure.
   onSuccess: preserveUseClientDirective,
-  external: ['react', 'react-dom', 'react/jsx-runtime', /^@zag-js\//, /^@labpics\/(?!.*\.css$)/],
-  noExternal: [/^@labpics\/.*\.css$/],
+  external: [
+    'react',
+    'react-dom',
+    'react/jsx-runtime',
+    /^@zag-js\//,
+    /^@labpics\/(?!.*\.css$|icons\/symbols\/)/,
+  ],
+  noExternal: [/^@labpics\/.*\.css$/, /^@labpics\/icons\/symbols\//],
   // Inline the component CSS (`button.css`) into the JS as a runtime-injected
   // <style>, so importing the component brings its styles with it in ANY bundler
   // — no separate stylesheet-import step. Without this, tsup emits a sibling

@@ -6,6 +6,7 @@
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
 export { Accordion, type AccordionProps } from './accordion.js';
+export { Alert, type AlertProps } from './alert.js';
 export { AlertDialog, type AlertDialogProps } from './alert-dialog.js';
 export { Avatar, type AvatarProps } from './avatar.js';
 export { Badge, type BadgeProps } from './badge.js';

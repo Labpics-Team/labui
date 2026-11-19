@@ -42,7 +42,10 @@
       "group": "data",
       "kind": "extension",
       "summary": "Авторские Lab Icons: оптика, смысловые состояния и движение импортированного символа.",
-      "web": { "subpath": "icon", "reactExport": "Icon" }
+      "web": {
+        "subpath": "icon",
+        "reactExport": "Icon"
+      }
     },
     {
       "slug": "button",
@@ -359,7 +362,15 @@
       "title": "Alert",
       "group": "feedback",
       "kind": "composition",
-      "summary": "Сообщение рядом с содержанием без модального диалога."
+      "summary": "Важное сообщение с закрытием и видимой глубиной стопки.",
+      "web": {
+        "subpath": "alert",
+        "reactExport": "Alert"
+      },
+      "native": {
+        "symbol": "LabAlert"
+      },
+      "profile": "alert"
     },
     {
       "slug": "alert-dialog",
@@ -453,7 +464,9 @@
         "subpath": "avatar",
         "reactExport": "Avatar"
       },
-      "native": { "symbol": "LabAvatar" },
+      "native": {
+        "symbol": "LabAvatar"
+      },
       "profile": "avatar"
     },
     {
@@ -617,7 +630,13 @@
       "uses": [
         {
           "family": "alert",
-          "role": "root"
+          "role": "root",
+          "web": {
+            "scope": "Neutral/Danger, Quantity 1/2/3; иконка, описание и закрытие с управлением из приложения."
+          },
+          "native": {
+            "scope": "LabAlert: Neutral/Danger, Quantity 1/2/3; общий текст и материалы."
+          }
         }
       ]
     },

@@ -1,5 +1,19 @@
 import { type TextStyleRole, textStyle, textStyleMetrics } from '@labpics/ui-tokens';
 
+/** Keep the authored line box while centering its cap-to-alphabetic text edge.
+ * Uses the loaded font's metrics, so components need no per-font pixel offset.
+ * Only first/last leading is trimmed; wrapped lines retain their line-height.
+ */
+export function authoredTextBoxCss(selector: string): string {
+  return `@supports (text-box-trim: trim-both) {
+  ${selector} {
+    text-box-trim: trim-both; text-box-edge: cap alphabetic;
+    box-sizing: border-box; min-block-size: 1lh;
+    padding-block: calc((1lh - 1cap) / 2);
+  }
+}`;
+}
+
 /** One area setting supplies both the full text style and numeric optical sizing. */
 export interface TypographyScale {
   readonly role: TextStyleRole;

@@ -63,6 +63,74 @@
       }
     },
     {
+      "tag": "lab-alert",
+      "subpath": "alert",
+      "pascal": "Alert",
+      "className": "LabAlert",
+      "props": [
+        {
+          "name": "open",
+          "attr": "open",
+          "kind": "prop"
+        },
+        {
+          "name": "controlled",
+          "attr": "controlled",
+          "kind": "boolean"
+        },
+        {
+          "name": "type",
+          "attr": "type",
+          "kind": "string"
+        },
+        {
+          "name": "quantity",
+          "attr": "quantity",
+          "kind": "string"
+        },
+        {
+          "name": "heading",
+          "attr": "heading",
+          "kind": "string"
+        },
+        {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        },
+        {
+          "name": "showIcon",
+          "attr": "show-icon",
+          "kind": "prop"
+        },
+        {
+          "name": "closeLabel",
+          "attr": "close-label",
+          "kind": "string"
+        },
+        {
+          "name": "announcement",
+          "attr": "announcement",
+          "kind": "string"
+        },
+        {
+          "name": "notificationKey",
+          "attr": "notification-key",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "dismiss"
+      ],
+      "slots": {
+        "default": false,
+        "named": [
+          "icon"
+        ],
+        "dynamic": false
+      }
+    },
+    {
       "tag": "lab-alert-dialog",
       "subpath": "alert-dialog",
       "pascal": "AlertDialog",

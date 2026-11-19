@@ -6,6 +6,7 @@
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
 export { renderAccordion, type AccordionSsrProps, type AccordionSsrSlots } from './accordion.ssr.js';
+export { renderAlert, type AlertSsrProps, type AlertSsrSlots } from './alert.ssr.js';
 export { renderAlertDialog, type AlertDialogSsrProps, type AlertDialogSsrSlots } from './alert-dialog.ssr.js';
 export { renderAvatar, type AvatarSsrProps, type AvatarSsrSlots } from './avatar.ssr.js';
 export { renderBadge, type BadgeSsrProps, type BadgeSsrSlots } from './badge.ssr.js';

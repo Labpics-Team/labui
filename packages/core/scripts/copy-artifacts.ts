@@ -1,3 +1,4 @@
+import { alertCss } from '../src/components/alert/styles.js';
 /**
  * Copy the non-JS artifacts (CSS) from `src/` into `dist/` after tsup has built
  * the JS/types, so the package's `./theme.css` export resolves for consumers.
@@ -45,6 +46,7 @@ const tokensPkg = require.resolve('@labpics/ui-tokens/tokens.css');
 
 function main(): void {
   mkdirSync(dist, { recursive: true });
+  writeFileSync(join(dist, 'alert.css'), alertCss);
 
   // Own source CSS files. selection.css — the UA-chrome binding layer
   // (selection/caret/accent/scrollbar), axis 10 of the foundations census (task 125).

@@ -251,6 +251,7 @@ export default defineConfig({
         'fixture-avatar-ssr': resolve(__dirname, 'src/_fixtures/avatar-ssr.html'),
         'fixture-colors-scope': resolve(__dirname, 'src/_fixtures/colors-scope.html'),
         'fixture-card-content': resolve(__dirname, 'src/_fixtures/card-content.html'),
+        'fixture-alert-material': resolve(__dirname, 'src/_fixtures/alert-material.html'),
         'fixture-selection': resolve(__dirname, 'src/_fixtures/selection.html'),
         'fixture-progress-author': resolve(__dirname, 'src/_fixtures/progress-author.html'),
         'fixture-breadcrumb': resolve(__dirname, 'src/_fixtures/breadcrumb.html'),
