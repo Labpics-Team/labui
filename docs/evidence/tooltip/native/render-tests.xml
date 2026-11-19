@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="TooltipRenderTest[desktop]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-19T22:45:37.338Z" hostname="DESKTOP-NFO26JA" time="12.48">
+  <properties/>
+  <testcase name="positioningFlipsAtEdgesAndMirrorsStartInRtl[desktop]" classname="pics.lab.ui.TooltipRenderTest" time="0.017"/>
+  <testcase name="authoredTypesTailsThemesAndTextScaleRenderThroughRealPopup[desktop]" classname="pics.lab.ui.TooltipRenderTest" time="11.917"/>
+  <testcase name="keyboardFocusEscapeAndAccessibleLongPressUseOneControl[desktop]" classname="pics.lab.ui.TooltipRenderTest" time="0.542"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
