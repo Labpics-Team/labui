@@ -52,6 +52,14 @@ image hashes match the preceding Select scenes. This repeat replaces the earlier
 native proof that depended on the unresolved typography implementation; the
 unchanged browser source and its evidence were not rerun.
 
+The subsequent CSS integration check keeps chips/caption in an unconditional,
+static isolated stack and forced-colors rules in a static media block. The
+global listbox still uses `--lab-z-dropdown`. Layer parity follows the actual
+CSS artifact producer for shared Lit/React styles, including Select and Sheet;
+it no longer assumes each React component has a separate stylesheet. All 256
+colors checks passed, plus eight focused Chromium/WebKit checks covering local
+stacking, open-list placement, chip removal, controlled requests and forms.
+
 ## Images and limits
 
 `chromium-*` and `webkit-*` contain 72 installed-consumer images: three sizes,

@@ -5,6 +5,30 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/select.html');
 });
 
+test('Select keeps chips local and the open list on the named dropdown layer', async ({ page }) => {
+  for (const renderer of ['lit', 'react']) {
+    const host = page.getByTestId(`${renderer}-select-multi`);
+    const trigger = host.getByRole('combobox');
+    await expect(host.locator('.lab-select-control')).toHaveCSS('isolation', 'isolate');
+    await trigger.focus();
+    await page.keyboard.press('ArrowDown');
+    const list =
+      renderer === 'lit'
+        ? host.getByRole('listbox')
+        : page.locator('body > .lab-select-positioner > [role="listbox"][data-state="open"]');
+    await expect(list).toBeVisible();
+    await expect(list).toHaveCSS('z-index', '900');
+    await list.getByRole('option', { name: 'Apple', exact: true }).click();
+    await expect(host.getByRole('button', { name: 'Remove Apple' })).toBeVisible();
+    await expect(list).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(trigger).toBeFocused();
+    await host.getByRole('button', { name: 'Remove Apple' }).click();
+    await expect(host.locator('.lab-chip-label')).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  }
+});
+
 test('FACE submits accepted chips, preserves an empty key, validates, resets and follows fieldset', async ({
   page,
 }) => {

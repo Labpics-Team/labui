@@ -18,13 +18,30 @@ const sizes = Object.entries(p.sizes)
   )
   .join('\n');
 
+// Chips and the floating caption stay above their sibling trigger inside this
+// control's own stacking context. They never compete with the global dropdown.
+const stackCss = `
+[data-lab-select] .lab-select-control { isolation: isolate; }
+[data-lab-select] .lab-select-control .lab-select-chips,
+[data-lab-select] .lab-select-control .lab-select-label { z-index: 1; }
+`;
+
+const forcedColorsCss = `
+@media (forced-colors: active) {
+  [data-lab-select] .lab-select-trigger::before,
+  [data-lab-select] .lab-select-outline { border-color: ButtonText; }
+  [data-lab-select][data-disabled] { color: GrayText; }
+  .lab-select-item[data-highlighted] { outline: 1px solid Highlight; }
+}
+`;
+
 /** Dropdown and Multiselect share behavior; their authored compositions differ. */
 export const selectCss = `
 ${chipCss}
 ${sizes}
 [data-lab-select] { display: inline-flex; flex-direction: column; min-inline-size: 0; max-inline-size: 100%; gap: .25rem; font-family: var(--lab-font-family); color: var(--lab-${p.roles.label}); }
 [data-lab-select] .lab-select-label { font-size: .75rem; font-weight: 500; line-height: 1; color: var(--lab-${p.roles.caption}); }
-[data-lab-select] .lab-select-control { position: relative; isolation: isolate; min-inline-size: 0; border-radius: var(--_select-radius); }
+[data-lab-select] .lab-select-control { position: relative; min-inline-size: 0; border-radius: var(--_select-radius); }
 [data-lab-select] .lab-select-trigger { position: relative; box-sizing: border-box; appearance: none; display: flex; align-items: center; justify-content: space-between; gap: var(--_select-gap); inline-size: 100%; min-inline-size: 0; min-block-size: var(--_select-height); margin: 0; padding: var(--_select-y) var(--_select-end) var(--_select-y) var(--_select-start); border: 0; border-radius: inherit; background: transparent; color: inherit; font: inherit; font-size: var(--_select-font); line-height: var(--_select-line); font-weight: var(--_select-weight); letter-spacing: var(--_select-tracking); text-align: start; cursor: pointer; }
 [data-lab-select]:dir(rtl) .lab-select-trigger { padding-inline: var(--_select-start) var(--_select-end); }
 [data-lab-select]:not([data-multiple]) .lab-select-trigger::before { content: ''; position: absolute; inset: 0; border: ${rem(p.stroke)} solid var(--lab-${p.roles.border}); border-radius: inherit; pointer-events: none; }
@@ -48,10 +65,10 @@ ${sizes}
 [data-lab-select][data-multiple] .lab-select-indicator { margin-inline-start: auto; color: var(--lab-${p.roles.caption}); }
 [data-lab-select][data-multiple][data-disabled] .lab-select-trigger .lab-select-value-text,
 [data-lab-select][data-multiple][data-disabled] .lab-select-indicator { color: inherit; }
-[data-lab-select][data-multiple] .lab-select-chips { position: relative; grid-area: 1 / 1; z-index: 1; display: flex; align-items: center; flex-wrap: wrap; gap: ${rem(p.multiple.gap)}; min-inline-size: 0; padding: ${rem(p.multiple.paddingY)} ${rem(p.multiple.paddingEnd)} ${rem(p.multiple.paddingY)} ${rem(p.multiple.paddingStart)}; pointer-events: none; }
+[data-lab-select][data-multiple] .lab-select-chips { position: relative; grid-area: 1 / 1; display: flex; align-items: center; flex-wrap: wrap; gap: ${rem(p.multiple.gap)}; min-inline-size: 0; padding: ${rem(p.multiple.paddingY)} ${rem(p.multiple.paddingEnd)} ${rem(p.multiple.paddingY)} ${rem(p.multiple.paddingStart)}; pointer-events: none; }
 [data-lab-select]:dir(rtl) .lab-select-chips { padding-inline: ${rem(p.multiple.paddingStart)} ${rem(p.multiple.paddingEnd)}; }
 [data-lab-select] .lab-select-chips > button { pointer-events: auto; }
-[data-lab-select][data-multiple] .lab-select-label { position: absolute; z-index: 1; inset-block-start: ${rem(-p.multiple.labelOverhang)}; inset-inline-start: ${rem(p.multiple.labelStart)}; max-inline-size: calc(100% - 2.5rem); font-size: ${rem(p.multiple.labelFontSize)}; line-height: ${p.multiple.labelLineHeight / p.multiple.labelFontSize}; font-weight: ${p.multiple.labelWeight}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
+[data-lab-select][data-multiple] .lab-select-label { position: absolute; inset-block-start: ${rem(-p.multiple.labelOverhang)}; inset-inline-start: ${rem(p.multiple.labelStart)}; max-inline-size: calc(100% - 2.5rem); font-size: ${rem(p.multiple.labelFontSize)}; line-height: ${p.multiple.labelLineHeight / p.multiple.labelFontSize}; font-weight: ${p.multiple.labelWeight}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
 [data-lab-select] .lab-select-outline { position: absolute; inset: ${rem(-p.multiple.labelFontSize / 2)} 0 0; min-inline-size: 0; margin: 0; padding: 0; padding-inline-start: ${rem(p.multiple.labelStart - p.multiple.labelGap - p.stroke)}; border: ${rem(p.stroke)} solid var(--lab-${p.roles.border}); border-radius: inherit; pointer-events: none; }
 [data-lab-select] .lab-select-outline legend { display: block; float: none; visibility: hidden; inline-size: auto; max-inline-size: calc(100% - 1.5rem); block-size: ${rem(p.multiple.labelFontSize)}; padding: 0 ${rem(p.multiple.labelGap)}; font-size: ${rem(p.multiple.labelFontSize)}; line-height: 1; font-weight: ${p.multiple.labelWeight}; white-space: nowrap; overflow: hidden; }
 [data-lab-select]:not([data-label-visible]) .lab-select-outline legend { max-inline-size: 0; padding: 0; }
@@ -69,5 +86,6 @@ ${sizes}
 .lab-select-item[data-disabled] { color: var(--lab-label-quaternary); cursor: default; }
 .lab-select-item-text { overflow-wrap: anywhere; min-inline-size: 0; }
 .lab-select-item-indicator { flex: none; }
-@media (forced-colors: active) { [data-lab-select] .lab-select-trigger::before, [data-lab-select] .lab-select-outline { border-color: ButtonText; } [data-lab-select][data-disabled] { color: GrayText; } .lab-select-item[data-highlighted] { outline: 1px solid Highlight; } }
+${stackCss}
+${forcedColorsCss}
 `;

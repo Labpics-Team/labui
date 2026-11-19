@@ -5,6 +5,7 @@ import { repoRoot } from './no-literal-colour-fallback.js';
 import {
   canonicalZLevels,
   consumedZLevels,
+  cssArtifactSources,
   materialsZIndexLiterals,
   scanZIndexSource,
   scanZIndexSurface,
@@ -173,14 +174,30 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
   it('each component uses the SAME z-layers on the Lit and React renderers', () => {
     const { core, react } = zLevelsByComponent();
     const shared = [...core.keys()].filter((name) => react.has(name)).sort();
-    // Сегодня z-index кладут dialog, popover, menu, select, combobox, tooltip —
-    // все шесть присутствуют на ОБОИХ рендерерах.
-    expect(shared).toEqual(['combobox', 'dialog', 'menu', 'popover', 'select', 'tooltip']);
+    // Shared stylesheets include Select and Sheet, even without a React-local CSS file.
+    expect(shared).toEqual(['combobox', 'dialog', 'menu', 'popover', 'select', 'sheet', 'tooltip']);
     for (const name of shared) {
       const coreSet = [...(core.get(name) as Set<string>)].sort();
       const reactSet = [...(react.get(name) as Set<string>)].sort();
       expect(reactSet, `${name}: z-layer parity core↔react`).toEqual(coreSet);
     }
+  });
+
+  it('follows shared CSS artifacts through their producer rather than guessing source names', () => {
+    expect([
+      ...cssArtifactSources(`
+      import { sharedCss as paint } from '../src/components/field/appearance.js';
+      writeFileSync(join(dist, 'choice.css'), paint);
+      writeFileSync(join(dist, 'ignored.json'), paint);
+    `),
+    ]).toEqual([['choice.css', '../src/components/field/appearance.js']]);
+    const { core, react } = zLevelsByComponent();
+    expect([...(core.get('select') ?? [])]).toEqual(['--lab-z-dropdown']);
+    expect([...(react.get('select') ?? [])]).toEqual(['--lab-z-dropdown']);
+    expect([...(react.get('sheet') ?? [])].sort()).toEqual([
+      '--lab-z-modal',
+      '--lab-z-modal-underlay',
+    ]);
   });
 
   // ── (7) Доказательство скоупа — поверхность накрывает реальные компонент-файлы

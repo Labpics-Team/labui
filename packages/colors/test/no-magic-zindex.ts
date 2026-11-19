@@ -27,7 +27,8 @@
  * сканер читает shadow-близнеца (TS) и React-близнеца (CSS) одинаково.
  */
 import { globSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
+import ts from 'typescript';
 import { type CssDeclaration, analyzeCssSource } from './css-source.js';
 import { repoRoot } from './no-literal-colour-fallback.js';
 import {
@@ -288,6 +289,41 @@ export function consumedZLevels(): Map<string, number> {
   return used;
 }
 
+/** Artifact filename → authored source, read from the same producer that ships CSS. */
+export function cssArtifactSources(source: string): Map<string, string> {
+  const file = ts.createSourceFile('copy-artifacts.ts', source, ts.ScriptTarget.Latest, true);
+  const bindings = new Map<string, string>();
+  const artifacts = new Map<string, string>();
+  for (const statement of file.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier))
+      continue;
+    const names = statement.importClause?.namedBindings;
+    if (names && ts.isNamedImports(names))
+      for (const name of names.elements)
+        bindings.set(name.name.text, statement.moduleSpecifier.text);
+  }
+  const visit = (node: ts.Node): void => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'writeFileSync'
+    ) {
+      const [target, value] = node.arguments;
+      if (target && value && ts.isCallExpression(target) && ts.isIdentifier(value)) {
+        const filename = target.arguments.find(
+          (part) => ts.isStringLiteral(part) && part.text.endsWith('.css'),
+        );
+        const imported = bindings.get(value.text);
+        if (filename && ts.isStringLiteral(filename) && imported)
+          artifacts.set(filename.text, imported);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  return artifacts;
+}
+
 /** Имя компонента → множество его `--lab-z-*` слоёв, для core и react раздельно. */
 export function zLevelsByComponent(): {
   core: Map<string, Set<string>>;
@@ -295,6 +331,17 @@ export function zLevelsByComponent(): {
 } {
   const core = new Map<string, Set<string>>();
   const react = new Map<string, Set<string>>();
+  const producer = 'packages/core/scripts/copy-artifacts.ts';
+  const shared = cssArtifactSources(readFileSync(resolve(repoRoot, producer), 'utf8'));
+  const add = (bucket: Map<string, Set<string>>, name: string, source: string): void => {
+    for (const m of source.matchAll(ZINDEX_DECL)) {
+      for (const ref of (m[1] as string).matchAll(Z_REF)) {
+        const set = bucket.get(name) ?? new Set<string>();
+        set.add(ref[0]);
+        bucket.set(name, set);
+      }
+    }
+  };
 
   for (const rel of zSurfaceFiles()) {
     const coreMatch = /packages\/core\/src\/components\/([^/]+)\//.exec(rel);
@@ -304,14 +351,23 @@ export function zLevelsByComponent(): {
       : reactMatch
         ? { name: reactMatch[1] as string, bucket: react }
         : null;
-    if (!target) continue;
+    if (target) add(target.bucket, target.name, readNormalized(rel));
 
-    for (const m of readNormalized(rel).matchAll(ZINDEX_DECL)) {
-      for (const ref of (m[1] as string).matchAll(Z_REF)) {
-        const set = target.bucket.get(target.name) ?? new Set<string>();
-        set.add(ref[0]);
-        target.bucket.set(target.name, set);
-      }
+    const renderer = /packages\/react\/src\/([^/]+)\.tsx$/.exec(rel);
+    if (!renderer) continue;
+    for (const { fileName } of ts.preProcessFile(readFileSync(resolve(repoRoot, rel), 'utf8'))
+      .importedFiles) {
+      const imported = /^@labpics\/ui-core\/(.+\.css)$/.exec(fileName);
+      if (!imported) continue;
+      // Follow the actual artifact producer, including renamed export/source pairs.
+      // A new shared CSS import must resolve; it cannot silently vanish from parity.
+      const source = shared.get(imported[1] as string);
+      if (!source) throw new Error(`${rel}: no CSS producer for ${fileName}`);
+      const path = relative(
+        repoRoot,
+        resolve(repoRoot, dirname(producer), source.replace(/\.js$/, '.ts')),
+      ).replaceAll('\\', '/');
+      add(react, renderer[1] as string, readNormalized(path));
     }
   }
   return { core, react };
