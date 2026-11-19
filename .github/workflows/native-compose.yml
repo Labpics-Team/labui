@@ -9,17 +9,13 @@ on:
       - packages/colors/**
       - packages/materials/**
       - .github/workflows/native-compose.yml
-      - .github/actions/prepare-native-icons/**
 
 permissions:
   contents: read
 
-# Icons still uses the accepted development source; Colors resolves its public release.
+# UI is under test; Icons, Colors and Motion resolve their public releases.
 env:
-  ICONS_SOURCE: 2282d3f6f4f0628878b273c346bf77b3e7393f95
   ORG_GRADLE_PROJECT_uiSource: ${{ github.workspace }}/native/compose
-  ORG_GRADLE_PROJECT_iconsSource: ${{ github.workspace }}/.dependencies/icons/native/compose
-  ORG_GRADLE_PROJECT_iconsVersion: '0.3.0'
 
 concurrency:
   group: native-compose-${{ github.ref }}
@@ -38,9 +34,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/prepare-native-icons
-        with:
-          source: ${{ env.ICONS_SOURCE }}
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
@@ -122,9 +115,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/prepare-native-icons
-        with:
-          source: ${{ env.ICONS_SOURCE }}
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
@@ -176,9 +166,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/prepare-native-icons
-        with:
-          source: ${{ env.ICONS_SOURCE }}
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin

@@ -54,7 +54,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(uiCoordinate)
-            implementation(providers.gradleProperty("iconsVersion").map { "pics.lab:icons-compose:$it" })
+            implementation(nativeIcons.compose)
             implementation(libs.datastore.preferences)
         }
         commonTest.dependencies { implementation(kotlin("test")) }

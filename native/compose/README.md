@@ -307,8 +307,12 @@ XCTest ищет live announcements по label: UIKit экспортирует и
 в [CI 44158011723](https://github.com/Labpics-Team/labui/actions/runs/44158011723):
 143.6 секунды на iPhone 16 Pro Simulator, включая восстановленное значение
 «Нативная лаборатория 東京». Это проверка поведения, а не скорости устройства.
-Пример использует опубликованный `pics.lab:icons-compose` через `iconsVersion`;
-до выпуска `iconsSource` явно подключает принятый native-каталог исходников.
+Библиотека и пример используют опубликованный `pics.lab:icons-compose:0.4.0`.
+Версия и точный commit Maven-хранилища заданы один раз в
+[`icons-release.json`](icons-release.json); оба Gradle-проекта получают общий
+каталог `nativeIcons`. CI устанавливает публичные артефакты Icons без checkout,
+генерации каталога или подмены исходниками. Для локальной разработки остаются
+явные `iconsRepository` / `iconsVersion` и `iconsSource` у consumer.
 Публичный выпуск Colors закреплён в [`colors-release.json`](colors-release.json):
 одна версия содержит точный source commit для Android, desktop и Apple.
 Оба Gradle-проекта используют общий каталог зависимостей и публичный Maven;
