@@ -85,6 +85,11 @@ try {
     }
     const {renderSelect}=await import('@labpics/ui-vue/ssr');
     for(const size of ['s','m','l'])parts.push('<section data-dropdown="'+size+'">'+renderSelect({items:[{value:'x',label:'Label'}],label:'Dropdown',size,defaultValue:['x']},{leading:${JSON.stringify(svg)}})+'</section>');
+    parts.push('<section data-gallery style="display:grid;gap:28px;width:320px;padding:10px">'+
+      '<div data-long>'+renderSelect({items:[{value:'long',label:'An unusually long selected option that still needs its removal action'}],label:'Long selection',multiple:true,defaultValue:['long']})+'</div>'+
+      '<div data-disabled>'+renderSelect({items,label:'Disabled',multiple:true,disabled:true,defaultValue:['a','b']})+'</div>'+
+      '<div data-hover>'+renderSelect({items,label:'Hover',multiple:true,defaultValue:['a','c']})+'</div>'+
+      '<div data-open>'+renderSelect({items,label:'Open',multiple:true,defaultValue:['b']})+'</div></section>');
     parts.push('<section data-renderer="react" id="react-root">'+renderToString(tree())+'</section>');
     await writeFile('index.html','<!doctype html><html data-theme="light"><head><meta charset="utf-8"><link rel="stylesheet" href="/client.css"><style>html{background:var(--lab-bg-primary);color:var(--lab-label-primary)}body{margin:24px;display:grid;gap:24px;font-family:Geist}form,section{margin:0;max-width:768px}form{padding-top:8px}section[data-dropdown]{width:max-content}</style></head><body>'+parts.join('')+'<script type="module" src="/client.js"></script></body></html>');
   `,
@@ -255,7 +260,35 @@ try {
           await multi.screenshot({
             path: join(output, `${engine}-${theme}-${scale}-multiselect.png`),
           });
+          const gallery = page.locator('[data-gallery]');
+          const long = gallery.getByRole('button', {
+            name: 'Remove An unusually long selected option that still needs its removal action',
+          });
+          const chipBounds = await long.boundingBox();
+          const longBounds = await gallery.locator('[data-long]').boundingBox();
+          assert.ok(
+            chipBounds.x >= longBounds.x &&
+              chipBounds.x + chipBounds.width <= longBounds.x + longBounds.width,
+          );
+          await expect(gallery.locator('[data-disabled]').getByRole('combobox')).toBeDisabled();
+          await gallery.locator('[data-hover] .lab-select-control').hover();
+          await gallery.screenshot({
+            path: join(output, `${engine}-${theme}-${scale}-states.png`),
+          });
+          await gallery.locator('[data-open]').getByRole('combobox').focus();
+          await page.keyboard.press('ArrowDown');
+          const listbox = gallery.locator('[data-open]').getByRole('listbox');
+          await expect(listbox).toBeVisible();
+          await listbox.screenshot({ path: join(output, `${engine}-${theme}-${scale}-open.png`) });
+          await page.keyboard.press('Escape');
         }
+      await page
+        .locator('[data-long]')
+        .getByRole('button', {
+          name: 'Remove An unusually long selected option that still needs its removal action',
+        })
+        .click();
+      await expect(page.locator('[data-long] .lab-chip-label')).toHaveCount(0);
       assert.deepEqual(errors, []);
       records.push({
         engine,
@@ -267,6 +300,8 @@ try {
         forms: true,
         controlledRejection: true,
         emptyStringKey: true,
+        longTextRemoval: true,
+        disabledHoverOpenRenders: true,
         metrics,
         errors,
       });

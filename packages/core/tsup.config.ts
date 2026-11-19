@@ -35,6 +35,7 @@ export default libraryPreset({
     'src/components/badge/contract.ts',
     'src/components/kbd/contract.ts',
     'src/components/chip/contract.ts',
+    'src/components/select/behavior.ts',
     'src/components/breadcrumb/contract.ts',
     'src/components/pagination/contract.ts',
     'src/ssr/index.ts',

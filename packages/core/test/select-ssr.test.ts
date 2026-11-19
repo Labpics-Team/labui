@@ -8,7 +8,7 @@ const items = [
 ];
 
 function label(markup: string): string {
-  return markup.match(/class="value-text"[^>]*>(.*?)<\/span>/s)?.[1] ?? '';
+  return markup.match(/part="value-text"[^>]*>(.*?)<\/span>/s)?.[1] ?? '';
 }
 
 describe('Select server selection', () => {
@@ -30,7 +30,12 @@ describe('Select server selection', () => {
     const empty = renderToString(
       html`<lab-select .items=${items} .defaultValue=${['b']} .value=${[]} placeholder="Выбрать"></lab-select>`,
     );
-    expect(label(uncontrolled)).toContain('Второй, Первый');
+    expect(uncontrolled.match(/class="lab-chip-label"[^>]*>(.*?)<\/span>/gs)?.join('')).toContain(
+      'Второй',
+    );
+    expect(uncontrolled.match(/class="lab-chip-label"[^>]*>(.*?)<\/span>/gs)?.join('')).toContain(
+      'Первый',
+    );
     expect(label(empty)).toContain('Выбрать');
     expect(label(empty)).not.toContain('Второй');
   });

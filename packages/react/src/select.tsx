@@ -33,19 +33,14 @@
  */
 'use client';
 
-import type { MachineModule, PropTypes, SchemaOf } from '@labpics/ui-core';
 import type { LabSelectItem, LabSelectPlacement, LabSelectSize } from '@labpics/ui-core/select';
+import { selectBehavior } from '@labpics/ui-core/select/behavior';
 import * as selectMachine from '@zag-js/select';
 import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Chip } from './chip.js';
 import { useZag } from './use-zag.js';
 import '@labpics/ui-core/select.css';
-
-type SelectSchema = SchemaOf<selectMachine.Service<LabSelectItem>>;
-type SelectApi = selectMachine.Api<PropTypes, LabSelectItem>;
-
-const selectModule: MachineModule<SelectSchema, SelectApi> = selectMachine;
 
 export interface SelectProps {
   /** The options. The machine resolves value/label/disabled through the collection. */
@@ -117,10 +112,11 @@ export function Select({
   );
 
   const hiddenSelect = useRef<HTMLSelectElement>(null);
-  const resetting = useRef(false);
   const [, refresh] = useState(0);
-  const api = useZag(selectModule, {
-    id: useId(),
+  const id = useId();
+  const api = useZag(selectBehavior, {
+    id,
+    ids: { hiddenSelect: `${id}-native` },
     collection,
     multiple,
     disabled,
@@ -132,7 +128,7 @@ export function Select({
     defaultValue,
     positioning: { placement, strategy: 'fixed' },
     onValueChange: (details) => {
-      if (!resetting.current || value === undefined) onValueChange?.(details.value);
+      onValueChange?.(details.value);
       // Rejected native/autofill requests must restore the accepted DOM selection.
       refresh((revision) => revision + 1);
     },
@@ -158,40 +154,6 @@ export function Select({
     }
     if (!hasSelection) select.selectedIndex = -1;
   });
-
-  const current = useRef(api);
-  current.current = api;
-  // Zag's native reset effect requests the initial value even for a controlled
-  // field. A reset must keep the application's accepted value, as other Lab fields
-  // do. Reconcile after the browser default action; cancelled reset is inert.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: form changes the native association.
-  useEffect(() => {
-    const native = hiddenSelect.current;
-    const owner = native?.form;
-    const tasks = new Set<ReturnType<typeof setTimeout>>();
-    const reset = (event: Event) => {
-      resetting.current = true;
-      const task = setTimeout(() => {
-        tasks.delete(task);
-        resetting.current = false;
-        if (event.defaultPrevented || !native?.isConnected) return;
-        const selected = new Set(current.current.value);
-        let hasSelection = false;
-        for (const option of native.options) {
-          option.selected = selected.has(option.value);
-          hasSelection ||= option.selected;
-        }
-        if (!hasSelection) native.selectedIndex = -1;
-        refresh((revision) => revision + 1);
-      }, 0);
-      tasks.add(task);
-    };
-    owner?.addEventListener('reset', reset, true);
-    return () => {
-      owner?.removeEventListener('reset', reset, true);
-      for (const task of tasks) clearTimeout(task);
-    };
-  }, [form]);
 
   const listbox = (
     <div {...api.getPositionerProps()} className="lab-select-positioner">

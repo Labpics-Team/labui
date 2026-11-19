@@ -55,10 +55,22 @@ React's native `<select>` participates directly in its form. Multiple values
 produce repeated entries with the same `name`. Missing and disabled options are
 omitted from submission, as in a native select, while the accepted array survives.
 
-`required`, `disabled`, a disabled parent `fieldset`, reset and native input are
-supported. Reset restores the uncontrolled default and preserves controlled
-values. Lit also exposes `form`, `validity`, `validationMessage`, `checkValidity()`
-and `reportValidity()`, and restores saved state only in uncontrolled mode.
+`required`, `disabled` and native `input`/`change` are supported. Native input
+reads `selectedOptions`, preserving a real empty-string option (`['']`) as
+distinct from no selection (`[]`).
+
+Every disabled ancestor `fieldset` disables the control, except when the control
+is inside that fieldset's first `legend`. The exception applies separately to
+each ancestor; an outer disabled fieldset can still disable the control.
+
+A non-cancelled reset restores the initial uncontrolled default and preserves
+controlled values. Calling `preventDefault()` on the form's `reset` event
+preserves the accepted selection, visible chips and submitted values. Changing
+React's `form` prop updates the native form association: reset follows the
+currently associated form, and resetting the previous form has no effect.
+
+Lit also exposes `form`, `validity`, `validationMessage`, `checkValidity()` and
+`reportValidity()`, and restores saved state only in uncontrolled mode.
 
 The server frame resolves labels and chips from `value ?? defaultValue`, including
 a controlled empty array. The positioned listbox is interactive after connection;
@@ -68,4 +80,7 @@ uses Foundation actions and a native popup, with arrows, Home/End and Escape.
 Sources: [Figma Dropdown](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2?node-id=6212-445),
 [Multiselect](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2?node-id=6214-4162),
 [Zag Select](https://zagjs.com/components/select#controlled-select-value),
-[form-associated custom elements](https://web.dev/articles/more-capable-form-controls).
+[form-associated custom elements](https://web.dev/articles/more-capable-form-controls),
+[HTML selected options](https://developer.mozilla.org/en-US/docs/Web/API/HTMLSelectElement/selectedOptions),
+[current form association](https://developer.mozilla.org/en-US/docs/Web/API/HTMLSelectElement/form),
+[form reset](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reset_event).

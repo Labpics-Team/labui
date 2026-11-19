@@ -43,7 +43,7 @@ ${sizes}
 [data-lab-select][data-disabled] .lab-select-label { color: inherit; }
 [data-lab-select][data-multiple] { --_select-height: ${rem(p.multiple.height)}; --_select-radius: ${rem(p.multiple.radius)}; inline-size: 100%; }
 [data-lab-select][data-multiple] .lab-select-control { display: grid; grid-template-columns: minmax(0, 1fr); }
-[data-lab-select][data-multiple] .lab-select-trigger { grid-area: 1 / 1; min-block-size: ${rem(p.multiple.height)}; padding: .75rem ${rem(p.multiple.chevronEnd)} .75rem ${rem(p.multiple.placeholderStart)}; font-size: 1rem; line-height: 1.5; font-weight: 400; letter-spacing: -.015625em; }
+[data-lab-select][data-multiple] .lab-select-trigger { grid-area: 1 / 1; min-block-size: ${rem(p.multiple.height)}; padding: ${rem(p.sizes.m.paddingY)} ${rem(p.multiple.chevronEnd)} ${rem(p.sizes.m.paddingY)} ${rem(p.multiple.placeholderStart)}; font-size: ${rem(p.sizes.m.fontSize)}; line-height: ${p.sizes.m.lineHeight / p.sizes.m.fontSize}; font-weight: ${p.sizes.m.fontWeight}; letter-spacing: ${p.sizes.m.letterSpacing / p.sizes.m.fontSize}em; }
 [data-lab-select][data-multiple] .lab-select-trigger .lab-select-value-text { color: var(--lab-${p.roles.placeholder}); }
 [data-lab-select][data-multiple] .lab-select-indicator { margin-inline-start: auto; color: var(--lab-${p.roles.caption}); }
 [data-lab-select][data-multiple][data-disabled] .lab-select-trigger .lab-select-value-text,

@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -130,8 +129,11 @@ public fun LabSelect(
     val labelLayout = rememberTextMeasurer().measure(label, caption, maxLines = 1)
     val border = colors[if (multiple && (focused || expanded)) LabComponents.SelectRolesFocus else LabComponents.SelectRolesBorder]
     val density = LocalDensity.current
-    Box(modifier.then(if (multiple) Modifier.fillMaxWidth() else Modifier).padding(top = if (visibleCaption) LabComponents.SelectMultipleLabelOverhang.dp else 0.dp)) {
-        Box(Modifier.onSizeChanged { controlSize = it }.drawWithCache {
+    val captionOverhang = with(density) { LabComponents.SelectMultipleLabelOverhang.sp.toDp() }
+    val multipleMinHeight = maxOf(LabComponents.SelectMultipleHeight.dp,
+        with(density) { style.lineHeight.toDp() } + LabComponents.SelectM.paddingY.dp * 2)
+    Box(modifier.then(if (multiple) Modifier.fillMaxWidth() else Modifier).padding(top = if (visibleCaption) captionOverhang else 0.dp)) {
+        Box(Modifier.then(if (multiple) Modifier.fillMaxWidth() else Modifier).onSizeChanged { controlSize = it }.drawWithCache {
             val stroke = LabComponents.SelectStroke.dp.toPx()
             val outline = shape.createOutline(this.size, layoutDirection, this)
             val contour = Path().apply { addOutline(outline) }
@@ -161,7 +163,7 @@ public fun LabSelect(
         }) {
             // The trigger and removal chips are siblings: each is one independent action.
             Row(Modifier.then(if (multiple) Modifier.matchParentSize() else Modifier)
-                .defaultMinSize(minHeight = (if (multiple) LabComponents.SelectMultipleHeight else metrics.height).dp)
+                .defaultMinSize(minHeight = if (multiple) multipleMinHeight else metrics.height.dp)
                 .focusRequester(trigger).onPreviewKeyEvent { event ->
                     if (enabled && event.type == KeyEventType.KeyDown && (event.key == Key.DirectionDown || event.key == Key.DirectionUp)) {
                         expanded = true; true
@@ -170,20 +172,21 @@ public fun LabSelect(
                 .semantics { contentDescription = label; stateDescription = text }
                 .padding(start = (if (multiple) LabComponents.SelectMultiplePlaceholderStart else metrics.paddingStart).dp,
                     end = (if (multiple) LabComponents.SelectMultipleChevronEnd else metrics.paddingEnd).dp,
-                    top = (if (multiple) 12f else metrics.paddingY).dp, bottom = (if (multiple) 12f else metrics.paddingY).dp),
+                    top = (if (multiple) LabComponents.SelectM.paddingY else metrics.paddingY).dp,
+                    bottom = (if (multiple) LabComponents.SelectM.paddingY else metrics.paddingY).dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(metrics.gap.dp)) {
-                if (!multiple || value.isEmpty()) Row(Modifier.weight(1f, fill = false), verticalAlignment = Alignment.CenterVertically,
+                if (!multiple || value.isEmpty()) Row(Modifier.weight(1f, fill = multiple), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(LabComponents.SelectLeadingGap.dp)) {
                     if (!multiple && leading != null) Box(Modifier.size(metrics.leadingSize.dp).clearAndSetSemantics {}) {
                         leading(LabSelectIconScope(metrics.leadingSize.dp, textColor))
                     }
-                    BasicText(text, Modifier.weight(1f, fill = false).clearAndSetSemantics {}, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    LabText(text, Modifier.weight(1f, fill = false).clearAndSetSemantics {}, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         style = if (multiple && enabled) style.copy(color = colors[LabComponents.SelectRolesPlaceholder]) else style)
                 } else Box(Modifier.weight(1f))
                 SelectChevron(expanded, if (!enabled) textColor else colors[if (multiple) LabComponents.SelectRolesCaption else LabComponents.SelectRolesLabel])
             }
-            if (multiple) FlowRow(Modifier.defaultMinSize(minHeight = LabComponents.SelectMultipleHeight.dp)
+            if (multiple) FlowRow(Modifier.defaultMinSize(minHeight = multipleMinHeight)
                 .padding(start = LabComponents.SelectMultiplePaddingStart.dp, end = LabComponents.SelectMultiplePaddingEnd.dp,
                     top = LabComponents.SelectMultiplePaddingY.dp, bottom = LabComponents.SelectMultiplePaddingY.dp),
                 horizontalArrangement = Arrangement.spacedBy(LabComponents.SelectMultipleGap.dp),
@@ -194,7 +197,7 @@ public fun LabSelect(
                         onRemove = { onValueChange(value.filter { it != item.value }); trigger.requestFocus() })
                 } }
             }
-            if (visibleCaption) BasicText(label, Modifier.offset(y = -LabComponents.SelectMultipleLabelOverhang.dp)
+            if (visibleCaption) LabText(label, Modifier.offset(y = -captionOverhang)
                 .padding(start = LabComponents.SelectMultipleLabelStart.dp, end = LabComponents.SelectMultipleLabelStart.dp)
                 .clearAndSetSemantics {}, style = if (enabled && (focused || expanded)) caption.copy(color = textColor) else caption, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
@@ -228,12 +231,12 @@ public fun LabSelect(
                             onValueChange(if (!multiple) listOf(item.value) else if (item.value in value) value.filter { it != item.value } else value + item.value)
                             if (!multiple) close()
                         }.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        BasicText(item.label, Modifier.weight(1f), style = style.copy(color = colors[when {
+                        LabText(item.label, Modifier.weight(1f), style = style.copy(color = colors[when {
                             item.disabled -> "label-quaternary"
                             item.value in value -> "label-accent"
                             else -> "label-primary"
                         }]))
-                        if (item.value in value) BasicText("✓", Modifier.clearAndSetSemantics {}, style = style.copy(color = colors["label-accent"]))
+                        if (item.value in value) LabText("✓", Modifier.clearAndSetSemantics {}, style = style.copy(color = colors["label-accent"]))
                     }
                 } }
             }

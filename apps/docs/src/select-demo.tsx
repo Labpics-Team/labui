@@ -54,6 +54,7 @@ function FormExample() {
           defaultValue={['banana']}
           items={options}
         />
+        <Select label="Empty key single" defaultValue={['banana']} items={options} />
       </fieldset>
       <output data-testid="select-request">{JSON.stringify(request)}</output>
       <button type="button" onClick={() => setAccept(!accept)}>
@@ -64,6 +65,27 @@ function FormExample() {
       </button>
       <button type="reset">Reset</button>
     </form>
+  );
+}
+
+function ExternalFormExample() {
+  const [form, setForm] = useState('select-form-a');
+  return (
+    <section data-testid="select-form-association">
+      <form id="select-form-a" />
+      <form id="select-form-b" />
+      <Select
+        label="External choice"
+        name="choice"
+        form={form}
+        multiple
+        defaultValue={['banana']}
+        items={FRUITS}
+      />
+      <button type="button" onClick={() => setForm('select-form-b')}>
+        Associate with B
+      </button>
+    </section>
   );
 }
 
@@ -78,5 +100,14 @@ createRoot(mount).render(
       <Select label="Fruits" placeholder="Pick fruits…" multiple items={FRUITS.slice(0, 3)} />
     </span>
     <FormExample />
+    <ExternalFormExample />
+    <fieldset disabled data-testid="select-disabled-ancestors">
+      <legend>
+        Exception <Select label="Legend choice" items={FRUITS} />
+      </legend>
+      <fieldset>
+        <Select label="Nested choice" items={FRUITS} />
+      </fieldset>
+    </fieldset>
   </StrictMode>,
 );

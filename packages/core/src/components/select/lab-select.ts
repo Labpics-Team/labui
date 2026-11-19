@@ -6,9 +6,10 @@
 import * as selectMachine from '@zag-js/select';
 import { type TemplateResult, css, html, isServer, nothing, unsafeCSS } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
-import type { MachineModule, PropTypes, SchemaOf } from '../../behaviors/types.js';
+import type { PropTypes, SchemaOf } from '../../behaviors/types.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
+import { selectBehavior } from './behavior.js';
 import { selectCss } from './styles.js';
 
 /** Control size — drives trigger height and listbox font band. */
@@ -43,12 +44,6 @@ export interface LabSelectItem {
  */
 type SelectSchema = SchemaOf<selectMachine.Service<LabSelectItem>>;
 type SelectApi = selectMachine.Api<PropTypes, LabSelectItem>;
-
-/**
- * The `@zag-js/select` package seen through the renderer-agnostic seam — the SAME
- * `MachineModule` shape the Lit base binds for every other component, no casts.
- */
-const selectModule: MachineModule<SelectSchema, SelectApi> = selectMachine;
 
 /** Per-instance machine id source. Overlays are client-only, so a client counter
  * is SSR-safe; an explicit id keeps the machine's element ids deterministic. */
@@ -116,6 +111,7 @@ export class LabSelect extends LabElement {
   declare removeLabel: string;
   private declare disabledByForm: boolean;
   private readonly internals?: ElementInternals;
+  private initialValues?: string[];
   declare placeholder: string;
   declare label: string;
   /** Null leaves selection to the component; an array, including [], is controlled. */
@@ -148,8 +144,9 @@ export class LabSelect extends LabElement {
     this.items = [];
     // All parts live in this shadow root. A defined value is controlled regardless
     // of whether it arrived as a JS property or an attribute.
-    this.machineCtl = this.runMachine(selectModule, () => ({
+    this.machineCtl = this.runMachine(selectBehavior, () => ({
       id: this.machineId,
+      ids: { hiddenSelect: `${this.machineId}-native` },
       collection: this.collection,
       multiple: this.multiple,
       disabled: this.disabled || this.disabledByForm,
@@ -191,6 +188,7 @@ export class LabSelect extends LabElement {
   }
 
   override willUpdate(changed: Map<string, unknown>): void {
+    this.initialValues ??= [...(this.defaultValue ?? [])];
     // Rebuild the collection from `items` BEFORE the machine reads props this
     // render, so its value resolver always matches the rendered options. The
     // collection is the machine's only source of value/label/disabled per item.
@@ -218,7 +216,7 @@ export class LabSelect extends LabElement {
     this.disabledByForm = disabled;
   }
   formResetCallback(): void {
-    if (this.value === null) this.machineCtl.api.setValue(this.defaultValue ?? []);
+    if (this.value === null) this.machineCtl.api.setValue(this.initialValues ?? []);
     this.requestUpdate();
   }
   formStateRestoreCallback(state: string | File | FormData): void {

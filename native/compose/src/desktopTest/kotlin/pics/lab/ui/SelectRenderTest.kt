@@ -108,7 +108,7 @@ class SelectRenderTest {
     @Test fun authoredSizesAndChipsRenderAtEveryTextScaleInBothThemes() {
         val output = File("build/select-evidence").apply { mkdirs() }
         for (appearance in LabAppearance.entries) for (scale in listOf(1f, 1.25f, 2f)) {
-            val scene = ImageComposeScene(840, 980, Density(2f, scale)) { LabTheme(theme(appearance)) {
+            val scene = ImageComposeScene(840, 1400, Density(2f, scale)) { LabTheme(theme(appearance)) {
                 Column(Modifier.fillMaxSize().background(if (appearance == LabAppearance.Light) Color.White else Color(0xFF101012)).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     LabControlSize.entries.forEach { size ->
@@ -128,6 +128,10 @@ class SelectRenderTest {
                     assertEquals(56f, named(scene, "Remove Chip label").boundsInRoot.height)
                 }
                 assertTrue(named(scene, "Remove An unusually long selected option that still needs its removal action").boundsInRoot.width <= 560f)
+                assertEquals(768f, named(scene, "Label").boundsInRoot.width)
+                assertEquals(768f, named(scene, "No caption").boundsInRoot.width)
+                assertTrue(named(scene, "No caption").boundsInRoot.height >= (24f * scale + 24f) * 2)
+                assertEquals("Select…", named(scene, "No caption").config[SemanticsProperties.StateDescription])
                 assertTrue(named(scene, "No caption").config.contains(SemanticsProperties.Disabled))
             } finally { scene.close() }
         }
