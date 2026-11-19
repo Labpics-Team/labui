@@ -75,8 +75,8 @@ class SliderRenderTest {
             settle(scene)
             var nodes = sliders(scene)
             assertEquals(2, nodes.size)
-            assertEquals(ProgressBarRangeInfo(20f, 0f..80f), nodes[0].config[SemanticsProperties.ProgressBarRangeInfo])
-            assertEquals(ProgressBarRangeInfo(80f, 20f..100f), nodes[1].config[SemanticsProperties.ProgressBarRangeInfo])
+            assertEquals(ProgressBarRangeInfo(20f, 0f..80f, 79), nodes[0].config[SemanticsProperties.ProgressBarRangeInfo])
+            assertEquals(ProgressBarRangeInfo(80f, 20f..100f, 79), nodes[1].config[SemanticsProperties.ProgressBarRangeInfo])
             assertTrue(nodes[0].config[SemanticsActions.SetProgress].action!!.invoke(99f))
             settle(scene)
             assertEquals(80f..80f, value)
@@ -127,9 +127,127 @@ class SliderRenderTest {
         } finally { scene.close() }
     }
 
+    @Test fun circularTrackClickChoosesAnAbsoluteValue() {
+        var value by mutableStateOf(0f)
+        var changes = 0
+        val scene = ImageComposeScene(160, 160) {
+            LabTheme(theme()) { Box(Modifier.padding(24.dp)) {
+                LabSlider(value, { value = it; changes++ }, "Dial", labelHidden = true, variant = LabSliderVariant.Circular)
+            } }
+        }
+        fun click(point: Offset) {
+            scene.sendPointerEvent(PointerEventType.Press, point)
+            scene.sendPointerEvent(PointerEventType.Release, point); settle(scene)
+        }
+        try {
+            settle(scene)
+            click(Offset(26f, 72f)); assertEquals(75f, value); assertEquals(1, changes)
+            value = 100f; settle(scene)
+            click(Offset(118f, 72f)); assertEquals(25f, value); assertEquals(2, changes)
+        } finally { scene.close() }
+    }
+
+    @Test fun coincidentRangeThumbsOpenInEitherDirection() {
+        for (direction in LayoutDirection.entries) for (variant in listOf(LabSliderVariant.Linear, LabSliderVariant.Circular)) {
+            var value by mutableStateOf(0f..0f)
+            val scene = ImageComposeScene(448, 160) {
+                CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                    LabTheme(theme()) { Box(Modifier.fillMaxSize().padding(24.dp)) {
+                        LabRangeSlider(value, { value = it }, "Range", variant = variant, labelHidden = true)
+                    } }
+                }
+            }
+            fun point(fraction: Float): Offset = if (variant == LabSliderVariant.Circular) {
+                val center = if (direction == LayoutDirection.Rtl) 376f else 72f
+                Offset(center + (46 * kotlin.math.sin(fraction * 2 * Math.PI)).toFloat(),
+                    72 + (-46 * kotlin.math.cos(fraction * 2 * Math.PI)).toFloat())
+            } else {
+                val x = maxOf(12f, 400 * fraction) - 6
+                Offset(24 + if (direction == LayoutDirection.Rtl) 400 - x else x, 46f)
+            }
+            try {
+                for ((initial, delta) in listOf(0f to 20f, 100f to -20f, 50f to 20f, 50f to -20f)) {
+                    value = initial..initial; settle(scene)
+                    scene.sendPointerEvent(PointerEventType.Press, point(initial / 100))
+                    for (part in 1..8) {
+                        scene.sendPointerEvent(PointerEventType.Move, point((initial + delta * part / 8) / 100)); settle(scene)
+                    }
+                    scene.sendPointerEvent(PointerEventType.Release, point((initial + delta) / 100)); settle(scene)
+                    assertEquals(if (delta > 0) initial..(initial + delta) else (initial + delta)..initial, value,
+                        "$variant $direction initial=$initial delta=$delta")
+                }
+                if (variant == LabSliderVariant.Circular) for (delta in listOf(20f, -20f)) {
+                    value = 0f..100f; settle(scene)
+                    scene.sendPointerEvent(PointerEventType.Press, point(0f))
+                    for (part in 1..8) {
+                        scene.sendPointerEvent(PointerEventType.Move, point(delta * part / 800)); settle(scene)
+                    }
+                    scene.sendPointerEvent(PointerEventType.Release, point(delta / 100)); settle(scene)
+                    assertEquals(if (delta > 0) 20f..100f else 0f..80f, value,
+                        "Full circular range $direction delta=$delta")
+                }
+            } finally { scene.close() }
+        }
+    }
+
+    @Test fun accessibilityIncrementsFollowTheReachableStepDomain() {
+        var value by mutableStateOf(0f)
+        val scene = ImageComposeScene(400, 100) {
+            LabTheme(theme()) { LabSlider(value, { value = it }, "Volume", step = 20f, labelHidden = true) }
+        }
+        try {
+            settle(scene)
+            val node = sliders(scene).single()
+            val info = node.config[SemanticsProperties.ProgressBarRangeInfo]
+            // AndroidX's delegate derives ACTION_SCROLL_FORWARD this way.
+            val increment = (info.range.endInclusive - info.range.start) / if (info.steps > 0) info.steps + 1 else 20
+            assertTrue(node.config[SemanticsActions.SetProgress].action!!.invoke(info.current + increment))
+            settle(scene); assertEquals(20f, value)
+            assertEquals(4, info.steps)
+        } finally { scene.close() }
+    }
+
+    @Test fun accessibilityExcludesUnreachableMaxAndHandlesTwoEndpoints() {
+        data class Case(val min: Float, val max: Float, val step: Float, val highest: Float, val steps: Int)
+        for (case in listOf(Case(0f, 100f, 30f, 90f, 2), Case(5f, 100f, 20f, 85f, 3),
+            Case(0f, 100f, 100f, 100f, 0), Case(-.7f, 1.3f, .2f, 1.3f, 9))) {
+            var value by mutableStateOf(case.min)
+            val scene = ImageComposeScene(400, 100) {
+                LabTheme(theme()) { LabSlider(value, { value = it }, "Volume", min = case.min, max = case.max, step = case.step, labelHidden = true) }
+            }
+            try {
+                settle(scene)
+                fun increment(sign: Int): Boolean {
+                    val node = sliders(scene).single(); val info = node.config[SemanticsProperties.ProgressBarRangeInfo]
+                    assertEquals(case.min..case.highest, info.range); assertEquals(case.steps, info.steps)
+                    val delta = (info.range.endInclusive - info.range.start) / if (info.steps > 0) info.steps + 1 else 20
+                    return node.config[SemanticsActions.SetProgress].action!!.invoke(info.current + sign * delta).also { settle(scene) }
+                }
+                assertTrue(increment(1)); assertEquals(case.min + case.step, value, .000001f)
+                value = case.highest; settle(scene)
+                assertFalse(increment(1)); assertEquals(case.highest, value)
+                assertTrue(increment(-1)); assertEquals(case.highest - case.step, value, .000001f)
+            } finally { scene.close() }
+        }
+        var range by mutableStateOf(25f..65f)
+        val scene = ImageComposeScene(400, 100) {
+            LabTheme(theme()) { LabRangeSlider(range, { range = it }, "Range", min = 5f, max = 100f, step = 20f, labelHidden = true) }
+        }
+        try {
+            settle(scene)
+            val nodes = sliders(scene)
+            assertEquals(ProgressBarRangeInfo(25f, 5f..65f, 2), nodes[0].config[SemanticsProperties.ProgressBarRangeInfo])
+            assertEquals(ProgressBarRangeInfo(65f, 25f..85f, 2), nodes[1].config[SemanticsProperties.ProgressBarRangeInfo])
+            assertTrue(nodes[0].config[SemanticsActions.SetProgress].action!!.invoke(45f)); settle(scene)
+            assertEquals(45f..65f, range)
+            assertEquals(ProgressBarRangeInfo(65f, 45f..85f, 1), sliders(scene)[1].config[SemanticsProperties.ProgressBarRangeInfo])
+        } finally { scene.close() }
+    }
+
     @Test fun fractionalDomainAndReadOnlyAreHonest() {
         val domain = SliderDomain(-.7f, 1.3f, .2f)
         assertEquals(.3f, domain.snap(.3f), .000001f)
+        assertEquals(1.3f, domain.snap(1.3f))
         assertEquals(90f, SliderDomain(0f, 100f, 30f).snap(100f))
         assertEquals(.3f, SliderDomain(0f, .3f, .1f).snap(.3f))
         assertEquals(listOf(.9f, .9f), domain.replace(listOf(-.3f, .9f), 0, 1.1f))

@@ -45,12 +45,36 @@ internal data class SliderDomain(val min: Float, val max: Float, val step: Float
     fun snap(value: Float): Float {
         val snapped = min.toDouble() + floor((value.coerceIn(min, max).toDouble() - min) / step + .5) * step
         val result = snapped.toFloat()
-        return (if (result > max) (snapped - step).toFloat() else result).coerceAtLeast(min)
+        // Decimal Float inputs can put an otherwise aligned endpoint one ULP
+        // above max (for example -0.7..1.3 by 0.2). Preserve that endpoint.
+        return when {
+            result <= max -> result
+            result.isFinite() && result - max <= maxOf(min.ulp, max.ulp, result.ulp) -> max
+            else -> (snapped - step).toFloat()
+        }.coerceAtLeast(min)
     }
     fun fraction(value: Float): Float = ((value.toDouble() - min) / (max.toDouble() - min)).toFloat()
     fun value(fraction: Float): Float = (min.toDouble() + fraction.coerceIn(0f, 1f) * (max.toDouble() - min)).toFloat()
     fun replace(values: List<Float>, index: Int, value: Float): List<Float> = values.toMutableList().also {
         it[index] = snap(value).coerceIn(values.getOrNull(index - 1) ?: min, values.getOrNull(index + 1) ?: max)
+    }
+    fun progressInfo(value: Float, low: Float, high: Float): ProgressBarRangeInfo {
+        val reachableHigh = snap(high)
+        val intervals = round((reachableHigh.toDouble() - low) / step)
+        val evenlySpaced = intervals in 1.0..Int.MAX_VALUE.toDouble() &&
+            step >= maxOf(low.ulp, reachableHigh.ulp) &&
+            abs((reachableHigh.toDouble() - low) / intervals - step) <= step.ulp * 2
+        return ProgressBarRangeInfo(value, low..reachableHigh, if (evenlySpaced) intervals.toInt() - 1 else 0)
+    }
+    fun accessibleChange(values: List<Float>, index: Int, requested: Float): List<Float> {
+        if (!requested.isFinite()) return values
+        val target = requested.coerceIn(values.getOrNull(index - 1) ?: min, values.getOrNull(index + 1) ?: snap(max))
+        val next = replace(values, index, target)
+        // Two reachable endpoints have zero intermediate steps. Android then
+        // requests 1/20 of their distance; preserve the requested direction.
+        return if (next == values && target != values[index])
+            replace(values, index, values[index] + if (target > values[index]) step else -step)
+        else next
     }
 }
 
@@ -180,28 +204,61 @@ private fun SliderContent(
                     val initial = current
                     pointerStart = initial
                     val initialFractions = initial.map(domain::fraction)
-                    val index = initialFractions.indices.minBy { (position(initialFractions[it]) - down.position).getDistance() }
-                    requests[index].requestFocus()
+                    var index = initialFractions.indices.minBy { (position(initialFractions[it]) - down.position).getDistance() }
                     val direct = (position(initialFractions[index]) - down.position).getDistance() <= LabComponents.SliderHitSize.dp.toPx() / 2
                     val firstPoint = if (vertical) actualHeight - down.position.y else if (rtl) actualWidth - down.position.x else down.position.x
                     val firstAngle = sliderCircleFraction(down.position - Offset(actualWidth / 2, actualHeight / 2))
-                    val angleOffset = if (direct && firstAngle != null) initialFractions[index] - firstAngle else 0f
-                    var previous = initialFractions[index]
+                    val coincident = initial.size == 2 && (position(initialFractions[0]) - position(initialFractions[1])).getDistance() < .01f
+                    val firstFraction = if (circular) firstAngle else firstPoint / if (vertical) actualHeight else actualWidth
+                    if (coincident && !direct && firstFraction != null) {
+                        index = when {
+                            firstFraction >= initialFractions[1] -> 1
+                            firstFraction <= initialFractions[0] -> 0
+                            else -> initialFractions.indices.minBy { abs(initialFractions[it] - firstFraction) }
+                        }
+                    }
+                    requests[index].requestFocus()
+                    var awaitingDirection = coincident && direct
+                    var angleOffset = if (direct && firstAngle != null) initialFractions[index] - firstAngle else 0f
+                    // Track targeting is absolute. Only a thumb drag starts
+                    // from the old value; subsequent samples keep continuity.
+                    var previous = if (direct) initialFractions[index] else firstAngle ?: initialFractions[index]
                     var dragging = false
                     var completed = false
                     fun apply(point: Offset) {
+                        val coordinate = if (vertical) actualHeight - point.y else if (rtl) actualWidth - point.x else point.x
+                        val angle = if (circular) sliderCircleFraction(point - Offset(actualWidth / 2, actualHeight / 2)) else null
+                        if (circular && angle == null) return
+                        if (awaitingDirection) {
+                            val delta = if (circular) {
+                                var turn = (angle ?: 0f) - (firstAngle ?: 0f)
+                                if (turn > .5f) turn -= 1f else if (turn < -.5f) turn += 1f
+                                turn
+                            } else coordinate - firstPoint
+                            if (delta == 0f) return
+                            index = if (circular && initialFractions[1] - initialFractions[0] == 1f) {
+                                if (delta > 0) 0 else 1
+                            } else if (delta > 0) 1 else 0
+                            awaitingDirection = false
+                            previous = initialFractions[index]
+                            angleOffset = if (circular) initialFractions[index] - (firstAngle ?: 0f) else 0f
+                            requests[index].requestFocus()
+                        }
                         val fraction = when {
                             circular -> {
-                                val angle = sliderCircleFraction(point - Offset(actualWidth / 2, actualHeight / 2)) ?: return
-                                val adjusted = angle + angleOffset
+                                val adjusted = (angle ?: 0f) + angleOffset
                                 (adjusted + floor(previous - adjusted + .5f)).coerceIn(0f, 1f).also { previous = it }
                             }
                             else -> {
-                                val coordinate = if (vertical) actualHeight - point.y else if (rtl) actualWidth - point.x else point.x
                                 val length = if (vertical) actualHeight else actualWidth
-                                if (direct) initialFractions[index] + (coordinate - firstPoint) / length
-                                else if (large) coordinate / length
-                                else if (coordinate <= thumbSize / 2) 0f else (coordinate + thumbSize / 2) / length
+                                if (large) {
+                                    if (direct) initialFractions[index] + (coordinate - firstPoint) / length else coordinate / length
+                                } else {
+                                    val center = position(initialFractions[index])
+                                    val startCenter = if (vertical) actualHeight - center.y else if (rtl) actualWidth - center.x else center.x
+                                    val target = if (direct) startCenter + coordinate - firstPoint else coordinate
+                                    if (target <= thumbSize / 2) 0f else (target + thumbSize / 2) / length
+                                }
                             }
                         }
                         request(index, domain.value(fraction))
@@ -330,10 +387,10 @@ private fun SliderContent(
                         }
                         .semantics {
                             contentDescription = name
-                            progressBarRangeInfo = ProgressBarRangeInfo(value, low..high)
+                            progressBarRangeInfo = domain.progressInfo(value, low, high)
                             if (!enabled) disabled()
                             if (enabled && !readOnly) setProgress { next ->
-                                val updated = domain.replace(current, index, next)
+                                val updated = domain.accessibleChange(current, index, next)
                                 if (updated == current) false else { change(updated); coroutine.launch { withFrameNanos {}; if (current == updated) end(current) }; true }
                             }
                         }.onKeyEvent { event ->

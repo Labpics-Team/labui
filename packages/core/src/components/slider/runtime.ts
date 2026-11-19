@@ -61,6 +61,9 @@ export function mountSlider(
         angleOffset: number;
         direct: boolean;
         thumbHalf: number;
+        thumbCenter: number;
+        pendingIndex: boolean;
+        startAngle: number;
       }
     | undefined;
   const listen = (target: EventTarget, name: string, fn: EventListener, capture = false) => {
@@ -148,6 +151,21 @@ export function mountSlider(
         event.clientY - active.bounds.top - active.bounds.height / 2,
       );
       if (angle === undefined) return;
+      if (active.pendingIndex) {
+        let delta = angle - active.startAngle;
+        if (delta > 0.5) delta -= 1;
+        else if (delta < -0.5) delta += 1;
+        if (delta === 0) return;
+        const fullRange =
+          active.start[0] === sliderBounds(input).min &&
+          active.start[1] === sliderBounds(input).max;
+        active.index = fullRange ? (delta > 0 ? 0 : 1) : delta > 0 ? 1 : 0;
+        active.startFraction = sliderFraction(active.start[active.index] ?? 0, input);
+        active.previousFraction = active.startFraction;
+        active.angleOffset = active.startFraction - active.startAngle;
+        active.pendingIndex = false;
+        inputs()[active.index]?.focus({ preventScroll: true });
+      }
       const adjusted = angle + active.angleOffset;
       fraction = Math.max(
         0,
@@ -162,13 +180,22 @@ export function mountSlider(
           : event.clientX - active.bounds.left;
       const length = vertical ? active.bounds.height : active.bounds.width;
       if (length <= 0) return;
-      fraction = active.direct
-        ? active.startFraction + (point - active.startPoint) / length
-        : input.variant === 'large'
-          ? point / length
-          : point <= active.thumbHalf
+      if (active.pendingIndex) {
+        const delta = point - active.startPoint;
+        if (delta === 0) return;
+        active.index = delta > 0 ? 1 : 0;
+        active.pendingIndex = false;
+        inputs()[active.index]?.focus({ preventScroll: true });
+      }
+      const target = active.direct ? active.thumbCenter + point - active.startPoint : point;
+      fraction =
+        input.variant === 'large'
+          ? active.direct
+            ? active.startFraction + (point - active.startPoint) / length
+            : point / length
+          : target <= active.thumbHalf
             ? 0
-            : (point + active.thumbHalf) / length;
+            : (target + active.thumbHalf) / length;
     }
     const bounds = sliderBounds(input);
     request(
@@ -200,6 +227,13 @@ export function mountSlider(
         ? (angle ?? 0)
         : point / (vertical ? bounds.height : bounds.width);
     let index = target ? Number(target.dataset.thumbIndex) : lastIndex;
+    const thumbRects = inputs().map((native) => native.parentElement?.getBoundingClientRect());
+    const firstThumb = thumbRects[0];
+    const lastThumb = thumbRects[1];
+    const coincident =
+      !!firstThumb &&
+      !!lastThumb &&
+      Math.hypot(firstThumb.x - lastThumb.x, firstThumb.y - lastThumb.y) < 0.01;
     if (!direct) {
       let distance = Number.POSITIVE_INFINITY;
       fractions.forEach((fraction, i) => {
@@ -212,6 +246,19 @@ export function mountSlider(
         }
       });
     }
+    if (coincident && !direct) {
+      index =
+        pointFraction >= (fractions[1] ?? 0)
+          ? 1
+          : pointFraction <= (fractions[0] ?? 0)
+            ? 0
+            : Math.abs(pointFraction - (fractions[0] ?? 0)) <=
+                Math.abs(pointFraction - (fractions[1] ?? 0))
+              ? 0
+              : 1;
+    }
+    const thumb = thumbRects[index];
+    if (!thumb) return;
     lastIndex = index;
     event.preventDefault();
     inputs()[index]?.focus({ preventScroll: true });
@@ -223,11 +270,18 @@ export function mountSlider(
       bounds,
       startPoint: point,
       startFraction: fractions[index] ?? 0,
-      previousFraction: fractions[index] ?? 0,
+      previousFraction: direct ? (fractions[index] ?? 0) : pointFraction,
       angleOffset:
         direct && input.variant === 'circular' ? (fractions[index] ?? 0) - (angle ?? 0) : 0,
       direct,
-      thumbHalf: (inputs()[index]?.parentElement?.getBoundingClientRect().width ?? 0) / 2,
+      thumbHalf: thumb.width / 2,
+      thumbCenter: vertical
+        ? bounds.bottom - thumb.y - thumb.height / 2
+        : rtl()
+          ? bounds.right - thumb.x - thumb.width / 2
+          : thumb.x + thumb.width / 2 - bounds.left,
+      pendingIndex: coincident && direct,
+      startAngle: angle ?? 0,
     };
     root.setAttribute('data-dragging', '');
     control.setPointerCapture(event.pointerId);

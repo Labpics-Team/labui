@@ -38,6 +38,7 @@ try {
       h(Slider,{label:'Fixed',value:[30],name:'fixed'}),
       h('fieldset',{disabled:true,id:'react-disabled'},h('legend',{},h(Slider,{label:'React legend',defaultValue:[25],name:'legend'})),h(Slider,{label:'React disabled',defaultValue:[35],name:'disabled'})),
       h(Slider,{label:'React external',defaultValue:[45],name:'external-react',form:'controls'}),
+      h(Slider,{label:'React click dial',defaultValue:[0],variant:'circular',onValueChange:value=>(window.dialChanges??=[]).push(value)}),
       h(Slider,{label:'React RTL',defaultValue:[25],dir:'rtl'}),h('button',{type:'reset'},'Reset'));}
   `);
   await writeFile(join(consumer, 'server.mjs'), `
@@ -141,6 +142,49 @@ try {
         await page.mouse.click(bounds.x + bounds.width * .25 + 6, bounds.y + bounds.height / 2);
         await expect(input).toHaveValue('75');
       }
+      await page.evaluate(async () => {
+        const dial = document.createElement('lab-slider'); dial.id='click-dial'; dial.label='Lit click dial'; dial.variant='circular'; dial.defaultValue=[0];
+        dial.addEventListener('value-change', event => (window.dialChanges??=[]).push(event.detail.value));
+        document.body.append(dial); await dial.updateComplete;
+      });
+      for (const name of ['Lit click dial', 'React click dial']) {
+        const input = page.getByRole('slider', { name, exact: true });
+        const control = input.locator('xpath=../..'); await control.scrollIntoViewIfNeeded();
+        const bounds = await control.boundingBox();
+        for (const [initial, target, key] of [[0,75,null], [100,25,'End']]) {
+          if (key) { await input.focus(); await page.keyboard.press(key); }
+          await expect(input).toHaveValue(String(initial));
+          await page.evaluate(() => { window.dialChanges=[]; });
+          await page.mouse.click(bounds.x + 48 + 46 * Math.sin(target * Math.PI / 50), bounds.y + 48 - 46 * Math.cos(target * Math.PI / 50));
+          await expect(input).toHaveValue(String(target));
+          assert.deepEqual(await page.evaluate(() => window.dialChanges), [[target]], `${name} initial track click must emit the chosen absolute value`);
+        }
+      }
+      await page.evaluate(async () => {
+        const field = document.createElement('lab-slider'); field.id='coincident'; field.label='Coincident'; field.labelHidden=true; field.defaultValue=[0,0]; field.style.width='400px';
+        document.body.append(field); await field.updateComplete;
+      });
+      const coincident = page.locator('#coincident');
+      for (const variant of ['linear','circular']) for (const dir of ['ltr','rtl']) {
+        for (const [initial, delta] of [[0,20],[100,-20],[50,20],[50,-20]]) {
+          await coincident.evaluate(async (node, { initial, variant, dir }) => {
+            window.coincidentAbort?.abort(); window.coincidentAbort=new AbortController();
+            node.variant=variant; node.dir=dir; node.value=[initial,initial];
+            node.addEventListener('value-change', event => { node.value=event.detail.value; }, { signal: window.coincidentAbort.signal });
+            await node.updateComplete;
+          }, { initial, variant, dir });
+          const control = coincident.locator('.lab-slider-control'); await control.scrollIntoViewIfNeeded();
+          const bounds=await control.boundingBox();
+          const point=fraction => variant==='circular'
+            ? {x:bounds.x+48+46*Math.sin(fraction*Math.PI*2),y:bounds.y+48-46*Math.cos(fraction*Math.PI*2)}
+            : {x:bounds.x+(dir==='rtl' ? bounds.width-(Math.max(12,bounds.width*fraction)-6) : Math.max(12,bounds.width*fraction)-6),y:bounds.y+bounds.height/2};
+          const from=point(initial/100); await page.mouse.move(from.x,from.y); await page.mouse.down();
+          for(let part=1;part<=8;part++){const at=point((initial+delta*part/8)/100);await page.mouse.move(at.x,at.y);}
+          await page.mouse.up();
+          await expect(coincident.getByRole('slider').nth(0)).toHaveValue(String(delta<0 ? initial+delta : initial));
+          await expect(coincident.getByRole('slider').nth(1)).toHaveValue(String(delta>0 ? initial+delta : initial));
+        }
+      }
       const range = page.locator('#range').getByRole('slider');
       await range.nth(0).focus(); await page.keyboard.press('End'); await expect(range.nth(0)).toHaveValue('80');
       assert.deepEqual(await page.locator('#controls').evaluate((form) => new FormData(form).getAll('budget')), ['80', '80']);
@@ -219,7 +263,7 @@ try {
         await captureAuthored(page, join(output, `web-${engine}-light-font-${scale * 100}.png`));
       }
       assert.deepEqual(errors, []);
-      records.push({ engine, ssrHydratedRenderers: 5, geometry, density: [1, 1.25, 2], rootFontSize: [16, 20, 32], idleRaf: raf, behavior: 'controlled and end callback, keyboard including RTL, external forms, disabled fieldset/first legend, submit/reset/cancel, non-divisible steps, range collision, circular seam/cancel, reparent, pointer geometry and forms at each root font size' });
+      records.push({ engine, ssrHydratedRenderers: 5, geometry, density: [1, 1.25, 2], rootFontSize: [16, 20, 32], idleRaf: raf, behavior: 'controlled and end callback, keyboard including RTL, external forms, disabled fieldset/first legend, submit/reset/cancel, non-divisible steps, range collision and coincident thumb pointer directions, circular absolute click/callback and seam/cancel, reparent, pointer geometry and forms at each root font size' });
     } finally { await browser.close(); }
   }
   await writeFile(join(output, 'installed.generated.json'), `${JSON.stringify({ archives, records }, null, 2)}\n`);
