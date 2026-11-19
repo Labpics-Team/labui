@@ -1,6 +1,6 @@
 {
-  "revision": "d596e8e2247623a0a240889a22e184f9b5e9a59c",
-  "sourceDigest": "sha256:56bfe84bf20fe009842720f78174c85aa981f5b53426b8e13954e1f44cfc0bf0",
+  "revision": "4a8ada000c5d43b778477e10001050b8ff624f4f",
+  "sourceDigest": "sha256:0b6b6cc723d2bd76c9dd55275eb839000267388dcc0b25f85d8fb1ba1d9c845f",
   "symbols": [
     {
       "name": "LabAccordion",
@@ -129,6 +129,10 @@
     {
       "name": "LabTheme",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabTheme.kt"
+    },
+    {
+      "name": "LabTooltip",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabTooltip.kt"
     }
   ]
 }

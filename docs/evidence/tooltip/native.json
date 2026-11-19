@@ -1,0 +1,93 @@
+{
+  "sourceCommit": "4a8ada000c5d43b778477e10001050b8ff624f4f",
+  "version": "0.1.0-tooltip-20261120-r3",
+  "publication": "local Maven repository consumed through published coordinates",
+  "sourcesJarMatchesCurrentTooltip": true,
+  "sourceSha256": {
+    "native/compose/src/commonMain/kotlin/pics/lab/ui/LabTooltip.kt": "f29a076e429daa8d721a56c8d5c38d25d6eefb0b731da87f15f6d4349bd86671",
+    "native/compose/src/commonMain/kotlin/pics/lab/ui/LabComponents.kt": "5e3db6721ea1f63275aebe1825fc817a217ea4bfb00ef85f7cc5585279d18c2f",
+    "packages/tokens/src/components.json": "9c9c77f6748aca6b01de4adffcb2d92994175ecc15686935e6a2c23bd21c42d2"
+  },
+  "artifacts": [
+    {
+      "coordinate": "pics.lab:ui-compose:0.1.0-tooltip-20261120-r3",
+      "file": "ui-compose-0.1.0-tooltip-20261120-r3.jar",
+      "sha256": "b0a53327139a546ce6c8fa410c20ca14048d17cee43ab052023e2b600af4625c"
+    },
+    {
+      "coordinate": "pics.lab:ui-compose:0.1.0-tooltip-20261120-r3",
+      "file": "ui-compose-0.1.0-tooltip-20261120-r3.pom",
+      "sha256": "ae80e06807f3348bc952b208b9fc06da54c472d6c46b1facbba0c2557987f518"
+    },
+    {
+      "coordinate": "pics.lab:ui-compose:0.1.0-tooltip-20261120-r3",
+      "file": "ui-compose-0.1.0-tooltip-20261120-r3.module",
+      "sha256": "06fbfdb2a65f4a82a839c488ba708886d893cafa3190babe91add7462017722d"
+    },
+    {
+      "coordinate": "pics.lab:ui-compose-desktop:0.1.0-tooltip-20261120-r3",
+      "file": "ui-compose-desktop-0.1.0-tooltip-20261120-r3.jar",
+      "sha256": "454655ba55ce7255cd014494ea5e3c3c327d250eb8700af6f8f800f3c2ba6e65"
+    },
+    {
+      "coordinate": "pics.lab:ui-compose-desktop:0.1.0-tooltip-20261120-r3",
+      "file": "ui-compose-desktop-0.1.0-tooltip-20261120-r3.pom",
+      "sha256": "68f5ff9d3231e35fdec434f90908633229aef12ef6154d02d349813ecf45444c"
+    },
+    {
+      "coordinate": "pics.lab:ui-compose-desktop:0.1.0-tooltip-20261120-r3",
+      "file": "ui-compose-desktop-0.1.0-tooltip-20261120-r3.module",
+      "sha256": "7467beca9f65e5ccc61187d8a620a2f6dbd896ca29ff429d01973855eaa855b4"
+    },
+    {
+      "coordinate": "pics.lab:ui-colors:0.1.0-tooltip-20261120-r3",
+      "file": "ui-colors-0.1.0-tooltip-20261120-r3.jar",
+      "sha256": "fa63a86a2ed1b5450216ed085dd1a73b5236432340e7cd64180fc496c03c219d"
+    },
+    {
+      "coordinate": "pics.lab:ui-colors:0.1.0-tooltip-20261120-r3",
+      "file": "ui-colors-0.1.0-tooltip-20261120-r3.pom",
+      "sha256": "8df6ea6e15d47785996e183582c96d91886d532b69ceb62f696e964ff94296eb"
+    },
+    {
+      "coordinate": "pics.lab:ui-colors:0.1.0-tooltip-20261120-r3",
+      "file": "ui-colors-0.1.0-tooltip-20261120-r3.module",
+      "sha256": "76c37fc126158bd58744c85ce75297f8f6b965d2d4e550cd9613e8d56017b9af"
+    },
+    {
+      "coordinate": "pics.lab:ui-colors-desktop:0.1.0-tooltip-20261120-r3",
+      "file": "ui-colors-desktop-0.1.0-tooltip-20261120-r3.jar",
+      "sha256": "0309c3881c5e8d4d0acbfba01b6b5cf730cf022c4d208823a1c8ab4ef4583263"
+    },
+    {
+      "coordinate": "pics.lab:ui-colors-desktop:0.1.0-tooltip-20261120-r3",
+      "file": "ui-colors-desktop-0.1.0-tooltip-20261120-r3.pom",
+      "sha256": "6591eff808194e4d2acce7c711f2353d9d77cd0b641f6a7ddd7ae86eb8c5cde8"
+    },
+    {
+      "coordinate": "pics.lab:ui-colors-desktop:0.1.0-tooltip-20261120-r3",
+      "file": "ui-colors-desktop-0.1.0-tooltip-20261120-r3.module",
+      "sha256": "431f6084f0bca9cbd70a9525106f082414d7b9d14a63f124fde7b809f4c5d676"
+    }
+  ],
+  "results": [
+    {
+      "name": "TooltipRenderTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-19T22:45:37.338Z",
+      "time": "12.48"
+    },
+    {
+      "name": "TooltipConsumerTest[desktop]",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-19T22:55:38.589Z",
+      "time": "2.999"
+    }
+  ]
+}
