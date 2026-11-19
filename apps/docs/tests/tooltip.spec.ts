@@ -149,6 +149,28 @@ test('dialog stays open and focused while its tooltip dismisses', async ({ page 
   await expect(dialog).toBeVisible();
   await expect(trigger).toBeFocused();
 });
+test('the same Lit element reconnects its actual control after a DOM move', async ({ page }) => {
+  const host = page.getByTestId('lit-tt-bottom');
+  const trigger = host.locator('button');
+  const surface = host.locator('.lab-tooltip-content');
+  await trigger.hover();
+  await expect(surface).toBeVisible();
+  await host.evaluate((element) => {
+    const parent = element.parentNode;
+    element.remove();
+    parent?.appendChild(element);
+  });
+  await page.mouse.move(0, 0);
+  await trigger.hover();
+  await expect(surface).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(surface).toBeHidden();
+  await page.mouse.move(0, 0);
+  await page.keyboard.press('Tab');
+  await trigger.focus();
+  await expect(surface).toBeVisible();
+  await expect(trigger).toHaveAccessibleDescription(text);
+});
 test('disabled, touch, repeated mount and cleanup leave no orphan surface or IDs', async ({
   page,
 }) => {
@@ -199,4 +221,39 @@ test('Chromium accessibility tree describes Lit private button and React native 
     await page.mouse.move(0, 0);
     await page.keyboard.press('Escape');
   }
+});
+test('a slotted native control has a live description in the browser accessibility tree', async ({
+  page,
+  browserName,
+}) => {
+  await page.evaluate(() => {
+    const host = document.createElement('lab-tooltip');
+    host.dataset.testid = 'native-description';
+    host.style.cssText = 'position:fixed;left:40px;top:80px';
+    host.innerHTML = '<button>Native help</button><span slot="content"><span>Before</span></span>';
+    document.body.append(host);
+  });
+  const host = page.getByTestId('native-description');
+  const trigger = host.locator('button');
+  await trigger.hover();
+  await expect(host.locator('.lab-tooltip-content')).toBeVisible();
+  const cdp = browserName === 'chromium' ? await page.context().newCDPSession(page) : undefined;
+  for (const value of ['Before', 'After']) {
+    await host.locator('[slot="content"] span').evaluate((el, text) => {
+      el.textContent = text;
+    }, value);
+    await expect(trigger).toHaveAccessibleDescription(value);
+    if (cdp)
+      await expect
+        .poll(async () => {
+          const tree = await cdp.send('Accessibility.getFullAXTree');
+          return tree.nodes.find(
+            (node) => node.role?.value === 'button' && node.name?.value === 'Native help',
+          )?.description?.value;
+        })
+        .toBe(value);
+  }
+  const id = await trigger.getAttribute('aria-describedby');
+  await host.evaluate((element) => element.remove());
+  await expect(page.locator(`[id="${id}"]`)).toHaveCount(0);
 });

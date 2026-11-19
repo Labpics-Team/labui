@@ -26,6 +26,7 @@ export interface TooltipOptions {
   arrow: boolean;
   tail: LabTooltipTail;
   description(): string;
+  descriptionNodes?(): Node[];
   onOpenChange?(open: boolean): void;
 }
 
@@ -44,6 +45,8 @@ export function mountTooltip(
   let alive = true;
   let spreads: (() => void)[] = [];
   let stopShape: (() => void) | undefined;
+  let descriptionObserver: MutationObserver | undefined;
+  let descriptionNodes: Node[] = [];
   let refreshPosition: (() => void) | undefined;
   const id = `lab-tooltip-${crypto.randomUUID()}`;
   const contentId = `${id}-content`;
@@ -55,10 +58,33 @@ export function mountTooltip(
   if (!sameRoot) {
     description.id = `${id}-description`;
     description.hidden = true;
-    description.slot = 'lab-tooltip-description';
     description.setAttribute('role', 'tooltip');
-    trigger.after(description);
+    const root = trigger.getRootNode();
+    // A light-DOM sibling inside lab-tooltip can be excluded from the composed
+    // tree by slotting. Append to the actual root, where ARIA can resolve it.
+    (root === trigger.ownerDocument ? trigger.ownerDocument.body : root).appendChild(description);
   }
+  const syncDescription = () => {
+    if (sameRoot) return;
+    description.textContent = options.description();
+    const nodes = [content, ...(options.descriptionNodes?.() ?? [])];
+    if (
+      nodes.length === descriptionNodes.length &&
+      nodes.every((node, i) => node === descriptionNodes[i])
+    )
+      return;
+    descriptionObserver ??= new MutationObserver(() => {
+      description.textContent = options.description();
+    });
+    descriptionObserver.disconnect();
+    descriptionNodes = nodes;
+    for (const node of nodes)
+      descriptionObserver.observe(node, { childList: true, characterData: true, subtree: true });
+  };
+  const stopDescription = () => {
+    descriptionObserver?.disconnect();
+    descriptionNodes = [];
+  };
   const restoreDescription = () => {
     const other = (trigger.getAttribute('aria-describedby') ?? '')
       .split(/\s+/)
@@ -210,7 +236,7 @@ export function mountTooltip(
       }),
     ];
     if (api.open) {
-      if (!sameRoot) description.textContent = options.description();
+      syncDescription();
       restoreDescription();
       trigger.setAttribute(
         'aria-describedby',
@@ -224,6 +250,7 @@ export function mountTooltip(
         stopShape = () => shape.destroy();
       }
     } else {
+      stopDescription();
       restoreDescription();
       if (positioner.matches(':popover-open')) positioner.hidePopover();
       stopShape?.();
@@ -253,6 +280,7 @@ export function mountTooltip(
       for (const clean of spreads) clean();
       if (positioner.matches(':popover-open')) positioner.hidePopover();
       stopShape?.();
+      stopDescription();
       restoreDescription();
       if (!sameRoot) description.remove();
     },

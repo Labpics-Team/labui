@@ -9,6 +9,7 @@ import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -175,8 +176,8 @@ internal fun TooltipSurface(text: String, type: LabTooltipType, tail: LabTooltip
     LaunchedEffect(motion) { motion.animate { to(opacity, 1f, MotionTransition.Tween(
         LabTokens.MotionEntranceDurationMs.toInt(), MotionEase.Bezier(LabTokens.MotionEntranceEase0,
             LabTokens.MotionEntranceEase1, LabTokens.MotionEntranceEase2, LabTokens.MotionEntranceEase3))) }.finished.await() }
-    Box(modifier.graphicsLayer { alpha = opacity.value }.padding(start = if (side == 1) extent else 0.dp, top = if (side == 2) extent else 0.dp,
-        end = if (side == 3) extent else 0.dp, bottom = if (side == 0) extent else 0.dp)) {
+    Box(modifier.graphicsLayer { alpha = opacity.value }.absolutePadding(left = if (side == 1) extent else 0.dp, top = if (side == 2) extent else 0.dp,
+        right = if (side == 3) extent else 0.dp, bottom = if (side == 0) extent else 0.dp)) {
         val shape = TooltipBodyShape
         Box(Modifier.widthIn(max = LabComponents.TooltipMaxWidth.dp).defaultMinSize(minWidth = LabComponents.TooltipMinWidth.dp)
             .labShadow(shape, LabComponents.TooltipShadow).background(color, shape)
