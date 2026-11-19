@@ -165,18 +165,29 @@ class AccordionRenderTest {
             }
         } }
         fun height() = nodes(scene).single { it.config.getOrNull(SemanticsProperties.TestTag) == "moving" }.size.height
+        var millis = -16L
+        fun frame(elapsed: Long = 16): Int {
+            millis += elapsed
+            scene.render(millis * 1_000_000).close()
+            return height()
+        }
         try {
-            settle(scene)
+            repeat(4) { frame() }
             assertEquals(88, height())
             value = emptyList()
-            val samples = mutableListOf<Int>()
-            repeat(6) { scene.render(System.nanoTime()).close(); samples.add(height()); Thread.sleep(8) }
-            assertTrue(samples.any { it in 57..87 }, "Expected intermediate disclosure heights: $samples")
+            val closing = List(3) { frame() }
+            val interrupted = closing.last()
+            assertTrue(interrupted in 57..87, "Interrupt an unfinished close: $closing")
             value = listOf("a")
-            scene.render(System.nanoTime()).close()
-            assertTrue(height() > 56, "Retarget must not jump to a closed pose")
-            settle(scene)
-            assertEquals(88, height())
+            // Recompose at the same animation time: a new target must preserve the visible pose.
+            assertEquals(interrupted, frame(0), "Retarget must preserve the intermediate height")
+            val opening = List(12) { frame() }
+            assertTrue(opening.any { it in (interrupted + 1)..87 }, "Expected intermediate reopening heights: $opening")
+            assertTrue(opening.zipWithNext().all { (previous, next) -> next >= previous }, "Reopening must continue toward the new target: $opening")
+            assertEquals(88, opening.last())
+            value = emptyList()
+            repeat(12) { frame() }
+            assertEquals(56, height(), "A subsequent uninterrupted close must finish")
         } finally { scene.close() }
     }
 }
