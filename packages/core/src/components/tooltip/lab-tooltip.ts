@@ -89,6 +89,10 @@ export class LabTooltip extends LabElement {
             .join('') || this.content
         );
       },
+      descriptionNodes: () =>
+        this.renderRoot
+          .querySelector<HTMLSlotElement>('slot[name="content"]')
+          ?.assignedNodes({ flatten: true }) ?? [],
       onOpenChange: (open: boolean) =>
         this.dispatchEvent(
           new CustomEvent('open-change', { detail: { open }, bubbles: true, composed: true }),
@@ -113,6 +117,12 @@ export class LabTooltip extends LabElement {
     this.stopSubscription = undefined;
     this.bind(null);
     this.source = null;
+  }
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // Lit does not schedule another update when an existing element reconnects.
+    // Rebind the actual control after disconnectedCallback released its runtime.
+    this.requestUpdate();
   }
   override disconnectedCallback(): void {
     this.clear();

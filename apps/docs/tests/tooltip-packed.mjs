@@ -236,12 +236,26 @@ try {
         await page.keyboard.press('Escape');
         await expect(surface).toBeHidden();
         await page.mouse.move(0, 0);
+        await trigger.evaluate((element) => element.blur());
         await page.keyboard.press('Tab');
         await trigger.focus();
         await expect(surface).toBeVisible();
         await page.keyboard.press('Escape');
         await expect(surface).toBeHidden();
         await expect(trigger).toBeFocused();
+        if (renderer !== 'react') {
+          await host.locator('lab-tooltip').evaluate((element) => {
+            const parent = element.parentNode;
+            element.remove();
+            parent.appendChild(element);
+          });
+          await page.mouse.move(0, 0);
+          await trigger.hover();
+          await expect(surface).toBeVisible();
+          await expect(trigger).toHaveAccessibleDescription('Hello, my name is Tooltip');
+          await page.keyboard.press('Escape');
+          await expect(surface).toBeHidden();
+        }
       }
       await page.locator('[data-renderer="react"] button').click();
       assert.equal(await page.evaluate(() => window.clicks), 1);

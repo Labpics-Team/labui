@@ -2,13 +2,17 @@ package pics.lab.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -23,6 +27,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import java.io.File
+import java.io.ByteArrayInputStream
+import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -101,6 +107,41 @@ class TooltipRenderTest {
             val position = TooltipPosition(placement, 4) {}.calculatePosition(IntRect(290, 190, 300, 200), window, LayoutDirection.Ltr, popup)
             assertTrue(position.x >= 4 && position.x + popup.width <= window.width - 4)
             assertTrue(position.y >= 4 && position.y + popup.height <= window.height - 4)
+        }
+    }
+    @Test fun horizontalPopupTailOccupiesTheSamePhysicalSpaceInRtl() {
+        val output = File("build/tooltip-evidence").apply { mkdirs() }
+        fun bounds(png: ByteArray, argb: Int): IntRect {
+            val image = ImageIO.read(ByteArrayInputStream(png))
+            var left = image.width; var top = image.height; var right = 0; var bottom = 0
+            for (y in 0 until image.height) for (x in 0 until image.width) if (image.getRGB(x, y) == argb) {
+                left = minOf(left, x); top = minOf(top, y); right = maxOf(right, x + 1); bottom = maxOf(bottom, y + 1)
+            }
+            assertTrue(right > left && bottom > top, "Tooltip surface must be visible")
+            return IntRect(left, top, right, bottom)
+        }
+        for (placement in listOf(LabTooltipPlacement.Left, LabTooltipPlacement.Right)) for (tail in listOf(LabTooltipTail.Chevron, LabTooltipTail.Bubble)) {
+            var ltr: IntRect? = null
+            for (direction in LayoutDirection.entries) {
+                val theme = theme()
+                val scene = ImageComposeScene(600, 300) { LabTheme(theme) {
+                    Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xfff4f4f4))) {
+                        Box(Modifier.absoluteOffset(250.dp, 120.dp)) {
+                            CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                                LabTooltip("Tip", state = rememberLabTooltipState(true), type = LabTooltipType.Accent,
+                                    placement = placement, tail = tail) { LabButton("Help", {}, it) }
+                            }
+                        }
+                    }
+                } }
+                try {
+                    val png = settle(scene)
+                    output.resolve("${direction.name}-${placement.name}-${tail.name}.png").writeBytes(png)
+                    val actual = bounds(png, theme.colors[LabTooltipType.Accent.surfaceRole].toArgb())
+                    if (direction == LayoutDirection.Ltr) ltr = actual
+                    else assertEquals(ltr, actual, "$placement/$tail must reserve its physical side in RTL")
+                } finally { scene.close() }
+            }
         }
     }
 }
