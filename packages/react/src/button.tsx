@@ -25,6 +25,7 @@ import type {
   LabButtonType,
 } from '@labpics/ui-core';
 import { type ButtonHTMLAttributes, type ReactNode, forwardRef } from 'react';
+import '@labpics/ui-core/button-fill.css';
 import './button.css';
 
 export interface ButtonProps
