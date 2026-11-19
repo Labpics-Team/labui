@@ -190,9 +190,9 @@ internal fun TooltipSurface(text: String, type: LabTooltipType, tail: LabTooltip
                 withTransform({
                     when (side) {
                         0 -> translate(center - half, size.height)
-                        1 -> { translate(0f, center + half); rotate(90f, androidx.compose.ui.geometry.Offset.Zero) }
+                        1 -> { translate(0f, center - half); rotate(90f, androidx.compose.ui.geometry.Offset.Zero) }
                         2 -> { translate(center + half, 0f); rotate(180f, androidx.compose.ui.geometry.Offset.Zero) }
-                        3 -> { translate(size.width, center - half); rotate(-90f, androidx.compose.ui.geometry.Offset.Zero) }
+                        3 -> { translate(size.width, center + half); rotate(-90f, androidx.compose.ui.geometry.Offset.Zero) }
                     }
                     scale(unit, unit, androidx.compose.ui.geometry.Offset.Zero)
                     if (tail == LabTooltipTail.Bubble) translate(LabComponents.TooltipTailBubbleX, LabComponents.TooltipTailBubbleY)

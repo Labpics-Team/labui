@@ -111,10 +111,11 @@ class TooltipRenderTest {
     }
     @Test fun horizontalPopupTailOccupiesTheSamePhysicalSpaceInRtl() {
         val output = File("build/tooltip-evidence").apply { mkdirs() }
-        fun bounds(png: ByteArray, argb: Int): IntRect {
+        fun bounds(png: ByteArray, argb: Int, region: IntRect? = null): IntRect {
             val image = ImageIO.read(ByteArrayInputStream(png))
             var left = image.width; var top = image.height; var right = 0; var bottom = 0
-            for (y in 0 until image.height) for (x in 0 until image.width) if (image.getRGB(x, y) == argb) {
+            val area = region ?: IntRect(0, 0, image.width, image.height)
+            for (y in area.top until area.bottom) for (x in area.left until area.right) if (image.getRGB(x, y) == argb) {
                 left = minOf(left, x); top = minOf(top, y); right = maxOf(right, x + 1); bottom = maxOf(bottom, y + 1)
             }
             assertTrue(right > left && bottom > top, "Tooltip surface must be visible")
@@ -140,6 +141,13 @@ class TooltipRenderTest {
                     val actual = bounds(png, theme.colors[LabTooltipType.Accent.surfaceRole].toArgb())
                     if (direction == LayoutDirection.Ltr) ltr = actual
                     else assertEquals(ltr, actual, "$placement/$tail must reserve its physical side in RTL")
+                    val anchor = nodes(scene).single { it.config.getOrNull(SemanticsProperties.Role) == Role.Button }.boundsInRoot
+                    val extent = (if (tail == LabTooltipTail.Chevron) LabComponents.TooltipTailHeight else LabComponents.TooltipTailBubbleHeight).toInt()
+                    val gap = LabComponents.TooltipGap.toInt()
+                    val tailLeft = if (placement == LabTooltipPlacement.Right) anchor.right.toInt() + gap else anchor.left.toInt() - gap - extent
+                    val tailBounds = bounds(png, theme.colors[LabTooltipType.Accent.surfaceRole].toArgb(), IntRect(tailLeft, 0, tailLeft + extent, 300))
+                    assertTrue(kotlin.math.abs(tailBounds.center.y - anchor.center.y) <= 2f,
+                        "$placement/$tail tail must point at its control: $tailBounds, anchor=$anchor")
                 } finally { scene.close() }
             }
         }
