@@ -50,6 +50,16 @@ loses part of the material. The committed recipe keeps the independent layers.
 - Core material/contract tests: 3 passed; Colors: 255 passed; browser Avatar
   suite: 7 passed; native Avatar suite: 5 passed. Typecheck passed.
 
+The original `installed-web-dark-normal-200.png` and
+`installed-web-dark-more-200.png` were captured before the newly selected CSS
+backgrounds decoded. Integration review identified their flat discs. These two
+files were replaced from the integrated packed consumer; production material
+bytes are unchanged. `web-consumer/capture.mjs` now awaits each computed URL's
+`Image.decode()` and checks the decoded texture. `verify-capture.py` also checks
+the actual screenshot pixels. The new package provenance, browser results and
+native typography captures are in
+[`../avatar-integration-20261119/`](../avatar-integration-20261119/README.md).
+
 Native density resources are intentional. Sampling one 256px bitmap on the CPU
 with Low, Medium or High filtering aliases the high-frequency noise at 32px.
 Offline 48/72/96/144/192px rasters, selected by Compose's normal density resource
@@ -59,9 +69,18 @@ For the native installed check, run the library's desktop publication task with
 the version above, then run its wrapper with `-p docs/evidence/avatar-20261119/native-consumer`
 and `-PuiRepository=<absolute local Maven repository>` and `test`. Set
 `JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dskiko.renderApi=SOFTWARE`.
+Pass `-PuiVersion=<new coordinate version>` when checking a newer publication;
+the consumer asserts that exact version in its JAR code source.
 The web fixture is retained in `web-consumer/`; bundle it only after installing
 the packed packages, with a file loader for WebP and fonts. The screenshots were
 taken against that bundled output, not the workspace dev page.
+
+For repeatable installed capture, install `@playwright/test` in that consumer,
+copy `capture.mjs`, and run `node capture.mjs <HTTP base URL> <evidence directory>`.
+Then run `python verify-capture.py <evidence directory>` with Pillow 13.
+For installed hydration, also install `@lit-labs/ssr-client`, copy
+`hydration.tsx` and `verify-hydration.mjs`, and run
+`node verify-hydration.mjs <HTTP base URL> <result.json>` from the consumer.
 
 ## Cost
 

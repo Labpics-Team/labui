@@ -1,0 +1,50 @@
+{
+  "productionCommit": "4c20a08",
+  "tarballs": [
+    {
+      "file": "labpics-fonts-0.0.0.tgz",
+      "bytes": 358619,
+      "sha256": "d0d46708a7b04e7fca9900afc5735ca7a72fa5ae1082787ea603199b632b2fef"
+    },
+    {
+      "file": "labpics-ui-core-0.0.0.tgz",
+      "bytes": 5269237,
+      "sha256": "bf482786b71c123fc6ce3f24cb37e231221fa228e31ae9803aab80b46129622c"
+    },
+    {
+      "file": "labpics-ui-materials-0.0.0.tgz",
+      "bytes": 349476,
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "file": "labpics-ui-react-0.0.0.tgz",
+      "bytes": 903915,
+      "sha256": "1ec4ae02130a515e9ca51062879342d195d61ca21613040833d84075c61429dd"
+    },
+    {
+      "file": "labpics-ui-shadow-0.0.0.tgz",
+      "bytes": 34021,
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "file": "labpics-ui-tokens-0.0.0.tgz",
+      "bytes": 206527,
+      "sha256": "bda7b8b08f8baa462b8c73bc72974ba13f81ea5374a63e1cc0f9f2036892dba8"
+    },
+    {
+      "file": "labpics-ui-vue-0.0.0.tgz",
+      "bytes": 110782,
+      "sha256": "bb844c6cf49e39bae63cf6bd11cbd62d1f0d315be3cbc4b075a80fbb923cd406"
+    },
+    {
+      "file": "labui-colors-0.0.0.tgz",
+      "bytes": 23386,
+      "sha256": "56ba4da1572ea321215974308bf0eb76333e8b583650b69e67d69bffacee7351"
+    }
+  ],
+  "compose": {
+    "file": "ui-compose-desktop-0.1.0-avatar-integrated-20261119.jar",
+    "bytes": 7906262,
+    "sha256": "532a61532497d626bede492aa4f6650b97cd2604d8abd4a213e84d9db2bc1839"
+  }
+}

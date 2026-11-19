@@ -1,6 +1,6 @@
 {
-  "revision": "dd920219cf1f208624ce18d54b2486f770232707",
-  "sourceDigest": "sha256:4c8fb0f421306124331926b2f3091017353055075478615136b81a6ee40d9b96",
+  "revision": "4c20a0896c102544f6fa179107fdb4bedea353a8",
+  "sourceDigest": "sha256:3c38af02c2fd96a49be3ef0abbac7afb4216fc0a55421a832253727d39ae0462",
   "symbols": [
     {
       "name": "LabAccordion",

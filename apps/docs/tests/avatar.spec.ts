@@ -251,8 +251,11 @@ test('presence cutout follows RTL and the whole avatar scales with text', async 
       expect(dot?.width).toBe(8);
       expect(dot?.height).toBe(8);
       expect((dot?.x ?? 0) - (box?.x ?? 0)).toBe(dir === 'rtl' ? 0 : 24);
-      expect((await avatar.locator('.lab-avatar-disc').evaluate(paint)).mask).toContain(
-        dir === 'rtl' ? '4px' : '100% - 4px',
+      // Browsers may preserve rem in the computed gradient instead of serializing px.
+      expect((await avatar.locator('.lab-avatar-disc').evaluate(paint)).mask).toMatch(
+        dir === 'rtl'
+          ? /circle at (?:4px|0\.25rem|calc\(0\.25rem\)) /
+          : /circle at calc\(100% - (?:4px|0\.25rem)\)/,
       );
     }
   }

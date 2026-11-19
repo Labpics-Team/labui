@@ -9,9 +9,15 @@ repositories {
     google(); mavenCentral()
 }
 kotlin { jvmToolchain(21) }
+val uiVersion = providers.gradleProperty("uiVersion").orElse("0.1.0-avatar-material-final-20261119")
 dependencies {
-    implementation("pics.lab:ui-compose-desktop:0.1.0-avatar-material-final-20261119")
+    implementation("pics.lab:ui-compose-desktop:${uiVersion.get()}")
     implementation(compose.desktop.currentOs)
     testImplementation(kotlin("test"))
+    testImplementation(compose.components.resources)
 }
-tasks.test { systemProperty("java.awt.headless", "true"); systemProperty("skiko.renderApi", "SOFTWARE") }
+tasks.test {
+    systemProperty("java.awt.headless", "true")
+    systemProperty("skiko.renderApi", "SOFTWARE")
+    systemProperty("uiVersion", uiVersion.get())
+}

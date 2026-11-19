@@ -1,0 +1,7858 @@
+[
+  {
+    "browser": "chromium",
+    "version": "140.0.7339.186",
+    "theme": "light",
+    "contrast": "normal",
+    "density": 1,
+    "file": "installed-chromium-light-normal-100.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 72,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 509,
+        "box": {
+          "x": 120,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 168,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 546,
+        "box": {
+          "x": 216,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 264,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 528,
+        "box": {
+          "x": 312,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 479,
+        "box": {
+          "x": 360,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 408,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 456,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 88,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 509,
+        "box": {
+          "x": 152,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 216,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 546,
+        "box": {
+          "x": 280,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 344,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 528,
+        "box": {
+          "x": 408,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 479,
+        "box": {
+          "x": 472,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 536,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 600,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 72,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 509,
+        "box": {
+          "x": 120,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 168,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 546,
+        "box": {
+          "x": 216,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 264,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 528,
+        "box": {
+          "x": 312,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 479,
+        "box": {
+          "x": 360,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 408,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 456,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 88,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 509,
+        "box": {
+          "x": 152,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 216,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 546,
+        "box": {
+          "x": 280,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 344,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 528,
+        "box": {
+          "x": 408,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 479,
+        "box": {
+          "x": 472,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 536,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 600,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 236
+  },
+  {
+    "browser": "chromium",
+    "version": "140.0.7339.186",
+    "theme": "light",
+    "contrast": "more",
+    "density": 1,
+    "file": "installed-chromium-light-more-100.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 24,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 544,
+        "box": {
+          "x": 72,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 120,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 168,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 216,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 264,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 312,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 360,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 408,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 540,
+        "box": {
+          "x": 456,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 24,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 544,
+        "box": {
+          "x": 88,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 152,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 280,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 344,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 408,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 472,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 536,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 540,
+        "box": {
+          "x": 600,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 24,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 544,
+        "box": {
+          "x": 72,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 120,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 168,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 216,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 264,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 312,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 360,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 408,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 540,
+        "box": {
+          "x": 456,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 24,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 544,
+        "box": {
+          "x": 88,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 152,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 280,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 344,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 408,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 472,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 536,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 540,
+        "box": {
+          "x": 600,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 236
+  },
+  {
+    "browser": "chromium",
+    "version": "140.0.7339.186",
+    "theme": "dark",
+    "contrast": "normal",
+    "density": 1,
+    "file": "installed-chromium-dark-normal-100.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 488,
+        "box": {
+          "x": 24,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 72,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 510,
+        "box": {
+          "x": 120,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 168,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 216,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 264,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 312,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 487,
+        "box": {
+          "x": 360,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 408,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 456,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 488,
+        "box": {
+          "x": 24,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 88,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 510,
+        "box": {
+          "x": 152,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 216,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 280,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 344,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 408,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 487,
+        "box": {
+          "x": 472,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 536,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 600,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 488,
+        "box": {
+          "x": 24,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 72,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 510,
+        "box": {
+          "x": 120,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 168,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 216,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 264,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 312,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 487,
+        "box": {
+          "x": 360,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 408,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 456,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 488,
+        "box": {
+          "x": 24,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 88,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 510,
+        "box": {
+          "x": 152,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 216,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 280,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 344,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 408,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 487,
+        "box": {
+          "x": 472,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 536,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 600,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 234
+  },
+  {
+    "browser": "chromium",
+    "version": "140.0.7339.186",
+    "theme": "dark",
+    "contrast": "more",
+    "density": 1,
+    "file": "installed-chromium-dark-more-100.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 24,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 72,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 120,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 168,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 264,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 312,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 360,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 408,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 545,
+        "box": {
+          "x": 456,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 24,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 88,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 152,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 216,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 280,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 344,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 408,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 472,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 536,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 545,
+        "box": {
+          "x": 600,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 24,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 72,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 120,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 168,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 264,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 312,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 360,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 408,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 545,
+        "box": {
+          "x": 456,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 24,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 88,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 152,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 216,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 280,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 344,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 408,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 472,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 536,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 545,
+        "box": {
+          "x": 600,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 239
+  },
+  {
+    "browser": "chromium",
+    "version": "140.0.7339.186",
+    "theme": "light",
+    "contrast": "normal",
+    "density": 2,
+    "file": "installed-chromium-light-normal-200.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 72,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 509,
+        "box": {
+          "x": 120,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 168,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 546,
+        "box": {
+          "x": 216,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 264,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 528,
+        "box": {
+          "x": 312,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 479,
+        "box": {
+          "x": 360,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 408,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 456,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 88,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 509,
+        "box": {
+          "x": 152,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 216,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 546,
+        "box": {
+          "x": 280,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 344,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 528,
+        "box": {
+          "x": 408,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 479,
+        "box": {
+          "x": 472,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 536,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 600,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 72,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 509,
+        "box": {
+          "x": 120,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 168,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 546,
+        "box": {
+          "x": 216,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 264,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 528,
+        "box": {
+          "x": 312,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 479,
+        "box": {
+          "x": 360,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 408,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 456,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 88,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 509,
+        "box": {
+          "x": 152,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 216,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 546,
+        "box": {
+          "x": 280,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 344,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 528,
+        "box": {
+          "x": 408,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 479,
+        "box": {
+          "x": 472,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 536,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 600,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 788
+  },
+  {
+    "browser": "chromium",
+    "version": "140.0.7339.186",
+    "theme": "light",
+    "contrast": "more",
+    "density": 2,
+    "file": "installed-chromium-light-more-200.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 24,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 544,
+        "box": {
+          "x": 72,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 120,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 168,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 216,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 264,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 312,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 360,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 408,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 540,
+        "box": {
+          "x": 456,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 24,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 544,
+        "box": {
+          "x": 88,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 152,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 280,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 344,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 408,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 472,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 536,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 540,
+        "box": {
+          "x": 600,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 24,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 544,
+        "box": {
+          "x": 72,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 120,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 168,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 216,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 264,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 312,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 360,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 408,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 540,
+        "box": {
+          "x": 456,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 24,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 544,
+        "box": {
+          "x": 88,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 152,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 280,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 344,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 408,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 472,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 536,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 540,
+        "box": {
+          "x": 600,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 803
+  },
+  {
+    "browser": "chromium",
+    "version": "140.0.7339.186",
+    "theme": "dark",
+    "contrast": "normal",
+    "density": 2,
+    "file": "installed-chromium-dark-normal-200.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 488,
+        "box": {
+          "x": 24,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 72,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 510,
+        "box": {
+          "x": 120,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 168,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 216,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 264,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 312,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 487,
+        "box": {
+          "x": 360,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 408,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 456,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 488,
+        "box": {
+          "x": 24,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 88,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 510,
+        "box": {
+          "x": 152,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 216,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 280,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 344,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 408,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 487,
+        "box": {
+          "x": 472,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 536,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 600,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 488,
+        "box": {
+          "x": 24,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 72,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 510,
+        "box": {
+          "x": 120,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 168,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 216,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 264,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 312,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 487,
+        "box": {
+          "x": 360,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 408,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 456,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 488,
+        "box": {
+          "x": 24,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 88,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 510,
+        "box": {
+          "x": 152,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 216,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 280,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 344,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 408,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 487,
+        "box": {
+          "x": 472,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 536,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 520,
+        "box": {
+          "x": 600,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 785
+  },
+  {
+    "browser": "chromium",
+    "version": "140.0.7339.186",
+    "theme": "dark",
+    "contrast": "more",
+    "density": 2,
+    "file": "installed-chromium-dark-more-200.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 24,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 72,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 120,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 168,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 264,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 312,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 360,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 408,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 545,
+        "box": {
+          "x": 456,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 24,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 88,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 152,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 216,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 280,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 344,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 408,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 472,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 536,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 545,
+        "box": {
+          "x": 600,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 24,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 72,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 120,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 168,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 264,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 312,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 360,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 408,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 545,
+        "box": {
+          "x": 456,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 24,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 88,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 152,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 537,
+        "box": {
+          "x": 216,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 280,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 344,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 408,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 472,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 536,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 545,
+        "box": {
+          "x": 600,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 875
+  },
+  {
+    "browser": "firefox",
+    "version": "141.0",
+    "theme": "light",
+    "contrast": "normal",
+    "density": 1,
+    "file": "installed-firefox-light-normal-100.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 72,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 489,
+        "box": {
+          "x": 120,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 168,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 502,
+        "box": {
+          "x": 264,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 312,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 360,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 408,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 456,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 88,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 489,
+        "box": {
+          "x": 152,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 216,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 280,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 502,
+        "box": {
+          "x": 344,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 408,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 472,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 536,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 600,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 72,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 489,
+        "box": {
+          "x": 120,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 168,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 502,
+        "box": {
+          "x": 264,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 312,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 360,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 408,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 456,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 88,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 489,
+        "box": {
+          "x": 152,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 216,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 280,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 502,
+        "box": {
+          "x": 344,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 408,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 472,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 536,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 600,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 235
+  },
+  {
+    "browser": "firefox",
+    "version": "141.0",
+    "theme": "light",
+    "contrast": "more",
+    "density": 1,
+    "file": "installed-firefox-light-more-100.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 504,
+        "box": {
+          "x": 24,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 72,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 120,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 168,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 216,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 264,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 312,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 360,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 408,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 456,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 504,
+        "box": {
+          "x": 24,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 88,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 152,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 216,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 280,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 344,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 408,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 472,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 536,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 600,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 504,
+        "box": {
+          "x": 24,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 72,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 120,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 168,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 216,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 264,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 312,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 360,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 408,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 456,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 504,
+        "box": {
+          "x": 24,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 88,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 152,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 216,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 280,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 344,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 408,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 472,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 536,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 600,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 232
+  },
+  {
+    "browser": "firefox",
+    "version": "141.0",
+    "theme": "dark",
+    "contrast": "normal",
+    "density": 1,
+    "file": "installed-firefox-dark-normal-100.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 483,
+        "box": {
+          "x": 24,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 518,
+        "box": {
+          "x": 72,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 484,
+        "box": {
+          "x": 120,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 168,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 216,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 511,
+        "box": {
+          "x": 264,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 496,
+        "box": {
+          "x": 312,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 360,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 408,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 456,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 483,
+        "box": {
+          "x": 24,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 518,
+        "box": {
+          "x": 88,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 484,
+        "box": {
+          "x": 152,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 280,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 511,
+        "box": {
+          "x": 344,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 496,
+        "box": {
+          "x": 408,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 472,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 536,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 600,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 483,
+        "box": {
+          "x": 24,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 518,
+        "box": {
+          "x": 72,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 484,
+        "box": {
+          "x": 120,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 168,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 216,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 511,
+        "box": {
+          "x": 264,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 496,
+        "box": {
+          "x": 312,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 360,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 408,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 456,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 483,
+        "box": {
+          "x": 24,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 518,
+        "box": {
+          "x": 88,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 484,
+        "box": {
+          "x": 152,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 280,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 511,
+        "box": {
+          "x": 344,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 496,
+        "box": {
+          "x": 408,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 472,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 536,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 600,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 230
+  },
+  {
+    "browser": "firefox",
+    "version": "141.0",
+    "theme": "dark",
+    "contrast": "more",
+    "density": 1,
+    "file": "installed-firefox-dark-more-100.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 24,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 72,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 491,
+        "box": {
+          "x": 120,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 168,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 216,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 512,
+        "box": {
+          "x": 264,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 312,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 500,
+        "box": {
+          "x": 360,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 408,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 456,
+          "y": 117.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 24,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 88,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 491,
+        "box": {
+          "x": 152,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 216,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 280,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 512,
+        "box": {
+          "x": 344,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 408,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 500,
+        "box": {
+          "x": 472,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 536,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 600,
+          "y": 271.6166687011719,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 24,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 72,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 491,
+        "box": {
+          "x": 120,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 168,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 216,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 512,
+        "box": {
+          "x": 264,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 312,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 500,
+        "box": {
+          "x": 360,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 408,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 456,
+          "y": 69.61666870117188,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 24,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 88,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 491,
+        "box": {
+          "x": 152,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 216,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 280,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 512,
+        "box": {
+          "x": 344,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 408,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 500,
+        "box": {
+          "x": 472,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 536,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 600,
+          "y": 207.61666870117188,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 242
+  },
+  {
+    "browser": "webkit",
+    "version": "26.0",
+    "theme": "light",
+    "contrast": "normal",
+    "density": 1,
+    "file": "installed-webkit-light-normal-100.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 72,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 489,
+        "box": {
+          "x": 120,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 168,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 502,
+        "box": {
+          "x": 264,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 312,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 360,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 408,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 456,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 88,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 489,
+        "box": {
+          "x": 152,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 216,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 280,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 502,
+        "box": {
+          "x": 344,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 408,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 472,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 536,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 600,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 72,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 489,
+        "box": {
+          "x": 120,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 168,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 502,
+        "box": {
+          "x": 264,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 312,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 360,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 408,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 456,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 24,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-normal-O6GLIKBG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 516,
+        "box": {
+          "x": 88,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-normal-TTYHTPXP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 489,
+        "box": {
+          "x": 152,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-normal-VKDDXEVC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 216,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-normal-POIMHW4F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 280,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-normal-GOAICXDP.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 502,
+        "box": {
+          "x": 344,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 514,
+        "box": {
+          "x": 408,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-normal-IGM5FUMZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 472,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-normal-JMMGI3LN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 530,
+        "box": {
+          "x": 536,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 600,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 226
+  },
+  {
+    "browser": "webkit",
+    "version": "26.0",
+    "theme": "light",
+    "contrast": "more",
+    "density": 1,
+    "file": "installed-webkit-light-more-100.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 504,
+        "box": {
+          "x": 24,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 72,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 120,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 168,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 216,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 264,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 312,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 360,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 408,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 456,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 504,
+        "box": {
+          "x": 24,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 88,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 152,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 216,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 280,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 344,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 408,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 472,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 536,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 600,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 504,
+        "box": {
+          "x": 24,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 72,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 120,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 168,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 216,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 264,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 312,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 360,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 408,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 456,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 504,
+        "box": {
+          "x": 24,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-light-more-ICG2P2JN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 88,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-light-more-2NDXODAG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 532,
+        "box": {
+          "x": 152,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-light-more-5OQO6LFC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 216,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-light-more-VAJD2MPZ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 542,
+        "box": {
+          "x": 280,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-light-more-KMVNKUO6.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 513,
+        "box": {
+          "x": 344,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-light-more-RQ3AORAJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 408,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-light-more-TA4DG3RU.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 506,
+        "box": {
+          "x": 472,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-light-more-ARYK2FUG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 526,
+        "box": {
+          "x": 536,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-light-more-2J67VFXR.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 543,
+        "box": {
+          "x": 600,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 231
+  },
+  {
+    "browser": "webkit",
+    "version": "26.0",
+    "theme": "dark",
+    "contrast": "normal",
+    "density": 1,
+    "file": "installed-webkit-dark-normal-100.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 483,
+        "box": {
+          "x": 24,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 518,
+        "box": {
+          "x": 72,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 484,
+        "box": {
+          "x": 120,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 168,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 216,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 511,
+        "box": {
+          "x": 264,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 496,
+        "box": {
+          "x": 312,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 360,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 408,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 456,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 483,
+        "box": {
+          "x": 24,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 518,
+        "box": {
+          "x": 88,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 484,
+        "box": {
+          "x": 152,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 280,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 511,
+        "box": {
+          "x": 344,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 496,
+        "box": {
+          "x": 408,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 472,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 536,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 600,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 483,
+        "box": {
+          "x": 24,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 518,
+        "box": {
+          "x": 72,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 484,
+        "box": {
+          "x": 120,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 168,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 216,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 511,
+        "box": {
+          "x": 264,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 496,
+        "box": {
+          "x": 312,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 360,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 408,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 456,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 483,
+        "box": {
+          "x": 24,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-normal-4UGFS3C7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 518,
+        "box": {
+          "x": 88,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-normal-OCJS7IPY.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 484,
+        "box": {
+          "x": 152,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-normal-KS5ALKZL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 535,
+        "box": {
+          "x": 216,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-normal-PJYFDDGJ.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 280,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-normal-INDJOCE4.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 511,
+        "box": {
+          "x": 344,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-normal-K3HMBORL.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 496,
+        "box": {
+          "x": 408,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-normal-AHXPJ366.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 448,
+        "box": {
+          "x": 472,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-normal-JFTCYGO2.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 538,
+        "box": {
+          "x": 536,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-normal-NH2WTT6M.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 515,
+        "box": {
+          "x": 600,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 230
+  },
+  {
+    "browser": "webkit",
+    "version": "26.0",
+    "theme": "dark",
+    "contrast": "more",
+    "density": 1,
+    "file": "installed-webkit-dark-more-100.png",
+    "materials": [
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 24,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 72,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 491,
+        "box": {
+          "x": 120,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 168,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 216,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 512,
+        "box": {
+          "x": 264,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 312,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 500,
+        "box": {
+          "x": 360,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 408,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 456,
+          "y": 116.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 24,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 88,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 491,
+        "box": {
+          "x": 152,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 216,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 280,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 512,
+        "box": {
+          "x": 344,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 408,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 500,
+        "box": {
+          "x": 472,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 536,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 600,
+          "y": 269.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 24,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 72,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 491,
+        "box": {
+          "x": 120,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 168,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 216,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 512,
+        "box": {
+          "x": 264,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 312,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 500,
+        "box": {
+          "x": 360,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 408,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 456,
+          "y": 68.609375,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 24,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/orange-dark-more-LTCLILQW.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 521,
+        "box": {
+          "x": 88,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/yellow-dark-more-5BINFWAN.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 491,
+        "box": {
+          "x": 152,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/green-dark-more-ZGSRT2UD.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 525,
+        "box": {
+          "x": 216,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/teal-dark-more-JBLHK52D.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 534,
+        "box": {
+          "x": 280,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/mint-dark-more-THU4M3CC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 512,
+        "box": {
+          "x": 344,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/blue-dark-more-AXKKRVH7.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 522,
+        "box": {
+          "x": 408,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/indigo-dark-more-6WR6Q3TC.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 500,
+        "box": {
+          "x": 472,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/purple-dark-more-2SN6ICRH.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 531,
+        "box": {
+          "x": 536,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      },
+      {
+        "url": "http://127.0.0.1:4390/dist/assets/pink-dark-more-AEVQHEMG.webp",
+        "width": 256,
+        "height": 256,
+        "distinct": 539,
+        "box": {
+          "x": 600,
+          "y": 205.609375,
+          "width": 48,
+          "height": 48
+        }
+      }
+    ],
+    "screenshotMinimumDistinctRgb": 237
+  }
+]
