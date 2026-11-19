@@ -1,0 +1,907 @@
+{
+  "sourceCommit": "993e4ed8b1284053bc784652a68d8f01ea58e095",
+  "archives": [
+    {
+      "name": "@labpics/ui-tokens",
+      "sha256": "355a35bf877e00bbb70cbe208837af959a76ce4bc6b085768c646993fe3621a0"
+    },
+    {
+      "name": "@labpics/ui-shadow",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "@labpics/ui-materials",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "@labpics/fonts",
+      "sha256": "d0d46708a7b04e7fca9900afc5735ca7a72fa5ae1082787ea603199b632b2fef"
+    },
+    {
+      "name": "@labui/colors",
+      "sha256": "f01ced7601b53b7df06c2358381ac5bdc31dc9eb5d6cfa0092c519f4d9555d06"
+    },
+    {
+      "name": "@labpics/ui-core",
+      "sha256": "ee7ee99e3497798ef8bfa0294e9b921d263f1464ac6fe29220382bf1b85af44c"
+    },
+    {
+      "name": "@labpics/ui-react",
+      "sha256": "58446f99853ab91870f83cb1a3840961cb1e6cd2c4be4ce52d414098ee86d29c"
+    }
+  ],
+  "records": [
+    {
+      "engine": "chromium",
+      "renderer": "lit",
+      "dir": "ltr",
+      "defaultValue": [
+        1
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          1
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "lit",
+      "dir": "ltr",
+      "defaultValue": [
+        2
+      ],
+      "step": 2,
+      "changes": [
+        [
+          20
+        ],
+        [
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "lit",
+      "dir": "ltr",
+      "defaultValue": [
+        -0.69
+      ],
+      "min": -0.7,
+      "max": 1.3,
+      "step": 0.01,
+      "changes": [
+        [
+          -0.3
+        ],
+        [
+          -0.69
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "lit",
+      "dir": "ltr",
+      "defaultValue": [
+        1,
+        2
+      ],
+      "changes": [
+        [
+          1,
+          20
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "lit",
+      "dir": "ltr",
+      "defaultValue": [
+        0
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          0
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "lit",
+      "dir": "ltr",
+      "defaultValue": [
+        20
+      ],
+      "changes": [
+        [
+          37
+        ],
+        [
+          20
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "lit",
+      "dir": "rtl",
+      "defaultValue": [
+        1
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          1
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "lit",
+      "dir": "rtl",
+      "defaultValue": [
+        2
+      ],
+      "step": 2,
+      "changes": [
+        [
+          20
+        ],
+        [
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "lit",
+      "dir": "rtl",
+      "defaultValue": [
+        -0.69
+      ],
+      "min": -0.7,
+      "max": 1.3,
+      "step": 0.01,
+      "changes": [
+        [
+          -0.3
+        ],
+        [
+          -0.69
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "lit",
+      "dir": "rtl",
+      "defaultValue": [
+        1,
+        2
+      ],
+      "changes": [
+        [
+          1,
+          20
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "lit",
+      "dir": "rtl",
+      "defaultValue": [
+        0
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          0
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "lit",
+      "dir": "rtl",
+      "defaultValue": [
+        20
+      ],
+      "changes": [
+        [
+          37
+        ],
+        [
+          20
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "dir": "ltr",
+      "defaultValue": [
+        1
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          1
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "dir": "ltr",
+      "defaultValue": [
+        2
+      ],
+      "step": 2,
+      "changes": [
+        [
+          20
+        ],
+        [
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "dir": "ltr",
+      "defaultValue": [
+        -0.69
+      ],
+      "min": -0.7,
+      "max": 1.3,
+      "step": 0.01,
+      "changes": [
+        [
+          -0.3
+        ],
+        [
+          -0.69
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "dir": "ltr",
+      "defaultValue": [
+        1,
+        2
+      ],
+      "changes": [
+        [
+          1,
+          20
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "dir": "ltr",
+      "defaultValue": [
+        0
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          0
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "dir": "ltr",
+      "defaultValue": [
+        20
+      ],
+      "changes": [
+        [
+          37
+        ],
+        [
+          20
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "dir": "rtl",
+      "defaultValue": [
+        1
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          1
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "dir": "rtl",
+      "defaultValue": [
+        2
+      ],
+      "step": 2,
+      "changes": [
+        [
+          20
+        ],
+        [
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "dir": "rtl",
+      "defaultValue": [
+        -0.69
+      ],
+      "min": -0.7,
+      "max": 1.3,
+      "step": 0.01,
+      "changes": [
+        [
+          -0.3
+        ],
+        [
+          -0.69
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "dir": "rtl",
+      "defaultValue": [
+        1,
+        2
+      ],
+      "changes": [
+        [
+          1,
+          20
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "dir": "rtl",
+      "defaultValue": [
+        0
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          0
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "dir": "rtl",
+      "defaultValue": [
+        20
+      ],
+      "changes": [
+        [
+          37
+        ],
+        [
+          20
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "lit",
+      "dir": "ltr",
+      "defaultValue": [
+        1
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          1
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "lit",
+      "dir": "ltr",
+      "defaultValue": [
+        2
+      ],
+      "step": 2,
+      "changes": [
+        [
+          20
+        ],
+        [
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "lit",
+      "dir": "ltr",
+      "defaultValue": [
+        -0.69
+      ],
+      "min": -0.7,
+      "max": 1.3,
+      "step": 0.01,
+      "changes": [
+        [
+          -0.3
+        ],
+        [
+          -0.69
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "lit",
+      "dir": "ltr",
+      "defaultValue": [
+        1,
+        2
+      ],
+      "changes": [
+        [
+          1,
+          20
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "lit",
+      "dir": "ltr",
+      "defaultValue": [
+        0
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          0
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "lit",
+      "dir": "ltr",
+      "defaultValue": [
+        20
+      ],
+      "changes": [
+        [
+          37
+        ],
+        [
+          20
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "lit",
+      "dir": "rtl",
+      "defaultValue": [
+        1
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          1
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "lit",
+      "dir": "rtl",
+      "defaultValue": [
+        2
+      ],
+      "step": 2,
+      "changes": [
+        [
+          20
+        ],
+        [
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "lit",
+      "dir": "rtl",
+      "defaultValue": [
+        -0.69
+      ],
+      "min": -0.7,
+      "max": 1.3,
+      "step": 0.01,
+      "changes": [
+        [
+          -0.3
+        ],
+        [
+          -0.69
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "lit",
+      "dir": "rtl",
+      "defaultValue": [
+        1,
+        2
+      ],
+      "changes": [
+        [
+          1,
+          20
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "lit",
+      "dir": "rtl",
+      "defaultValue": [
+        0
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          0
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "lit",
+      "dir": "rtl",
+      "defaultValue": [
+        20
+      ],
+      "changes": [
+        [
+          37
+        ],
+        [
+          20
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "dir": "ltr",
+      "defaultValue": [
+        1
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          1
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "dir": "ltr",
+      "defaultValue": [
+        2
+      ],
+      "step": 2,
+      "changes": [
+        [
+          20
+        ],
+        [
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "dir": "ltr",
+      "defaultValue": [
+        -0.69
+      ],
+      "min": -0.7,
+      "max": 1.3,
+      "step": 0.01,
+      "changes": [
+        [
+          -0.3
+        ],
+        [
+          -0.69
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "dir": "ltr",
+      "defaultValue": [
+        1,
+        2
+      ],
+      "changes": [
+        [
+          1,
+          20
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "dir": "ltr",
+      "defaultValue": [
+        0
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          0
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "dir": "ltr",
+      "defaultValue": [
+        20
+      ],
+      "changes": [
+        [
+          37
+        ],
+        [
+          20
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "dir": "rtl",
+      "defaultValue": [
+        1
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          1
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "dir": "rtl",
+      "defaultValue": [
+        2
+      ],
+      "step": 2,
+      "changes": [
+        [
+          20
+        ],
+        [
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "dir": "rtl",
+      "defaultValue": [
+        -0.69
+      ],
+      "min": -0.7,
+      "max": 1.3,
+      "step": 0.01,
+      "changes": [
+        [
+          -0.3
+        ],
+        [
+          -0.69
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "dir": "rtl",
+      "defaultValue": [
+        1,
+        2
+      ],
+      "changes": [
+        [
+          1,
+          20
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "dir": "rtl",
+      "defaultValue": [
+        0
+      ],
+      "changes": [
+        [
+          20
+        ],
+        [
+          0
+        ]
+      ],
+      "ends": []
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "dir": "rtl",
+      "defaultValue": [
+        20
+      ],
+      "changes": [
+        [
+          37
+        ],
+        [
+          20
+        ]
+      ],
+      "ends": []
+    }
+  ]
+}

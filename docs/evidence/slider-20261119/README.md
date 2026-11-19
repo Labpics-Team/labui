@@ -34,6 +34,14 @@ runtime проецирует pointer на авторскую геометрию;
 выбирает нижний бегунок, обратное — верхний. В Linear начало drag учитывает
 видимый центр, включая плато у нуля.
 
+Второй проход ревью нашёл неоднозначность этого плато: при width 400 значения
+0…3 рисуются в центре 6 px. Поэтому неподвижное нажатие и возврат прямого drag
+в начальную координату сохраняют исходное значение, а не восстанавливают его
+из центра. Иначе web click менял 1→0, а native терял 1 при возврате после drag.
+Сохранённое значение относится к выбранному бегунку; диапазон `[1,2]` восстанавливает
+верхний бегунок после раскрытия вправо. Callback изменения приходит только при
+реальном изменении; возврат к началу не создаёт commit callback.
+
 [AndroidX accessibility delegate](https://github.com/androidx/androidx/blob/androidx-main/compose/ui/ui/src/androidMain/kotlin/androidx/compose/ui/platform/AndroidComposeViewAccessibilityDelegateCompat.android.kt#L1555)
 вычисляет increment из `range / (steps + 1)`, а при `steps=0` — из `range / 20`.
 Поэтому для двух достижимых endpoints `SetProgress` сохраняет направление запроса,
@@ -80,6 +88,19 @@ WebKit проверяют `0→75` и `100→25` через Lit/React с пуб�
 pointer на совпавших endpoints и середине в обе стороны. `review.generated.json`
 фиксирует эти пути отдельно от визуальных и прежних проверок.
 
+Адресная проверка второго исправления: `slider-gesture-packed.mjs` устанавливает
+новые tarballs и проверяет 48 сценариев Chromium/WebKit × Lit uncontrolled/React
+controlled × LTR/RTL: начальные 1, шаг 2, дробный `-0.69` на сетке 0.01, диапазон
+`[1,2]`, ноль и обычное значение 20. Проверяются неподвижное нажатие, точное значение
+после движения, возврат до release, callbacks и FormData. Для React отдельно
+воспроизведён переход Home→Arrow→pointer. Хеши и значения — в
+`gesture-installed.generated.json`. До исправления installed Chromium получил 0
+вместо 1; две новые native-регрессии упали на возврате single и range. После него
+прошли шесть адресных Compose-тестов и два behavioral-теста отдельного Maven
+consumer `0.1.0-slider-20261120.4`. Хеши этой версии — в
+`gesture-native-installed.generated.json`. Визуальная матрица не повторялась:
+геометрия и рисование не менялись.
+
 Web не создаёт idle RAF. Native размывает маленькую alpha-маску 13×62 @1x,
 затем перемещает изображение и окрашивает его ролями. Отдельный опыт с временным
 счётчиком подтвердил один `rasterizeBlurMask` на прогрев 20 и 120 изменений; счётчик
@@ -91,6 +112,7 @@ Web не создаёт idle RAF. Native размывает маленькую a
 ```powershell
 pnpm --filter @labpics/ui-core exec vitest run test/slider-contract.test.ts
 node apps/docs/tests/slider-packed.mjs
+node apps/docs/tests/slider-gesture-packed.mjs
 pnpm --filter @labpics/ui-docs exec playwright test slider.spec.ts --project=chromium --project=webkit
 $env:JAVA_TOOL_OPTIONS='-Djava.awt.headless=true'
 $env:SKIKO_RENDER_API='SOFTWARE'

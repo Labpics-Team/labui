@@ -1,0 +1,29 @@
+{
+  "sourceCommit": "993e4ed8b1284053bc784652a68d8f01ea58e095",
+  "version": "0.1.0-slider-20261120.4",
+  "iconsVersion": "0.4.0-semantic.6",
+  "sourceSubstitution": false,
+  "artifacts": [
+    {
+      "path": "pics/lab/ui-colors-desktop/0.1.0-slider-20261120.4/ui-colors-desktop-0.1.0-slider-20261120.4.jar",
+      "sha256": "0309c3881c5e8d4d0acbfba01b6b5cf730cf022c4d208823a1c8ab4ef4583263"
+    },
+    {
+      "path": "pics/lab/ui-compose-desktop/0.1.0-slider-20261120.4/ui-compose-desktop-0.1.0-slider-20261120.4.jar",
+      "sha256": "5a1e5f19b8b77d7703540d048d9c013071fa4572011777319fa6fb5c48918121"
+    }
+  ],
+  "nativeTests": [
+    "pointerTracksAuthoredTrailingEdgeGeometry[desktop]",
+    "rtlPointerKeyboardAndSemanticsShareThePaintedPosition[desktop]",
+    "coincidentRangeThumbsOpenInEitherDirection[desktop]",
+    "coincidentPlateauRangeRestoresTheChosenThumb[desktop]",
+    "directPointerPreservesValuesAtThePaintedPlateau[desktop]",
+    "circularTrackClickChoosesAnAbsoluteValue[desktop]"
+  ],
+  "installedTests": [
+    "installedPointerAndAccessibilityPathsReachTheirValues[desktop]",
+    "installedLinearGesturePreservesItsOriginalValue[desktop]"
+  ],
+  "failures": 0
+}

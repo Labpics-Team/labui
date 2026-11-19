@@ -62,5 +62,28 @@
       "range25..65 globalmin5 step20"
     ]
   },
-  "limitation": "Android ACTION_SCROLL increment follows inspected AndroidX source in an offscreen semantic test; this is not an Android device or screen-reader run."
+  "limitation": "Android ACTION_SCROLL increment follows inspected AndroidX source in an offscreen semantic test; this is not an Android device or screen-reader run.",
+  "gestureOriginReview": {
+    "sourceCommit": "993e4ed8b1284053bc784652a68d8f01ea58e095",
+    "reviewedBaseline": "e762282f",
+    "cause": "Linear clamped painted center is non-injective near min; inverse geometry loses the original direct-gesture value.",
+    "redBeforeFix": {
+      "installedChromiumLit": "width400 value1 stationary click produced0",
+      "nativeSingle": "return to origin before release expected1, actual0",
+      "nativeRange": "return to origin expected1..2, actual1..1"
+    },
+    "green": {
+      "installedWebGestures": 48,
+      "installedWebEvidence": "gesture-installed.generated.json",
+      "nativeTargetedTests": 6,
+      "installedNativeTargetedTests": 2,
+      "nativeEvidence": "gesture-native-installed.generated.json",
+      "mavenVersion": "0.1.0-slider-20261120.4",
+      "coreContractTests": 6,
+      "coreTypes": true,
+      "catalogCheck": true,
+      "biome": true
+    },
+    "visuals": "No geometry or drawing changes; previous density and font matrix was not repeated."
+  }
 }
