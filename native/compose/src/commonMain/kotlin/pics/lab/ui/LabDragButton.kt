@@ -46,6 +46,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -178,9 +179,18 @@ public fun LabDragButton(
         val trackWidth = maxWidth.value
         // Mask belongs to helper + track, never the growing Button.
         Box(Modifier.matchParentSize().clipToBounds().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen; scaleX = if (rtl) -1f else 1f }) {
-            if (showHelper && effective == LabDragButtonStatus.Idle) Box(Modifier.matchParentSize().padding(horizontal = (metrics.height + LabComponents.DragButtonPadding).dp), contentAlignment = Alignment.Center) {
+            if (showHelper && effective == LabDragButtonStatus.Idle) Layout(modifier = Modifier.matchParentSize(), content = {
                 LabText(helperText, Modifier.graphicsLayer { scaleX = if (rtl) -1f else 1f },
                     style = textStyle.withTypography(color = colors[LabComponents.DragButtonRolesLabel]), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }) { measurables, constraints ->
+                val start = (metrics.height + LabComponents.DragButtonPadding * 2).dp.roundToPx()
+                val end = (LabComponents.DragButtonPadding * 2).dp.roundToPx()
+                val text = measurables.single().measure(constraints.copy(minWidth = 0, minHeight = 0,
+                    maxWidth = (constraints.maxWidth - start - end).coerceAtLeast(0)))
+                layout(constraints.maxWidth, constraints.maxHeight) {
+                    // Preserve the authored centre until the initial Button needs more room.
+                    text.place(((constraints.maxWidth - text.width) / 2).coerceAtLeast(start), (constraints.maxHeight - text.height) / 2)
+                }
             }
             Canvas(Modifier.matchParentSize()) { drawRoundRect(colors[LabComponents.DragButtonRolesTrack], cornerRadius = CornerRadius(LabComponents.DragButtonRadius.dp.toPx())) }
             val blur = LabComponents.DragButtonMaskBlur

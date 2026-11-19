@@ -19,14 +19,16 @@ export const dragButtonCss = `
 }
 [data-lab-drag-button] > .lab-drag-track {
   position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none;
+  display: grid; align-items: center; direction: ltr;
+  grid-template-columns: minmax(calc(var(--lab-size-button-m) + ${rem(p.padding * 2)}), 1fr) minmax(0, max-content) minmax(${rem(p.padding * 2)}, 1fr);
   mask-image: url('data:image/svg+xml,${encodeURIComponent(svg)}');
   mask-size: ${rem(maskWidth + p.mask.blur * 2)} ${rem(p.mask.height + p.mask.blur * 2)};
   mask-position: calc(100% + ${rem(p.mask.blur)}) center; mask-repeat: no-repeat;
 }
 [data-lab-drag-button]:dir(rtl) > .lab-drag-track { transform: scaleX(-1); }
-[data-lab-drag-button]:dir(rtl) .lab-drag-helper { transform: scaleX(-1); }
+[data-lab-drag-button]:dir(rtl) .lab-drag-helper { transform: scaleX(-1); direction: rtl; }
 .lab-drag-track::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: var(--lab-${p.roles.track}); }
-.lab-drag-helper { display: block; line-height: ${rem(p.height)}; padding-inline: calc(var(--lab-size-button-m) + ${rem(p.padding)}); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
+.lab-drag-helper { grid-column: 2; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 [data-lab-drag-button]:not([data-status='idle']) .lab-drag-helper { visibility: hidden; }
 [data-lab-drag-button] > .lab-drag-fill {
   position: relative; display: flex; align-items: center; justify-content: flex-end; box-sizing: border-box;
