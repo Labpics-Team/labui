@@ -69,7 +69,7 @@ export class LabAvatar extends LabElement {
   declare src?: string;
   declare name: string;
   /** Local view state: the image errored, so fall back to initials for real. */
-  private _imageFailed = false;
+  private declare _imageFailed: boolean;
 
   constructor() {
     super();
@@ -77,6 +77,7 @@ export class LabAvatar extends LabElement {
     this.color = 'neutral';
     this.status = 'none';
     this.name = '';
+    this._imageFailed = false;
   }
 
   /** Initials from the name: first letters of the first two words, uppercased. */

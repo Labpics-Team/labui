@@ -38,13 +38,14 @@ export function mountSheetMotion(
   const currentView = frame.ownerDocument.defaultView;
   if (!currentView) throw new Error('LabSheet: движение требует окно документа');
   const view = currentView;
+  // Validate the initial geometry before allocating a scope that setup may not return.
+  let geometry = options.readGeometry();
   const motion: MotionScope = scope(frame);
   const reduced = view.matchMedia('(prefers-reduced-motion: reduce)');
   const original = frame.style.getPropertyValue('--_sheet-top');
   const originalPriority = frame.style.getPropertyPriority('--_sheet-top');
   const originalHeight = frame.style.getPropertyValue('--_sheet-visible-height');
   const originalHeightPriority = frame.style.getPropertyPriority('--_sheet-visible-height');
-  let geometry = options.readGeometry();
   let open = false;
   let position: LabSheetPosition = 'half';
   let disposed = false;

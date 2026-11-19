@@ -50,6 +50,31 @@ test('honest fallback: a name with no image renders initials on both renderers',
   await expect(page.getByTestId('react-brand-online').locator('img')).toHaveCount(0);
 });
 
+test('a failed image renders initials immediately and a new source recovers', async ({ page }) => {
+  await page.route('**/broken-avatar.png', (route) => route.abort());
+  const avatar = page.getByTestId('lit-brand-online');
+  const requested = page.waitForRequest('**/broken-avatar.png');
+  await avatar.evaluate((element) => element.setAttribute('src', '/broken-avatar.png'));
+  await requested;
+  await expect(avatar.locator('img')).toHaveCount(0);
+  await expect(litDisc(page, 'lit-brand-online')).toContainText('AL');
+
+  await avatar.evaluate((element) =>
+    element.setAttribute(
+      'src',
+      `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="8" fill="red"/></svg>')}`,
+    ),
+  );
+  await expect(avatar.locator('img')).toBeVisible();
+  await expect
+    .poll(() =>
+      avatar
+        .locator('img')
+        .evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0),
+    )
+    .toBe(true);
+});
+
 test('honest fallback: no name and no image renders the anonymous glyph, not initials', async ({
   page,
 }) => {

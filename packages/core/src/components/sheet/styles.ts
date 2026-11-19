@@ -1,3 +1,5 @@
+import { materialProfile } from '@labpics/ui-materials';
+
 /** Общая геометрия и оформление Sheet для Lit и React. */
 export const sheetCss = String.raw`
 /* Геометрия Core Sheet; native DOM сохраняет те же semantic paints и материалы. */
@@ -5,7 +7,7 @@ export const sheetCss = String.raw`
   --_sheet-inset: var(--lab-space-sheet-x, 1rem);
   --_sheet-bottom: var(--lab-space-sheet-bottom, 1rem);
   --_sheet-gap: var(--lab-space-sheet-content-gap, 1.5rem);
-  --_sheet-overlap: var(--lab-sheet-ghost-overlap);
+  --_sheet-overlap: var(--lab-sheet-ghost-overlap, ${materialProfile.compositions.sheet.ghost.overlap}px);
   color: var(--lab-label-primary);
   position: fixed;
   inset: 0;

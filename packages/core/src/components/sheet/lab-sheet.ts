@@ -218,6 +218,9 @@ export class LabSheet extends LabElement {
       onDismiss: () => this.changeOpen(false),
     });
     this.modalBoundary.update(this.open || this.present, this.modal, this.open);
+    // A never-opened (or failed-to-mount) panel has no visible geometry to animate.
+    // Wait for an actual open request instead of retrying setup after each failure.
+    if (!this.motion && !this.open) return;
     try {
       if (!this.motion || (!this.motion.active && this.open)) {
         this.motion = mountSheetMotion(

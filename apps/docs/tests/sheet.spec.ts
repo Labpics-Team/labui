@@ -7,6 +7,46 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/_fixtures/sheet.html');
 });
 
+test('Sheet uses its profile without inherited geometry and does not measure a closed panel', async ({
+  page,
+}) => {
+  await page.evaluate(async () => {
+    await customElements.whenDefined('lab-sheet');
+    const sheet = document.createElement('lab-sheet');
+    sheet.id = 'geometry-sheet';
+    sheet.heading = 'Проверка геометрии';
+    sheet.modal = false;
+    sheet.style.setProperty('--lab-sheet-ghost-overlap', 'initial');
+    let errors = 0;
+    document.documentElement.dataset.sheetErrors = '0';
+    sheet.addEventListener('motion-error', () => {
+      document.documentElement.dataset.sheetErrors = String(++errors);
+      // Keep an erroneous render loop from starving the browser's event loop.
+      if (errors > 1) sheet.remove();
+    });
+    document.body.append(sheet);
+    await sheet.updateComplete;
+  });
+  const sheet = page.locator('#geometry-sheet');
+  await expect(page.locator('html')).toHaveAttribute('data-sheet-errors', '0');
+  await expect(sheet.locator('dialog')).toBeHidden();
+  await expect(sheet.locator('.lab-sheet-frame')).not.toHaveAttribute('data-lab-motion');
+  await sheet.evaluate((element) => {
+    (element as LabSheet).open = true;
+  });
+  await expect(sheet.locator('dialog')).toBeVisible();
+  await expect(sheet.locator('.lab-sheet-content')).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('data-sheet-errors', '0');
+  const top = await sheet.locator('.lab-sheet-content').evaluate((element) => {
+    return element.getBoundingClientRect().top;
+  });
+  expect(top).toBeCloseTo(390, 0);
+  await sheet.evaluate((element) => {
+    (element as LabSheet).open = false;
+  });
+  await expect(sheet.locator('dialog')).toBeHidden();
+});
+
 test('оба renderer сохраняют авторскую роль заголовка Sheet при системном масштабе', async ({
   page,
 }) => {
