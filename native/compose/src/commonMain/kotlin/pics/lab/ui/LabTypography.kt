@@ -20,7 +20,7 @@ internal fun TextStyle.withTypography(
     fontSize: TextUnit = this.fontSize,
     lineHeight: TextUnit = this.lineHeight,
     fontWeight: FontWeight? = this.fontWeight,
-    lineHeightStyle: LineHeightStyle? = this.lineHeightStyle,
+    lineHeightStyle: LineHeightStyle? = this.lineHeightStyle ?: LabLineHeightStyle,
 ): TextStyle = copy(
     color = color,
     fontFamily = fontFamily,
@@ -30,4 +30,8 @@ internal fun TextStyle.withTypography(
     letterSpacing = letterSpacing,
     lineHeightStyle = lineHeightStyle,
     fontFeatureSettings = if (letterSpacing.isUnspecified || letterSpacing.value == 0f) null else "liga 0, clig 0",
+)
+
+internal val LabLineHeightStyle = LineHeightStyle(
+    LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None, LineHeightStyle.Mode.Tight,
 )

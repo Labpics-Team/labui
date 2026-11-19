@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -219,9 +218,9 @@ internal fun SelectionLabelLayout(
     val hasEnd = label.isNotEmpty()
     val controlIndex = if (hasStart) 1 else 0
     Layout(modifier = modifier, content = {
-        if (hasStart) BasicText(labelStart, style = style)
+        if (hasStart) LabText(labelStart, style = style)
         indicator()
-        if (hasEnd) BasicText(label, style = style)
+        if (hasEnd) LabText(label, style = style)
     }) { measurables, constraints ->
         val loose = constraints.copy(minWidth = 0, minHeight = 0)
         val control = measurables[controlIndex].measure(loose)

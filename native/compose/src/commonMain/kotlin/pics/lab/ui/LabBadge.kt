@@ -5,19 +5,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -73,7 +69,7 @@ public fun LabBadge(
         letterSpacing = LabComponents.BadgeLetterSpacing.sp,
         fontWeight = FontWeight(LabComponents.BadgeFontWeight.toInt()),
         lineHeightStyle = LineHeightStyle(
-            LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both, LineHeightStyle.Mode.Fixed),
+            LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None, LineHeightStyle.Mode.Tight),
     )
     Row(
         modifier.semantics(mergeDescendants = true) {}
@@ -86,12 +82,7 @@ public fun LabBadge(
         if (icon != null) Box(Modifier.size(iconScope.size).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
             iconScope.icon()
         }
-        // Skia's first/last line font metrics exceed the authored line box even
-        // with Mode.Fixed. Center the unbounded glyph box inside the 12sp advance;
-        // the surrounding padding accommodates ascenders without clipping.
-        BasicText(text, modifier = Modifier.weight(1f, fill = false)
-            .height(with(LocalDensity.current) { LabComponents.BadgeLineHeight.sp.toDp() })
-            .wrapContentHeight(unbounded = true), style = labelStyle,
+        LabText(text, modifier = Modifier.weight(1f, fill = false), style = labelStyle,
             maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
         if (iconEnd != null) Box(Modifier.size(iconScope.size).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
             iconScope.iconEnd()

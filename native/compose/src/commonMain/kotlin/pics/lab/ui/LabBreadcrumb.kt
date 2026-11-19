@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -128,7 +127,7 @@ public fun LabBreadcrumb(
                         if (current) textModifier = textModifier.semantics { selected = true }
                         // Trim only the outer leading. Wrapped lines retain a readable baseline distance.
                         val trim = with(density) { (metrics.multilineLineHeight - metrics.lineHeight).sp.roundToPx() }
-                        BasicText(item.label, textModifier.layout { measurable, constraints ->
+                        LabText(item.label, textModifier.layout { measurable, constraints ->
                             val placeable = measurable.measure(constraints)
                             layout(placeable.width, max(0, placeable.height - trim)) {
                                 placeable.placeRelative(0, -trim / 2)
@@ -138,7 +137,7 @@ public fun LabBreadcrumb(
                             fontWeight = FontWeight(LabComponents.BreadcrumbFontWeight.toInt()),
                             letterSpacing = LabComponents.BreadcrumbLetterSpacing.sp,
                             lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center,
-                                LineHeightStyle.Trim.None, LineHeightStyle.Mode.Fixed)))
+                                LineHeightStyle.Trim.None, LineHeightStyle.Mode.Tight)))
                     }
                     if (position < indices.lastIndex) BreadcrumbGlyph(LabComponents.BreadcrumbGlyphsChevronPath,
                         LabComponents.BreadcrumbGlyphsChevronX, LabComponents.BreadcrumbGlyphsChevronY,

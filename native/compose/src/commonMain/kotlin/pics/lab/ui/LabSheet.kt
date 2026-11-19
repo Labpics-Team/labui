@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -306,7 +305,7 @@ public fun LabSheetHost(
                                             Layout(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 content = {
-                                                    BasicText(title, style = LabType.body().withTypography(
+                                                    LabText(title, style = LabType.body().withTypography(
                                                         fontSize = LabComponents.SheetTypographyTitleFontSize.sp,
                                                         lineHeight = LabComponents.SheetTypographyTitleLineHeight.sp,
                                                         fontWeight = FontWeight(LabComponents.SheetTypographyTitleFontWeight.toInt()),

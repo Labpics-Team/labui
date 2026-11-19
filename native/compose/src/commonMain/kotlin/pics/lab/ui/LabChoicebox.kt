@@ -19,7 +19,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -148,9 +147,9 @@ internal fun ChoiceboxOption(
             item.icon?.invoke(iconScope)
         }
     }
-    val label: @Composable () -> Unit = { BasicText(item.label, style = labelStyle) }
+    val label: @Composable () -> Unit = { LabText(item.label, style = labelStyle) }
     val description: (@Composable () -> Unit)? = item.description?.let { value -> {
-        BasicText(value, style = LabType.body().copy(
+        LabText(value, style = LabType.body().copy(
             color = colors[if (enabled) LabComponents.SelectionChoiceboxDescriptionRole else LabComponents.SelectionRolesDisabledLabel]))
     } }
     val bounds = if (layout == LabChoiceboxLayout.Card) Modifier.width(LabComponents.SelectionChoiceboxPreferredWidth.dp)

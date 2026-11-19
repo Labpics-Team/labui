@@ -11,12 +11,6 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import org.jetbrains.compose.resources.Font
-import pics.lab.ui.resources.Res
-import pics.lab.ui.resources.geist_regular
-import pics.lab.ui.resources.geist_medium
-import pics.lab.ui.resources.geist_semibold
 
 public enum class LabAppearance { Light, Dark }
 
@@ -73,11 +67,7 @@ public fun LabTheme(state: LabThemeState, fontFamily: FontFamily = labFontFamily
 }
 
 @Composable
-public fun labFontFamily(): FontFamily = FontFamily(
-    Font(Res.font.geist_regular, FontWeight.Normal),
-    Font(Res.font.geist_medium, FontWeight.Medium),
-    Font(Res.font.geist_semibold, FontWeight.SemiBold),
-)
+public expect fun labFontFamily(): FontFamily
 
 internal object LabType {
     @Composable

@@ -15,6 +15,7 @@ from fontTools.ttLib import TTFont
 ROOT = Path(__file__).resolve().parents[1]
 REPO = ROOT.parents[1]
 NATIVE = REPO / "native/compose/src/commonMain/composeResources/font"
+SKIKO = REPO / "native/compose/src/skikoMain/composeResources/font"
 GEIST_REV = "4d655731f83507f0258ce5541c297b6553d5d081"
 NOTO_REV = "7af0d90b4d532ffa4b041937b560c6df4e7b1e95"
 NOTO_URL = f"https://raw.githubusercontent.com/google/fonts/{NOTO_REV}/ofl/notosanssymbols2/NotoSansSymbols2-Regular.ttf"
@@ -99,6 +100,38 @@ def verify_native(original, result, symbols):
     assert result["hmtx"][glyph] == symbols["hmtx"][glyph]
 
 
+def skiko_line_metrics(font):
+    """Keep the font's vertical centre, with one em of unpadded line metrics.
+
+    Compose/Skia 1.12.2/0.150.2 adds the source leading to an explicit line
+    height, and forces natural outer metrics when lineHeight <= fontSize.
+    Android uses Minikin and continues receiving the unchanged source metrics.
+    """
+    result = copy.deepcopy(font)
+    em = font["head"].unitsPerEm
+    centre = font["hhea"].ascent + font["hhea"].descent
+    assert (em + centre) % 2 == 0
+    ascent, descent = (em + centre) // 2, (centre - em) // 2
+    result["hhea"].ascent, result["hhea"].descent, result["hhea"].lineGap = ascent, descent, 0
+    result["OS/2"].sTypoAscender = ascent
+    result["OS/2"].sTypoDescender = descent
+    result["OS/2"].sTypoLineGap = 0
+    rename(result, "Lab UI Text Skia", font["name"].getDebugName(2))
+    # Apart from names and the six line metrics, every font table stays identical.
+    for table in font.keys():
+        if table not in ("GlyphOrder", "head", "name", "hhea", "OS/2"):
+            assert result.getTableData(table) == font.getTableData(table), table
+    restored = copy.deepcopy(result)
+    for table, fields in {
+        "hhea": ("ascent", "descent", "lineGap"),
+        "OS/2": ("sTypoAscender", "sTypoDescender", "sTypoLineGap"),
+    }.items():
+        for field in fields:
+            setattr(restored[table], field, getattr(font[table], field))
+        assert restored.getTableData(table) == font.getTableData(table), table
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cache-dir", type=Path, required=True)
@@ -140,6 +173,7 @@ def main():
         data = encoded(result)
         verify_native(original, TTFont(io.BytesIO(data)), noto)
         products[NATIVE / f"geist_{resource}.ttf"] = data
+        products[SKIKO / f"geist_skiko_{resource}.ttf"] = encoded(skiko_line_metrics(TTFont(io.BytesIO(data), recalcTimestamp=False)))
 
     # CSS Unicode ranges share one family, so the supplementary face needs the
     # same line metrics as Geist. Its own metrics would move the text baseline.
@@ -165,6 +199,7 @@ def main():
             if path.read_bytes() != data:
                 raise ValueError(f"Generated resource differs: {path}")
         else:
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
     print(json.dumps(report, indent=2))
 

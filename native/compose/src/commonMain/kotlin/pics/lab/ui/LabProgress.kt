@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -142,10 +141,10 @@ public fun LabProgress(
         if (label.isNotBlank() || (!circular && showText)) {
             Row(if (circular) Modifier else Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(LabTokens.Space2.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (label.isNotBlank()) BasicText(label,
+                if (label.isNotBlank()) LabText(label,
                     (if (circular) Modifier else Modifier.weight(1f)).clearAndSetSemantics {}, style = textStyle)
                 else if (!circular) Box(Modifier.weight(1f))
-                if (!circular && showText) BasicText(state.text, Modifier.clearAndSetSemantics {}, style = textStyle)
+                if (!circular && showText) LabText(state.text, Modifier.clearAndSetSemantics {}, style = textStyle)
             }
         }
         if (circular) {
@@ -165,7 +164,7 @@ public fun LabProgress(
                         sweepAngle = fraction * 360f, useCenter = false, topLeft = origin, size = bounds, style = stroke)
                 }
             }, contentAlignment = Alignment.Center) {
-                if (showText) BasicText(state.text, Modifier.clearAndSetSemantics {}, style = textStyle)
+                if (showText) LabText(state.text, Modifier.clearAndSetSemantics {}, style = textStyle)
             }
         } else Box(Modifier.fillMaxWidth().height(metrics.thickness.dp).drawWithCache {
             val radius = CornerRadius(LabComponents.ProgressRadius.dp.toPx())

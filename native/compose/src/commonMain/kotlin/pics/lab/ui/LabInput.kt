@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
@@ -126,6 +125,7 @@ public fun LabInput(
                 letterSpacing = metrics.letterSpacing.sp,
             )
     val measurer = rememberTextMeasurer()
+    val authoredLabel = usesAuthoredTextMetrics(labelStyle.fontFamily)
     val overhang = with(LocalDensity.current) { LabComponents.InputLabelOverhang.sp.toDp() }
     Column(
         modifier.padding(top = overhang),
@@ -143,7 +143,9 @@ public fun LabInput(
             // The first line keeps its authored notch. Additional lines reserve space
             // inside the outline before the editor, without changing single-line geometry.
             val extraLabelHeight = with(LocalDensity.current) {
-                (labelLayout.lastBaseline - labelLayout.firstBaseline).toDp()
+                (if (authoredLabel && !hasTallerTextMetrics(labelStyle, labelLayout.lineCount, labelLayout.size.height))
+                    authoredLineHeight(labelStyle) * (labelLayout.lineCount - 1)
+                    else labelLayout.lastBaseline - labelLayout.firstBaseline).toDp()
             }
             BasicTextField(
                 state = state,
@@ -207,7 +209,7 @@ public fun LabInput(
                         contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart,
                     ) {
                         if (state.text.isEmpty() && placeholder != null)
-                            BasicText(
+                            LabText(
                                 placeholder,
                                 Modifier.clearAndSetSemantics {},
                                 style = body.copy(color = colors[
@@ -217,7 +219,7 @@ public fun LabInput(
                     }
                 },
             )
-            BasicText(
+            LabText(
                 label,
                 Modifier.offset(y = -overhang)
                     .padding(start = contentStart.dp, end = contentEnd.dp)
@@ -227,7 +229,7 @@ public fun LabInput(
         }
         val explanation = error ?: helper
         if (explanation != null)
-            BasicText(
+            LabText(
                 explanation,
                 Modifier.padding(horizontal = LabComponents.InputHelperPaddingX.dp)
                     .then(

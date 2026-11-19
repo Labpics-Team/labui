@@ -23,7 +23,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -227,14 +226,10 @@ internal fun LabTabControl(
             .padding(metrics.padding.dp), horizontalArrangement = Arrangement.spacedBy(metrics.gap.dp),
             verticalAlignment = Alignment.CenterVertically) {
             if (item.icon != null) Box(Modifier.size(iconSize).clearAndSetSemantics {}, contentAlignment = Alignment.Center) { item.icon.invoke(iconScope) }
-            if (!item.iconOnly) BasicText(item.label, Modifier.layout { child, constraints ->
-                val paragraph = child.measure(constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity))
-                val height = metrics.lineHeight.sp.roundToPx()
-                layout(paragraph.width, constraints.constrainHeight(height)) { paragraph.placeRelative(0, (height - paragraph.height) / 2) }
-            }, style = LabType.body().withTypography(
+            if (!item.iconOnly) LabText(item.label, style = LabType.body().withTypography(
                 color = labelColor, fontSize = metrics.fontSize.sp, lineHeight = metrics.lineHeight.sp,
                 fontWeight = FontWeight(metrics.fontWeight.toInt()), letterSpacing = metrics.letterSpacing.sp,
-                lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None, LineHeightStyle.Mode.Fixed),
+                lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None, LineHeightStyle.Mode.Tight),
             ), softWrap = false)
             if (!item.iconOnly && item.iconEnd != null) Box(Modifier.size(metrics.iconSize.dp).clearAndSetSemantics {},
                 contentAlignment = Alignment.Center) { item.iconEnd.invoke(LabTabIconScope(labelColor, metrics.iconSize.dp)) }

@@ -16,15 +16,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -175,7 +174,7 @@ private fun AccordionDisclosure(
     val labelColor = colors[if (disabled) LabComponents.AccordionRolesDisabled else LabComponents.AccordionRolesLabel]
     val shape = RoundedCornerShape(metrics.radius.dp)
     val text = LabType.body().copy(fontSize = metrics.fontSize.sp, lineHeight = metrics.lineHeight.sp,
-        lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None, LineHeightStyle.Mode.Fixed))
+        lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None, LineHeightStyle.Mode.Tight))
     Column(Modifier.hoverable(interactions, enabled = !disabled)
         .then(if (hovered && !disabled) Modifier.background(colors[LabComponents.AccordionRolesHover], shape) else Modifier)) {
         Row(navigation.focusRequester(focusRequester)
@@ -207,7 +206,7 @@ private fun AccordionDisclosure(
                     measured.placeRelative(top, top)
                 }
             }, horizontalArrangement = Arrangement.spacedBy(metrics.gap.dp), verticalAlignment = Alignment.CenterVertically) {
-            AccordionText(item.label, Modifier.weight(1f), style = text.withTypography(color = labelColor,
+            LabText(item.label, Modifier.weight(1f), style = text.withTypography(color = labelColor,
                 fontWeight = FontWeight(LabComponents.AccordionTitleWeight.toInt()), letterSpacing = LabComponents.AccordionTitleTracking.sp))
             Canvas(Modifier.size(metrics.iconSize.dp).align(if (expanded) Alignment.Top else Alignment.CenterVertically)
                 .graphicsLayer { rotationZ = 180f * progress.value }.clearAndSetSemantics {}) {
@@ -236,20 +235,7 @@ private val LocalLabDisclosureText = androidx.compose.runtime.staticCompositionL
 /** Default body typography; custom panel content may contain any controls or layout. */
 @Composable
 public fun LabAccordionText(text: String, modifier: Modifier = Modifier): Unit =
-    AccordionText(text, modifier, style = LocalLabDisclosureText.current)
-
-/** Font ascent/descent may extend the paragraph bounds; authored line boxes stay exact. */
-@Composable
-private fun AccordionText(text: String, modifier: Modifier, style: TextStyle) {
-    val lineCount = remember { intArrayOf(1) }
-    BasicText(text, modifier.layout { child, constraints ->
-        val paragraph = child.measure(constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity))
-        val height = (style.lineHeight.toPx() * lineCount[0]).roundToInt()
-        layout(paragraph.width, constraints.constrainHeight(height)) {
-            paragraph.placeRelative(0, (height - paragraph.height) / 2)
-        }
-    }, style = style, onTextLayout = { lineCount[0] = it.lineCount })
-}
+    LabText(text, modifier, style = LocalLabDisclosureText.current)
 
 @Composable
 private fun RetainedDisclosure(expanded: Boolean, progress: () -> Float, trigger: FocusRequester, content: @Composable () -> Unit) {

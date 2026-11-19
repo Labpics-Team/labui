@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
@@ -44,14 +43,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
@@ -127,7 +123,7 @@ public fun LabChip(
     val style = LabType.body().withTypography(
         color = label, fontSize = metrics.fontSize.sp, lineHeight = metrics.lineHeight.sp,
         fontWeight = FontWeight(metrics.fontWeight.toInt()), letterSpacing = metrics.letterSpacing.sp,
-        lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None, LineHeightStyle.Mode.Fixed),
+        lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None, LineHeightStyle.Mode.Tight),
     )
     val action = when (mode) {
         LabChipMode.Filter -> Modifier.toggleable(selected, enabled = enabled, role = Role.Button,
@@ -179,7 +175,7 @@ public fun LabChip(
                 colors[LabComponents.ChipRolesSkeleton], RoundedCornerShape(skeletonRadius.dp),
             ) else Modifier), horizontalArrangement = Arrangement.spacedBy(metrics.gap.dp),
                 verticalAlignment = Alignment.CenterVertically) {
-                ChipText(text, metrics, Modifier.weight(1f, fill = false).alpha(if (loading) 0f else 1f).then(
+                LabText(text, Modifier.weight(1f, fill = false).alpha(if (loading) 0f else 1f).then(
                     if (accessibilityLabel != null) Modifier.clearAndSetSemantics {} else Modifier,
                 ), style)
                 if (isSelected) ChipClose(size, metrics.closeSize.dp, close, Modifier.alpha(if (loading) 0f else 1f))
@@ -187,20 +183,6 @@ public fun LabChip(
         }
         if (isPressed && isSelected) ChipGlow(Modifier.matchParentSize(), shape, direction, true, colors[LabComponents.ChipRolesGlow])
     }
-}
-
-/** Align the actual paragraph to the author baseline, excluding font top/bottom padding. */
-@Composable
-private fun ChipText(text: String, metrics: LabChipMetrics, modifier: Modifier, style: TextStyle) {
-    val measured = remember { arrayOfNulls<TextLayoutResult>(1) }
-    BasicText(text, modifier.layout { child, constraints ->
-        val placeable = child.measure(constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity))
-        val paragraph = checkNotNull(measured[0])
-        val height = (paragraph.lastBaseline - paragraph.firstBaseline + metrics.lineHeight.sp.toPx()).roundToInt()
-        layout(placeable.width, constraints.constrainHeight(height)) {
-            placeable.place(0, (metrics.baseline.sp.toPx() - paragraph.firstBaseline).roundToInt())
-        }
-    }, style = style, onTextLayout = { measured[0] = it })
 }
 
 @Composable

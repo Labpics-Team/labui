@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -177,8 +176,8 @@ public fun LabButton(
             if (icon != null) Box(Modifier.size(metrics.icon.dp), contentAlignment = Alignment.Center) { iconScope.icon() }
             if (!iconOnly) Row(Modifier.heightIn(min = metrics.icon.dp).padding(horizontal = LabComponents.ButtonLabelPaddingX.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(LabComponents.ButtonLabelGap.dp)) {
-                BasicText(text, style = labelStyle)
-                if (description != null) BasicText(description, style = labelStyle.withTypography(color = descriptionColor,
+                LabText(text, style = labelStyle)
+                if (description != null) LabText(description, style = labelStyle.withTypography(color = descriptionColor,
                     fontWeight = FontWeight(metrics.descriptionFontWeight.toInt()), letterSpacing = metrics.descriptionLetterSpacing.sp))
             }
             if (!iconOnly && iconEnd != null) Box(Modifier.size(metrics.icon.dp), contentAlignment = Alignment.Center) { iconScope.iconEnd() }

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -167,11 +166,11 @@ public fun LabSnackbar(
                                 Offset(stroke / 2, stroke / 2), Size(size.width - stroke, size.height - stroke),
                                 style = Stroke(stroke, cap = StrokeCap.Round))
                         }
-                        BasicText(seconds.toString(), style = textStyle.copy(color = color))
+                        LabText(seconds.toString(), style = textStyle.copy(color = color))
                     }
                 }
                 key(notificationKey) {
-                    BasicText(message, Modifier.weight(1f, fill = false)
+                    LabText(message, Modifier.weight(1f, fill = false)
                         .semantics { liveRegion = LiveRegionMode.Polite }, style = textStyle)
                 }
             }

@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,7 +18,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -63,7 +60,7 @@ private fun KbdKey(text: String, metrics: LabKbdMetrics, first: Boolean) {
         fontWeight = FontWeight(LabComponents.KbdFontWeight.toInt()),
         letterSpacing = LabComponents.KbdLetterSpacing.sp,
         lineHeightStyle = LineHeightStyle(
-            LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both, LineHeightStyle.Mode.Fixed),
+            LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None, LineHeightStyle.Mode.Tight),
     )
     Box(Modifier.defaultMinSize(minWidth = metrics.height.dp, minHeight = metrics.height.dp)
         .drawWithCache {
@@ -91,9 +88,7 @@ private fun KbdKey(text: String, metrics: LabKbdMetrics, first: Boolean) {
         }
         .padding(horizontal = metrics.paddingX.dp, vertical = metrics.paddingY.dp),
         contentAlignment = Alignment.Center) {
-        BasicText(text, modifier = Modifier
-            .height(with(LocalDensity.current) { metrics.lineHeight.sp.toDp() })
-            .wrapContentHeight(unbounded = true), style = style,
+        LabText(text, style = style,
             maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.input.TextFieldState
@@ -20,6 +21,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -37,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.math.roundToInt
 
 /** Real CPU text rasterization, with no platform window or accessibility client. */
 class InputRenderTest {
@@ -139,6 +142,7 @@ class InputRenderTest {
                 } }
             }
             // This unconstrained-height BasicText is the independent readability oracle.
+            // Textarea's 14/12 profile centres the 1em native glyph box in its 12sp line.
             // The component label intentionally has no duplicate accessibility node.
             val reference = ImageComposeScene(320, sceneHeight, Density(1f, scale)) {
                 val font = labFontFamily()
@@ -146,7 +150,8 @@ class InputRenderTest {
                 LaunchedEffect(font) { resolver.preload(font); referenceReady.set(true) }
                 CompositionLocalProvider(LocalLayoutDirection provides direction) { LabTheme(theme, font) {
                     Box(Modifier.fillMaxSize().background(theme.colors["bg-primary"])) {
-                        BasicText(label, Modifier.padding(start = 36.dp, end = 32.dp, top = 16.dp),
+                        val trim = with(LocalDensity.current) { (if (singleLine) 0 else 1).sp.toDp() }
+                        BasicText(label, Modifier.offset(y = -trim).padding(start = 36.dp, end = 32.dp, top = 16.dp),
                             style = LabType.caption().copy(color = theme.colors[if (singleLine) "label-secondary" else "label-primary"],
                                 fontSize = (if (singleLine) 12 else 14).sp, lineHeight = 12.sp, fontWeight = FontWeight.Medium,
                                 letterSpacing = 0.sp), onTextLayout = { expectedLabel = it })
@@ -199,7 +204,7 @@ class InputRenderTest {
                     )) {
                         label = value
                         checkLabel(name)
-                        val extraHeight = expectedLabel.size.height - shortLabelHeight
+                        val extraHeight = (12 * scale * (expectedLabel.lineCount - 1)).roundToInt()
                         assertEquals(shortHeight + extraHeight, componentHeight,
                             "Each extra label line must reserve its height above the editable content")
                         if (scale == 2f && name == "long") assertTrue(expectedLabel.lineCount > 1)

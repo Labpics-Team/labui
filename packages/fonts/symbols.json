@@ -9,13 +9,25 @@
       "sha256": "7aa7babb00b3c005f0f3f1598a8ee64d7342b0848264f1301d521f728baa2129",
       "bytes": 70752
     },
+    "native/compose/src/skikoMain/composeResources/font/geist_skiko_regular.ttf": {
+      "sha256": "85f550508482623fa5019e55e5e576818397f149a93465dc76a5c280f8560c28",
+      "bytes": 70788
+    },
     "native/compose/src/commonMain/composeResources/font/geist_medium.ttf": {
       "sha256": "65b4e2e34974e8a8ec50e3685622cc5613595d3cd59d1446a3dc7791cc8c7563",
       "bytes": 71748
     },
+    "native/compose/src/skikoMain/composeResources/font/geist_skiko_medium.ttf": {
+      "sha256": "7cbd91ae2e28d8a83040102815fb03b309d64a597f5f6ce8ecee5cf761c9b215",
+      "bytes": 71784
+    },
     "native/compose/src/commonMain/composeResources/font/geist_semibold.ttf": {
       "sha256": "6486570524c826b4de5e9d28ae7d71c6373d685a7aa1f1c6d1b3b4549efd4c74",
       "bytes": 71704
+    },
+    "native/compose/src/skikoMain/composeResources/font/geist_skiko_semibold.ttf": {
+      "sha256": "cbb818bf16d1e4611088a270807d5be8762100a48882be16991cb237a14cc0fa",
+      "bytes": 71740
     },
     "packages/fonts/fonts/LabUI-Symbols.woff2": {
       "sha256": "6911fb2912210f206015fb3b3a20731cb9c96a2d32cf71b39b8dffeef1290eeb",

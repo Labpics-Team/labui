@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -174,9 +173,9 @@ private fun SwitchLayout(
     val hasEnd = label.isNotEmpty()
     val trackIndex = if (hasStart) 1 else 0
     Layout(modifier = modifier, content = {
-        if (hasStart) BasicText(labelStart, style = style)
+        if (hasStart) LabText(labelStart, style = style)
         track()
-        if (hasEnd) BasicText(label, style = style)
+        if (hasEnd) LabText(label, style = style)
     }) { measurables, constraints ->
         val loose = constraints.copy(minWidth = 0, minHeight = 0)
         val control = measurables[trackIndex].measure(loose)
