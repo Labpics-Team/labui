@@ -31,7 +31,7 @@
     [key: string]: unknown;
   }
 
-  let { symbol, variant, size, scale, weight, opsz, state, date, timeZone, duration, reducedMotion, effect, effectKey, label, children, slots, ...rest }: Props = $props();
+  let { symbol: prop_symbol, variant: prop_variant, size: prop_size, scale: prop_scale, weight: prop_weight, opsz: prop_opsz, state: prop_state, date: prop_date, timeZone: prop_timeZone, duration: prop_duration, reducedMotion: prop_reducedMotion, effect: prop_effect, effectKey: prop_effectKey, label: prop_label, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'symbol', attr: 'symbol', kind: 'prop' },
@@ -51,7 +51,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-icon', {
-    specs, props: { symbol, variant, size, scale, weight, opsz, state, date, timeZone, duration, reducedMotion, effect, effectKey, label }, attributes: rest,
+    specs, props: { symbol: prop_symbol, variant: prop_variant, size: prop_size, scale: prop_scale, weight: prop_weight, opsz: prop_opsz, state: prop_state, date: prop_date, timeZone: prop_timeZone, duration: prop_duration, reducedMotion: prop_reducedMotion, effect: prop_effect, effectKey: prop_effectKey, label: prop_label }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -60,7 +60,7 @@
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-icon bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { symbol, variant, size, scale, weight, opsz, state, date, timeZone, duration, reducedMotion, effect, effectKey, label } } }}>
+<lab-icon bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { symbol: prop_symbol, variant: prop_variant, size: prop_size, scale: prop_scale, weight: prop_weight, opsz: prop_opsz, state: prop_state, date: prop_date, timeZone: prop_timeZone, duration: prop_duration, reducedMotion: prop_reducedMotion, effect: prop_effect, effectKey: prop_effectKey, label: prop_label } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

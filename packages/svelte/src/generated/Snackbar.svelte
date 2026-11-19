@@ -25,7 +25,7 @@
     [key: string]: unknown;
   }
 
-  let { open, message, duration, actionLabel, notificationKey, onLabAction, onLabError, onLabOpenChange, children, slots, ...rest }: Props = $props();
+  let { open: prop_open, message: prop_message, duration: prop_duration, actionLabel: prop_actionLabel, notificationKey: prop_notificationKey, onLabAction, onLabError, onLabOpenChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'open', attr: 'open', kind: 'boolean' },
@@ -36,7 +36,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-snackbar', {
-    specs, props: { open, message, duration, actionLabel, notificationKey }, attributes: rest,
+    specs, props: { open: prop_open, message: prop_message, duration: prop_duration, actionLabel: prop_actionLabel, notificationKey: prop_notificationKey }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -45,7 +45,7 @@
   $effect(() => forwardEvents(el, { 'lab-action': onLabAction, 'lab-error': onLabError, 'lab-open-change': onLabOpenChange }));
 </script>
 
-<lab-snackbar bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { open, message, duration, actionLabel, notificationKey } } }}>
+<lab-snackbar bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { open: prop_open, message: prop_message, duration: prop_duration, actionLabel: prop_actionLabel, notificationKey: prop_notificationKey } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

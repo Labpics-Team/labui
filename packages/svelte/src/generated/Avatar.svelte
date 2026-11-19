@@ -26,7 +26,7 @@
     [key: string]: unknown;
   }
 
-  let { size, color, status, src, name, initials, fallback, decorative, statusLabel, children, slots, ...rest }: Props = $props();
+  let { size: prop_size, color: prop_color, status: prop_status, src: prop_src, name: prop_name, initials: prop_initials, fallback: prop_fallback, decorative: prop_decorative, statusLabel: prop_statusLabel, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
@@ -41,7 +41,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-avatar', {
-    specs, props: { size, color, status, src, name, initials, fallback, decorative, statusLabel }, attributes: rest,
+    specs, props: { size: prop_size, color: prop_color, status: prop_status, src: prop_src, name: prop_name, initials: prop_initials, fallback: prop_fallback, decorative: prop_decorative, statusLabel: prop_statusLabel }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -50,7 +50,7 @@
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-avatar bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, color, status, src, name, initials, fallback, decorative, statusLabel } } }}>
+<lab-avatar bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size: prop_size, color: prop_color, status: prop_status, src: prop_src, name: prop_name, initials: prop_initials, fallback: prop_fallback, decorative: prop_decorative, statusLabel: prop_statusLabel } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

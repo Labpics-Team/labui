@@ -33,7 +33,7 @@
     [key: string]: unknown;
   }
 
-  let { size, placement, multiple, disabled, name, required, showLabel, removeLabel, placeholder, label, value, defaultValue, items, onOpenChange, onValueChange, children, slots, leading, ...rest }: Props = $props();
+  let { size: prop_size, placement: prop_placement, multiple: prop_multiple, disabled: prop_disabled, name: prop_name, required: prop_required, showLabel: prop_showLabel, removeLabel: prop_removeLabel, placeholder: prop_placeholder, label: prop_label, value: prop_value, defaultValue: prop_defaultValue, items: prop_items, onOpenChange, onValueChange, children, slots, leading: slot_leading, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
@@ -52,16 +52,16 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-select', {
-    specs, props: { size, placement, multiple, disabled, name, required, showLabel, removeLabel, placeholder, label, value, defaultValue, items }, attributes: rest,
+    specs, props: { size: prop_size, placement: prop_placement, multiple: prop_multiple, disabled: prop_disabled, name: prop_name, required: prop_required, showLabel: prop_showLabel, removeLabel: prop_removeLabel, placeholder: prop_placeholder, label: prop_label, value: prop_value, defaultValue: prop_defaultValue, items: prop_items }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'leading': leading, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'leading': slot_leading, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange, 'value-change': onValueChange }));
 </script>
 
-<lab-select bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, placement, multiple, disabled, name, required, showLabel, removeLabel, placeholder, label, value, defaultValue, items } } }}>
+<lab-select bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size: prop_size, placement: prop_placement, multiple: prop_multiple, disabled: prop_disabled, name: prop_name, required: prop_required, showLabel: prop_showLabel, removeLabel: prop_removeLabel, placeholder: prop_placeholder, label: prop_label, value: prop_value, defaultValue: prop_defaultValue, items: prop_items } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

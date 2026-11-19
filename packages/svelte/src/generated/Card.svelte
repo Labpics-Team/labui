@@ -31,7 +31,7 @@
     [key: string]: unknown;
   }
 
-  let { variant, padding, interactive, image, imageAlt, heading, headingHint, description, caption, lowerCaption, children, slots, badge, footer, header, media, ...rest }: Props = $props();
+  let { variant: prop_variant, padding: prop_padding, interactive: prop_interactive, image: prop_image, imageAlt: prop_imageAlt, heading: prop_heading, headingHint: prop_headingHint, description: prop_description, caption: prop_caption, lowerCaption: prop_lowerCaption, children, slots, badge: slot_badge, footer: slot_footer, header: slot_header, media: slot_media, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'variant', attr: 'variant', kind: 'string' },
@@ -47,16 +47,16 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-card', {
-    specs, props: { variant, padding, interactive, image, imageAlt, heading, headingHint, description, caption, lowerCaption }, attributes: rest,
+    specs, props: { variant: prop_variant, padding: prop_padding, interactive: prop_interactive, image: prop_image, imageAlt: prop_imageAlt, heading: prop_heading, headingHint: prop_headingHint, description: prop_description, caption: prop_caption, lowerCaption: prop_lowerCaption }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'badge': badge, 'footer': footer, 'header': header, 'media': media, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'badge': slot_badge, 'footer': slot_footer, 'header': slot_header, 'media': slot_media, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-card bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { variant, padding, interactive, image, imageAlt, heading, headingHint, description, caption, lowerCaption } } }}>
+<lab-card bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { variant: prop_variant, padding: prop_padding, interactive: prop_interactive, image: prop_image, imageAlt: prop_imageAlt, heading: prop_heading, headingHint: prop_headingHint, description: prop_description, caption: prop_caption, lowerCaption: prop_lowerCaption } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

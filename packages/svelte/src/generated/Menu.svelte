@@ -24,7 +24,7 @@
     [key: string]: unknown;
   }
 
-  let { size, placement, disabled, label, items, onOpenChange, onSelect, children, slots, ...rest }: Props = $props();
+  let { size: prop_size, placement: prop_placement, disabled: prop_disabled, label: prop_label, items: prop_items, onOpenChange, onSelect, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
@@ -35,7 +35,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-menu', {
-    specs, props: { size, placement, disabled, label, items }, attributes: rest,
+    specs, props: { size: prop_size, placement: prop_placement, disabled: prop_disabled, label: prop_label, items: prop_items }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -44,7 +44,7 @@
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange, 'select': onSelect }));
 </script>
 
-<lab-menu bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, placement, disabled, label, items } } }}>
+<lab-menu bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size: prop_size, placement: prop_placement, disabled: prop_disabled, label: prop_label, items: prop_items } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

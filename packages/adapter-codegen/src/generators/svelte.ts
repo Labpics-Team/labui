@@ -56,17 +56,19 @@ function componentFile(c: ComponentMeta): string {
   // children деструктурируем ВСЕГДA (иначе Snippet ушёл бы в ...rest и спреднулся
   // атрибутом); рендерим только при наличии default/динамического слота.
   const destructure = [
-    ...propNames,
+    ...propNames.map((name) => `${name}: prop_${name}`),
     ...handlerNames,
     'children',
     'slots',
-    ...namedSlots.map((s) => s.prop),
+    ...namedSlots.map((s) => `${s.prop}: slot_${s.prop}`),
   ];
-  const valuesObj = propNames.join(', ');
+  // Public names can be Svelte runes (state/effect) or generator locals. Keep
+  // their lexical bindings separate while preserving the public prop keys.
+  const valuesObj = propNames.map((name) => `${name}: prop_${name}`).join(', ');
   const eventsObj = c.events.map((e) => `'${e}': ${handlerName(e)}`).join(', ');
   const specs = c.props.map(specLiteral).join('\n');
 
-  const namedValues = namedSlots.map((s) => `'${s.slot}': ${s.prop}`).join(', ');
+  const namedValues = namedSlots.map((s) => `'${s.slot}': slot_${s.prop}`).join(', ');
   const namedSlotMarkup = `  {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
   {/each}`;

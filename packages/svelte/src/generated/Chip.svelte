@@ -33,7 +33,7 @@
     [key: string]: unknown;
   }
 
-  let { mode, size, sharp, active, selected, defaultSelected, controlled, disabled, loading, showLeading, name, value, onAction, onRemove, onSelectedChange, children, slots, leading, ...rest }: Props = $props();
+  let { mode: prop_mode, size: prop_size, sharp: prop_sharp, active: prop_active, selected: prop_selected, defaultSelected: prop_defaultSelected, controlled: prop_controlled, disabled: prop_disabled, loading: prop_loading, showLeading: prop_showLeading, name: prop_name, value: prop_value, onAction, onRemove, onSelectedChange, children, slots, leading: slot_leading, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'mode', attr: 'mode', kind: 'string' },
@@ -51,16 +51,16 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-chip', {
-    specs, props: { mode, size, sharp, active, selected, defaultSelected, controlled, disabled, loading, showLeading, name, value }, attributes: rest,
+    specs, props: { mode: prop_mode, size: prop_size, sharp: prop_sharp, active: prop_active, selected: prop_selected, defaultSelected: prop_defaultSelected, controlled: prop_controlled, disabled: prop_disabled, loading: prop_loading, showLeading: prop_showLeading, name: prop_name, value: prop_value }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'leading': leading, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'leading': slot_leading, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, { 'action': onAction, 'remove': onRemove, 'selected-change': onSelectedChange }));
 </script>
 
-<lab-chip bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { mode, size, sharp, active, selected, defaultSelected, controlled, disabled, loading, showLeading, name, value } } }}>
+<lab-chip bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { mode: prop_mode, size: prop_size, sharp: prop_sharp, active: prop_active, selected: prop_selected, defaultSelected: prop_defaultSelected, controlled: prop_controlled, disabled: prop_disabled, loading: prop_loading, showLeading: prop_showLeading, name: prop_name, value: prop_value } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

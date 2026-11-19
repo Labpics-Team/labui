@@ -26,7 +26,7 @@
     [key: string]: unknown;
   }
 
-  let { type, kind, size, icon, loading, disabled, htmlType, children, slots, description, iconEnd, ...rest }: Props = $props();
+  let { type: prop_type, kind: prop_kind, size: prop_size, icon: prop_icon, loading: prop_loading, disabled: prop_disabled, htmlType: prop_htmlType, children, slots, description: slot_description, iconEnd: slot_iconEnd, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -39,16 +39,16 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-button', {
-    specs, props: { type, kind, size, icon, loading, disabled, htmlType }, attributes: rest,
+    specs, props: { type: prop_type, kind: prop_kind, size: prop_size, icon: prop_icon, loading: prop_loading, disabled: prop_disabled, htmlType: prop_htmlType }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'description': description, 'icon-end': iconEnd, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'description': slot_description, 'icon-end': slot_iconEnd, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-button bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, kind, size, icon, loading, disabled, htmlType } } }}>
+<lab-button bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type: prop_type, kind: prop_kind, size: prop_size, icon: prop_icon, loading: prop_loading, disabled: prop_disabled, htmlType: prop_htmlType } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

@@ -33,7 +33,7 @@
     [key: string]: unknown;
   }
 
-  let { type, size, variant, checked, indeterminate, defaultChecked, defaultIndeterminate, controlled, disabled, required, name, value, onCheckedChange, children, slots, description, icon, labelStart, ...rest }: Props = $props();
+  let { type: prop_type, size: prop_size, variant: prop_variant, checked: prop_checked, indeterminate: prop_indeterminate, defaultChecked: prop_defaultChecked, defaultIndeterminate: prop_defaultIndeterminate, controlled: prop_controlled, disabled: prop_disabled, required: prop_required, name: prop_name, value: prop_value, onCheckedChange, children, slots, description: slot_description, icon: slot_icon, labelStart: slot_labelStart, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -51,16 +51,16 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-checkbox', {
-    specs, props: { type, size, variant, checked, indeterminate, defaultChecked, defaultIndeterminate, controlled, disabled, required, name, value }, attributes: rest,
+    specs, props: { type: prop_type, size: prop_size, variant: prop_variant, checked: prop_checked, indeterminate: prop_indeterminate, defaultChecked: prop_defaultChecked, defaultIndeterminate: prop_defaultIndeterminate, controlled: prop_controlled, disabled: prop_disabled, required: prop_required, name: prop_name, value: prop_value }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'description': description, 'icon': icon, 'label-start': labelStart, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'description': slot_description, 'icon': slot_icon, 'label-start': slot_labelStart, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, { 'checked-change': onCheckedChange }));
 </script>
 
-<lab-checkbox bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, variant, checked, indeterminate, defaultChecked, defaultIndeterminate, controlled, disabled, required, name, value } } }}>
+<lab-checkbox bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type: prop_type, size: prop_size, variant: prop_variant, checked: prop_checked, indeterminate: prop_indeterminate, defaultChecked: prop_defaultChecked, defaultIndeterminate: prop_defaultIndeterminate, controlled: prop_controlled, disabled: prop_disabled, required: prop_required, name: prop_name, value: prop_value } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

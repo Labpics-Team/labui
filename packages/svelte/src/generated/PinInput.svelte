@@ -38,7 +38,7 @@
     [key: string]: unknown;
   }
 
-  let { type, size, label, labelHidden, helper, error, count, valueType, mask, otp, placeholder, value, defaultValue, readonly, disabled, required, invalid, name, onValueChange, onValueComplete, onValueInvalid, children, slots, ...rest }: Props = $props();
+  let { type: prop_type, size: prop_size, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, count: prop_count, valueType: prop_valueType, mask: prop_mask, otp: prop_otp, placeholder: prop_placeholder, value: prop_value, defaultValue: prop_defaultValue, readonly: prop_readonly, disabled: prop_disabled, required: prop_required, invalid: prop_invalid, name: prop_name, onValueChange, onValueComplete, onValueInvalid, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -62,7 +62,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-pin-input', {
-    specs, props: { type, size, label, labelHidden, helper, error, count, valueType, mask, otp, placeholder, value, defaultValue, readonly, disabled, required, invalid, name }, attributes: rest,
+    specs, props: { type: prop_type, size: prop_size, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, count: prop_count, valueType: prop_valueType, mask: prop_mask, otp: prop_otp, placeholder: prop_placeholder, value: prop_value, defaultValue: prop_defaultValue, readonly: prop_readonly, disabled: prop_disabled, required: prop_required, invalid: prop_invalid, name: prop_name }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -71,7 +71,7 @@
   $effect(() => forwardEvents(el, { 'value-change': onValueChange, 'value-complete': onValueComplete, 'value-invalid': onValueInvalid }));
 </script>
 
-<lab-pin-input bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, label, labelHidden, helper, error, count, valueType, mask, otp, placeholder, value, defaultValue, readonly, disabled, required, invalid, name } } }}>
+<lab-pin-input bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type: prop_type, size: prop_size, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, count: prop_count, valueType: prop_valueType, mask: prop_mask, otp: prop_otp, placeholder: prop_placeholder, value: prop_value, defaultValue: prop_defaultValue, readonly: prop_readonly, disabled: prop_disabled, required: prop_required, invalid: prop_invalid, name: prop_name } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

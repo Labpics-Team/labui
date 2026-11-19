@@ -28,7 +28,7 @@
     [key: string]: unknown;
   }
 
-  let { open, position, modal, closable, heading, description, onMotionError, onOpenChange, onPositionChange, children, slots, content, trigger, ...rest }: Props = $props();
+  let { open: prop_open, position: prop_position, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description, onMotionError, onOpenChange, onPositionChange, children, slots, content: slot_content, trigger: slot_trigger, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'open', attr: 'open', kind: 'boolean' },
@@ -40,16 +40,16 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-sheet', {
-    specs, props: { open, position, modal, closable, heading, description }, attributes: rest,
+    specs, props: { open: prop_open, position: prop_position, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'content': content, 'trigger': trigger, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'content': slot_content, 'trigger': slot_trigger, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, { 'motion-error': onMotionError, 'open-change': onOpenChange, 'position-change': onPositionChange }));
 </script>
 
-<lab-sheet bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { open, position, modal, closable, heading, description } } }}>
+<lab-sheet bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { open: prop_open, position: prop_position, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

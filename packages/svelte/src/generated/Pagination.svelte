@@ -32,7 +32,7 @@
     [key: string]: unknown;
   }
 
-  let { count, pageSize, page, defaultPage, siblingCount, variant, disabled, ambient, progress, href, label, previousLabel, nextLabel, pageLabel, onPageChange, children, slots, ...rest }: Props = $props();
+  let { count: prop_count, pageSize: prop_pageSize, page: prop_page, defaultPage: prop_defaultPage, siblingCount: prop_siblingCount, variant: prop_variant, disabled: prop_disabled, ambient: prop_ambient, progress: prop_progress, href: prop_href, label: prop_label, previousLabel: prop_previousLabel, nextLabel: prop_nextLabel, pageLabel: prop_pageLabel, onPageChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'count', attr: 'count', kind: 'string' },
@@ -52,7 +52,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-pagination', {
-    specs, props: { count, pageSize, page, defaultPage, siblingCount, variant, disabled, ambient, progress, href, label, previousLabel, nextLabel, pageLabel }, attributes: rest,
+    specs, props: { count: prop_count, pageSize: prop_pageSize, page: prop_page, defaultPage: prop_defaultPage, siblingCount: prop_siblingCount, variant: prop_variant, disabled: prop_disabled, ambient: prop_ambient, progress: prop_progress, href: prop_href, label: prop_label, previousLabel: prop_previousLabel, nextLabel: prop_nextLabel, pageLabel: prop_pageLabel }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -61,7 +61,7 @@
   $effect(() => forwardEvents(el, { 'page-change': onPageChange }));
 </script>
 
-<lab-pagination bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { count, pageSize, page, defaultPage, siblingCount, variant, disabled, ambient, progress, href, label, previousLabel, nextLabel, pageLabel } } }}>
+<lab-pagination bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { count: prop_count, pageSize: prop_pageSize, page: prop_page, defaultPage: prop_defaultPage, siblingCount: prop_siblingCount, variant: prop_variant, disabled: prop_disabled, ambient: prop_ambient, progress: prop_progress, href: prop_href, label: prop_label, previousLabel: prop_previousLabel, nextLabel: prop_nextLabel, pageLabel: prop_pageLabel } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

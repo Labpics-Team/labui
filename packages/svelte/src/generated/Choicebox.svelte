@@ -28,7 +28,7 @@
     [key: string]: unknown;
   }
 
-  let { layout, multiple, value, defaultValue, controlled, disabled, required, name, label, items, onValueChange, children, slots, ...rest }: Props = $props();
+  let { layout: prop_layout, multiple: prop_multiple, value: prop_value, defaultValue: prop_defaultValue, controlled: prop_controlled, disabled: prop_disabled, required: prop_required, name: prop_name, label: prop_label, items: prop_items, onValueChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'layout', attr: 'layout', kind: 'string' },
@@ -44,7 +44,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-choicebox', {
-    specs, props: { layout, multiple, value, defaultValue, controlled, disabled, required, name, label, items }, attributes: rest,
+    specs, props: { layout: prop_layout, multiple: prop_multiple, value: prop_value, defaultValue: prop_defaultValue, controlled: prop_controlled, disabled: prop_disabled, required: prop_required, name: prop_name, label: prop_label, items: prop_items }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -53,7 +53,7 @@
   $effect(() => forwardEvents(el, { 'value-change': onValueChange }));
 </script>
 
-<lab-choicebox bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { layout, multiple, value, defaultValue, controlled, disabled, required, name, label, items } } }}>
+<lab-choicebox bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { layout: prop_layout, multiple: prop_multiple, value: prop_value, defaultValue: prop_defaultValue, controlled: prop_controlled, disabled: prop_disabled, required: prop_required, name: prop_name, label: prop_label, items: prop_items } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

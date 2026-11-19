@@ -37,7 +37,7 @@
     [key: string]: unknown;
   }
 
-  let { type, size, placement, multiple, disabled, readonly, required, invalid, name, placeholder, label, labelHidden, helper, error, value, defaultValue, items, onInputValueChange, onOpenChange, onValueChange, children, slots, ...rest }: Props = $props();
+  let { type: prop_type, size: prop_size, placement: prop_placement, multiple: prop_multiple, disabled: prop_disabled, readonly: prop_readonly, required: prop_required, invalid: prop_invalid, name: prop_name, placeholder: prop_placeholder, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, value: prop_value, defaultValue: prop_defaultValue, items: prop_items, onInputValueChange, onOpenChange, onValueChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -60,7 +60,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-combobox', {
-    specs, props: { type, size, placement, multiple, disabled, readonly, required, invalid, name, placeholder, label, labelHidden, helper, error, value, defaultValue, items }, attributes: rest,
+    specs, props: { type: prop_type, size: prop_size, placement: prop_placement, multiple: prop_multiple, disabled: prop_disabled, readonly: prop_readonly, required: prop_required, invalid: prop_invalid, name: prop_name, placeholder: prop_placeholder, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, value: prop_value, defaultValue: prop_defaultValue, items: prop_items }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -69,7 +69,7 @@
   $effect(() => forwardEvents(el, { 'input-value-change': onInputValueChange, 'open-change': onOpenChange, 'value-change': onValueChange }));
 </script>
 
-<lab-combobox bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, placement, multiple, disabled, readonly, required, invalid, name, placeholder, label, labelHidden, helper, error, value, defaultValue, items } } }}>
+<lab-combobox bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type: prop_type, size: prop_size, placement: prop_placement, multiple: prop_multiple, disabled: prop_disabled, readonly: prop_readonly, required: prop_required, invalid: prop_invalid, name: prop_name, placeholder: prop_placeholder, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, value: prop_value, defaultValue: prop_defaultValue, items: prop_items } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

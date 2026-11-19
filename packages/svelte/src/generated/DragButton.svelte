@@ -27,7 +27,7 @@
     [key: string]: unknown;
   }
 
-  let { label, helperText, showHelper, pendingText, successText, dangerText, status, disabled, resetKey, onComplete, children, slots, ...rest }: Props = $props();
+  let { label: prop_label, helperText: prop_helperText, showHelper: prop_showHelper, pendingText: prop_pendingText, successText: prop_successText, dangerText: prop_dangerText, status: prop_status, disabled: prop_disabled, resetKey: prop_resetKey, onComplete, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'label', attr: 'label', kind: 'string' },
@@ -42,7 +42,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-drag-button', {
-    specs, props: { label, helperText, showHelper, pendingText, successText, dangerText, status, disabled, resetKey }, attributes: rest,
+    specs, props: { label: prop_label, helperText: prop_helperText, showHelper: prop_showHelper, pendingText: prop_pendingText, successText: prop_successText, dangerText: prop_dangerText, status: prop_status, disabled: prop_disabled, resetKey: prop_resetKey }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -51,7 +51,7 @@
   $effect(() => forwardEvents(el, { 'complete': onComplete }));
 </script>
 
-<lab-drag-button bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { label, helperText, showHelper, pendingText, successText, dangerText, status, disabled, resetKey } } }}>
+<lab-drag-button bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { label: prop_label, helperText: prop_helperText, showHelper: prop_showHelper, pendingText: prop_pendingText, successText: prop_successText, dangerText: prop_dangerText, status: prop_status, disabled: prop_disabled, resetKey: prop_resetKey } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

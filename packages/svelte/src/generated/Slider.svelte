@@ -36,7 +36,7 @@
     [key: string]: unknown;
   }
 
-  let { size, orientation, label, labelHidden, helper, error, value, defaultValue, min, max, step, marks, showValue, readonly, disabled, invalid, name, onValueChange, onValueChangeEnd, children, slots, ...rest }: Props = $props();
+  let { size: prop_size, orientation: prop_orientation, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, value: prop_value, defaultValue: prop_defaultValue, min: prop_min, max: prop_max, step: prop_step, marks: prop_marks, showValue: prop_showValue, readonly: prop_readonly, disabled: prop_disabled, invalid: prop_invalid, name: prop_name, onValueChange, onValueChangeEnd, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
@@ -59,7 +59,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-slider', {
-    specs, props: { size, orientation, label, labelHidden, helper, error, value, defaultValue, min, max, step, marks, showValue, readonly, disabled, invalid, name }, attributes: rest,
+    specs, props: { size: prop_size, orientation: prop_orientation, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, value: prop_value, defaultValue: prop_defaultValue, min: prop_min, max: prop_max, step: prop_step, marks: prop_marks, showValue: prop_showValue, readonly: prop_readonly, disabled: prop_disabled, invalid: prop_invalid, name: prop_name }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -68,7 +68,7 @@
   $effect(() => forwardEvents(el, { 'value-change': onValueChange, 'value-change-end': onValueChangeEnd }));
 </script>
 
-<lab-slider bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, orientation, label, labelHidden, helper, error, value, defaultValue, min, max, step, marks, showValue, readonly, disabled, invalid, name } } }}>
+<lab-slider bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size: prop_size, orientation: prop_orientation, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, value: prop_value, defaultValue: prop_defaultValue, min: prop_min, max: prop_max, step: prop_step, marks: prop_marks, showValue: prop_showValue, readonly: prop_readonly, disabled: prop_disabled, invalid: prop_invalid, name: prop_name } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

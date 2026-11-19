@@ -30,7 +30,7 @@
     [key: string]: unknown;
   }
 
-  let { type, size, variant, orientation, value, defaultValue, controlled, disabled, required, name, label, items, onValueChange, children, slots, ...rest }: Props = $props();
+  let { type: prop_type, size: prop_size, variant: prop_variant, orientation: prop_orientation, value: prop_value, defaultValue: prop_defaultValue, controlled: prop_controlled, disabled: prop_disabled, required: prop_required, name: prop_name, label: prop_label, items: prop_items, onValueChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -48,7 +48,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-radio-group', {
-    specs, props: { type, size, variant, orientation, value, defaultValue, controlled, disabled, required, name, label, items }, attributes: rest,
+    specs, props: { type: prop_type, size: prop_size, variant: prop_variant, orientation: prop_orientation, value: prop_value, defaultValue: prop_defaultValue, controlled: prop_controlled, disabled: prop_disabled, required: prop_required, name: prop_name, label: prop_label, items: prop_items }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -57,7 +57,7 @@
   $effect(() => forwardEvents(el, { 'value-change': onValueChange }));
 </script>
 
-<lab-radio-group bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, variant, orientation, value, defaultValue, controlled, disabled, required, name, label, items } } }}>
+<lab-radio-group bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type: prop_type, size: prop_size, variant: prop_variant, orientation: prop_orientation, value: prop_value, defaultValue: prop_defaultValue, controlled: prop_controlled, disabled: prop_disabled, required: prop_required, name: prop_name, label: prop_label, items: prop_items } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

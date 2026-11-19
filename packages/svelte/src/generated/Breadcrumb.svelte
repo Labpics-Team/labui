@@ -23,7 +23,7 @@
     [key: string]: unknown;
   }
 
-  let { size, separator, items, maxItems, label, expandLabel, children, slots, ...rest }: Props = $props();
+  let { size: prop_size, separator: prop_separator, items: prop_items, maxItems: prop_maxItems, label: prop_label, expandLabel: prop_expandLabel, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
@@ -35,7 +35,7 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-breadcrumb', {
-    specs, props: { size, separator, items, maxItems, label, expandLabel }, attributes: rest,
+    specs, props: { size: prop_size, separator: prop_separator, items: prop_items, maxItems: prop_maxItems, label: prop_label, expandLabel: prop_expandLabel }, attributes: rest,
   }));
   let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
 
@@ -44,7 +44,7 @@
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-breadcrumb bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, separator, items, maxItems, label, expandLabel } } }}>
+<lab-breadcrumb bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size: prop_size, separator: prop_separator, items: prop_items, maxItems: prop_maxItems, label: prop_label, expandLabel: prop_expandLabel } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
