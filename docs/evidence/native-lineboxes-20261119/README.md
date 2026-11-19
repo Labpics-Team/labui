@@ -143,5 +143,60 @@ selection и непрозрачные пиксели глифов, accessibility
 targeted проверки: TextEllipsisInkRenderTest, TextLineBoxRenderTest,
 BadgeRenderTest, InputRenderTest. Включены прежние проверки плотности,
 масштабирования, custom/fallback, редактирования и конечного maxHeight.
-Android/Apple runtime этой поправкой не измерялся; используются общие
-публичные `MultiParagraph.paint` и Compose Canvas API.
+Android/Apple runtime этой поправкой не измерялся. Android сохраняет свой
+paragraph painter; восстановление выступающего ink и измерение его границ
+ограничены Skiko, где изменены font metrics.
+
+## Ограничения потребителя и конечные границы ink
+
+Следующее независимое review обнаружило недостаток `6e133f8`: Difference
+дорисовывала и обычные части букв, намеренно обрезанные `maxHeight`, а также
+тень за горизонтальным clip. У `Headline` / Body 16/24 / width 100 / height 5
+native BasicText не рисовал ink, тогда как LabText возвращал 381 пиксель за
+пределами высоты. Этот случай сохранён отрицательным контролем.
+
+Теперь дополнительный paint разрешён только при полном размещении оставшегося
+`MultiParagraph` в измеренной высоте. Частично обрезанная строка сохраняет native
+clip; наружный clip также учитывает пространство tight linebox. `minHeight`
+передаётся в native measure: его прежнее обнуление смещало короткий остаток
+многострочного текста и меняло размещение `minLines`.
+
+Восстанавливается только вертикальный ink внутри исходной ширины. Его конечную
+границу Skiko получает из записи того же paragraph с `PictureRecorder` и
+`RTreeFactory`; запись не растеризуется. В закреплённой версии Skia
+[finishRecordingAsPicture](https://github.com/JetBrains/skia/blob/m150-a3f509bf52/src/core/SkPictureRecorder.cpp)
+заменяет cullRect объединением bounds реальных draw-команд. Это включает
+позиционированные combining marks, stroke и shadow. К геометрической границе
+добавлен соседний local pixel для antialias fringe.
+
+Публичный `TextLayoutResult` описывает layout, а не glyph ink; Skiko 0.150.2
+не открывает `getLocalClipBounds`. Запас в один em не ограничивает произвольную
+цепочку marks. Полоса до `Constraints.Infinity` была проверена и отвергнута:
+при rotation 30° / scale 1.25 она отличалась от конечного rectangle oracle на
+7269 пикселях. Большие координаты теперь существуют только как начальный cull
+identity-space записи; на целевой Canvas применяется конечная измеренная граница.
+
+Запись создаётся лишь у переполненного ellipsis штатной семьи и при изменении
+paragraph/style. Кеш хранит ссылки на paragraph/style и четыре координаты;
+Picture, Recorder и RTree закрываются в `use` до возврата. Проверка 220 записей
+под Skiko `Stats` подтверждает нулевое число оставшихся native ресурсов без GC.
+Время 200 прогретых измерений и итоговый targeted прогон сохранены в `clip/`.
+
+`TextClipRenderTest` сравнивает с native BasicText высоты 5/12/24, многострочный
+`maxLines=2`, `minLines=2`, tight 14/12 при density 1/2 и fontScale 1/1.25/2.
+Оба BasicText используют `onTextLayout`: без него Foundation выбирает другой
+renderer, и такой oracle давал неверный вывод о горизонтальном clip.
+Два одинаковых transformed reference тоже были сверены: разница равна нулю.
+
+Transform-проверка использует независимый полный paint уже усечённого paragraph
+и проверяет сохранность ink/ширины при rotation 0°/30°/90°, scale .5/1/1.25/4.
+Foundation сохраняет исходный antialias clip, поэтому его смешивание на границе
+не тождественно одному полному paint: наблюдались max 13/255 и MAE .097/255
+по paint bounds. На реальном размере видимого шва или утолщения нет. Проверка
+допускает max 16/255, MAE .15/255; upright Badge и alpha/brush/decoration
+по-прежнему требуют точного равенства. Поворот не стал причиной замены Foundation.
+
+Поведенческая версия `6e133f8` (с неиспользуемыми helper declarations только
+для компиляции нового теста) провалила все три новые проверки: height, width,
+transforms. После восстановления исправления они проходят. Ресурсы шрифта,
+контуры, ширины и baseline этой поправкой не менялись.

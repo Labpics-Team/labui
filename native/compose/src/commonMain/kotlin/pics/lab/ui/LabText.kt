@@ -5,6 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -12,6 +14,7 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.MultiParagraph
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextDecoration
@@ -35,6 +38,33 @@ internal fun Density.hasTallerTextMetrics(style: TextStyle, lines: Int, paragrap
     val lineHeight = authoredLineHeight(style)
     val naturalOuterSpace = if (style.fontSize.isSp) (style.fontSize.toPx() - lineHeight).coerceAtLeast(0f) else 0f
     return paragraphHeight > (lineHeight * lines + naturalOuterSpace).roundToInt() + 1
+}
+
+internal expect fun textPaintBounds(paragraph: MultiParagraph, style: TextStyle): Rect?
+
+internal fun MultiParagraph.paintText(canvas: Canvas, style: TextStyle) {
+    val shadow = style.shadow ?: Shadow.None
+    val decoration = style.textDecoration ?: TextDecoration.None
+    val drawStyle = style.drawStyle ?: Fill
+    val brush = style.brush
+    if (brush != null) paint(canvas, brush, style.alpha, shadow, decoration, drawStyle)
+    else paint(canvas, if (style.color == Color.Unspecified) Color.Black else style.color,
+        shadow, decoration, drawStyle)
+}
+
+private class TextPaintBoundsCache {
+    private var paragraph: MultiParagraph? = null
+    private var style: TextStyle? = null
+    private var bounds: Rect? = null
+
+    fun get(paragraph: MultiParagraph, style: TextStyle): Rect? {
+        if (this.paragraph !== paragraph || this.style != style) {
+            bounds = textPaintBounds(paragraph, style)
+            this.paragraph = paragraph
+            this.style = style
+        }
+        return bounds
+    }
 }
 
 /**
@@ -64,7 +94,9 @@ public fun LabText(
         // height limit for vertical ellipsis and text hit testing.
         val paragraphMaxHeight = if (constraints.maxHeight == Constraints.Infinity) Constraints.Infinity
             else (constraints.maxHeight.toLong() + outerSpace).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-        val paragraph = child.measure(constraints.copy(minHeight = 0, maxHeight = paragraphMaxHeight))
+        // Retain minHeight as well: discarding it recenters a short retained
+        // paragraph inside the caller's height and changes minLines placement.
+        val paragraph = child.measure(constraints.copy(maxHeight = paragraphMaxHeight))
         val lines = max(minLines, measured[0]?.lineCount ?: 1)
         val authoredHeight = (lineHeight * lines).roundToInt()
         // A fallback glyph can bring taller metrics even inside the bundled family.
@@ -77,28 +109,33 @@ public fun LabText(
     } else Modifier
     val resolvedStyle = if (authoredFamily && style.lineHeightStyle == null) style.copy(lineHeightStyle = LabLineHeightStyle) else style
     val isEllipsis = overflow == TextOverflow.Ellipsis || overflow == TextOverflow.StartEllipsis || overflow == TextOverflow.MiddleEllipsis
-    val completeInk = if (authoredFamily && isEllipsis) Modifier.drawWithContent {
-        drawContent()
+    val callerHeightClip = if (authoredFamily && overflow != TextOverflow.Visible) Modifier.drawWithContent {
         val result = measured[0]
-        if (result != null && result.hasVisualOverflow) {
-            // Compose clips an overflowing paragraph to its line box. Accents may
-            // extend outside a tight authored line. Reuse the already ellipsized
-            // paragraph only outside that clip; no text or selection is repainted
-            // inside it, and the original text remains available to semantics.
-            clipRect(0f, 0f, result.size.width.toFloat(), result.size.height.toFloat(), ClipOp.Difference) {
-                val shadow = resolvedStyle.shadow ?: Shadow.None
-                val decoration = resolvedStyle.textDecoration ?: TextDecoration.None
-                val drawStyle = resolvedStyle.drawStyle ?: Fill
-                val brush = resolvedStyle.brush
-                if (brush != null) result.multiParagraph.paint(drawContext.canvas, brush, resolvedStyle.alpha,
-                    shadow, decoration, drawStyle)
-                else result.multiParagraph.paint(drawContext.canvas,
-                    if (resolvedStyle.color == Color.Unspecified) Color.Black else resolvedStyle.color,
-                    shadow, decoration, drawStyle)
+        if (result != null && result.multiParagraph.height > result.size.height) clipRect { this@drawWithContent.drawContent() }
+        else drawContent()
+    } else Modifier
+    val completeInk = if (authoredFamily && isEllipsis) {
+        val inkBounds = remember { TextPaintBoundsCache() }
+        Modifier.drawWithContent {
+            drawContent()
+            val result = measured[0]
+            if (result != null && result.hasVisualOverflow && result.multiParagraph.height <= result.size.height) {
+                // Compose clips an overflowing paragraph to its line box. Accents may
+                // extend outside a tight authored line. Reuse the already ellipsized
+                // paragraph only outside that clip; no text or selection is repainted
+                // inside it, and the original text remains available to semantics.
+                // Real paint bounds include stacked marks and effects. A guessed
+                // large strip loses clip precision when the canvas is transformed.
+                val bounds = inkBounds.get(result.multiParagraph, resolvedStyle)
+                if (bounds != null) clipRect(0f, bounds.top, result.size.width.toFloat(), bounds.bottom) {
+                    clipRect(0f, 0f, result.size.width.toFloat(), result.size.height.toFloat(), ClipOp.Difference) {
+                        result.multiParagraph.paintText(drawContext.canvas, resolvedStyle)
+                    }
+                }
             }
         }
     } else Modifier
-    BasicText(text, modifier.then(authored).then(completeInk), style = resolvedStyle,
+    BasicText(text, modifier.then(callerHeightClip).then(authored).then(completeInk), style = resolvedStyle,
         onTextLayout = { measured[0] = it; onTextLayout?.invoke(it) },
         overflow = overflow, softWrap = softWrap, maxLines = maxLines, minLines = minLines)
 }
