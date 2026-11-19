@@ -100,3 +100,48 @@ python packages/fonts/scripts/build-symbols.py --cache-dir <font-cache> --check
 
 `paint-steps.tsv`, `authored-d2-s1.png`, `custom-and-accents.png`, `selection.png`
 сохраняют результаты; полная матрица изображений воспроизводится в `build/lineboxes`.
+
+## Поправка после независимого review: ellipsis и акценты
+
+Freeze `3f22a8c` сохранял linebox и усечение, но срезал акценты узкого Badge.
+У Medium Å, É, Й верхний ink превышает ascent 850. Когда строка переполняется,
+Compose `TextAnnotatedStringNode.kt:533–539` обрезает paragraph по
+`TextLayoutResult.size`; широкая строка без переполнения этого clip не имеет.
+[Точный исходный Foundation artifact](https://repo.maven.apache.org/maven2/org/jetbrains/compose/foundation/foundation-desktop/1.12.2/foundation-desktop-1.12.2-sources.jar)
+содержит эту ветку и штатный порядок рисования selection, brush, shadow и decoration.
+
+Общая граница `LabText` теперь дорисовывает **тот же уже усечённый**
+`MultiParagraph` с `ClipOp.Difference` за пределами внутреннего clip.
+Его внутренняя часть не рисуется второй раз. Native shaping, усечение,
+семантика полного текста и selection остаются штатными. Измерения, font
+resources и положение glyph baseline не менялись; отдельного Badge offset нет.
+Дополнительный paint выполняется только для переполненного ellipsis текста
+штатной семьи. `TextLayoutResult` переиспользуется вместо прежнего счётчика
+строк; повторного shaping/measure и дополнительного состояния для обычного
+Visible-текста нет.
+
+`TextEllipsisInkRenderTest` сравнивает все пиксели неизменённого префикса
+`ÅÉЙ` у настоящего `LabBadge("ÅÉЙ ÅÉЙ ÅÉЙ ÅÉЙ")` шириной 400 и 110 dp.
+Широкая строка калибрует измеритель; узкая обязана реально переполняться.
+
+| Density / fontScale | Потеря пикселей на `3f22a8c` | После исправления |
+|---|---:|---:|
+| 1 / 1 | 11 | 0 |
+| 1 / 1.25 | 14 | 0 |
+| 1 / 2 | 33 | 0 |
+| 2 / 1 | 33 | 0 |
+| 2 / 1.25 | 30 | 0 |
+| 2 / 2 | 84 | 0 |
+
+Отрицательный опыт подменял только `LabText.kt` его версией `3f22a8c` и
+воспроизвёл все шесть потерь. Дополнительные проверки сравнивают целый
+префикс при полупрозрачном цвете, градиенте, shadow и underline; новая
+дорисовка не удваивает альфу. Настоящий mouse drag по ellipsis тексту сохраняет
+selection и непрозрачные пиксели глифов, accessibility получает полную строку.
+
+`ellipsis/` содержит исходные отчёты before/after, рисунки и результаты
+targeted проверки: TextEllipsisInkRenderTest, TextLineBoxRenderTest,
+BadgeRenderTest, InputRenderTest. Включены прежние проверки плотности,
+масштабирования, custom/fallback, редактирования и конечного maxHeight.
+Android/Apple runtime этой поправкой не измерялся; используются общие
+публичные `MultiParagraph.paint` и Compose Canvas API.

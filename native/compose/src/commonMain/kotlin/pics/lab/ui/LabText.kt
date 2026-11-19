@@ -4,10 +4,17 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.ClipOp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.text.font.FontFamily
@@ -48,7 +55,7 @@ public fun LabText(
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
 ) {
-    val lineCount = remember { intArrayOf(1) }
+    val measured = remember { arrayOfNulls<TextLayoutResult>(1) }
     val authoredFamily = usesAuthoredTextMetrics(style.fontFamily)
     val authored = if (authoredFamily && style.lineHeight.isSpecified && (!style.lineHeight.isEm || style.fontSize.isSp)) Modifier.layout { child, constraints ->
         val lineHeight = authoredLineHeight(style)
@@ -58,7 +65,7 @@ public fun LabText(
         val paragraphMaxHeight = if (constraints.maxHeight == Constraints.Infinity) Constraints.Infinity
             else (constraints.maxHeight.toLong() + outerSpace).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
         val paragraph = child.measure(constraints.copy(minHeight = 0, maxHeight = paragraphMaxHeight))
-        val lines = max(minLines, lineCount[0])
+        val lines = max(minLines, measured[0]?.lineCount ?: 1)
         val authoredHeight = (lineHeight * lines).roundToInt()
         // A fallback glyph can bring taller metrics even inside the bundled family.
         // Keep that native paragraph intact instead of shortening it around overflowing text.
@@ -69,7 +76,29 @@ public fun LabText(
         }
     } else Modifier
     val resolvedStyle = if (authoredFamily && style.lineHeightStyle == null) style.copy(lineHeightStyle = LabLineHeightStyle) else style
-    BasicText(text, modifier.then(authored), style = resolvedStyle,
-        onTextLayout = { lineCount[0] = it.lineCount; onTextLayout?.invoke(it) },
+    val isEllipsis = overflow == TextOverflow.Ellipsis || overflow == TextOverflow.StartEllipsis || overflow == TextOverflow.MiddleEllipsis
+    val completeInk = if (authoredFamily && isEllipsis) Modifier.drawWithContent {
+        drawContent()
+        val result = measured[0]
+        if (result != null && result.hasVisualOverflow) {
+            // Compose clips an overflowing paragraph to its line box. Accents may
+            // extend outside a tight authored line. Reuse the already ellipsized
+            // paragraph only outside that clip; no text or selection is repainted
+            // inside it, and the original text remains available to semantics.
+            clipRect(0f, 0f, result.size.width.toFloat(), result.size.height.toFloat(), ClipOp.Difference) {
+                val shadow = resolvedStyle.shadow ?: Shadow.None
+                val decoration = resolvedStyle.textDecoration ?: TextDecoration.None
+                val drawStyle = resolvedStyle.drawStyle ?: Fill
+                val brush = resolvedStyle.brush
+                if (brush != null) result.multiParagraph.paint(drawContext.canvas, brush, resolvedStyle.alpha,
+                    shadow, decoration, drawStyle)
+                else result.multiParagraph.paint(drawContext.canvas,
+                    if (resolvedStyle.color == Color.Unspecified) Color.Black else resolvedStyle.color,
+                    shadow, decoration, drawStyle)
+            }
+        }
+    } else Modifier
+    BasicText(text, modifier.then(authored).then(completeInk), style = resolvedStyle,
+        onTextLayout = { measured[0] = it; onTextLayout?.invoke(it) },
         overflow = overflow, softWrap = softWrap, maxLines = maxLines, minLines = minLines)
 }

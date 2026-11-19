@@ -56,7 +56,9 @@ Native-компонент, выбирающий конечный tracking, ис�
 linebox штатного `labFontFamily()`. `TextStyle` сохраняет заданные кегль,
 интерлиньяж и tracking; `LabText` использует штатные accessibility и selection
 механизмы `BasicText`. По умолчанию `TextOverflow.Visible` сохраняет выступающие
-акценты и нижние выносные элементы. `maxLines`, `minLines`, `softWrap` и
+акценты и нижние выносные элементы. Ellipsis также сохраняет полный рисунок
+оставшихся букв: native paragraph определяет усечение, а общий paint adapter
+восстанавливает только его выступающий ink за clip строки. `maxLines`, `minLines`, `softWrap` и
 переданное ограничение высоты сохраняют поведение native overflow.
 
 Skia получает отдельные производные файлы с теми же контурами и advances.
