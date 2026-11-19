@@ -50,13 +50,16 @@ loses part of the material. The committed recipe keeps the independent layers.
 - Core material/contract tests: 3 passed; Colors: 255 passed; browser Avatar
   suite: 7 passed; native Avatar suite: 5 passed. Typecheck passed.
 
-The original `installed-web-dark-normal-200.png` and
-`installed-web-dark-more-200.png` were captured before the newly selected CSS
-backgrounds decoded. Integration review identified their flat discs. These two
-files were replaced from the integrated packed consumer; production material
-bytes are unchanged. `web-consumer/capture.mjs` now awaits each computed URL's
-`Image.decode()` and checks the decoded texture. `verify-capture.py` also checks
-the actual screenshot pixels. The new package provenance, browser results and
+The four original `installed-web-dark-{normal,more}-{100,200}.png` files were
+captured before the newly selected CSS backgrounds decoded. Integration review
+identified their flat discs. The first correction covered only the density-2
+files and omitted the two density-1 files from pixel verification. All four are
+now replaced from the integrated packed consumer; production material bytes
+are unchanged. `web-consumer/capture.mjs` awaits each computed URL's
+`Image.decode()` and records every PNG path it writes, including retained names.
+`verify-capture.py` checks actual pixels and requires the complete set of
+`installed-*.png` files in both evidence directories to be in that manifest.
+The new package provenance, browser results and
 native typography captures are in
 [`../avatar-integration-20261119/`](../avatar-integration-20261119/README.md).
 
@@ -76,8 +79,9 @@ the packed packages, with a file loader for WebP and fonts. The screenshots were
 taken against that bundled output, not the workspace dev page.
 
 For repeatable installed capture, install `@playwright/test` in that consumer,
-copy `capture.mjs`, and run `node capture.mjs <HTTP base URL> <evidence directory>`.
-Then run `python verify-capture.py <evidence directory>` with Pillow 13.
+copy `capture.mjs`, and run
+`node capture.mjs <HTTP base URL> <integration evidence directory> <retained evidence directory>`.
+Then run `python verify-capture.py <integration evidence directory>` with Pillow 13.
 For installed hydration, also install `@lit-labs/ssr-client`, copy
 `hydration.tsx` and `verify-hydration.mjs`, and run
 `node verify-hydration.mjs <HTTP base URL> <result.json>` from the consumer.

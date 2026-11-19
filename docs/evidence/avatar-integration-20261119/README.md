@@ -17,16 +17,24 @@ under `/dist/assets/`.
 
 `installed-materials.json` records Chromium 140, Firefox 141 and WebKit 26,
 four appearance/contrast modes, both component sizes and both renderers.
-Chromium also covers density 2. All 40 resource URLs load and decode. The 16
-screenshots contain 640 Avatar discs; every inner crop has more than 100 distinct
-RGB colors (observed minimum 226), so a flat fallback cannot pass as material.
+Chromium also covers density 2. All 40 resource URLs load and decode. The capture
+manifest records every path actually written by the capture script, including
+the retained matrix aliases, three browser screenshots and the 200% zoom image.
+Pixel verification covers **all 28 retained web PNGs**, containing 1006 Avatar
+discs. Every inner crop has more than 100 distinct RGB colors (observed minimum
+226). The verifier also compares recorded files with every `installed-*.png`
+in both evidence directories, rejecting any missing or unverified screenshot.
+Valid older pixels remain retained and have their own verified SHA-256 values.
 The capture and pixel-verification scripts are retained in
 [`../avatar-20261119/web-consumer/`](../avatar-20261119/web-consumer/).
 
-Two earlier dark density-2 evidence images were captured too early. Their
-replacements await `Image.decode()` for the actual computed background URLs
-and two animation frames. This fixes the evidence path; it does not modify
-the accepted material compiler or resources.
+All four earlier dark matrix images were captured too early. Commit `56becf2`
+corrected only the density-2 pair; its verifier checked the 16 new integration
+PNGs and missed the still-flat retained density-1 pair. The follow-up replaces
+that pair and removes this coverage gap. `pixel-negative-controls.json` records
+that the verifier rejects both former density-1 PNGs: each failing crop has
+exactly one RGB color. Current replacements pass actual bitmap inspection,
+after decoded background URLs have painted. Production sources are unchanged.
 
 `installed-hydration.json` records the separate packed SSR consumer. Images
 load before the hydration bundle is released; the original Lit and React image
