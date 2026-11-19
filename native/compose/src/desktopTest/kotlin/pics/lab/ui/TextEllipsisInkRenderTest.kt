@@ -51,7 +51,8 @@ class TextEllipsisInkRenderTest {
         val output = File("build/lineboxes/ellipsis").apply { mkdirs() }
         val report = StringBuilder("density\tfontScale\tprefixPixels\tmismatches\n")
         val mismatchingCases = mutableListOf<String>()
-        for (density in listOf(1f, 2f)) for (scale in listOf(1f, 1.25f, 2f)) {
+        for (density in listOf(1f, 2f)) for (scale in listOf(1f, 1.25f, 2f)) for (calibrate in listOf(false, true)) {
+            val case = "badge-${if (calibrate) "control-" else ""}d$density-s$scale"
             val ready = AtomicBoolean(false)
             val bounds = mutableMapOf<String, Rect>()
             val theme = LabThemeState(LabColorOutput(mapOf(
@@ -65,7 +66,7 @@ class TextEllipsisInkRenderTest {
                 LabTheme(theme, font) {
                     Column(Modifier.fillMaxSize().background(Color.White).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                        for ((name, width) in listOf("wide" to 400, "narrow" to 110)) {
+                        for ((name, width) in listOf("wide" to 400, "narrow" to if (calibrate) 400 else 110)) {
                             LabBadge(text, Modifier.width(width.dp).onGloballyPositioned { bounds[name] = it.boundsInRoot() },
                                 color = LabBadgeColor.Blue)
                         }
@@ -84,14 +85,14 @@ class TextEllipsisInkRenderTest {
                     Thread.sleep(5)
                 }
                 val frame = checkNotNull(png)
-                File(output, "badge-d${density}-s${scale}.png").writeBytes(frame)
+                File(output, "$case.png").writeBytes(frame)
                 val nodes = scene.semanticsOwners.flatMap { walk(it.unmergedRootSemanticsNode) }
                 val paragraphs = nodes.flatMap { node -> mutableListOf<TextLayoutResult>().also {
                     node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(it)
                 } }.sortedByDescending { it.size.width }
                 assertEquals(2, paragraphs.size)
                 assertFalse(paragraphs[0].hasVisualOverflow, "The complete wide string calibrates the glyph oracle")
-                assertTrue(paragraphs[1].hasVisualOverflow, "The narrow badge must actually truncate")
+                assertEquals(!calibrate, paragraphs.last().hasVisualOverflow, "The comparison must use the intended overflow path")
                 for (paragraph in paragraphs) assertEquals(text, paragraph.layoutInput.text.text)
                 val labelNodes = nodes.filter { it.config.getOrNull(SemanticsProperties.Text) != null }
                 assertEquals(2, labelNodes.size)
@@ -101,17 +102,10 @@ class TextEllipsisInkRenderTest {
                 val narrow = bounds.getValue("narrow")
                 assertEquals(wide.height, narrow.height, "Truncation must preserve the authored control height")
                 val prefixWidth = ceil(paragraphs[0].getBoundingBox(2).right + LabComponents.BadgePaddingX * density).toInt()
-                var ink = 0
-                var mismatches = 0
-                for (y in 0 until wide.height.roundToInt()) for (x in 0 until prefixWidth) {
-                    val expected = bitmap.getRGB(wide.left.roundToInt() + x, wide.top.roundToInt() + y)
-                    val actual = bitmap.getRGB(narrow.left.roundToInt() + x, narrow.top.roundToInt() + y)
-                    if (expected and 0x00ffffff != 0x00ffffff) ink++
-                    if (expected != actual) mismatches++
-                }
-                report.appendLine("$density\t$scale\t$ink\t$mismatches")
-                assertTrue(ink > 30, "The prefix oracle must contain visible glyphs and accents")
-                if (mismatches != 0) mismatchingCases += "density=$density fontScale=$scale: $mismatches pixels"
+                val comparison = recordTextPixelEvidence(output, case, bitmap, wide, narrow, prefixWidth)
+                if (!calibrate) report.appendLine("$density\t$scale\t${comparison.inkPixels}\t${comparison.mismatches}")
+                assertTrue(comparison.inkPixels > 30, "The prefix oracle must contain visible glyphs and accents")
+                if (comparison.mismatches != 0) mismatchingCases += "$case: ${comparison.summary()}"
             } finally { scene.close() }
         }
         File(output, "badge-prefix.tsv").writeText(report.toString())
@@ -120,10 +114,12 @@ class TextEllipsisInkRenderTest {
 
     @Test fun restorationPreservesBrushAlphaShadowAndDecorationWithoutDoublePainting() {
         val output = File("build/lineboxes/ellipsis").apply { mkdirs() }
-        for (paint in listOf("alpha", "brush", "decoration")) {
+        val mismatchingCases = mutableListOf<String>()
+        for (paint in listOf("alpha", "brush", "decoration")) for (calibrate in listOf(false, true)) {
+            val case = "paint-${if (calibrate) "control-" else ""}$paint"
             val ready = AtomicBoolean(false)
-            val bounds = mutableMapOf<Int, Rect>()
-            val layouts = mutableMapOf<Int, TextLayoutResult>()
+            val bounds = mutableMapOf<String, Rect>()
+            val layouts = mutableMapOf<String, TextLayoutResult>()
             val scene = ImageComposeScene(900, 260, Density(2f)) {
                 val font = labFontFamily()
                 val resolver = LocalFontFamilyResolver.current
@@ -139,10 +135,10 @@ class TextEllipsisInkRenderTest {
                 }
                 Column(Modifier.fillMaxSize().background(Color.White).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                    for (width in listOf(400, 110)) LabText("ÅÉЙ ÅÉЙ ÅÉЙ ÅÉЙ",
-                        Modifier.width(width.dp).onGloballyPositioned { bounds[width] = it.boundsInRoot() }
+                    for ((name, width) in listOf("wide" to 400, "narrow" to if (calibrate) 400 else 110)) LabText("ÅÉЙ ÅÉЙ ÅÉЙ ÅÉЙ",
+                        Modifier.width(width.dp).onGloballyPositioned { bounds[name] = it.boundsInRoot() }
                             .padding(vertical = 8.dp), style, overflow = TextOverflow.Ellipsis,
-                        maxLines = 1, softWrap = false, onTextLayout = { layouts[width] = it })
+                        maxLines = 1, softWrap = false, onTextLayout = { layouts[name] = it })
                 }
             }
             try {
@@ -157,19 +153,17 @@ class TextEllipsisInkRenderTest {
                     Thread.sleep(5)
                 }
                 val frame = checkNotNull(png)
-                File(output, "paint-$paint.png").writeBytes(frame)
-                assertFalse(layouts.getValue(400).hasVisualOverflow)
-                assertTrue(layouts.getValue(110).hasVisualOverflow)
+                File(output, "$case.png").writeBytes(frame)
+                assertFalse(layouts.getValue("wide").hasVisualOverflow)
+                assertEquals(!calibrate, layouts.getValue("narrow").hasVisualOverflow)
                 val bitmap = ImageIO.read(ByteArrayInputStream(frame))
-                val wide = bounds.getValue(400)
-                val narrow = bounds.getValue(110)
-                val prefix = ceil(layouts.getValue(400).getBoundingBox(2).right).toInt()
-                for (y in 0 until wide.height.roundToInt()) for (x in 0 until prefix)
-                    assertEquals(bitmap.getRGB(wide.left.roundToInt() + x, wide.top.roundToInt() + y),
-                        bitmap.getRGB(narrow.left.roundToInt() + x, narrow.top.roundToInt() + y),
-                        "$paint prefix pixel $x/$y must not change during ellipsis")
+                val wide = bounds.getValue("wide")
+                val prefix = ceil(layouts.getValue("wide").getBoundingBox(2).right).toInt()
+                val comparison = recordTextPixelEvidence(output, case, bitmap, wide, bounds.getValue("narrow"), prefix)
+                if (comparison.mismatches != 0) mismatchingCases += "$case: ${comparison.summary()}"
             } finally { scene.close() }
         }
+        assertTrue(mismatchingCases.isEmpty(), "The complete paint matrix must preserve its prefix: ${mismatchingCases.joinToString()}")
     }
 
     @Test fun anEllipsizedLabelKeepsNativeSelectionAndItsFullAccessibleText() {
