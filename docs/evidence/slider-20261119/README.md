@@ -26,6 +26,23 @@ runtime проецирует pointer на авторскую геометрию;
 скачка; Escape и отменённый pointer возвращают начальное значение. Основание:
 [WAI-ARIA Multi-Thumb Slider](https://www.w3.org/WAI/ARIA/apg/patterns/slider-multithumb/).
 
+После независимого ревью исправлены три пути, не покрытые прежними проверками:
+первый click по круговой дорожке выбирает абсолютную позицию, а continuity действует
+на последующие движения; совпавшие бегунки выбираются первым направлением drag и
+сохраняют выбранную идентичность; native accessibility сообщает достижимые bounds
+и число промежуточных шагов. На круговом `[0,100]` движение по часовой стрелке
+выбирает нижний бегунок, обратное — верхний. В Linear начало drag учитывает
+видимый центр, включая плато у нуля.
+
+[AndroidX accessibility delegate](https://github.com/androidx/androidx/blob/androidx-main/compose/ui/ui/src/androidMain/kotlin/androidx/compose/ui/platform/AndroidComposeViewAccessibilityDelegateCompat.android.kt#L1555)
+вычисляет increment из `range / (steps + 1)`, а при `steps=0` — из `range / 20`.
+Поэтому для двух достижимых endpoints `SetProgress` сохраняет направление запроса,
+даже если округление малого increment вернуло прежнее значение. Неделимый максимум
+исключён из доступного диапазона; два бегунка показывают собственные достижимые
+границы, шаг остаётся привязан к общему min. В Float учитывается погрешность до
+одного ULP у терминальной точки (`-0.7…1.3`, шаг `0.2`); число шагов не заявляется,
+если сетка не представима с равными интервалами.
+
 `compare-*.png` показывают Figma, Chromium и Compose на белом фоне в этом порядке.
 `comparison.generated.json` содержит фактическую RGB-разницу, а не обещание
 попиксельного совпадения. Сохраняются различия сглаживания и растеризации Geist.
@@ -44,16 +61,24 @@ browser zoom. Отдельные `web-*-font-*` проверяют реальн�
 - Установленные npm tarballs: пять SSR/hydrated renderer, сохранение DOM и реального
   ввода до hydration, controlled/end callback, fieldset/first legend, внешняя форма,
   submit/reset/cancel, дробный шаг, RTL, диапазон, circular seam/Escape, reparent.
-- 9 Compose-тестов в offscreen CPU `ImageComposeScene`: мастера, semantics/range,
+- 13 Compose-тестов в offscreen CPU `ImageComposeScene`: мастера, semantics/range,
   pointer, RTL/keyboard, Escape, отказ controlled, readOnly/disabled, увеличенный
-  текст, нулевые ограничения, непрерывные изменения.
-- Отдельный Maven consumer `0.1.0-slider-20261120.1`, без source substitution:
+  текст, нулевые ограничения, непрерывные изменения, первые круговые клики,
+  раскрытие совпавших бегунков в LTR/RTL и реальные increment по данным semantics.
+- Отдельный Maven consumer `0.1.0-slider-20261120.3`, без source substitution:
   `SliderConsumerTest` изменяет четыре настройки и проверяет видимую сводку при
-  fontScale 2. Хеши npm/Maven находятся в `*installed.generated.json`.
+  fontScale 2; второй тест повторяет pointer и accessibility исправления через
+  установленные классы. Хеши npm/Maven находятся в `*installed.generated.json`.
 
-Общий docs typecheck остаётся красным на четырёх прежних `possibly undefined`
-в `apps/docs/tests/avatar.spec.ts:129–132`; Slider и остальные package typecheck
-проходят. Файл Avatar этой работой не менялся.
+Общий docs typecheck в этой изолированной ветке остаётся красным на четырёх
+прежних `possibly undefined` в `apps/docs/tests/avatar.spec.ts:129–132`;
+root исправила их отдельно в `2f6ac71`. Файл Avatar этой работой не менялся.
+
+До исправления три новых native регрессии были красными; installed Chromium
+подтвердил `0→75` как `0` без callback. После исправления installed Chromium и
+WebKit проверяют `0→75` и `100→25` через Lit/React с публичным callback, а также
+pointer на совпавших endpoints и середине в обе стороны. `review.generated.json`
+фиксирует эти пути отдельно от визуальных и прежних проверок.
 
 Web не создаёт idle RAF. Native размывает маленькую alpha-маску 13×62 @1x,
 затем перемещает изображение и окрашивает его ролями. Отдельный опыт с временным
@@ -72,7 +97,7 @@ $env:SKIKO_RENDER_API='SOFTWARE'
 ./native/compose/gradlew.bat -p native/compose :desktopTest --tests pics.lab.ui.SliderRenderTest
 ```
 
-Maven publish использует `publicationVersion=0.1.0-slider-20261120.1` и отдельный
+Maven publish использует `publicationVersion=0.1.0-slider-20261120.3` и отдельный
 `publicationRepository`; consumer — тот же `uiVersion/uiRepository`,
 `iconsVersion=0.4.0-semantic.6` и Maven Icons repository, без `uiSource/iconsSource`.
 Запускается `:desktopTest --tests pics.lab.ui.sample.SliderConsumerTest` из consumer.

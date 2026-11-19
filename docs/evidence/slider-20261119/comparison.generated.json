@@ -68,8 +68,8 @@
       100
     ],
     "meanRgbDifference": [
-      0.26729166666666665,
-      0.15041666666666667,
+      0.2753125,
+      0.15625,
       0.0
     ],
     "pixelsWithChannelDifferenceOver20": 25
@@ -98,11 +98,11 @@
       104
     ],
     "meanRgbDifference": [
-      1.0545873397435896,
-      0.5608974358974359,
+      0.9722556089743589,
+      0.5161258012820513,
       0.0
     ],
-    "pixelsWithChannelDifferenceOver20": 203
+    "pixelsWithChannelDifferenceOver20": 189
   },
   {
     "node": "6467-117334",
@@ -128,11 +128,11 @@
       100
     ],
     "meanRgbDifference": [
-      1.5535416666666666,
-      0.8246875,
+      1.7216666666666667,
+      0.9148958333333334,
       0.0
     ],
-    "pixelsWithChannelDifferenceOver20": 291
+    "pixelsWithChannelDifferenceOver20": 322
   },
   {
     "node": "6467-117338",
@@ -188,11 +188,11 @@
       56
     ],
     "meanRgbDifference": [
-      1.433632848043676,
-      0.8137227024567789,
-      0.4978673794358508
+      1.4297656960873522,
+      0.8105095541401274,
+      0.49783894449499544
     ],
-    "pixelsWithChannelDifferenceOver20": 384
+    "pixelsWithChannelDifferenceOver20": 381
   },
   {
     "node": "7530-6626",
@@ -218,8 +218,8 @@
       56
     ],
     "meanRgbDifference": [
-      1.82174135577798,
-      1.1144222020018197,
+      1.8183291628753413,
+      1.115588034576888,
       0.0006255686988171065
     ],
     "pixelsWithChannelDifferenceOver20": 420

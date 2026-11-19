@@ -22,11 +22,11 @@
     },
     {
       "name": "@labpics/ui-core",
-      "sha256": "a20fc2f15ee683eebfe13b1465dbe777b3df99457c632736eadb797c93657a65"
+      "sha256": "e3b00479950128835256f115895fa27fa9de6e54212e8f18704f97be8f17c77d"
     },
     {
       "name": "@labpics/ui-react",
-      "sha256": "8d67cbb95d84669b7c084a0c645c02230fec1fc88ff5b4525e7e9b5df5ccd040"
+      "sha256": "f8f093d9a5f395ef44eace84305208a97c1795f35ed73f2a775c62f6812efb8a"
     },
     {
       "name": "@labpics/ui-vue",
@@ -65,7 +65,7 @@
         32
       ],
       "idleRaf": 0,
-      "behavior": "controlled and end callback, keyboard including RTL, external forms, disabled fieldset/first legend, submit/reset/cancel, non-divisible steps, range collision, circular seam/cancel, reparent, pointer geometry and forms at each root font size"
+      "behavior": "controlled and end callback, keyboard including RTL, external forms, disabled fieldset/first legend, submit/reset/cancel, non-divisible steps, range collision and coincident thumb pointer directions, circular absolute click/callback and seam/cancel, reparent, pointer geometry and forms at each root font size"
     },
     {
       "engine": "webkit",
@@ -86,7 +86,7 @@
         32
       ],
       "idleRaf": 0,
-      "behavior": "controlled and end callback, keyboard including RTL, external forms, disabled fieldset/first legend, submit/reset/cancel, non-divisible steps, range collision, circular seam/cancel, reparent, pointer geometry and forms at each root font size"
+      "behavior": "controlled and end callback, keyboard including RTL, external forms, disabled fieldset/first legend, submit/reset/cancel, non-divisible steps, range collision and coincident thumb pointer directions, circular absolute click/callback and seam/cancel, reparent, pointer geometry and forms at each root font size"
     }
   ]
 }
