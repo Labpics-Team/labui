@@ -41,6 +41,17 @@ without composite source substitution. The consumer rejects then accepts a
 removal, saves the accepted state, resets and saves again. Artifact hashes and
 test summaries are in `native.generated.json`.
 
+The native checks were repeated from the integrated source revision `394a3d9`
+after the accepted LabText fixes for complete glyph ink and caller clipping
+(`73ad8e9`, `e1affb9`). All three component tests and all six installed-consumer
+scenes passed with Maven version `0.1.0-select-20261119.3`. Gradle confirmed the
+published `ui-compose-desktop` runtime variant; see
+`native-runtime-dependency.txt`. All twelve new scenes were visually inspected
+for captions, empty frames, trailing chevrons, wrapping and enlarged text. The
+image hashes match the preceding Select scenes. This repeat replaces the earlier
+native proof that depended on the unresolved typography implementation; the
+unchanged browser source and its evidence were not rerun.
+
 ## Images and limits
 
 `chromium-*` and `webkit-*` contain 72 installed-consumer images: three sizes,
