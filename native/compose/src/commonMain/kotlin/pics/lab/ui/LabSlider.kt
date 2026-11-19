@@ -40,6 +40,13 @@ import kotlinx.coroutines.launch
 public enum class LabSliderVariant { Linear, Circular, Large }
 public enum class LabSliderOrientation { Horizontal, Vertical }
 
+/** Binary32 spacing; Float.ulp is absent from Kotlin's common metadata API. */
+private fun sliderFloatUlp(value: Float): Float {
+    val exponent = (value.toRawBits() ushr 23) and 0xff
+    return if (exponent < 24) Float.fromBits(1 shl (exponent - 1).coerceAtLeast(0))
+    else Float.fromBits((exponent - 23) shl 23)
+}
+
 internal data class SliderDomain(val min: Float, val max: Float, val step: Float) {
     init { require(min.isFinite() && max.isFinite() && max > min && step.isFinite() && step > 0f) }
     fun snap(value: Float): Float {
@@ -49,7 +56,7 @@ internal data class SliderDomain(val min: Float, val max: Float, val step: Float
         // above max (for example -0.7..1.3 by 0.2). Preserve that endpoint.
         return when {
             result <= max -> result
-            result.isFinite() && result - max <= maxOf(min.ulp, max.ulp, result.ulp) -> max
+            result.isFinite() && result - max <= maxOf(sliderFloatUlp(min), sliderFloatUlp(max), sliderFloatUlp(result)) -> max
             else -> (snapped - step).toFloat()
         }.coerceAtLeast(min)
     }
@@ -62,8 +69,8 @@ internal data class SliderDomain(val min: Float, val max: Float, val step: Float
         val reachableHigh = snap(high)
         val intervals = round((reachableHigh.toDouble() - low) / step)
         val evenlySpaced = intervals in 1.0..Int.MAX_VALUE.toDouble() &&
-            step >= maxOf(low.ulp, reachableHigh.ulp) &&
-            abs((reachableHigh.toDouble() - low) / intervals - step) <= step.ulp * 2
+            step >= maxOf(sliderFloatUlp(low), sliderFloatUlp(reachableHigh)) &&
+            abs((reachableHigh.toDouble() - low) / intervals - step) <= sliderFloatUlp(step) * 2
         return ProgressBarRangeInfo(value, low..reachableHigh, if (evenlySpaced) intervals.toInt() - 1 else 0)
     }
     fun accessibleChange(values: List<Float>, index: Int, requested: Float): List<Float> {
