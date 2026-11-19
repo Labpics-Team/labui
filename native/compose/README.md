@@ -434,6 +434,19 @@ Card в сценарии настроек использует Elevated из mas
 В evidence открыто отмечено различие версий Geist в исходных текстовых ролях;
 покомпонентной подмены шрифта нет.
 
+## Select
+
+`LabSelect` объединяет Dropdown и Multiselect одним контролируемым списком ключей.
+Dropdown сохраняет размеры 32/48/56 dp и декоративный leading slot; Multiselect
+использует внутреннюю подпись, sharp Chips и растёт при переносе. Удаление chip
+только запрашивает новое значение и возвращает фокус trigger. Пустой ключ,
+отклонённый запрос, исчезновение option и reset не создают отдельного состояния chips.
+Текст использует общий `LabText`, пустая композиция сохраняет заданную ширину,
+а подпись и placeholder получают место при увеличении системного текста.
+
+[Контракт](../../docs/reference/select.md) ·
+[offscreen и установленный Maven consumer](../../docs/evidence/select-20261119/README.md).
+
 ## Источники
 
 - [Lab UI — исходная Figma](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1)

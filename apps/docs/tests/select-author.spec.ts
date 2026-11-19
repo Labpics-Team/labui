@@ -247,6 +247,7 @@ test('authored dimensions, independent chip actions and RTL keyboard survive bot
       await host.getByRole('combobox').focus();
       await page.keyboard.press('ArrowDown');
       await expect(host.getByRole('listbox')).toBeVisible();
+      await expect(host.getByRole('listbox')).toBeFocused();
       await page.keyboard.press('Escape');
       await expect(host.getByRole('combobox')).toBeFocused();
     }

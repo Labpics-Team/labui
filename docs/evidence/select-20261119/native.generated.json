@@ -1,0 +1,155 @@
+{
+  "sourceRevision": "c2b0a92",
+  "typographyDependency": "3f22a8cc16fd55a48ab1ee26952f2233ff55e6e4",
+  "version": "0.1.0-select-20261119.2",
+  "runtime": "Zulu Java 21 / Compose desktop / Skiko SOFTWARE",
+  "headless": true,
+  "sourceSubstitution": false,
+  "themes": [
+    "light",
+    "dark"
+  ],
+  "textScales": [
+    1,
+    1.25,
+    2
+  ],
+  "renderDensity": 2,
+  "consumerDensity": 1,
+  "artifacts": [
+    {
+      "path": "pics/lab/ui-colors/0.1.0-select-20261119.2/ui-colors-0.1.0-select-20261119.2-sources.jar",
+      "sha256": "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3"
+    },
+    {
+      "path": "pics/lab/ui-colors/0.1.0-select-20261119.2/ui-colors-0.1.0-select-20261119.2.jar",
+      "sha256": "fa63a86a2ed1b5450216ed085dd1a73b5236432340e7cd64180fc496c03c219d"
+    },
+    {
+      "path": "pics/lab/ui-colors/0.1.0-select-20261119.2/ui-colors-0.1.0-select-20261119.2.module",
+      "sha256": "d8109f35bf1b0a4b5101b95d95f43b3fa70b6a52bc8d9a4462d7abbbb93e458c"
+    },
+    {
+      "path": "pics/lab/ui-colors/0.1.0-select-20261119.2/ui-colors-0.1.0-select-20261119.2.pom",
+      "sha256": "8ba2ec71a388058468e7ff21dd61dd046d231762c9c49466f17dbb9aa94d7ea7"
+    },
+    {
+      "path": "pics/lab/ui-colors-desktop/0.1.0-select-20261119.2/ui-colors-desktop-0.1.0-select-20261119.2-sources.jar",
+      "sha256": "9ac32d299e180afd3985501406dd52f071d1a54a18df176774da3fba83e501b1"
+    },
+    {
+      "path": "pics/lab/ui-colors-desktop/0.1.0-select-20261119.2/ui-colors-desktop-0.1.0-select-20261119.2.jar",
+      "sha256": "0309c3881c5e8d4d0acbfba01b6b5cf730cf022c4d208823a1c8ab4ef4583263"
+    },
+    {
+      "path": "pics/lab/ui-colors-desktop/0.1.0-select-20261119.2/ui-colors-desktop-0.1.0-select-20261119.2.module",
+      "sha256": "3c1417d2f361d7c62c1f5c8e775bc56a63ef1ec4e9a7edcea0f2f561e2263523"
+    },
+    {
+      "path": "pics/lab/ui-colors-desktop/0.1.0-select-20261119.2/ui-colors-desktop-0.1.0-select-20261119.2.pom",
+      "sha256": "1fbd7826a7a1ce1bb0f1cf8c5c261b1d44a630b8789668e7760d22310bdc2284"
+    },
+    {
+      "path": "pics/lab/ui-compose/0.1.0-select-20261119.2/ui-compose-0.1.0-select-20261119.2-sources.jar",
+      "sha256": "2275e18b07ff318055cf89ea319d30eddd60f7bec22258a98cee4b49e3bd64e0"
+    },
+    {
+      "path": "pics/lab/ui-compose/0.1.0-select-20261119.2/ui-compose-0.1.0-select-20261119.2.jar",
+      "sha256": "09f5e4e64184c31846d068870cea001e9d67d3dac4663a65c4a75e0eff7287df"
+    },
+    {
+      "path": "pics/lab/ui-compose/0.1.0-select-20261119.2/ui-compose-0.1.0-select-20261119.2.module",
+      "sha256": "e972f0a7ed5c975eef5a9fbd0aad94d56b213d8f1cc007a77182efc930b9c3f7"
+    },
+    {
+      "path": "pics/lab/ui-compose/0.1.0-select-20261119.2/ui-compose-0.1.0-select-20261119.2.pom",
+      "sha256": "c8703c44f0e4ee1e541382188094e50de4ac4a7afbce3aa4211b4542875bd564"
+    },
+    {
+      "path": "pics/lab/ui-compose-desktop/0.1.0-select-20261119.2/ui-compose-desktop-0.1.0-select-20261119.2-sources.jar",
+      "sha256": "c6192f0a1c07bfd61f2a32d1ae92d5eb8a6db96c27933c6edddddf8eb2fbd602"
+    },
+    {
+      "path": "pics/lab/ui-compose-desktop/0.1.0-select-20261119.2/ui-compose-desktop-0.1.0-select-20261119.2.jar",
+      "sha256": "d377de4b43001b0a39f77f987ba8d6899b4e0d76fb480925e273e2415aabb323"
+    },
+    {
+      "path": "pics/lab/ui-compose-desktop/0.1.0-select-20261119.2/ui-compose-desktop-0.1.0-select-20261119.2.module",
+      "sha256": "813770a84799b2713fd5f49db32779835d3f7b2ab9f5c0757e0ca7e4719dc414"
+    },
+    {
+      "path": "pics/lab/ui-compose-desktop/0.1.0-select-20261119.2/ui-compose-desktop-0.1.0-select-20261119.2.pom",
+      "sha256": "6710f8ff6242c3ed71b010eb2036e97c97c177fcecb3b1d661400f7f5a72f50b"
+    }
+  ],
+  "tests": [
+    {
+      "name": "SelectRenderTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-19T17:18:59.977Z",
+      "time": "4.159"
+    },
+    {
+      "name": "SelectConsumerTest[desktop]",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-19T17:22:38.388Z",
+      "time": "7.475"
+    }
+  ],
+  "images": [
+    {
+      "file": "native-dark-1.0.png",
+      "sha256": "c3ed66197b5e3e4327c15ecdb8ae5f634660c196a26c19b7fb929935cb4187f5"
+    },
+    {
+      "file": "native-dark-1.25.png",
+      "sha256": "2feb82b1b01a090b2339c718506dbec7c215d063c89b52333e00641806c2d186"
+    },
+    {
+      "file": "native-dark-2.0.png",
+      "sha256": "f589eaad8deeeb585cda5e3e9af94c8508b6e074c44ddc5157d5ee75258ea7a5"
+    },
+    {
+      "file": "native-light-1.0.png",
+      "sha256": "1d8b984efed0448bda777fcc992f8fe29eb7bf0d9a95f71665dc8a5e816af86e"
+    },
+    {
+      "file": "native-light-1.25.png",
+      "sha256": "719cad11c4ffc85f21ec00d255e0a464188e31fe0b70ddc3d365c890adf28e75"
+    },
+    {
+      "file": "native-light-2.0.png",
+      "sha256": "ca220e9b8876b0a951156a61dd461130e99c0dd6ed0e30fb4ba2d433a17e607d"
+    },
+    {
+      "file": "consumer-dark-1.0.png",
+      "sha256": "61a9337aa315270602060be6fba6ab15058676be10d8c5baf101c75ecc18a399"
+    },
+    {
+      "file": "consumer-dark-1.25.png",
+      "sha256": "080326b5af6796c1cc56a366df3f191d5fccb7544c2c752f64224c7bae1dae9d"
+    },
+    {
+      "file": "consumer-dark-2.0.png",
+      "sha256": "440051f23f030568dfed0e13448246486f70e617941688a9641f42cf07e39ed3"
+    },
+    {
+      "file": "consumer-light-1.0.png",
+      "sha256": "04edce2c0bba15d4a603d038eccb01d95f3f1e9c955807d5622277ec4a6f648c"
+    },
+    {
+      "file": "consumer-light-1.25.png",
+      "sha256": "aa31e8645d9f346c8b7cd4894a297a43f66db11c56810c0ec5c0dbf41db61561"
+    },
+    {
+      "file": "consumer-light-2.0.png",
+      "sha256": "542c6ac75936f027711554c7b3c3bb1730f0b3894d01f4ce4acd3f40f6a98e64"
+    }
+  ]
+}

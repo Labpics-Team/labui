@@ -1,6 +1,6 @@
 {
-  "revision": "1602ea2b05b9535e4060218aa7c5ace974cefde6",
-  "sourceDigest": "sha256:c96db767c3dc67b17a5a21ae0fdcdfa8cffdcf4eb02a6bc5c2e0bacc2f5e1de1",
+  "revision": "1c4b7cf0e4589df7499218a81d989ba7b7606f1c",
+  "sourceDigest": "sha256:9782f2009ab61c19218936888188a8cbf6204bfb7ccbbfd0253e98d323dc4196",
   "symbols": [
     {
       "name": "LabAccordion",
@@ -83,6 +83,10 @@
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSegmentedControl.kt"
     },
     {
+      "name": "LabSelect",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSelect.kt"
+    },
+    {
       "name": "LabSheetHost",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSheet.kt"
     },
@@ -109,6 +113,10 @@
     {
       "name": "LabTabs",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabTabs.kt"
+    },
+    {
+      "name": "LabText",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabText.kt"
     },
     {
       "name": "LabTheme",
