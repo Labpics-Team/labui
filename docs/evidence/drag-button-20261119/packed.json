@@ -22,11 +22,11 @@
     },
     {
       "name": "labpics-ui-core-0.0.0.tgz",
-      "sha256": "33eb3cf1a5569758636c3397a6b5f3f5db8f8162abfb824826602a04d4145ba0"
+      "sha256": "4316b771d54e92ccc725bab23c932779d5423e9c8c3a178d834f5fd1a0d2832c"
     },
     {
       "name": "labpics-ui-react-0.0.0.tgz",
-      "sha256": "217ecc3a91aebd47cbbde3ec431e790af6e93e7a5e5ee2b0816975c45b810614"
+      "sha256": "d17759545759b451b6a6999e433d9cfb97ee8e24c07fb99f305e5dfbb5b65811"
     },
     {
       "name": "labpics-ui-vue-0.0.0.tgz",
@@ -66,7 +66,8 @@
       "clickKeyboard": true,
       "escapePointerCancelResize": true,
       "rtl": true,
-      "disabledResultReset": true
+      "disabledResultReset": true,
+      "reconnectPreservesAttemptAndExplicitResets": true
     },
     {
       "engine": "chromium",
@@ -76,7 +77,8 @@
       "clickKeyboard": true,
       "escapePointerCancelResize": true,
       "rtl": true,
-      "disabledResultReset": true
+      "disabledResultReset": true,
+      "reconnectPreservesAttemptAndExplicitResets": true
     },
     {
       "engine": "chromium",
@@ -86,7 +88,8 @@
       "clickKeyboard": true,
       "escapePointerCancelResize": true,
       "rtl": true,
-      "disabledResultReset": true
+      "disabledResultReset": true,
+      "reconnectPreservesAttemptAndExplicitResets": true
     },
     {
       "engine": "chromium",
@@ -96,7 +99,8 @@
       "clickKeyboard": true,
       "escapePointerCancelResize": true,
       "rtl": true,
-      "disabledResultReset": true
+      "disabledResultReset": true,
+      "reconnectPreservesAttemptAndExplicitResets": true
     },
     {
       "engine": "chromium",
@@ -155,7 +159,8 @@
       "clickKeyboard": true,
       "escapePointerCancelResize": true,
       "rtl": true,
-      "disabledResultReset": true
+      "disabledResultReset": true,
+      "reconnectPreservesAttemptAndExplicitResets": true
     },
     {
       "engine": "webkit",
@@ -165,7 +170,8 @@
       "clickKeyboard": true,
       "escapePointerCancelResize": true,
       "rtl": true,
-      "disabledResultReset": true
+      "disabledResultReset": true,
+      "reconnectPreservesAttemptAndExplicitResets": true
     },
     {
       "engine": "webkit",
@@ -175,7 +181,8 @@
       "clickKeyboard": true,
       "escapePointerCancelResize": true,
       "rtl": true,
-      "disabledResultReset": true
+      "disabledResultReset": true,
+      "reconnectPreservesAttemptAndExplicitResets": true
     },
     {
       "engine": "webkit",
@@ -185,7 +192,8 @@
       "clickKeyboard": true,
       "escapePointerCancelResize": true,
       "rtl": true,
-      "disabledResultReset": true
+      "disabledResultReset": true,
+      "reconnectPreservesAttemptAndExplicitResets": true
     },
     {
       "engine": "webkit",

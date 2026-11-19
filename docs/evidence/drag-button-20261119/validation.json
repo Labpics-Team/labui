@@ -1,5 +1,5 @@
 {
-  "sourceRevision": "c4ce6eb",
+  "sourceRevision": "02c18e3",
   "figmaVersion": "2423213750570316842",
   "sourceVerifier": "passed",
   "coreTests": { "files": 22, "passed": 93 },
@@ -12,15 +12,17 @@
     "standaloneDeclarations": "passed",
     "normalMotionInterruption": "passed",
     "fontReadyAndWeight": "passed",
+    "reconnectPreservesAttemptAndDetachedResets": "passed",
     "publicIcons": false
   },
   "native": {
-    "desktopTests": 6,
+    "desktopTests": 7,
     "installedConsumerTests": 1,
     "installedConsumerCases": 6,
-    "uiVersion": "0.1.0-drag6-20261119",
+    "uiVersion": "0.1.0-drag8-20261119",
     "iconsVersion": "0.4.0",
-    "iconsSource": "verified CI Maven artifact from Icons PR139",
+    "iconsSource": "public Maven repository maven-compose-v0.4.0",
+    "verticalReleaseAndUnchangedGestureBounds": "passed at fontScale 1 and 2",
     "renderApi": "SOFTWARE",
     "headless": true,
     "androidCompile": "requires integration CI; local SDK absent",

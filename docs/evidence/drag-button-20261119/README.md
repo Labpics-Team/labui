@@ -46,23 +46,32 @@ WebKit сохраняется при том же шрифте и весе; ав�
 | Core | 93 теста, включая SSR без JS и завершённый результат до hydration |
 | Adapter codegen/catalog | 32 теста; generated catalog соответствует зафиксированным Kotlin-источникам |
 | Packed npm | React + Vue/Solid/Svelte/Astro bindings; ESM/CJS, NodeNext declarations, SSR/hydration |
-| Chromium + WebKit | Pointer, click, Enter/Space, partial/Escape/pointercancel/resize cancellation, RTL, disabled, reset, один commit |
+| Chromium + WebKit | Pointer, click, Enter/Space, cancellation, RTL, disabled, reset; reparent сохраняет attempt, detached reset открывает следующий |
 | Motion | Новый жест прерывает возврат; старая анимация не меняет его ширину; после возврата нет зафиксированной px-ширины |
 | Web render | Light/Dark × 100/125/200% root font × 320/416/1144 px; длинный результат переносится |
-| Compose | 6 CPU/offscreen tests: gestures, resize/RTL/reset, keyboard/focus, состояния/масштабы, отсутствие helper overflow, frame cost |
+| Compose | 7 CPU/offscreen tests: gestures, resize/RTL/reset, keyboard/focus, состояния/масштабы, helper overflow, frame cost, release position/стабильные bounds |
 | Installed Maven consumer | Light/Dark × 100/125/200% fontScale; две явные попытки, без двойного перевода |
 | Build | Tokens, core, React, generated adapters и docs; core/React/docs typecheck; Biome changed source |
+
+После независимого ревью добавлены две регрессии. Installed web test переносит
+активированную Lit-кнопку между контейнерами без resetKey: Enter/Space/click сохраняют
+один вызов. Смена resetKey и controlled success → idle во время detach разрешают
+следующие попытки. Native `verticalMovementAtTheEndControlsReleaseInsideTheButton`
+проверяет выход/возврат по вертикали при неизменном x и конечный Up: четыре маршрута
+при fontScale 1/2. Родитель не фиксирует высоту; измеренные bounds до и во время
+жеста должны совпадать. Декоративный glow не участвует в измерении.
 
 Compose использует масштаб текста платформы: dp-геометрия кнопки не увеличивается
 вместе с fontScale. Web-матрица увеличивает root rem, включая геометрию. Поэтому
 сравнение пикселей с Figma выполняется при 100%, а крупный текст проверяется отдельно.
 
-Проверки используют `@labpics/icons:0.4.0` из локального release tarball и
-`pics.lab:icons-compose:0.4.0` из проверенного CI Maven-артефакта Icons PR139.
+Web-проверки используют `@labpics/icons:0.4.0` из локального release tarball.
+Финальный Maven consumer разрешил `pics.lab:icons-compose:0.4.0` из публичного
+репозитория `maven-compose-v0.4.0`; первоначальная проверка использовала CI-артефакт PR139.
 Публичный npm registry в момент проверки ещё возвращал 0.2.0. `packed.json`
 честно сохраняет `publicIcons: false`; это не свидетельство публичной установки 0.4.0.
 SHA256 Icons tarball: `94935519919b402ee3685d20deefa561f3c92a72500c288a9ba2bf7c209b45f3`.
-UI Maven проверен как `0.1.0-drag6-20261119`; production manifests сохраняют релизные
+UI Maven проверен как `0.1.0-drag8-20261119`; production manifests сохраняют релизные
 координаты, не локальные пути. После публикации Icons тот же packed test работает без override.
 
 ```sh
