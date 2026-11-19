@@ -1,6 +1,6 @@
 {
-  "revision": "ea02b94ee050bcf2b81cd050157e614267d3655d",
-  "sourceDigest": "sha256:2fc5377f61abf864faad5af501040f87cd4a5dbd9950cb851de45021c8ea0a13",
+  "revision": "95d76788463df0678f154ed12cc9a5f1f2a5164e",
+  "sourceDigest": "sha256:bf56945bfdb73fde49f37e5937dc9b79e5f972ed9045a8e2851977a6143e0eb7",
   "symbols": [
     {
       "name": "LabAccordion",
@@ -77,6 +77,10 @@
     {
       "name": "LabRadioGroup",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabRadioGroup.kt"
+    },
+    {
+      "name": "LabSegmentedControl",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabSegmentedControl.kt"
     },
     {
       "name": "LabSheetHost",
