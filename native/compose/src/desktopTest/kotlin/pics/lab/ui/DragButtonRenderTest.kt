@@ -109,6 +109,32 @@ class DragButtonRenderTest {
             assertEquals(2, calls)
         } finally { scene.close() }
     }
+    @Test fun verticalMovementAtTheEndControlsReleaseInsideTheButton() {
+        for (scale in listOf(1f, 2f)) for ((firstOutside, nextOutside, releaseOutside, expected) in listOf(
+            listOf(0, 1, 1, 0),
+            listOf(1, 0, 0, 1),
+            listOf(0, 0, 1, 0),
+            listOf(1, 1, 0, 1),
+        )) {
+            var calls = 0
+            val scene = ImageComposeScene(400, 192, Density(1f, scale)) { LabTheme(theme()) {
+                Box(Modifier.fillMaxSize()) { LabDragButton("Send", { calls++ }) }
+            } }
+            try {
+                settle(scene)
+                val bounds = button(scene).boundsInRoot
+                fun y(outside: Int) = if (outside == 1) bounds.bottom + 44f else bounds.center.y
+                scene.sendPointerEvent(PointerEventType.Press, Offset(28f, y(0)))
+                scene.sendPointerEvent(PointerEventType.Move, Offset(375f, y(firstOutside)))
+                settle(scene)
+                assertEquals(bounds, button(scene).boundsInRoot, "Drag decoration must preserve measured bounds at fontScale $scale")
+                scene.sendPointerEvent(PointerEventType.Move, Offset(375f, y(nextOutside)))
+                scene.sendPointerEvent(PointerEventType.Release, Offset(375f, y(releaseOutside)))
+                settle(scene)
+                assertEquals(expected, calls, "Full drag outside=$firstOutside -> $nextOutside -> release $releaseOutside at fontScale $scale")
+            } finally { scene.close() }
+        }
+    }
     @Test fun authoredStatesBothThemesTextScaleAndNarrowWidthRender() {
         val output = File("build/drag-button-evidence").apply { mkdirs() }
         for (appearance in LabAppearance.entries) for (scale in listOf(1f, 1.25f, 2f)) for (width in listOf(320, 416, 1144)) {

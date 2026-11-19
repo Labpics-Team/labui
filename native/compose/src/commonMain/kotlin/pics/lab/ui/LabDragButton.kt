@@ -5,7 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
-import androidx.compose.foundation.gestures.horizontalDrag
+import androidx.compose.foundation.gestures.awaitDragOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -168,9 +168,14 @@ public fun LabDragButton(
                         change.consume(); dragging = true; move(change.position.x, change.position.y)
                     }
                     if (start != null) {
-                        val released = horizontalDrag(start.id) { change ->
+                        var pointer = start.id
+                        var released = false
+                        while (true) {
+                            val change = awaitDragOrCancellation(pointer) ?: break
                             change.consume()
                             if (!cancelled) move(change.position.x, change.position.y)
+                            if (!change.pressed) { released = true; break }
+                            pointer = change.id
                         }
                         if (released && inside && !cancelled && progress.value >= 1f) activate(LabDragButtonSource.Drag)
                         else resetGesture()
@@ -203,10 +208,12 @@ public fun LabDragButton(
         Box(Modifier.padding(LabComponents.DragButtonPadding.dp).width(width).heightIn(min = metrics.height.dp)
             .labButtonSurface(RoundedCornerShape(metrics.radius.dp), fill, colors, enabled, dragging, active && hovered),
             contentAlignment = if (effective == LabDragButtonStatus.Idle) Alignment.CenterEnd else Alignment.Center) {
-            if (dragging) Canvas(Modifier.requiredSize((LabComponents.DragButtonGlowSize + LabComponents.DragButtonGlowBlur * 2).dp)
-                .align(Alignment.Center).absoluteOffset(LabComponents.DragButtonGlowOffsetX.dp, LabComponents.DragButtonGlowOffsetY.dp)
-                .graphicsLayer { alpha = LabComponents.DragButtonGlowOpacity; renderEffect = dragButtonLayerBlur(LabComponents.DragButtonGlowBlur.dp.toPx()) }) {
-                drawCircle(colors[LabComponents.DragButtonGlowColorRole], radius = LabComponents.DragButtonGlowSize.dp.toPx() / 2)
+            if (dragging) Box(Modifier.matchParentSize()) {
+                Canvas(Modifier.requiredSize((LabComponents.DragButtonGlowSize + LabComponents.DragButtonGlowBlur * 2).dp)
+                    .align(Alignment.Center).absoluteOffset(LabComponents.DragButtonGlowOffsetX.dp, LabComponents.DragButtonGlowOffsetY.dp)
+                    .graphicsLayer { alpha = LabComponents.DragButtonGlowOpacity; renderEffect = dragButtonLayerBlur(LabComponents.DragButtonGlowBlur.dp.toPx()) }) {
+                    drawCircle(colors[LabComponents.DragButtonGlowColorRole], radius = LabComponents.DragButtonGlowSize.dp.toPx() / 2)
+                }
             }
             if (effective == LabDragButtonStatus.Idle) Box(Modifier.size(metrics.height.dp), contentAlignment = Alignment.Center) {
                 Icon(chevronForward, ink, Modifier.graphicsLayer { scaleX = if (rtl) -1f else 1f }, size = metrics.icon.dp)
