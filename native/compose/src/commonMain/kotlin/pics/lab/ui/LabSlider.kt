@@ -251,6 +251,12 @@ private fun SliderContent(
                             angleOffset = if (circular) initialFractions[index] - (firstAngle ?: 0f) else 0f
                             requests[index].requestFocus()
                         }
+                        // The clamped center represents several values. Preserve
+                        // the original value when a direct gesture returns there.
+                        if (!circular && direct && coordinate == firstPoint) {
+                            request(index, initial[index])
+                            return
+                        }
                         val fraction = when {
                             circular -> {
                                 val adjusted = (angle ?: 0f) + angleOffset

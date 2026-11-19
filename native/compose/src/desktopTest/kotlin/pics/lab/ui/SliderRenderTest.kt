@@ -105,6 +105,67 @@ class SliderRenderTest {
         } finally { scene.close() }
     }
 
+    @Test fun directPointerPreservesValuesAtThePaintedPlateau() {
+        for (direction in LayoutDirection.entries) for ((initial, min, max, step) in listOf(
+            listOf(1f, 0f, 100f, 1f), listOf(2f, 0f, 100f, 2f),
+            listOf(-.69f, -.7f, 1.3f, .01f), listOf(0f, 0f, 100f, 1f),
+        )) {
+            var value by mutableStateOf(initial)
+            val changes = mutableListOf<Float>()
+            var ended = 0
+            val scene = ImageComposeScene(400, 100) {
+                CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                    LabTheme(theme()) { LabSlider(value, { value = it; changes.add(it) }, "Volume",
+                        min = min, max = max, step = step, labelHidden = true, onValueChangeEnd = { ended++ }) }
+                }
+            }
+            val origin = Offset(if (direction == LayoutDirection.Rtl) 394f else 6f, 22f)
+            val away = origin + Offset(if (direction == LayoutDirection.Rtl) -68f else 68f, 0f)
+            try {
+                settle(scene)
+                scene.sendPointerEvent(PointerEventType.Press, origin)
+                scene.sendPointerEvent(PointerEventType.Release, origin); settle(scene)
+                assertEquals(initial, value); assertTrue(changes.isEmpty()); assertEquals(0, ended)
+                scene.sendPointerEvent(PointerEventType.Press, origin)
+                scene.sendPointerEvent(PointerEventType.Move, away); settle(scene)
+                assertNotEquals(initial, value)
+                scene.sendPointerEvent(PointerEventType.Move, origin); settle(scene)
+                assertEquals(initial, value, "$direction initial=$initial return before release")
+                scene.sendPointerEvent(PointerEventType.Release, origin); settle(scene)
+                assertEquals(initial, value); assertEquals(2, changes.size); assertEquals(0, ended)
+            } finally { scene.close() }
+        }
+    }
+
+    @Test fun coincidentPlateauRangeRestoresTheChosenThumb() {
+        for (direction in LayoutDirection.entries) {
+            var value by mutableStateOf(1f..2f)
+            val changes = mutableListOf<ClosedFloatingPointRange<Float>>()
+            var ended = 0
+            val scene = ImageComposeScene(400, 100) {
+                CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                    LabTheme(theme()) { LabRangeSlider(value, { value = it; changes.add(it) }, "Range",
+                        labelHidden = true, onValueChangeEnd = { ended++ }) }
+                }
+            }
+            val origin = Offset(if (direction == LayoutDirection.Rtl) 394f else 6f, 22f)
+            val away = origin + Offset(if (direction == LayoutDirection.Rtl) -68f else 68f, 0f)
+            try {
+                settle(scene)
+                scene.sendPointerEvent(PointerEventType.Press, origin)
+                scene.sendPointerEvent(PointerEventType.Release, origin); settle(scene)
+                assertEquals(1f..2f, value); assertTrue(changes.isEmpty())
+                scene.sendPointerEvent(PointerEventType.Press, origin)
+                scene.sendPointerEvent(PointerEventType.Move, away); settle(scene)
+                assertEquals(1f..20f, value)
+                scene.sendPointerEvent(PointerEventType.Move, origin); settle(scene)
+                assertEquals(1f..2f, value)
+                scene.sendPointerEvent(PointerEventType.Release, origin); settle(scene)
+                assertEquals(1f..2f, value); assertEquals(2, changes.size); assertEquals(0, ended)
+            } finally { scene.close() }
+        }
+    }
+
     @Test fun circularPointerClampsAtTheSeamAndReturnsSmoothly() {
         var value by mutableStateOf(95f)
         val scene = ImageComposeScene(160, 160) {

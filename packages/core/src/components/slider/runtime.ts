@@ -187,6 +187,12 @@ export function mountSlider(
         active.pendingIndex = false;
         inputs()[active.index]?.focus({ preventScroll: true });
       }
+      // Several values share the clamped painted center. At the gesture origin,
+      // retain its actual value rather than invert that ambiguous position.
+      if (active.direct && point === active.startPoint) {
+        request(active.index, active.start[active.index] ?? sliderBounds(input).min);
+        return;
+      }
       const target = active.direct ? active.thumbCenter + point - active.startPoint : point;
       fraction =
         input.variant === 'large'

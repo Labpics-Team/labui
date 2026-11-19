@@ -25,6 +25,40 @@ import pics.lab.ui.*
 
 class SliderConsumerTest {
     private fun walk(node: SemanticsNode): List<SemanticsNode> = listOf(node) + node.children.flatMap(::walk)
+    @Test fun installedLinearGesturePreservesItsOriginalValue() {
+        var value by mutableStateOf(1f)
+        var range by mutableStateOf(1f..2f)
+        val singleChanges = mutableListOf<Float>()
+        val rangeChanges = mutableListOf<ClosedFloatingPointRange<Float>>()
+        var ended = 0
+        val state = LabThemeState(initialLabColors(LabPreferences()))
+        val scene = ImageComposeScene(448, 180) {
+            LabTheme(state) { Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                LabSlider(value, { value = it; singleChanges.add(it) }, "Volume", labelHidden = true, onValueChangeEnd = { ended++ })
+                LabRangeSlider(range, { range = it; rangeChanges.add(it) }, "Range", labelHidden = true, onValueChangeEnd = { ended++ })
+            } }
+        }
+        fun settle() { repeat(12) { scene.render().close(); Thread.sleep(5) } }
+        fun gesture(y: Float) {
+            val origin = Offset(30f, y)
+            scene.sendPointerEvent(PointerEventType.Press, origin)
+            scene.sendPointerEvent(PointerEventType.Release, origin); settle()
+            assertEquals(1f, value); assertEquals(1f..2f, range)
+            scene.sendPointerEvent(PointerEventType.Press, origin)
+            scene.sendPointerEvent(PointerEventType.Move, Offset(98f, y)); settle()
+            if (y == 46f) assertEquals(20f, value) else assertEquals(1f..20f, range)
+            scene.sendPointerEvent(PointerEventType.Move, origin); settle()
+            assertEquals(1f, value); assertEquals(1f..2f, range)
+            scene.sendPointerEvent(PointerEventType.Release, origin); settle()
+        }
+        try {
+            settle(); gesture(46f); gesture(110f)
+            assertEquals(listOf(20f, 1f), singleChanges)
+            assertEquals(listOf(1f..20f, 1f..2f), rangeChanges)
+            assertEquals(0, ended)
+        } finally { scene.close() }
+    }
+
     @Test fun installedSlidersChangeTheImageSettings() {
         val state = LabThemeState(initialLabColors(LabPreferences()))
         val ready = AtomicBoolean(false)
