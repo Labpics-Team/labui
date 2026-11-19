@@ -73,13 +73,20 @@ export function RadioGroup({
 }: RadioGroupProps): ReactNode {
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
+  const mounted = useRef(false);
   const [localValue, setLocalValue] = useState(defaultValue);
   const selected = value !== undefined ? value : localValue;
   const current = useRef({ value, defaultValue });
-  current.current = { value, defaultValue };
   useClientLayoutEffect(() => {
+    current.current = { value, defaultValue };
     const inputs = Array.from(root.current?.querySelectorAll<HTMLInputElement>('input') ?? []);
-    for (const input of inputs) input.checked = input.value === selected;
+    const next =
+      !mounted.current && value === undefined
+        ? (inputs.find((input) => input.checked)?.value ?? null)
+        : selected;
+    if (!mounted.current && value === undefined) setLocalValue(next);
+    mounted.current = true;
+    for (const input of inputs) input.checked = input.value === next;
     const enabled = inputs.filter((input) => !input.matches(':disabled'));
     const tabStop = enabled.find((input) => input.checked) ?? enabled[0];
     for (const input of inputs) input.tabIndex = input === tabStop ? 0 : -1;
@@ -104,7 +111,7 @@ export function RadioGroup({
       },
       root.current ?? input,
     );
-  }, [form, children]);
+  }, [form, name, children]);
   const context: RadioContext = {
     type,
     size,
@@ -113,14 +120,15 @@ export function RadioGroup({
     resetValue: value !== undefined ? value : defaultValue,
     disabled,
     required,
-    name,
-    form,
+    name: name || `${id}-radio`,
+    form: name ? form : '',
     select(next) {
       if (value === undefined) setLocalValue(next);
       onValueChange?.(next);
-      if (value !== undefined)
+      const committed = current.current.value;
+      if (committed !== undefined)
         for (const input of root.current?.querySelectorAll<HTMLInputElement>('input') ?? [])
-          input.checked = input.value === value;
+          input.checked = input.value === committed;
     },
   };
   return (
@@ -237,7 +245,7 @@ export function Radio({
         value={value}
         defaultChecked={group.resetValue === value}
         disabled={blocked}
-        required={group.required && group.value === null}
+        required={group.required}
         form={group.form}
         tabIndex={checked ? 0 : group.value !== null ? -1 : undefined}
         aria-labelledby={labels || undefined}

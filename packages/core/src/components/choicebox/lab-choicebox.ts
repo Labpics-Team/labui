@@ -107,7 +107,11 @@ export class LabChoicebox extends LabElement {
       JSON.stringify(this.value),
     );
     const missing =
-      this.required && !disabled && !selected.length && this.items.some((item) => !item.disabled);
+      !!this.name &&
+      this.required &&
+      !disabled &&
+      !selected.length &&
+      this.items.some((item) => !item.disabled);
     this.internals?.setValidity(
       missing ? { valueMissing: true } : {},
       missing ? 'Выберите вариант.' : '',
@@ -141,6 +145,7 @@ export class LabChoicebox extends LabElement {
     this.disabledByForm = disabled;
   }
   formResetCallback(): void {
+    if (!this.name) return;
     if (!this.controlled) {
       this.value = [...(this.resetValue ?? [])];
       this.syncForm();

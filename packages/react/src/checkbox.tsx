@@ -51,12 +51,12 @@ export function Checkbox({
   const id = useId();
   const root = useRef<HTMLLabelElement>(null);
   const input = useRef<HTMLInputElement>(null);
+  const mounted = useRef(false);
   const motion = useRef<SelectionMotion>();
   const [localChecked, setLocalChecked] = useState(defaultChecked);
   const state = checked ?? localChecked;
   const mixed = state === 'indeterminate';
   const current = useRef({ checked, defaultChecked, state });
-  current.current = { checked, defaultChecked, state };
   // biome-ignore lint/correctness/useExhaustiveDependencies: form changes rebind native reset ownership.
   useEffect(() => {
     const native = input.current;
@@ -77,10 +77,19 @@ export function Checkbox({
     };
   }, [form]);
   useClientLayoutEffect(() => {
+    current.current = { checked, defaultChecked, state };
     if (input.current) {
-      input.current.checked = state === true;
-      input.current.indeterminate = mixed;
+      const next =
+        !mounted.current && checked === undefined
+          ? defaultChecked === 'indeterminate' && !input.current.checked
+            ? 'indeterminate'
+            : input.current.checked
+          : state;
+      if (!mounted.current && checked === undefined) setLocalChecked(next);
+      input.current.checked = next === true;
+      input.current.indeterminate = next === 'indeterminate';
     }
+    mounted.current = true;
     motion.current?.update();
   });
   const hasStart = labelStart != null && labelStart !== false && labelStart !== '';
@@ -134,12 +143,14 @@ export function Checkbox({
         aria-label={labels ? undefined : ariaLabel}
         aria-describedby={description != null ? `${id}-description` : undefined}
         onInput={(event) => {
-          const next = event.currentTarget.checked;
+          const native = event.currentTarget;
+          const next = native.checked;
           if (checked === undefined) setLocalChecked(next);
           onCheckedChange?.(next);
-          if (checked !== undefined) {
-            event.currentTarget.checked = checked === true;
-            event.currentTarget.indeterminate = checked === 'indeterminate';
+          const committed = current.current.checked;
+          if (input.current === native && committed !== undefined) {
+            native.checked = committed === true;
+            native.indeterminate = committed === 'indeterminate';
           }
         }}
       />

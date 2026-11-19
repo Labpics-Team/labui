@@ -23,6 +23,158 @@
         "checked": true
       }
     ],
+    "controlledLifecycle": [
+      {
+        "model": "checkbox",
+        "mode": "accept",
+        "checked": [],
+        "visual": [],
+        "form": [],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": false
+      },
+      {
+        "model": "radio",
+        "mode": "accept",
+        "checked": ["b"],
+        "visual": ["b"],
+        "form": ["b"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": true
+      },
+      {
+        "model": "choice-one",
+        "mode": "accept",
+        "checked": ["b"],
+        "visual": ["b"],
+        "form": ["b"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": true
+      },
+      {
+        "model": "choice-many",
+        "mode": "accept",
+        "checked": ["a", "b"],
+        "visual": ["a", "b"],
+        "form": ["a", "b"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": true
+      },
+      {
+        "model": "segmented",
+        "mode": "accept",
+        "checked": ["b"],
+        "visual": ["b"],
+        "form": ["b"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": true
+      },
+      {
+        "model": "checkbox",
+        "mode": "override",
+        "checked": [],
+        "visual": ["a"],
+        "form": [],
+        "mixed": true,
+        "connected": true,
+        "detachedChecked": false
+      },
+      {
+        "model": "radio",
+        "mode": "override",
+        "checked": ["a"],
+        "visual": ["a"],
+        "form": ["a"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": false
+      },
+      {
+        "model": "choice-one",
+        "mode": "override",
+        "checked": ["a"],
+        "visual": ["a"],
+        "form": ["a"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": false
+      },
+      {
+        "model": "choice-many",
+        "mode": "override",
+        "checked": ["a"],
+        "visual": ["a"],
+        "form": ["a"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": false
+      },
+      {
+        "model": "segmented",
+        "mode": "override",
+        "checked": ["a"],
+        "visual": ["a"],
+        "form": ["a"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": false
+      },
+      {
+        "model": "checkbox",
+        "mode": "unmount",
+        "checked": [],
+        "visual": [],
+        "form": [],
+        "mixed": false,
+        "connected": false,
+        "detachedChecked": false
+      },
+      {
+        "model": "radio",
+        "mode": "unmount",
+        "checked": [],
+        "visual": [],
+        "form": [],
+        "mixed": false,
+        "connected": false,
+        "detachedChecked": true
+      },
+      {
+        "model": "choice-one",
+        "mode": "unmount",
+        "checked": [],
+        "visual": [],
+        "form": [],
+        "mixed": false,
+        "connected": false,
+        "detachedChecked": true
+      },
+      {
+        "model": "choice-many",
+        "mode": "unmount",
+        "checked": [],
+        "visual": [],
+        "form": [],
+        "mixed": false,
+        "connected": false,
+        "detachedChecked": true
+      },
+      {
+        "model": "segmented",
+        "mode": "unmount",
+        "checked": [],
+        "visual": [],
+        "form": [],
+        "mixed": false,
+        "connected": false,
+        "detachedChecked": true
+      }
+    ],
     "errors": []
   },
   {
@@ -47,6 +199,158 @@
         "mode": "disposed before timer",
         "callbacks": 0,
         "checked": true
+      }
+    ],
+    "controlledLifecycle": [
+      {
+        "model": "checkbox",
+        "mode": "accept",
+        "checked": [],
+        "visual": [],
+        "form": [],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": false
+      },
+      {
+        "model": "radio",
+        "mode": "accept",
+        "checked": ["b"],
+        "visual": ["b"],
+        "form": ["b"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": true
+      },
+      {
+        "model": "choice-one",
+        "mode": "accept",
+        "checked": ["b"],
+        "visual": ["b"],
+        "form": ["b"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": true
+      },
+      {
+        "model": "choice-many",
+        "mode": "accept",
+        "checked": ["a", "b"],
+        "visual": ["a", "b"],
+        "form": ["a", "b"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": true
+      },
+      {
+        "model": "segmented",
+        "mode": "accept",
+        "checked": ["b"],
+        "visual": ["b"],
+        "form": ["b"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": true
+      },
+      {
+        "model": "checkbox",
+        "mode": "override",
+        "checked": [],
+        "visual": ["a"],
+        "form": [],
+        "mixed": true,
+        "connected": true,
+        "detachedChecked": false
+      },
+      {
+        "model": "radio",
+        "mode": "override",
+        "checked": ["a"],
+        "visual": ["a"],
+        "form": ["a"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": false
+      },
+      {
+        "model": "choice-one",
+        "mode": "override",
+        "checked": ["a"],
+        "visual": ["a"],
+        "form": ["a"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": false
+      },
+      {
+        "model": "choice-many",
+        "mode": "override",
+        "checked": ["a"],
+        "visual": ["a"],
+        "form": ["a"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": false
+      },
+      {
+        "model": "segmented",
+        "mode": "override",
+        "checked": ["a"],
+        "visual": ["a"],
+        "form": ["a"],
+        "mixed": false,
+        "connected": true,
+        "detachedChecked": false
+      },
+      {
+        "model": "checkbox",
+        "mode": "unmount",
+        "checked": [],
+        "visual": [],
+        "form": [],
+        "mixed": false,
+        "connected": false,
+        "detachedChecked": false
+      },
+      {
+        "model": "radio",
+        "mode": "unmount",
+        "checked": [],
+        "visual": [],
+        "form": [],
+        "mixed": false,
+        "connected": false,
+        "detachedChecked": true
+      },
+      {
+        "model": "choice-one",
+        "mode": "unmount",
+        "checked": [],
+        "visual": [],
+        "form": [],
+        "mixed": false,
+        "connected": false,
+        "detachedChecked": true
+      },
+      {
+        "model": "choice-many",
+        "mode": "unmount",
+        "checked": [],
+        "visual": [],
+        "form": [],
+        "mixed": false,
+        "connected": false,
+        "detachedChecked": true
+      },
+      {
+        "model": "segmented",
+        "mode": "unmount",
+        "checked": [],
+        "visual": [],
+        "form": [],
+        "mixed": false,
+        "connected": false,
+        "detachedChecked": true
       }
     ],
     "errors": []

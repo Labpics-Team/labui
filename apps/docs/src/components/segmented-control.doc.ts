@@ -99,7 +99,8 @@ export const segmentedControlDoc: ComponentDoc = {
       },
       {
         name: 'name / form / required / disabled',
-        description: 'Штатное участие в HTML-форме и отключение действий.',
+        description:
+          'name включает отправку, проверку и reset формы; без него группа самостоятельна.',
       },
       { name: 'label', type: 'string', description: 'Доступное имя всей группы.' },
     ],

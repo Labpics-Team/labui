@@ -2,19 +2,20 @@ import { selectionProfile as p, textStyle } from '@labpics/ui-tokens';
 
 const rem = (px: number): string => `${px / 16}rem`;
 const role = (name: string): string => `var(--lab-${name})`;
+const selected = ':is(:has(input:checked), [data-indeterminate])';
 const mark = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${p.checkbox.glyph.viewBox} ${p.checkbox.glyph.viewBox}"><path fill-rule="${p.checkbox.glyph.windingRule.toLowerCase()}" d="${p.checkbox.glyph.data}"/></svg>`)}")`;
 // Image masks consume alpha, so their opaque coverage does not depend on theme.
 const radioMask = `
-[data-lab-selection][data-kind="radio"][data-selected]:not([data-size="tiny"]) .lab-selection-control::before {
+[data-lab-selection][data-kind="radio"]${selected}:not([data-size="tiny"]) .lab-selection-control::before {
   mask: radial-gradient(circle closest-side, transparent calc(100% - var(--_selection-radio-stroke)), black 0);
 }
 `;
 const forcedColors = `
 @media (forced-colors: active) {
   [data-lab-selection] .lab-selection-control { forced-color-adjust: none; background: Canvas; border: 1px solid ButtonText; }
-  [data-lab-selection][data-selected] .lab-selection-control { background: Highlight; }
+  [data-lab-selection]${selected} .lab-selection-control { background: Highlight; }
   [data-lab-selection] .lab-selection-mark { background: HighlightText; }
-  [data-lab-selection][data-kind="radio"][data-selected] .lab-selection-control { background: Canvas; border-color: Highlight; }
+  [data-lab-selection][data-kind="radio"]${selected} .lab-selection-control { background: Canvas; border-color: Highlight; }
   [data-lab-selection]:has(input:focus-visible) { --_selection-focus: Highlight; }
 }
 `;
@@ -55,16 +56,16 @@ ${Object.entries(p.sizes)
 [data-lab-selection][data-type="neutral"] { --_selection-color: ${role(p.roles.neutral)}; --_selection-focus: ${role(p.roles.focusNeutral)}; }
 [data-lab-selection][data-type="neutral"][data-kind="checkbox"]:not([data-size="tiny"]):not([data-disabled]):not(:has(input:disabled)) { --_selection-glyph: ${role(p.roles.neutralGlyph)}; }
 [data-lab-selection][data-type="danger"] { --_selection-color: ${role(p.roles.danger)}; --_selection-focus: ${role(p.roles.focusDanger)}; }
-[data-lab-selection]:not([data-selected]) { --_selection-focus: ${role(p.roles.focusNeutral)}; }
+[data-lab-selection]:not(${selected}) { --_selection-focus: ${role(p.roles.focusNeutral)}; }
 [data-lab-selection]:hover:not([data-disabled]):not(:has(input:disabled)) { --_selection-fill: ${role(p.roles.uncheckedHoverFill)}; }
-[data-lab-selection][data-selected] {
+[data-lab-selection]${selected} {
   --_selection-fill: var(--_selection-color); --_selection-stroke: transparent;
 }
-[data-lab-selection][data-selected][data-kind="checkbox"]:not([data-size="tiny"]):not([data-disabled]):not(:has(input:disabled)) {
+[data-lab-selection]${selected}[data-kind="checkbox"]:not([data-size="tiny"]):not([data-disabled]):not(:has(input:disabled)) {
   --_selection-gradient: linear-gradient(to bottom, color-mix(in srgb, ${role('bg-static-light')} ${p.fill.highlight * 100}%, transparent), transparent);
   --_selection-shadow: inset ${rem(p.checkbox.innerShadow.x)} ${rem(p.checkbox.innerShadow.y)} ${rem(p.checkbox.innerShadow.blur)} ${role(p.checkbox.innerShadow.colorRole)};
 }
-[data-lab-selection][data-selected][data-kind="checkbox"]:hover:not([data-disabled]):not(:has(input:disabled)):not([data-size="tiny"]) {
+[data-lab-selection]${selected}[data-kind="checkbox"]:hover:not([data-disabled]):not(:has(input:disabled)):not([data-size="tiny"]) {
   --_selection-gradient: linear-gradient(to bottom, color-mix(in srgb, ${role('bg-static-light')} ${p.fill.hoverHighlight * 100}%, transparent), transparent);
 }
 [data-lab-selection] .lab-selection-control {
@@ -74,29 +75,29 @@ ${Object.entries(p.sizes)
   background-color: var(--_selection-fill); background-image: var(--_selection-gradient);
   box-shadow: var(--_selection-shadow); border: 1px solid var(--_selection-stroke);
 }
-[data-lab-selection][data-selected] .lab-selection-control { border: 0; }
+[data-lab-selection]${selected} .lab-selection-control { border: 0; }
 [data-lab-selection][data-kind="radio"] .lab-selection-control { border-radius: var(--lab-radius-circle); corner-shape: round; }
-[data-lab-selection][data-kind="radio"][data-selected] .lab-selection-control {
+[data-lab-selection][data-kind="radio"]${selected} .lab-selection-control {
   background: transparent; border: var(--_selection-radio-stroke) solid var(--_selection-color);
 }
-[data-lab-selection][data-kind="radio"][data-selected]:not([data-size="tiny"]) .lab-selection-control::before {
+[data-lab-selection][data-kind="radio"]${selected}:not([data-size="tiny"]) .lab-selection-control::before {
   content: ""; position: absolute; inset: calc(-1 * var(--_selection-radio-stroke)); border-radius: var(--lab-radius-circle); corner-shape: round;
   background: linear-gradient(to bottom, color-mix(in srgb, ${role('bg-static-light')} ${p.fill.highlight * 100}%, transparent), transparent);
   opacity: var(--_selection-reveal, 1);
 }
-[data-lab-selection][data-kind="radio"][data-selected]:not([data-size="tiny"]):hover:not([data-disabled]):not(:has(input:disabled)) .lab-selection-control::before {
+[data-lab-selection][data-kind="radio"]${selected}:not([data-size="tiny"]):hover:not([data-disabled]):not(:has(input:disabled)) .lab-selection-control::before {
   background: linear-gradient(to bottom, color-mix(in srgb, ${role('bg-static-light')} ${p.fill.hoverHighlight * 100}%, transparent), transparent);
 }
-[data-lab-selection][data-kind="radio"][data-type="accent"][data-selected]:has(input:focus-visible) .lab-selection-control { --_selection-radio-stroke: var(--_selection-radio-focus-stroke); }
+[data-lab-selection][data-kind="radio"][data-type="accent"]${selected}:has(input:focus-visible) .lab-selection-control { --_selection-radio-stroke: var(--_selection-radio-focus-stroke); }
 [data-lab-selection][data-kind="radio"][data-disabled] .lab-selection-control::before, [data-lab-selection][data-kind="radio"]:has(input:disabled) .lab-selection-control::before { display: none; }
-[data-lab-selection][data-kind="radio"][data-type="accent"][data-selected]:has(input:focus-visible) .lab-selection-control { border-width: var(--_selection-radio-focus-stroke); }
+[data-lab-selection][data-kind="radio"][data-type="accent"]${selected}:has(input:focus-visible) .lab-selection-control { border-width: var(--_selection-radio-focus-stroke); }
 [data-lab-selection] .lab-selection-mark {
   position: absolute; inline-size: var(--_selection-glyph-size); block-size: var(--_selection-glyph-size);
   inset-inline-start: calc((100% - var(--_selection-glyph-size)) / 2); inset-block-start: calc((100% - var(--_selection-glyph-size)) / 2);
   background: var(--_selection-glyph); mask: ${mark} center / contain no-repeat;
   opacity: var(--_selection-reveal, 0);
 }
-[data-lab-selection][data-selected] .lab-selection-mark { opacity: var(--_selection-reveal, 1); }
+[data-lab-selection]${selected} .lab-selection-mark { opacity: var(--_selection-reveal, 1); }
 [data-lab-selection][data-indeterminate] .lab-selection-mark {
   block-size: var(--_selection-mixed-height); inset-block-start: var(--_selection-mixed-y); mask: none; border-radius: var(--_selection-mixed-height);
 }
@@ -105,7 +106,7 @@ ${Object.entries(p.sizes)
 [data-lab-selection][data-size="tiny"] .lab-selection-mark { --_selection-glyph: var(--_selection-color); }
 [data-lab-selection][data-size="tiny"]:not([data-disabled]):not(:has(input:disabled)) .lab-selection-mark { background-image: linear-gradient(to bottom, color-mix(in srgb, ${role('bg-static-light')} ${p.fill.highlight * 100}%, transparent), transparent); }
 [data-lab-selection][data-size="tiny"]:hover:not([data-disabled]):not(:has(input:disabled)) .lab-selection-mark { background-image: linear-gradient(to bottom, color-mix(in srgb, ${role('bg-static-light')} ${p.fill.hoverHighlight * 100}%, transparent), transparent); }
-[data-lab-selection][data-kind="radio"][data-size="tiny"][data-selected] .lab-selection-control { border: 0; background: transparent; }
+[data-lab-selection][data-kind="radio"][data-size="tiny"]${selected} .lab-selection-control { border: 0; background: transparent; }
 [data-lab-selection][data-kind="radio"][data-size="tiny"] .lab-selection-mark {
   display: block; inline-size: var(--_selection-tiny-dot); block-size: var(--_selection-tiny-dot); mask: none; border-radius: var(--lab-radius-circle); corner-shape: round;
   inset: calc((100% - var(--_selection-tiny-dot)) / 2);
@@ -146,7 +147,7 @@ ${Object.entries(p.sizes)
 [data-lab-selection][data-variant="card"] { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "icon control" "label label"; gap: ${rem(p.choicebox.cardContentGap)}; min-block-size: ${rem(p.choicebox.cardHeight)}; align-content: start; }
 [data-lab-selection][data-variant="row"] { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "icon label control"; column-gap: ${rem(p.choicebox.rowContentGap)}; min-block-size: ${rem(p.choicebox.rowHeight)}; }
 [data-lab-selection][data-variant="row"] .lab-selection-control { margin-inline-start: ${rem(p.choicebox.headerGap - p.choicebox.rowContentGap)}; }
-[data-lab-selection]:is([data-variant="card"], [data-variant="row"])[data-selected] { box-shadow: inset 0 0 0 ${rem(p.choicebox.selectedStrokeWidth)} ${role(p.choicebox.selectedStrokeRole)}; }
+[data-lab-selection]:is([data-variant="card"], [data-variant="row"])${selected} { box-shadow: inset 0 0 0 ${rem(p.choicebox.selectedStrokeWidth)} ${role(p.choicebox.selectedStrokeRole)}; }
 [data-lab-selection]:is([data-variant="card"], [data-variant="row"]):hover:not([data-disabled]):not(:has(input:disabled)) { background: ${role(p.choicebox.hoverFillRole)}; }
 [data-lab-selection]:is([data-variant="card"], [data-variant="row"]) .lab-selection-control { grid-area: control; }
 [data-lab-selection]:is([data-variant="card"], [data-variant="row"]) .lab-selection-label { grid-area: label; }

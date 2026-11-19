@@ -48,12 +48,8 @@ export function Choicebox({
   const [localValue, setLocalValue] = useState<readonly string[]>(defaultValue);
   const selected = value ?? localValue;
   const current = useRef({ value, defaultValue });
-  current.current = { value, defaultValue };
   useClientLayoutEffect(() => {
-    // Composed controls receive the group's current value; their native reset baseline belongs to this group.
-    const baseline = value ?? defaultValue;
-    for (const input of root.current?.querySelectorAll<HTMLInputElement>('input') ?? [])
-      input.defaultChecked = baseline.includes(input.value);
+    current.current = { value, defaultValue };
   });
   // biome-ignore lint/correctness/useExhaustiveDependencies: rebind when the renderer or form changes.
   useEffect(() => {
@@ -69,7 +65,7 @@ export function Choicebox({
       },
       root.current ?? input,
     );
-  }, [multiple, form, items]);
+  }, [multiple, form, name, items]);
   useEffect(() => {
     if (!multiple) return;
     const inputs = Array.from(root.current?.querySelectorAll<HTMLInputElement>('input') ?? []);
@@ -81,16 +77,18 @@ export function Choicebox({
   const change = (next: string[]): void => {
     if (value === undefined) setLocalValue(next);
     onValueChange?.(next);
-    if (value !== undefined)
+    const committed = current.current.value;
+    if (committed !== undefined)
       for (const input of root.current?.querySelectorAll<HTMLInputElement>('input') ?? [])
-        input.checked = value.includes(input.value);
+        input.checked = committed.includes(input.value);
   };
   if (!multiple)
     return (
       <div ref={root}>
         <RadioGroup
           variant={layout}
-          value={selected[0] ?? null}
+          value={value === undefined ? undefined : (selected[0] ?? null)}
+          defaultValue={defaultValue[0] ?? null}
           disabled={disabled}
           required={required}
           name={name}
@@ -130,11 +128,12 @@ export function Choicebox({
           <Checkbox
             key={item.value}
             variant={layout}
-            checked={selected.includes(item.value)}
+            checked={value === undefined ? undefined : selected.includes(item.value)}
+            defaultChecked={defaultValue.includes(item.value)}
             disabled={disabled || item.disabled}
             name={name}
             value={item.value}
-            form={form}
+            form={name ? form : ''}
             icon={item.icon}
             description={item.description}
             onCheckedChange={() =>

@@ -10,7 +10,7 @@ export function mountSegmentedMotion(root: HTMLElement): { update(): void; dispo
   let disposed = false;
   function update(): void {
     const selected = root.querySelector<HTMLElement>(
-      ':scope > [data-selected] > .lab-segment-active',
+      ':scope > .lab-segment:has(input:checked) > .lab-segment-active',
     );
     if (selected === previous) return;
     const initial = previous === undefined;

@@ -96,9 +96,12 @@ export class LabRadioGroup extends LabElement {
     const inputs = this.inputs;
     for (const input of inputs) input.checked = input.value === this.value;
     const selected = inputs.find((input) => input.checked && !input.disabled);
-    this.internals?.setFormValue(selected?.value ?? null, JSON.stringify(this.value));
+    this.internals?.setFormValue(
+      this.name ? (selected?.value ?? null) : null,
+      JSON.stringify(this.value),
+    );
     const anchor = inputs.find((input) => !input.disabled);
-    const missing = this.required && !selected && !!anchor;
+    const missing = !!this.name && this.required && !selected && !!anchor;
     this.internals?.setValidity(
       missing ? { valueMissing: true } : {},
       missing ? 'Выберите один вариант.' : '',
@@ -124,6 +127,7 @@ export class LabRadioGroup extends LabElement {
     this.disabledByForm = disabled;
   }
   formResetCallback(): void {
+    if (!this.name) return;
     if (!this.controlled) {
       this.value = this.resetValue ?? null;
       this.syncForm();

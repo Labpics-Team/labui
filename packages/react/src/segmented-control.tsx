@@ -6,6 +6,7 @@ import {
   type HTMLAttributes,
   type ReactNode,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -46,19 +47,17 @@ export function SegmentedControl({
   onValueChange,
   ...rest
 }: SegmentedControlProps): ReactNode {
+  const id = useId();
   const root = useRef<HTMLDivElement>(null);
   const [localValue, setLocalValue] = useState(defaultValue);
   const selected = value === undefined ? localValue : value;
   const current = useRef({ value, defaultValue });
-  current.current = { value, defaultValue };
   const motion = useRef<ReturnType<typeof mountSegmentedMotion>>();
   const mounted = useRef(false);
   const tabStop = (
     items.find((item) => item.value === selected && !item.disabled) ??
     items.find((item) => !item.disabled)
   )?.value;
-  const hasEnabledChoice =
-    !disabled && items.some((item) => item.value === selected && !item.disabled);
   useEffect(() => {
     if (root.current) motion.current = mountSegmentedMotion(root.current);
     return () => {
@@ -67,10 +66,14 @@ export function SegmentedControl({
     };
   }, []);
   useClientLayoutEffect(() => {
+    current.current = { value, defaultValue };
     const inputs = Array.from(root.current?.querySelectorAll<HTMLInputElement>('input') ?? []);
-    if (!mounted.current && value === undefined)
-      setLocalValue(inputs.find((input) => input.checked)?.value ?? null);
-    else for (const input of inputs) input.checked = input.value === selected;
+    const next =
+      !mounted.current && value === undefined
+        ? (inputs.find((input) => input.checked)?.value ?? null)
+        : selected;
+    if (!mounted.current && value === undefined) setLocalValue(next);
+    for (const input of inputs) input.checked = input.value === next;
     mounted.current = true;
     motion.current?.update();
     const enabled = inputs.filter((input) => !input.matches(':disabled'));
@@ -95,7 +98,7 @@ export function SegmentedControl({
       },
       root.current ?? input,
     );
-  }, [form, items]);
+  }, [form, name, items]);
   return (
     <div
       {...rest}
@@ -135,20 +138,21 @@ export function SegmentedControl({
           )}
           <input
             type="radio"
-            name={name}
-            form={form}
+            name={name || `${id}-segmented`}
+            form={name ? form : ''}
             value={item.value}
             defaultChecked={item.value === (value === undefined ? defaultValue : value)}
             disabled={disabled || item.disabled}
-            required={required && !hasEnabledChoice}
+            required={required}
             tabIndex={!disabled && item.value === tabStop ? 0 : -1}
             onInput={(event) => {
               if (!event.currentTarget.checked) return;
               if (value === undefined) setLocalValue(item.value);
               onValueChange?.(item.value);
-              if (value !== undefined)
+              const committed = current.current.value;
+              if (committed !== undefined)
                 for (const input of root.current?.querySelectorAll<HTMLInputElement>('input') ?? [])
-                  input.checked = input.value === value;
+                  input.checked = input.value === committed;
             }}
           />
         </label>

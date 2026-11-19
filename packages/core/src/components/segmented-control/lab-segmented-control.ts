@@ -39,6 +39,8 @@ export class LabSegmentedControl extends LabElement {
   private localValue: string | null | undefined;
   private readonly internals?: ElementInternals;
   private motion?: ReturnType<typeof mountSegmentedMotion>;
+  private serverValue: string | null | undefined;
+  private hydrationUpdate?: Promise<boolean>;
 
   constructor() {
     super();
@@ -77,9 +79,12 @@ export class LabSegmentedControl extends LabElement {
     const inputs = this.inputs;
     for (const input of inputs) input.checked = input.value === this.selectedValue;
     const selected = inputs.find((input) => input.checked && !input.disabled);
-    this.internals?.setFormValue(selected?.value ?? null, JSON.stringify(this.selectedValue));
+    this.internals?.setFormValue(
+      this.name ? (selected?.value ?? null) : null,
+      JSON.stringify(this.selectedValue),
+    );
     const anchor = inputs.find((input) => !input.disabled);
-    const missing = this.required && !selected && !!anchor;
+    const missing = !!this.name && this.required && !selected && !!anchor;
     this.internals?.setValidity(
       missing ? { valueMissing: true } : {},
       missing ? 'Выберите один вариант.' : '',
@@ -104,6 +109,7 @@ export class LabSegmentedControl extends LabElement {
     this.disabledByForm = disabled;
   }
   formResetCallback(): void {
+    if (!this.name) return;
     if (this.value === undefined) this.localValue = this.defaultValue;
     this.syncForm();
     this.requestUpdate();
@@ -136,12 +142,32 @@ export class LabSegmentedControl extends LabElement {
   }
   override connectedCallback(): void {
     const existing = this.shadowRoot?.querySelector<HTMLElement>('[data-lab-segmented]');
+    if (!this.hasUpdated && existing)
+      this.serverValue =
+        existing.querySelector<HTMLInputElement>('[data-selected] input')?.value ?? null;
     if (!this.hasUpdated && this.value === undefined && existing?.hasAttribute('data-controlled'))
       this.value = existing.getAttribute('data-value');
     else if (!this.hasUpdated && this.value === undefined && existing)
       this.localValue = existing.querySelector<HTMLInputElement>('input:checked')?.value ?? null;
     super.connectedCallback();
     if (this.hasUpdated) this.requestUpdate();
+  }
+  protected override firstUpdated(): void {
+    const serverValue = this.serverValue;
+    this.serverValue = undefined;
+    if (serverValue !== undefined && serverValue !== this.selectedValue) {
+      // Lit hydration must see the original server data before committing the recovered choice.
+      this.requestUpdate();
+      this.hydrationUpdate = super.getUpdateComplete();
+    }
+  }
+  protected override async getUpdateComplete(): Promise<boolean> {
+    const complete = await super.getUpdateComplete();
+    if (!this.hydrationUpdate) return complete;
+    const hydrationUpdate = this.hydrationUpdate;
+    await hydrationUpdate;
+    this.hydrationUpdate = undefined;
+    return true;
   }
   override updated(): void {
     this.syncForm();
@@ -157,7 +183,7 @@ export class LabSegmentedControl extends LabElement {
     super.disconnectedCallback();
   }
   override render(): TemplateResult {
-    const value = this.selectedValue;
+    const value = this.serverValue === undefined ? this.selectedValue : this.serverValue;
     const disabled = this.disabled || this.disabledByForm;
     const tabStop = (
       this.items.find((item) => item.value === value && !item.disabled) ??

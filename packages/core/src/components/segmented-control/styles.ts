@@ -33,17 +33,17 @@ ${Object.entries(p.shapes)
   letter-spacing: ${p.letterSpacing / p.fontSize}em; white-space: nowrap;
 }
 [data-lab-segmented] > .lab-segment[data-icon-only] { padding: ${rem(p.iconOnlyPadding)}; }
-[data-lab-segmented] > .lab-segment:hover:not(:has(input:disabled)):not([data-selected]) { background: ${role(p.roles.hover)}; color: ${role(p.roles.label)}; }
-[data-lab-segmented] > .lab-segment[data-selected] { color: ${role(p.roles.label)}; }
+[data-lab-segmented] > .lab-segment:hover:not(:has(input:disabled)):not(:has(input:checked)) { background: ${role(p.roles.hover)}; color: ${role(p.roles.label)}; }
+[data-lab-segmented] > .lab-segment:has(input:checked) { color: ${role(p.roles.label)}; }
 [data-lab-segmented] > .lab-segment:has(input:disabled) { color: ${role(p.roles.disabledLabel)}; cursor: default; }
 [data-lab-segmented] > .lab-segment > input { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; opacity: 0; margin: 0; cursor: inherit; }
 [data-lab-segmented] > .lab-segment > .lab-segment-active { position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit; corner-shape: round; }
-[data-lab-segmented] > .lab-segment[data-selected] > .lab-segment-active { background: ${role(p.roles.activeFill)}; box-shadow: var(--lab-shadow-${p.activeShadow}, ${shadow}); }
-[data-lab-segmented] > .lab-segment:not(:first-child):not([data-selected])::before {
+[data-lab-segmented] > .lab-segment:has(input:checked) > .lab-segment-active { background: ${role(p.roles.activeFill)}; box-shadow: var(--lab-shadow-${p.activeShadow}, ${shadow}); }
+[data-lab-segmented] > .lab-segment:not(:first-child):not(:has(input:checked))::before {
   content: ''; position: absolute; inset-block: ${rem(p.separatorInset)}; inset-inline-start: 0;
   inline-size: ${rem(p.strokeWidth)}; background: ${role(p.roles.border)};
 }
-[data-lab-segmented] > .lab-segment[data-selected] + .lab-segment::before { display: none; }
+[data-lab-segmented] > .lab-segment:has(input:checked) + .lab-segment::before { display: none; }
 .lab-segment-icon { display: inline-flex; flex: none; inline-size: ${rem(p.iconSize)}; block-size: ${rem(p.iconSize)}; }
 .lab-segment-icon > * { inline-size: 100%; block-size: 100%; }
 .lab-segment[data-icon-only] > .lab-segment-icon { inline-size: ${rem(p.iconOnlySize)}; block-size: ${rem(p.iconOnlySize)}; }
@@ -52,7 +52,7 @@ ${Object.entries(p.shapes)
 @media (forced-colors: active) {
   [data-lab-segmented] { background: Canvas; outline: 1px solid ButtonText; outline-offset: -1px; }
   [data-lab-segmented] > .lab-segment { color: ButtonText; }
-  [data-lab-segmented] > .lab-segment[data-selected] { color: Highlight; outline: 1px solid Highlight; outline-offset: -1px; }
+  [data-lab-segmented] > .lab-segment:has(input:checked) { color: Highlight; outline: 1px solid Highlight; outline-offset: -1px; }
   [data-lab-segmented] > .lab-segment:has(input:disabled) { color: GrayText; }
   [data-lab-segmented] > .lab-segment:has(input:focus-visible) { outline: 2px solid Highlight; }
 }

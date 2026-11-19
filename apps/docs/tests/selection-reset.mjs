@@ -15,12 +15,22 @@ const built = await build({
     resolveDir: resolve(root, 'apps/docs'),
     loader: 'jsx',
     contents: `
-  import React from 'react';import {createRoot} from 'react-dom/client';
+  import React,{useState} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
   import {Checkbox} from '@labpics/ui-react/checkbox';import {RadioGroup,Radio} from '@labpics/ui-react/radio-group';
   import {Choicebox} from '@labpics/ui-react/choicebox';import {SegmentedControl} from '@labpics/ui-react/segmented-control';
   import {listenSelectionReset} from '@labpics/ui-core/selection/runtime';window.resetHelper=listenSelectionReset;
   const items=[{value:'a',label:'A'},{value:'b',label:'B'}];window.requests={};
   const record=(key)=>(value)=>{(window.requests[key]??=[]).push(value)};
+  function Lifecycle({model,mode}) {
+    const key=model+'-'+mode;const [value,setValue]=useState(model==='checkbox'?true:model.startsWith('choice')?['a']:'a');
+    const [visible,setVisible]=useState(true);
+    const change=next=>{record(key)(next);flushSync(()=>mode==='unmount'?setVisible(false):setValue(mode==='override'?(model==='checkbox'?'indeterminate':model.startsWith('choice')?['a']:'a'):next))};
+    const common={name:'item',label:'Lifecycle',value,onValueChange:change};
+    return <form data-lifecycle={key}>{visible&&(model==='checkbox'?<Checkbox name="item" value="a" checked={value} onCheckedChange={change}>A</Checkbox>:
+      model==='radio'?<RadioGroup {...common}><Radio value="a">A</Radio><Radio value="b">B</Radio></RadioGroup>:
+      model==='segmented'?<SegmentedControl {...common} items={items}/>:
+      <Choicebox {...common} items={items} multiple={model==='choice-many'}/>)}</form>
+  }
   function Demo(){return <>{[false,true].flatMap(controlled=>['checkbox','radio','choice-one','choice-many','segmented'].map(model=>{
     const key=model+(controlled?'-controlled':'');const formProps={'data-model':key};
     const common={name:'item',label:'Selection',onValueChange:record(key)};
@@ -31,7 +41,7 @@ const built = await build({
        <Choicebox {...common} items={items} defaultValue={['a']} multiple={model==='choice-many'} {...(controlled?{value:['a']}:{})}/>}
       <button type="reset">Reset</button>
     </form>;
-  }))}</>};createRoot(document.getElementById('root')).render(<Demo/>);
+  }))}{['accept','override','unmount'].flatMap(mode=>['checkbox','radio','choice-one','choice-many','segmented'].map(model=><Lifecycle key={model+mode} model={model} mode={mode}/>))}</>};createRoot(document.getElementById('root')).render(<Demo/>);
 `,
   },
   bundle: true,
@@ -60,7 +70,48 @@ try {
       const errors = [];
       page.on('pageerror', (error) => errors.push(error.message));
       await page.goto(`http://127.0.0.1:${server.address().port}`);
-      await expect(page.locator('form')).toHaveCount(10);
+      await expect(page.locator('form')).toHaveCount(25);
+      const controlledLifecycle = [];
+      for (const mode of ['accept', 'override', 'unmount'])
+        for (const model of ['checkbox', 'radio', 'choice-one', 'choice-many', 'segmented']) {
+          const key = `${model}-${mode}`;
+          const form = page.locator(`[data-lifecycle="${key}"]`);
+          const actual = await form.evaluate((form) => {
+            const target = form.querySelector('input[value="b"]') ?? form.querySelector('input');
+            target.click();
+            return {
+              checked: Array.from(form.querySelectorAll('input:checked'), (input) => input.value),
+              visual: Array.from(
+                form.querySelectorAll('label[data-selected] input'),
+                (input) => input.value,
+              ),
+              form: Array.from(new FormData(form), ([, value]) => value),
+              mixed: form.querySelector('input')?.indeterminate ?? false,
+              connected: target.isConnected,
+              detachedChecked: target.checked,
+            };
+          });
+          const expected =
+            mode === 'unmount' || model === 'checkbox'
+              ? []
+              : mode === 'override'
+                ? ['a']
+                : model === 'choice-many'
+                  ? ['a', 'b']
+                  : ['b'];
+          controlledLifecycle.push({ model, mode, ...actual });
+          assert.deepEqual(actual.checked, expected, `${engine}/${key}: committed checked`);
+          assert.deepEqual(actual.form, expected, `${engine}/${key}: committed FormData`);
+          assert.deepEqual(
+            actual.visual,
+            mode === 'override' && model === 'checkbox' ? ['a'] : expected,
+            `${engine}/${key}: committed appearance`,
+          );
+          assert.equal(actual.mixed, mode === 'override' && model === 'checkbox');
+          assert.equal(actual.connected, mode !== 'unmount');
+          if (mode === 'unmount') assert.equal(actual.detachedChecked, model !== 'checkbox');
+          assert.equal(await page.evaluate((key) => window.requests[key]?.length, key), 1);
+        }
       for (const controlled of [false, true])
         for (const model of ['checkbox', 'radio', 'choice-one', 'choice-many', 'segmented']) {
           const key = model + (controlled ? '-controlled' : '');
@@ -160,6 +211,7 @@ try {
         sameTaskResetClick: true,
         lateResetCancellation: true,
         lifecycle,
+        controlledLifecycle,
         errors,
       });
     } finally {
