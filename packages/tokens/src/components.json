@@ -1090,10 +1090,7 @@
     "chevron": {
       "sourceRef": {
         "key": "component-set/Accordion/Accordion",
-        "path": [
-          "chevron-down",
-          "Vector"
-        ],
+        "path": ["chevron-down", "Vector"],
         "variant": {
           "Hover": "False",
           "Expanded": "False"

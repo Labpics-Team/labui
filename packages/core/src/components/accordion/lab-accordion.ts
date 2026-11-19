@@ -4,8 +4,8 @@ import { repeat } from 'lit/directives/repeat.js';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
-import { accordionCss } from './styles.js';
 import { mountAccordionMotion } from './runtime.js';
+import { accordionCss } from './styles.js';
 
 /** Horizontal grouping is an extension; the authored arrangement is vertical. */
 export type LabAccordionOrientation = 'vertical' | 'horizontal';

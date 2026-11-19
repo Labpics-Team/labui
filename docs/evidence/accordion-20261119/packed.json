@@ -2,7 +2,7 @@
   "archives": [
     {
       "name": "@labpics/ui-tokens",
-      "sha256": "3f1d36a9c0db21d0229acf462ba03fd03595d8010ae69393ba2fd61ab3beb4ce"
+      "sha256": "32a0c13811235938dc1cf90409ec327fcc069e063a5bcfd719d4cdf342d7dabd"
     },
     {
       "name": "@labpics/ui-shadow",
@@ -22,27 +22,27 @@
     },
     {
       "name": "@labpics/ui-core",
-      "sha256": "91eca35128fef425dda2afb277ba2ca6610160e74001b9a6e162ec82b336dda7"
+      "sha256": "3cc16b5873388f3d253422339c506de0eb062efca6ba821121665d977d045161"
     },
     {
       "name": "@labpics/ui-react",
-      "sha256": "75573234410a4468532c4ce92b70bfc61f50899cc6f1b6c03850cd9093e06489"
+      "sha256": "f55cd82c77df1acd21321a0478c68112af4c569ffd8a87004587157da57dd56b"
     },
     {
       "name": "@labpics/ui-vue",
-      "sha256": "e9bf5126b8424d5a3bb7ff5bb1603374c28612a2b30745e7f644b2a40b94fb17"
+      "sha256": "ac7f77432c4789b309790eea7b668bdbdbf190dafa5302ca5259c2d44be68391"
     },
     {
       "name": "@labpics/ui-solid",
-      "sha256": "9defea44b2187d5e5faf8c85cee7797e974187fecddd9dc4580194b9f422f67c"
+      "sha256": "c287ec23f2cfcf115139d2ac6bf564370d15e1e21fdfcad273bbc76a0f53b646"
     },
     {
       "name": "@labpics/ui-svelte",
-      "sha256": "ac6ce0c607e24ca4de544a023af9c0ed855be745b8e8fcfa6d69948ec9038025"
+      "sha256": "62a51fa4cdaefe2617fd08617e3a01f99cceae352af73def1115829a0e049f1b"
     },
     {
       "name": "@labpics/ui-astro",
-      "sha256": "8119fe95529033da9d779f78f1ee5dcf7bf9233c238104e59016de03d46fd113"
+      "sha256": "e324b744b9d4fb9142dcf98899d318a24e060d284099571eee77e3c43712549e"
     }
   ],
   "declarations": true,
@@ -50,12 +50,7 @@
     {
       "engine": "chromium",
       "browser": "140.0.7339.186",
-      "SSRHelpers": [
-        "vue",
-        "solid",
-        "svelte",
-        "astro"
-      ],
+      "SSRHelpers": ["vue", "solid", "svelte", "astro"],
       "nativeReact": true,
       "noJsFirstPaint": true,
       "shiftedServerIds": true,
@@ -69,12 +64,7 @@
     {
       "engine": "webkit",
       "browser": "26.0",
-      "SSRHelpers": [
-        "vue",
-        "solid",
-        "svelte",
-        "astro"
-      ],
+      "SSRHelpers": ["vue", "solid", "svelte", "astro"],
       "nativeReact": true,
       "noJsFirstPaint": true,
       "shiftedServerIds": true,

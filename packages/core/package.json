@@ -244,9 +244,7 @@
       "require": "./dist/components/accordion/runtime.cjs"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "sideEffects": [
     "./src/components/*/index.ts",
     "./dist/theme.css",
