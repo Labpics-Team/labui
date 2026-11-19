@@ -37,6 +37,14 @@
   ],
   "families": [
     {
+      "slug": "icon",
+      "title": "Icon",
+      "group": "data",
+      "kind": "extension",
+      "summary": "Авторские Lab Icons: оптика, смысловые состояния и движение импортированного символа.",
+      "web": { "subpath": "icon", "reactExport": "Icon" }
+    },
+    {
       "slug": "button",
       "title": "Button",
       "group": "actions",

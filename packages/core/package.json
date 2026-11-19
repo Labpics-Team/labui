@@ -295,6 +295,26 @@
         "types": "./dist/components/avatar/contract.d.cts",
         "default": "./dist/components/avatar/contract.cjs"
       }
+    },
+    "./typography": {
+      "import": {
+        "types": "./dist/typography.d.ts",
+        "default": "./dist/typography.js"
+      },
+      "require": {
+        "types": "./dist/typography.d.cts",
+        "default": "./dist/typography.cjs"
+      }
+    },
+    "./icon/runtime": {
+      "import": {
+        "types": "./dist/components/icon/runtime.d.ts",
+        "default": "./dist/components/icon/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/icon/runtime.d.cts",
+        "default": "./dist/components/icon/runtime.cjs"
+      }
     }
   },
   "files": ["dist"],
@@ -334,6 +354,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@labpics/icons": "0.4.0",
     "@labpics/motion": "0.5.0",
     "@labpics/ui-materials": "workspace:*",
     "@labpics/ui-shadow": "workspace:*",

@@ -1,6 +1,11 @@
+import { symbol as settingsIcon } from '@labpics/icons/symbols/cog';
+import { symbol as notificationsIcon } from '@labpics/icons/symbols/notifications';
+import { createTypographyScale, typographyStyle } from '@labpics/ui-core/typography';
 import { Button } from '@labpics/ui-react/button';
 import { Card } from '@labpics/ui-react/card';
+import { Icon } from '@labpics/ui-react/icon';
 import { Input } from '@labpics/ui-react/input';
+import { Radio, RadioGroup } from '@labpics/ui-react/radio-group';
 import { Sheet } from '@labpics/ui-react/sheet';
 import { Snackbar } from '@labpics/ui-react/snackbar';
 import { Switch } from '@labpics/ui-react/switch';
@@ -40,6 +45,14 @@ function Workspace() {
   } | null>(null);
   const noticeKey = useRef(0);
   const [dark, setDark] = useState(false);
+  const [textRoot, setTextRoot] = useState(16);
+  const textScale = createTypographyScale('body', textRoot);
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${textRoot}px`;
+    return () => {
+      document.documentElement.style.removeProperty('font-size');
+    };
+  }, [textRoot]);
   const [contrast, setContrast] = useState(false);
   const [themeReady, setThemeReady] = useState(false);
   const scope = useRef<ThemeScope>();
@@ -220,6 +233,7 @@ function Workspace() {
                       settingsTrigger.current = element;
                     }}
                     disabled={undoing}
+                    iconSlot={<Icon symbol={settingsIcon} size="1.25em" scale={textScale} />}
                   >
                     Изменить настройки
                   </Button>
@@ -313,7 +327,15 @@ function Workspace() {
               </div>
               <div>
                 <dt>Уведомления команды</dt>
-                <dd>{settings.notifications ? 'Включены' : 'Выключены'}</dd>
+                <dd className="workspace-icon-state" style={typographyStyle(textScale)}>
+                  <Icon
+                    symbol={notificationsIcon}
+                    size="1.25em"
+                    scale={textScale}
+                    state={settings.notifications ? 'selected' : 'unselected'}
+                  />
+                  {settings.notifications ? 'Включены' : 'Выключены'}
+                </dd>
               </div>
             </dl>
           ) : loadError ? (
@@ -329,6 +351,19 @@ function Workspace() {
         </Card>
         <Card className="workspace-card" padding="l" heading="Внешний вид">
           <div className="workspace-preferences">
+            <div className="workspace-option">
+              <RadioGroup
+                label="Размер текста"
+                value={String(textRoot)}
+                onValueChange={(value) => {
+                  if (value) setTextRoot(Number(value));
+                }}
+              >
+                <Radio value="16">100%</Radio>
+                <Radio value="20">125%</Radio>
+                <Radio value="32">200%</Radio>
+              </RadioGroup>
+            </div>
             <div className="workspace-option">
               <Switch
                 labelStart="Тёмная тема"

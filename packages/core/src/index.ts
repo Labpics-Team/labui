@@ -33,6 +33,22 @@ export type {
 
 // Lit base + Zag bridge.
 export { LabElement } from './lit/lab-element.js';
+export type { LabPropertyDeclaration } from './lit/property.js';
+export {
+  createTypographyScale,
+  typographyStyle,
+  resolveTypographySize,
+  type TypographyScale,
+  type TypographySize,
+} from './typography.js';
+export type {
+  IconOptions,
+  IconHandle,
+  IconSymbol,
+  IconVariant,
+  IconEffectOptions,
+  SymbolPlayback,
+} from './components/icon/runtime.js';
 export { type Attrs, ZagController } from './lit/zag-controller.js';
 
 // Theming contract (selectors + helpers).

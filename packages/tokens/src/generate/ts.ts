@@ -35,6 +35,9 @@ export function generateTs(tokens: ResolvedTokens): string {
       '} as const;',
       '',
       'export type TextStyleRole = keyof typeof textStyle;',
+      '',
+      '/** Authored CSS-pixel metrics at the 16px reference root, without private provenance. */',
+      `export const textStyleMetrics = ${JSON.stringify(Object.fromEntries(Object.entries(authoredTextStyles).map(([role, style]) => [role, { fontSize: style.fontSize, lineHeight: style.lineHeight, fontWeight: style.fontWeight, letterSpacing: style.letterSpacing }])), null, 2)} as const;`,
     ].join('\n'),
   );
   parts.push(

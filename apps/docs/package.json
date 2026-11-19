@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@labpics/fonts": "workspace:*",
+    "@labpics/icons": "0.4.0",
     "@labpics/ui-core": "workspace:*",
     "@labpics/ui-materials": "workspace:*",
     "@labpics/ui-react": "workspace:*",

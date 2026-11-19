@@ -1,5 +1,6 @@
 import { LitElementRenderer } from '@lit-labs/ssr';
 import type { LabElement } from '../lit/lab-element.js';
+import type { LabPropertyDeclaration } from '../lit/property.js';
 import { LAB_ELEMENT_BRAND, SSR_INPUTS_ATTRIBUTE } from '../lit/ssr-inputs.js';
 
 function isJsonValue(value: unknown, parents = new Set<object>()): boolean {
@@ -32,8 +33,10 @@ export class LabElementRenderer extends LitElementRenderer {
 
   override setProperty(name: string, value: unknown): void {
     super.setProperty(name, value);
-    const options = (this.element.constructor as typeof LabElement).elementProperties.get(name);
-    if (!options || options.state || value === undefined) return;
+    const options = (this.element.constructor as typeof LabElement).elementProperties.get(name) as
+      | LabPropertyDeclaration
+      | undefined;
+    if (!options || options.state || options.resource || value === undefined) return;
     // An existing reflected attribute remains the authority for its input.
     // Absent boolean/null attributes cannot distinguish an explicit input from
     // a constructor default, so those values still need the server record.

@@ -736,6 +736,90 @@
       }
     },
     {
+      "tag": "lab-icon",
+      "subpath": "icon",
+      "pascal": "Icon",
+      "className": "LabIcon",
+      "props": [
+        {
+          "name": "symbol",
+          "attr": "symbol",
+          "kind": "prop"
+        },
+        {
+          "name": "variant",
+          "attr": "variant",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "prop"
+        },
+        {
+          "name": "scale",
+          "attr": "scale",
+          "kind": "prop"
+        },
+        {
+          "name": "weight",
+          "attr": "weight",
+          "kind": "string"
+        },
+        {
+          "name": "opsz",
+          "attr": "opsz",
+          "kind": "prop"
+        },
+        {
+          "name": "state",
+          "attr": "state",
+          "kind": "string"
+        },
+        {
+          "name": "date",
+          "attr": "date",
+          "kind": "prop"
+        },
+        {
+          "name": "timeZone",
+          "attr": "time-zone",
+          "kind": "string"
+        },
+        {
+          "name": "duration",
+          "attr": "duration",
+          "kind": "string"
+        },
+        {
+          "name": "reducedMotion",
+          "attr": "reduced-motion",
+          "kind": "boolean"
+        },
+        {
+          "name": "effect",
+          "attr": "effect",
+          "kind": "string"
+        },
+        {
+          "name": "effectKey",
+          "attr": "effectKey",
+          "kind": "prop"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        }
+      ],
+      "events": [],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
       "tag": "lab-input",
       "subpath": "input",
       "pascal": "Input",

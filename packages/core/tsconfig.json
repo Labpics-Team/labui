@@ -2,7 +2,8 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "paths": { "@labpics/ui-core/icon/runtime": ["./src/components/icon/runtime.ts"] }
   },
   "include": ["src"]
 }

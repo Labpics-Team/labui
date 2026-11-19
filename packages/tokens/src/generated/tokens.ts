@@ -47,6 +47,40 @@ export const textStyle = {
 
 export type TextStyleRole = keyof typeof textStyle;
 
+/** Authored CSS-pixel metrics at the 16px reference root, without private provenance. */
+export const textStyleMetrics = {
+  "body": {
+    "fontSize": 16,
+    "lineHeight": 24,
+    "fontWeight": 400,
+    "letterSpacing": -0.25
+  },
+  "body-emphasized": {
+    "fontSize": 16,
+    "lineHeight": 24,
+    "fontWeight": 500,
+    "letterSpacing": 0
+  },
+  "headline": {
+    "fontSize": 20,
+    "lineHeight": 20,
+    "fontWeight": 500,
+    "letterSpacing": -0.33
+  },
+  "caption-xs": {
+    "fontSize": 12,
+    "lineHeight": 12,
+    "fontWeight": 500,
+    "letterSpacing": 0
+  },
+  "caption-s": {
+    "fontSize": 14,
+    "lineHeight": 12,
+    "fontWeight": 500,
+    "letterSpacing": 0
+  }
+} as const;
+
 export const component = {
   'font-weight-button': 'var(--lab-font-weight-button)',
   'space-button-label-x': 'var(--lab-space-button-label-x)',

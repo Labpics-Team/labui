@@ -18,6 +18,7 @@ import type { MachineSchema } from '@zag-js/core';
 import { type CSSResultGroup, type CSSResultOrNative, LitElement, css } from 'lit';
 import { LAB_INPUTS_PROPERTY, type LabInputBinding, forwardDeclared } from '../adapter-runtime.js';
 import type { MachineModule, MachineProps } from '../behaviors/types.js';
+import type { LabPropertyDeclaration } from './property.js';
 import { LAB_ELEMENT_BRAND, SSR_INPUTS_ATTRIBUTE, parseSsrInputs } from './ssr-inputs.js';
 import { ZagController } from './zag-controller.js';
 
@@ -42,6 +43,20 @@ const cornerShapeStyles = css`
 export class LabElement extends LitElement {
   static readonly [LAB_ELEMENT_BRAND] = true;
   private restoredServerInputs = false;
+
+  /** Keep server artwork until its imported resources reach the upgraded element. */
+  protected override shouldUpdate(): boolean {
+    if (!this.hasUpdated && this.shadowRoot?.hasChildNodes()) {
+      for (const [name, declaration] of (this.constructor as typeof LabElement).elementProperties) {
+        if (
+          (declaration as LabPropertyDeclaration).resource &&
+          Reflect.get(this, name) === undefined
+        )
+          return false;
+      }
+    }
+    return true;
+  }
 
   /**
    * Non-reflected adapter input binding. A framework's ordinary property patch
@@ -71,7 +86,8 @@ export class LabElement extends LitElement {
     // in the same order as ordinary HTML attributes.
     for (const [property, input] of Object.entries(parseSsrInputs(value))) {
       const options = properties.get(property);
-      if (options && !options.state) Reflect.set(this, property, input);
+      if (options && !options.state && !(options as LabPropertyDeclaration).resource)
+        Reflect.set(this, property, input);
     }
   }
 

@@ -17,6 +17,7 @@ export { default as Chip } from './Chip.svelte';
 export { default as Choicebox } from './Choicebox.svelte';
 export { default as Combobox } from './Combobox.svelte';
 export { default as Dialog } from './Dialog.svelte';
+export { default as Icon } from './Icon.svelte';
 export { default as Input } from './Input.svelte';
 export { default as Kbd } from './Kbd.svelte';
 export { default as Loader } from './Loader.svelte';

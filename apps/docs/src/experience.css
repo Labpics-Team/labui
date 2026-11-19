@@ -82,6 +82,11 @@ input {
   margin: 0;
   overflow-wrap: anywhere;
 }
+.workspace-icon-state {
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+}
 .workspace-preferences,
 .workspace-form {
   display: grid;

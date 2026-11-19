@@ -1,0 +1,105 @@
+{
+  "archives": [
+    {
+      "name": "labpics-ui-tokens-0.0.0.tgz",
+      "sha256": "cdbaefc3caae97b20d57335a588843c85382af904558c7b2fd97d43827a83af5"
+    },
+    {
+      "name": "labpics-ui-shadow-0.0.0.tgz",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "labpics-ui-materials-0.0.0.tgz",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "labpics-ui-core-0.0.0.tgz",
+      "sha256": "7057ac129c76b5e2a0c488af1929051336d7f79ffbbde9d8e18bcdda575cace9"
+    },
+    {
+      "name": "labpics-ui-react-0.0.0.tgz",
+      "sha256": "9ad1ae893609656e16e5c59db4d8c58ac7ce0a46cdd7fa32cbd9316b8f3c5b26"
+    },
+    {
+      "name": "labpics-ui-vue-0.0.0.tgz",
+      "sha256": "cf5171fb88a4e35f9592af05df3336c999bb4a73d4dcb7f84b86a10c02da6d1f"
+    },
+    {
+      "name": "labpics-ui-solid-0.0.0.tgz",
+      "sha256": "59b6a8d0618069088ba49474704e452deafed93d63989136a4ff424e15dde5ac"
+    },
+    {
+      "name": "labpics-ui-svelte-0.0.0.tgz",
+      "sha256": "94965d19312d7ae253290a3f501a3183de0c77642d5977a9ed5f15ff05ef9309"
+    },
+    {
+      "name": "labpics-ui-astro-0.0.0.tgz",
+      "sha256": "9fcf41d1e095f52b96fa09803a7885dc5596a737d629667bcf408886a585bce2"
+    }
+  ],
+  "serverHtmlBytes": 7988,
+  "staticBytes": 25634,
+  "idle": [
+    {
+      "icons": 1,
+      "frames": 0,
+      "observers": 0,
+      "media": 0
+    },
+    {
+      "icons": 100,
+      "frames": 0,
+      "observers": 0,
+      "media": 0
+    }
+  ],
+  "sizes": [
+    {
+      "root": 16,
+      "widths": [
+        24,
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "root": 20,
+      "widths": [
+        30,
+        30,
+        30,
+        30,
+        30
+      ]
+    },
+    {
+      "root": 32,
+      "widths": [
+        48,
+        48,
+        48,
+        48,
+        48
+      ]
+    }
+  ],
+  "checks": [
+    "ESM+CJS SSR",
+    "installed NodeNext types",
+    "all four generated SSR adapters",
+    "no-JS SVG",
+    "resource hydration SVG identity",
+    "lazy-load state races",
+    "symbol replacement and dispose",
+    "interrupted state pose",
+    "effect pause/seek/play/finish and dispose",
+    "reduced motion",
+    "explicit/system reduced motion during held lazy HTTP import",
+    "optional motion load failure preserves requested state",
+    "static tree shaking",
+    "reconnect latest symbol/size/state and detached resource cleanup",
+    "calendar Date/IANA SSR and updates"
+  ]
+}

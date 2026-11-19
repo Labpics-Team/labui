@@ -32,6 +32,8 @@ export default libraryPreset({
   entry: [
     'src/index.ts',
     'src/adapter-runtime.ts',
+    'src/typography.ts',
+    'src/components/icon/runtime.ts',
     'src/components/badge/contract.ts',
     'src/components/kbd/contract.ts',
     'src/components/chip/contract.ts',
@@ -58,5 +60,8 @@ export default libraryPreset({
     'src/motion/sheet.ts',
     ...componentEntries,
   ],
-  external: [/^@zag-js\//, /^@lit-labs\//, 'lit'],
+  external: [/^@zag-js\//, /^@lit-labs\//, 'lit', '@labpics/ui-core/icon/runtime'],
+  // Icons exposes import-only ESM. Bundle its small pure renderer once into our
+  // shared dual-format runtime; the optional motion entry remains lazy/external.
+  noExternal: ['@labpics/icons/render'],
 });
