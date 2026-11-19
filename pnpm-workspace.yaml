@@ -1,3 +1,29 @@
 packages:
   - "packages/*"
   - "apps/*"
+
+# CI устанавливает зафиксированный lockfile; peer-зависимости доставляются автоматически.
+autoInstallPeers: true
+strictPeerDependencies: false
+
+# Cooldown версионных обновлений задан в Dependabot; security updates не задерживаются.
+minimumReleaseAge: 0
+
+# Выполняются только ранее разрешённые установочные скрипты.
+allowBuilds:
+  "@biomejs/biome": true
+  "esbuild": true
+
+overrides:
+  "tmp@<0.2.6": ">=0.2.6"
+  "esbuild@<0.25.0": ">=0.25.0"
+  "js-yaml@<3.15.2": "3.15.2"
+  "js-yaml@>=4.0.0 <4.3.1": "4.3.2"
+  "nanoid@<3.3.18": "3.3.18"
+  "postcss@<8.5.18": "8.5.18"
+  "devalue@<5.9.3": "5.9.3"
+  "source-map-js@<1.2.2": "1.2.2"
+  "tinypool@<2.1.2": "2.1.2"
+  "undici@>=8 <8.12.2": "8.12.2"
+  "astro@7.2.8>vite": "8.3.3"
+  "zod@>=4 <4.6.6": "4.6.7"
