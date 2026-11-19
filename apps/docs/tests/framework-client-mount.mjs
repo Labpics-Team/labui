@@ -51,7 +51,12 @@ export async function checkClientMount(browser, framework, browserName, origin, 
     const state = (id) =>
       page.locator(`#${id}`).evaluate((node) => ({
         selected: [...node.selectedValues],
-        text: node.shadowRoot.querySelector('.value-text').textContent.trim(),
+        text:
+          node.multiple && node.selectedValues.length
+            ? [...node.shadowRoot.querySelectorAll('.lab-chip-label')]
+                .map((chip) => chip.textContent.trim())
+                .join(', ')
+            : node.shadowRoot.querySelector('.value-text').textContent.trim(),
       }));
     assert.deepEqual(await state('uncontrolled'), { selected: ['b'], text: 'B' });
     assert.deepEqual(await state('controlled'), { selected: ['a'], text: 'A' });
@@ -67,7 +72,7 @@ export async function checkClientMount(browser, framework, browserName, origin, 
     await page.waitForFunction(() =>
       document
         .querySelector('#uncontrolled')
-        .shadowRoot.querySelector('.value-text')
+        .shadowRoot.querySelector('.lab-select-chips')
         .textContent.includes('Renamed C'),
     );
     assert.deepEqual(await state('uncontrolled'), { selected: ['b', 'c'], text: 'B, Renamed C' });

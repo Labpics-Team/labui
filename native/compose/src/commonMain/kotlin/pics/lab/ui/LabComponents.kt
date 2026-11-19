@@ -12,6 +12,7 @@ internal data class LabChipMetrics(val height: Float, val radius: Float, val pad
 internal data class LabTabsMetrics(val height: Float, val radius: Float, val padding: Float, val gap: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float, val iconSize: Float, val iconOnlySize: Float, val baseline: Float)
 internal data class LabBreadcrumbMetrics(val fontSize: Float, val lineHeight: Float, val multilineLineHeight: Float, val icon: Float, val gap: Float)
 internal data class LabAccordionMetrics(val padding: Float, val radius: Float, val gap: Float, val contentGap: Float, val fontSize: Float, val lineHeight: Float, val iconSize: Float)
+internal data class LabSelectMetrics(val height: Float, val radius: Float, val paddingStart: Float, val paddingEnd: Float, val paddingY: Float, val gap: Float, val leadingSize: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float)
 
 public enum class LabBadgeColor(internal val role: String) { Neutral("neutral"), Gray("gray"), Blue("blue"), Red("red"), Orange("orange"), Green("green"), Yellow("yellow"), Teal("teal"), Mint("mint"), Indigo("indigo"), Purple("purple"), Pink("pink"), StaticDark("static-dark"), StaticLight("static-light"), Brand("brand") }
 
@@ -584,4 +585,64 @@ internal object LabComponents {
     const val SegmentedLineHeight = 12f
     const val SegmentedFontWeight = 500f
     const val SegmentedLetterSpacing = 0f
+    val SelectS = LabSelectMetrics(32f, 9999f, 12f, 8f, 8f, 8f, 16f, 14f, 12f, 500f, 0f)
+    val SelectM = LabSelectMetrics(48f, 12f, 16f, 12f, 12f, 12f, 16f, 16f, 24f, 400f, -0.25f)
+    val SelectL = LabSelectMetrics(56f, 16f, 16f, 16f, 16f, 12f, 20f, 16f, 24f, 400f, -0.25f)
+    const val SelectLeadingGap = 8f
+    const val SelectChevronViewBox = 16f
+    const val SelectChevronX = 3.3802490234375f
+    const val SelectChevronY = 5.734375f
+    // Shared contour: transform the canvas, never mutate this path.
+    val SelectChevronPath by lazy { androidx.compose.ui.graphics.Path().apply {
+        moveTo(8.99384f, 0.234521f)
+        cubicTo(9.28658f, 0.527434f, 9.30478f, 0.990701f, 9.04851f, 1.30483f)
+        lineTo(8.99384f, 1.36537f)
+        lineTo(5.93391f, 4.4253f)
+        cubicTo(5.81124f, 4.5479f, 5.68571f, 4.6747f, 5.56998f, 4.7729f)
+        cubicTo(5.44718f, 4.87717f, 5.28378f, 4.9955f, 5.06738f, 5.0659f)
+        cubicTo(4.77284f, 5.16157f, 4.45504f, 5.16163f, 4.16051f, 5.0659f)
+        lineTo(4.08171f, 5.0379f)
+        cubicTo(3.90384f, 4.96663f, 3.76531f, 4.86417f, 3.65791f, 4.7729f)
+        cubicTo(3.54224f, 4.6747f, 3.41651f, 4.54783f, 3.29398f, 4.4253f)
+        lineTo(0.234057f, 1.36537f)
+        lineTo(0.179364f, 1.30483f)
+        cubicTo(-0.0767561f, 0.990701f, -0.0586359f, 0.527381f, 0.234057f, 0.234521f)
+        cubicTo(0.546417f, -0.0778258f, 1.05314f, -0.0777191f, 1.36556f, 0.234521f)
+        lineTo(4.42544f, 3.29443f)
+        cubicTo(4.49258f, 3.3615f, 4.54578f, 3.41423f, 4.59211f, 3.4591f)
+        cubicTo(4.59951f, 3.46623f, 4.60698f, 3.47297f, 4.61364f, 3.4793f)
+        cubicTo(4.62038f, 3.47283f, 4.62818f, 3.46643f, 4.63578f, 3.4591f)
+        cubicTo(4.68211f, 3.41417f, 4.73524f, 3.36157f, 4.80244f, 3.29443f)
+        lineTo(7.86231f, 0.234521f)
+        lineTo(7.92284f, 0.179181f)
+        cubicTo(8.23705f, -0.0771456f, 8.70091f, -0.0582458f, 8.99384f, 0.234521f)
+        close()
+    } }
+    const val SelectStroke = 1f
+    const val SelectMultipleHeight = 48f
+    const val SelectMultipleRadius = 12f
+    const val SelectMultiplePaddingStart = 10f
+    const val SelectMultiplePaddingEnd = 32f
+    const val SelectMultiplePaddingY = 10f
+    const val SelectMultipleGap = 8f
+    const val SelectMultiplePlaceholderStart = 20f
+    const val SelectMultipleLabelStart = 20f
+    const val SelectMultipleLabelFontSize = 12f
+    const val SelectMultipleLabelLineHeight = 12f
+    const val SelectMultipleLabelWeight = 500f
+    const val SelectMultipleLabelOverhang = 8f
+    const val SelectMultipleLabelGap = 4f
+    const val SelectMultipleChevronEnd = 12f
+    const val SelectMultipleShowLabel = true
+    const val SelectMultipleHoverCenterX = 0.13548386378449973f
+    const val SelectMultipleHoverCenterY = 0f
+    const val SelectMultipleHoverRadiusX = 0.3662704874799413f
+    const val SelectMultipleHoverRadiusY = 0.821945539573786f
+    const val SelectRolesLabel = "label-primary"
+    const val SelectRolesCaption = "label-secondary"
+    const val SelectRolesPlaceholder = "label-tertiary"
+    const val SelectRolesDisabled = "label-quaternary"
+    const val SelectRolesBorder = "border-base"
+    const val SelectRolesHover = "fill-quaternary"
+    const val SelectRolesFocus = "border-focus"
 }

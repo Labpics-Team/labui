@@ -53,7 +53,7 @@ function reactTrigger(page: Page, testid: string): Locator {
 }
 /** The React listbox is portalled to <body>; find the open one by data-state. */
 function reactOpenContent(page: Page): Locator {
-  return page.locator('.lab-select-content[data-state="open"]');
+  return page.locator('body > .lab-select-positioner > .lab-select-content[data-state="open"]');
 }
 
 const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;

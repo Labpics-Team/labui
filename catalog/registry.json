@@ -142,7 +142,11 @@
       "web": {
         "subpath": "select",
         "reactExport": "Select"
-      }
+      },
+      "native": {
+        "symbol": "LabSelect"
+      },
+      "profile": "select"
     },
     {
       "slug": "combobox",
@@ -1253,7 +1257,11 @@
           "family": "select",
           "role": "root",
           "web": {
-            "scope": "Публичный API семейства; все авторские варианты ещё не сверены."
+            "scope": "Authored S32/M48/L56, leading icon, hover and expanded chevron; semantic label stays accessible."
+          },
+          "native": {
+            "symbol": "LabSelect",
+            "scope": "Authored S32/M48/L56, leading icon, hover and expanded chevron; semantic label stays accessible."
           }
         }
       ]
@@ -1606,7 +1614,11 @@
             "props": {
               "multiple": true
             },
-            "scope": "Множественный выбор; авторский trigger и chips ещё не сверены."
+            "scope": "Authored48 with floating caption, sharp Chips28 and independent removal; controlled value is the only selection state."
+          },
+          "native": {
+            "symbol": "LabSelect",
+            "scope": "Authored48 with floating caption, sharp Chips28 and independent removal; controlled value is the only selection state."
           }
         }
       ]

@@ -25,6 +25,7 @@ import { kbdCss } from '../src/components/kbd/styles.js';
 import { paginationCss } from '../src/components/pagination/styles.js';
 import { progressCss } from '../src/components/progress/styles.js';
 import { segmentedCss } from '../src/components/segmented-control/styles.js';
+import { selectCss } from '../src/components/select/styles.js';
 import { selectionCss } from '../src/components/selection/styles.js';
 import { sheetCss } from '../src/components/sheet/styles.js';
 import { snackbarCss } from '../src/components/snackbar/styles.js';
@@ -56,6 +57,7 @@ function main(): void {
   copyFileSync(tokensPkg, join(dist, 'tokens.css'));
   writeFileSync(join(dist, 'sheet.css'), sheetCss);
   writeFileSync(join(dist, 'input.css'), inputCss);
+  writeFileSync(join(dist, 'select.css'), selectCss);
   writeFileSync(join(dist, 'snackbar.css'), snackbarCss);
   writeFileSync(join(dist, 'card.css'), cardCss);
   writeFileSync(join(dist, 'chip.css'), chipCss);

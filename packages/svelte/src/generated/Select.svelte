@@ -17,6 +17,9 @@
     multiple?: LabSelect['multiple'];
     disabled?: LabSelect['disabled'];
     name?: LabSelect['name'];
+    required?: LabSelect['required'];
+    showLabel?: LabSelect['showLabel'];
+    removeLabel?: LabSelect['removeLabel'];
     placeholder?: LabSelect['placeholder'];
     label?: LabSelect['label'];
     value?: LabSelect['value'];
@@ -24,12 +27,13 @@
     items?: LabSelect['items'];
     onOpenChange?: (event: CustomEvent) => void;
     onValueChange?: (event: CustomEvent) => void;
+    leading?: Snippet;
     children?: Snippet;
     slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { size, placement, multiple, disabled, name, placeholder, label, value, defaultValue, items, onOpenChange, onValueChange, children, slots, ...rest }: Props = $props();
+  let { size, placement, multiple, disabled, name, required, showLabel, removeLabel, placeholder, label, value, defaultValue, items, onOpenChange, onValueChange, children, slots, leading, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
@@ -37,6 +41,9 @@
     { name: 'multiple', attr: 'multiple', kind: 'boolean' },
     { name: 'disabled', attr: 'disabled', kind: 'boolean' },
     { name: 'name', attr: 'name', kind: 'string' },
+    { name: 'required', attr: 'required', kind: 'boolean' },
+    { name: 'showLabel', attr: 'show-label', kind: 'prop' },
+    { name: 'removeLabel', attr: 'remove-label', kind: 'string' },
     { name: 'placeholder', attr: 'placeholder', kind: 'string' },
     { name: 'label', attr: 'label', kind: 'string' },
     { name: 'value', attr: 'value', kind: 'prop' },
@@ -45,16 +52,16 @@
   ];
 
   const server = untrack(() => renderElementParts('lab-select', {
-    specs, props: { size, placement, multiple, disabled, name, placeholder, label, value, defaultValue, items }, attributes: rest,
+    specs, props: { size, placement, multiple, disabled, name, required, showLabel, removeLabel, placeholder, label, value, defaultValue, items }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'leading': leading, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange, 'value-change': onValueChange }));
 </script>
 
-<lab-select bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, placement, multiple, disabled, name, placeholder, label, value, defaultValue, items } } }}>
+<lab-select bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, placement, multiple, disabled, name, required, showLabel, removeLabel, placeholder, label, value, defaultValue, items } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
     {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}

@@ -1507,6 +1507,21 @@
           "kind": "string"
         },
         {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "showLabel",
+          "attr": "show-label",
+          "kind": "prop"
+        },
+        {
+          "name": "removeLabel",
+          "attr": "remove-label",
+          "kind": "string"
+        },
+        {
           "name": "placeholder",
           "attr": "placeholder",
           "kind": "string"
@@ -1538,7 +1553,9 @@
       ],
       "slots": {
         "default": false,
-        "named": [],
+        "named": [
+          "leading"
+        ],
         "dynamic": false
       }
     },

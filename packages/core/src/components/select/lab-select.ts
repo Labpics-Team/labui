@@ -1,14 +1,15 @@
-/**
+﻿/**
  * A single or multiple choice from a positioned listbox. Zag provides selection,
  * keyboard navigation, focus and positioning; all Lit parts share one shadow root.
  * A supplied value is controlled. Without one, defaultValue initializes the machine.
  */
 import * as selectMachine from '@zag-js/select';
-import { type TemplateResult, css, html, isServer, nothing } from 'lit';
+import { type TemplateResult, css, html, isServer, nothing, unsafeCSS } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import type { MachineModule, PropTypes, SchemaOf } from '../../behaviors/types.js';
-import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
+import { selectCss } from './styles.js';
 
 /** Control size — drives trigger height and listbox font band. */
 export type LabSelectSize = 's' | 'm' | 'l';
@@ -54,6 +55,7 @@ const selectModule: MachineModule<SelectSchema, SelectApi> = selectMachine;
 let selectInstanceSeq = 0;
 
 export class LabSelect extends LabElement {
+  static formAssociated = true;
   static override properties = {
     size: { reflect: true },
     /** Where the listbox sits relative to the trigger. */
@@ -63,7 +65,15 @@ export class LabSelect extends LabElement {
     /** Trigger non-interactive when present. */
     disabled: { type: Boolean, reflect: true },
     /** Name of the hidden native `<select>`. */
-    name: {},
+    name: { reflect: true },
+    required: { type: Boolean, reflect: true },
+    showLabel: {
+      attribute: 'show-label',
+      converter: { fromAttribute: (raw: string | null) => raw !== 'false' },
+      reflect: true,
+    },
+    removeLabel: { attribute: 'remove-label' },
+    disabledByForm: { state: true },
     /** Placeholder shown in the trigger when nothing is selected. */
     placeholder: {},
     /** Optional control label, wired as the machine's label part (accessible name). */
@@ -99,6 +109,13 @@ export class LabSelect extends LabElement {
   declare multiple: boolean;
   declare disabled: boolean;
   declare name: string;
+  declare required: boolean;
+  /** Controls the internal Multiselect caption; its accessible name remains present. */
+  declare showLabel: boolean;
+  /** Verb used by chip removal buttons, followed by the option label. */
+  declare removeLabel: string;
+  private declare disabledByForm: boolean;
+  private readonly internals?: ElementInternals;
   declare placeholder: string;
   declare label: string;
   /** Null leaves selection to the component; an array, including [], is controlled. */
@@ -119,6 +136,11 @@ export class LabSelect extends LabElement {
     this.multiple = false;
     this.disabled = false;
     this.name = '';
+    this.required = false;
+    this.showLabel = true;
+    this.removeLabel = 'Remove';
+    this.disabledByForm = false;
+    if (typeof ElementInternals !== 'undefined') this.internals = this.attachInternals();
     this.placeholder = 'Select…';
     this.label = '';
     this.value = null;
@@ -130,7 +152,9 @@ export class LabSelect extends LabElement {
       id: this.machineId,
       collection: this.collection,
       multiple: this.multiple,
-      disabled: this.disabled,
+      disabled: this.disabled || this.disabledByForm,
+      required: this.required,
+      dir: this.closest('[dir]')?.getAttribute('dir') === 'rtl' ? 'rtl' : 'ltr',
       name: this.name || undefined,
       value: this.value ?? undefined,
       defaultValue: this.defaultValue?.length ? this.defaultValue : undefined,
@@ -180,185 +204,53 @@ export class LabSelect extends LabElement {
     }
   }
 
-  static override styles = css`
-    :host {
-      --_h: 2.25rem;
-      --_pad-x: ${litVar('--lab-space-md', '1rem')};
-      --_font: ${litVar('--lab-font-size-md', '1rem')};
-      --_gap: ${litVar('--lab-space-xs', '0.25rem')};
+  static override styles = [
+    unsafeCSS(selectCss),
+    css`
+    :host { display: inline-flex; min-inline-size: 0; max-inline-size: 100%; vertical-align: middle; }
+    :host([multiple]) { display: flex; }
+    :host(:not(:has([slot='leading']))) .lab-select-leading { display: none; }
+    ::slotted([slot='leading']) { display: inline-flex; inline-size: 100%; block-size: 100%; }
+  `,
+  ];
 
-      display: inline-flex;
-      flex-direction: column;
-      gap: var(--_gap);
-      vertical-align: middle;
-    }
+  formDisabledCallback(disabled: boolean): void {
+    this.disabledByForm = disabled;
+  }
+  formResetCallback(): void {
+    if (this.value === null) this.machineCtl.api.setValue(this.defaultValue ?? []);
+    this.requestUpdate();
+  }
+  formStateRestoreCallback(state: string | File | FormData): void {
+    if (this.value === null && typeof state === 'string')
+      this.machineCtl.api.setValue(parseValues(state));
+    this.requestUpdate();
+  }
+  get form(): HTMLFormElement | null {
+    return this.internals?.form ?? null;
+  }
+  get validity(): ValidityState | undefined {
+    return this.internals?.validity;
+  }
+  get validationMessage(): string {
+    return this.internals?.validationMessage ?? '';
+  }
+  checkValidity(): boolean {
+    return this.internals?.checkValidity() ?? true;
+  }
+  reportValidity(): boolean {
+    return this.internals?.reportValidity() ?? true;
+  }
 
-    :host([size='s']) {
-      --_h: 1.875rem;
-      --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
-    }
-    :host([size='l']) {
-      --_h: 2.75rem;
-      --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
-    }
-
-    .label {
-      font-size: var(--_font);
-      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
-      color: ${litVar('--lab-label-primary')};
-    }
-
-    /* The control wraps the trigger; the machine spreads no behaviour onto it
-       beyond getControlProps (data attrs), so it is a pure layout frame. */
-    .control {
-      display: inline-flex;
-    }
-
-    /* The Zag trigger — a real button; the machine spreads role=combobox,
-       aria-haspopup=listbox, aria-controls, aria-expanded and the toggle handler. */
-    .trigger {
-      box-sizing: border-box;
-      display: inline-flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: ${litVar('--lab-space-sm', '0.5rem')};
-      min-width: 12rem;
-      height: var(--_h);
-      margin: 0;
-      padding: 0 var(--_pad-x);
-      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
-      border-radius: ${litVar('--lab-radius-s', '0.375rem')};
-      background-color: ${litVar('--lab-bg-primary')};
-      color: ${litVar('--lab-label-primary')};
-      font: inherit;
-      font-size: var(--_font);
-      line-height: ${litVar('--lab-line-height-md', '1.5')};
-      cursor: pointer;
-      transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
-    }
-    .trigger:hover {
-      border-color: ${litVar('--lab-border-strong')};
-    }
-    .trigger[data-state='open'] {
-      border-color: ${litVar('--lab-border-accent')};
-    }
-    .trigger[data-disabled] {
-      cursor: not-allowed;
-      opacity: 0.45;
-    }
-    .trigger:focus-visible {
-      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
-      outline-offset: ${litVar('--lab-focus-ring-offset')};
-    }
-
-    /* Trigger value text — placeholder colour when nothing is selected. The
-       @zag-js/select machine sets data-placeholder-shown on the TRIGGER (not the
-       value-text), so the placeholder tint keys off the trigger's attribute and
-       descends to the value text. */
-    .value-text {
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-    .trigger[data-placeholder-shown] .value-text {
-      color: ${litVar('--lab-label-tertiary')};
-    }
-
-    /* The disclosure indicator — rotates when open (machine sets data-state). */
-    .indicator {
-      flex: 0 0 auto;
-      display: inline-flex;
-      color: ${litVar('--lab-label-secondary')};
-      transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
-    }
-    .indicator[data-state='open'] {
-      transform: rotate(180deg);
-    }
-
-    /* The Zag positioner — Floating UI writes --x/--y here and mirrors the content
-       z-index into --z-index for layering. */
-    .positioner {
-      /* positioning frame only */
-    }
-
-    /* The floating listbox — raised surface with a hairline, lifted and layered. */
-    .content {
-      box-sizing: border-box;
-      min-width: var(--reference-width, 12rem);
-      max-height: 16rem;
-      overflow-y: auto;
-      margin: 0;
-      padding: ${litVar('--lab-space-xs', '0.25rem')};
-      list-style: none;
-      border-radius: ${litVar('--lab-radius-s', '0.375rem')};
-      background-color: ${litVar('--lab-bg-secondary')};
-      color: ${litVar('--lab-label-primary')};
-      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
-      box-shadow: var(--lab-elevation-overlay);
-      font: inherit;
-      font-size: var(--_font);
-      line-height: ${litVar('--lab-line-height-md', '1.5')};
-      z-index: ${litVar('--lab-z-dropdown', '900')};
-    }
-    .content[hidden] {
-      display: none;
-    }
-    .content:focus-visible {
-      outline: none;
-    }
-
-    /* One option — the Zag item element. */
-    .item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: ${litVar('--lab-space-sm', '0.5rem')};
-      padding: ${litVar('--lab-space-xs', '0.25rem')} ${litVar('--lab-space-sm', '0.5rem')};
-      border-radius: ${litVar('--lab-radius-xs', '0.25rem')};
-      cursor: pointer;
-      user-select: none;
-    }
-    /* Highlight (keyboard/pointer) — the machine sets data-highlighted. */
-    .item[data-highlighted] {
-      background-color: ${litVar('--lab-fill-primary')};
-    }
-    /* Selected — the machine sets data-state=checked + aria-selected. */
-    .item[data-state='checked'] .item-text {
-      color: ${litVar('--lab-label-accent')};
-      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
-    }
-    .item[data-disabled] {
-      cursor: not-allowed;
-      opacity: 0.45;
-    }
-
-    .item-text {
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-
-    /* The selected-indicator — shown only on the selected option (machine toggles). */
-    .item-indicator {
-      flex: 0 0 auto;
-      display: inline-flex;
-      color: ${litVar('--lab-label-accent')};
-    }
-
-    /* The hidden native <select> — visually removed. */
-    select {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      margin: -1px;
-      padding: 0;
-      border: 0;
-      clip: rect(0 0 0 0);
-      clip-path: inset(50%);
-      overflow: hidden;
-      white-space: nowrap;
-    }
-  `;
+  private removeValue(value: string): void {
+    if (this.disabled || this.disabledByForm) return;
+    const api = this.machineCtl.api;
+    // clearValue('') means clear ALL to Zag. Filtering the accepted array preserves
+    // the empty-string option and controlled rejection/delay without local chips state.
+    api.setValue(api.value.filter((selected) => selected !== value));
+    api.focus();
+    this.requestUpdate();
+  }
 
   override updated(): void {
     // Apply the machine's connect props onto the real shadow nodes: group-level
@@ -413,6 +305,18 @@ export class LabSelect extends LabElement {
       }
       // A single select auto-selects its first option when all are deselected.
       if (!hasSelection) hiddenSelect.selectedIndex = -1;
+      const data = new FormData();
+      if (this.name && !hiddenSelect.disabled) {
+        for (const option of hiddenSelect.selectedOptions) {
+          if (!option.disabled) data.append(this.name, option.value);
+        }
+      }
+      this.internals?.setFormValue(hiddenSelect.disabled ? null : data, JSON.stringify(api.value));
+      this.internals?.setValidity(
+        hiddenSelect.validity,
+        hiddenSelect.validationMessage,
+        trigger ?? undefined,
+      );
     }
 
     // Map each option's getters onto its node by the STABLE key `value`, never the
@@ -448,37 +352,61 @@ export class LabSelect extends LabElement {
   }
 
   override render(): TemplateResult {
-    // Structure only; behaviour (combobox/listbox roles, aria, open/close,
-    // navigation, typeahead, dismiss, positioning, form value) is spread in
-    // updated() from the machine. SSR emits this markup so first paint is a
-    // meaningful, styled trigger before any JS upgrades it.
+    const values = this.selectedValues;
+    const disabled = this.disabled || this.disabledByForm;
+    const labelVisible = !!this.label && this.multiple && this.showLabel;
+    const caption = this.label
+      ? html`<span class="label lab-select-label ${labelVisible ? '' : 'lab-select-label-hidden'}" part="label">${this.label}</span>`
+      : nothing;
     return html`
-      ${this.label ? html`<span class="label" part="label">${this.label}</span>` : nothing}
-      <div class="control" part="control">
-        <button class="trigger" type="button" part="trigger">
-          <span class="value-text" part="value-text">${this.valueText}</span>
-          <span class="indicator" part="indicator" aria-hidden="true">▾</span>
+      <div data-lab-select data-size=${this.size} ?data-multiple=${this.multiple} ?data-disabled=${disabled} ?data-label-visible=${labelVisible}>
+      ${!this.multiple ? caption : nothing}
+      <div class="control lab-select-control" part="control">
+        ${this.multiple ? caption : nothing}
+        <button class="trigger lab-select-trigger" type="button" part="trigger" ?disabled=${disabled} aria-label=${this.label || this.placeholder}>
+          <span class="lab-select-value">
+            ${!this.multiple ? html`<span class="lab-select-leading" aria-hidden="true"><slot name="leading" ></slot></span>` : nothing}
+            <span class="value-text lab-select-value-text" part="value-text" ?hidden=${this.multiple && values.length > 0}>${this.valueText}</span>
+          </span>
+          <span class="indicator lab-select-indicator" part="indicator" aria-hidden="true"></span>
         </button>
+        ${
+          this.multiple && values.length
+            ? html`<div class="lab-select-chips" part="chips">
+          ${repeat(
+            values,
+            (value) => value,
+            (value) => {
+              const item = this.items.find((item) => item.value === value);
+              const label = item?.label ?? value;
+              return html`<button type="button" data-lab-chip data-size="s" data-sharp data-selected data-value=${value} class="lab-select-remove" part="chip" ?disabled=${disabled || item?.disabled} aria-label=${`${this.removeLabel} ${label}`} @click=${() => this.removeValue(value)}>
+              <span class="lab-chip-content"><span class="lab-chip-label">${label}</span><span class="lab-chip-close" aria-hidden="true"></span></span>
+              <span class="lab-chip-glow" aria-hidden="true"></span>
+            </button>`;
+            },
+          )}
+        </div>`
+            : nothing
+        }
+        ${this.multiple ? html`<fieldset class="lab-select-outline" aria-hidden="true"><legend>${this.label}</legend></fieldset>` : nothing}
       </div>
-      <div class="positioner" part="positioner">
-        <ul class="content" part="content" hidden>
-          ${(this.items ?? []).map(
+      <div class="positioner lab-select-positioner" part="positioner">
+        <ul class="content lab-select-content" part="content" hidden>
+          ${repeat(
+            this.items ?? [],
+            (item) => item.value,
             (item) => html`
-              <li class="item" part="item" data-value="${item.value}">
-                <span class="item-text" part="item-text">${item.label}</span>
-                <span class="item-indicator" part="item-indicator" aria-hidden="true">✓</span>
-              </li>
-            `,
+            <li class="item lab-select-item" part="item" data-value=${item.value}>
+              <span class="item-text lab-select-item-text" part="item-text">${item.label}</span>
+              <span class="item-indicator lab-select-item-indicator" part="item-indicator" aria-hidden="true">✓</span>
+            </li>`,
           )}
         </ul>
       </div>
-      <select>
-        ${(this.items ?? []).map(
-          (item) => html`<option value="${item.value}" ?disabled="${item.disabled ?? false}">
-            ${item.label}
-          </option>`,
-        )}
+      <select class="lab-select-hidden" ?multiple=${this.multiple} ?disabled=${disabled} ?required=${this.required}>
+        ${(this.items ?? []).map((item) => html`<option value=${item.value} ?disabled=${item.disabled ?? false} ?selected=${values.includes(item.value)}>${item.label}</option>`)}
       </select>
+      </div>
     `;
   }
 }

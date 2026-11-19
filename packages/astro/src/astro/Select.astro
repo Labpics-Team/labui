@@ -8,7 +8,9 @@
  */
 import { renderSelect } from '@labpics/ui-astro/ssr';
 
-const dsd = renderSelect(Astro.props, {});
+const dsd = renderSelect(Astro.props, {
+  leading: Astro.slots.has('leading') ? await Astro.slots.render('leading') : undefined,
+});
 ---
 <Fragment set:html={dsd} />
 <script>

@@ -1,21 +1,37 @@
-# Select: selection state
+﻿# Select: Dropdown and Multiselect
 
-`value` is an input: a supplied array controls the selection, including the empty
-array. Both `element.value = ['a']` and `value='["a"]'` use the same contract. When
-the user selects an option, `value-change` carries the requested values. The caller
-accepts by assigning `value`; ignoring the event keeps the accepted selection.
+One family selects values from `items: { value, label, disabled? }[]`. Values are
+unique stable keys; labels may change without losing selection. Dropdown uses
+32/48/56 px sizes (`s`, `m`, `l`). `multiple` uses the authored 48 px Multiselect
+composition and removable 28 px sharp Chips. It grows when chips wrap. Metrics and
+the chevron come from `components.json#select`; Lit and React share one stylesheet,
+Compose consumes generated metrics and the existing Chip.
+
+`label` names the control. Dropdown keeps that name visually hidden, matching the
+source composition. A visible form label can be composed externally. Multiselect
+shows its internal floating caption by default, matching Figma's `Show label=True`.
+`showLabel=false` (HTML `show-label="false"`) hides only that caption; its accessible
+name remains. `leading` is a decorative Dropdown slot (a React node or Compose
+icon scope), with authored 16/16/20 px size. No arbitrary icon is inserted by default.
+
+Each chip is a separate removal button beside the trigger. Its accessible name is
+`removeLabel + label` (`Remove` by default); localize that verb for the product.
+Removing a chip requests a value change and returns focus to the trigger. There
+are no buttons nested inside the combobox trigger and no second chips state.
+
+## Accepted selection
+
+`value` is an input: an array, including `[]`, controls the selection. Both
+`element.value = ['a']` and `value='["a"]'` use the same contract. `value-change`
+requests a new array; assigning `value` accepts it. Ignoring or delaying that
+assignment preserves the displayed chips, native selection and submitted value.
+The empty-string key `''` is a value, distinct from an empty array.
 
 Without `value` (`null` on the custom element), `defaultValue` initializes the
-uncontrolled selection. Later changes to `defaultValue` do not replace a user's
-choice. Read `selectedValues` for the accepted selection in either mode; the
-uncontrolled component does not turn itself into a controlled one after a click.
-
-Once connected, the hidden native select mirrors accepted values present in `items`,
-including multiple and empty selections. Updating or reordering `items` keeps
-selection attached to values. Native input (such as autofill) follows the same
-request/accept contract; rejecting it restores the accepted native selection.
-This select lives inside the shadow root: it does not associate the custom
-element with a form outside that root.
+uncontrolled selection. Later defaults do not replace a user's current choice.
+Read `selectedValues` for the accepted selection in either mode. Reordering or
+removing `items` does not rewrite accepted values. A missing item retains a chip
+using its key as fallback text; restoring that item restores its label.
 
 ```ts
 select.value = ['studio'];
@@ -24,16 +40,32 @@ select.addEventListener('value-change', (event) => {
 });
 ```
 
-The initial server frame resolves the selected labels from `items` and
-`value ?? defaultValue`, including a controlled empty selection. It does not flash
-the placeholder before the client starts the selection machine.
+React uses `value`/`onValueChange`, with `undefined` for uncontrolled mode.
+Vue, Solid, Svelte and Astro inherit the core property's contract. Compose exposes
+`LabSelect(value: List<String>, onValueChange, items, label, multiple, ...)`: the
+caller accepts requests and resets by assigning the value. Local Compose state
+can use `rememberSaveable { mutableStateOf(defaultValues) }`.
 
-The generated Vue, Solid, Svelte and Astro APIs inherit the core property's type.
-React uses the same Zag controlled-selection contract through `value` and
-`onValueChange`.
+## Forms and initial rendering
 
-Source: [Zag Select: controlled selection](https://zagjs.com/components/select#controlled-select-value).
+Lit is form-associated: `ElementInternals` submits the accepted enabled options
+through `FormData`. The hidden shadow `<select>` supplies native validity and
+autofill semantics; its `name` alone does not provide the external form association.
+React's native `<select>` participates directly in its form. Multiple values
+produce repeated entries with the same `name`. Missing and disabled options are
+omitted from submission, as in a native select, while the accepted array survives.
 
-This contract repair does not qualify the complete Figma Dropdown/Multiselect
-design. Their shared profile, authored chips, native renderer and nested-overlay
-behaviour remain separate implementation work.
+`required`, `disabled`, a disabled parent `fieldset`, reset and native input are
+supported. Reset restores the uncontrolled default and preserves controlled
+values. Lit also exposes `form`, `validity`, `validationMessage`, `checkValidity()`
+and `reportValidity()`, and restores saved state only in uncontrolled mode.
+
+The server frame resolves labels and chips from `value ?? defaultValue`, including
+a controlled empty array. The positioned listbox is interactive after connection;
+its keyboard navigation, typeahead, RTL and dismissal use Zag on web. Compose
+uses Foundation actions and a native popup, with arrows, Home/End and Escape.
+
+Sources: [Figma Dropdown](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2?node-id=6212-445),
+[Multiselect](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2?node-id=6214-4162),
+[Zag Select](https://zagjs.com/components/select#controlled-select-value),
+[form-associated custom elements](https://web.dev/articles/more-capable-form-controls).

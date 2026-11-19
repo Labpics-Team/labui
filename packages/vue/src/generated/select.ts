@@ -10,7 +10,7 @@ import '@labpics/ui-core/select';
 import type { LabSelect } from '@labpics/ui-core/select';
 
 /** Пропы <lab-select>, взятые прямо из класса ядра (LabSelect). */
-export type SelectProps = Pick<LabSelect, 'size' | 'placement' | 'multiple' | 'disabled' | 'name' | 'placeholder' | 'label' | 'value' | 'defaultValue' | 'items'>;
+export type SelectProps = Pick<LabSelect, 'size' | 'placement' | 'multiple' | 'disabled' | 'name' | 'required' | 'showLabel' | 'removeLabel' | 'placeholder' | 'label' | 'value' | 'defaultValue' | 'items'>;
 
 /**
  * <Select> — тонкая Vue-обёртка над <lab-select>.
@@ -26,6 +26,9 @@ export const Select: LabComponent<SelectProps, 'open-change' | 'value-change'> =
       { name: 'multiple', attr: 'multiple', kind: 'boolean' },
       { name: 'disabled', attr: 'disabled', kind: 'boolean' },
       { name: 'name', attr: 'name', kind: 'string' },
+      { name: 'required', attr: 'required', kind: 'boolean' },
+      { name: 'showLabel', attr: 'show-label', kind: 'prop' },
+      { name: 'removeLabel', attr: 'remove-label', kind: 'string' },
       { name: 'placeholder', attr: 'placeholder', kind: 'string' },
       { name: 'label', attr: 'label', kind: 'string' },
       { name: 'value', attr: 'value', kind: 'prop' },
