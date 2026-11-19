@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/progress';
 import type { LabProgress } from '@labpics/ui-core/progress';
-import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-progress>, взятые прямо из класса ядра (LabProgress). */
 export type ProgressProps = Pick<LabProgress, 'size' | 'variant' | 'value' | 'min' | 'max' | 'label' | 'showValueText'>;

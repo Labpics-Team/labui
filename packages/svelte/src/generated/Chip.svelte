@@ -4,9 +4,10 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/chip';
   import type { LabChip } from '@labpics/ui-core/chip';
-  import type { Snippet } from 'svelte';
+  import { type Snippet, untrack } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-chip> — типы взяты прямо из класса ядра (LabChip). */
@@ -28,10 +29,11 @@
     onSelectedChange?: (event: CustomEvent) => void;
     leading?: Snippet;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { mode, size, sharp, active, selected, defaultSelected, controlled, disabled, loading, showLeading, name, value, onAction, onRemove, onSelectedChange, children, leading, ...rest }: Props = $props();
+  let { mode, size, sharp, active, selected, defaultSelected, controlled, disabled, loading, showLeading, name, value, onAction, onRemove, onSelectedChange, children, slots, leading, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'mode', attr: 'mode', kind: 'string' },
@@ -48,6 +50,11 @@
     { name: 'value', attr: 'value', kind: 'string' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-chip', {
+    specs, props: { mode, size, sharp, active, selected, defaultSelected, controlled, disabled, loading, showLeading, name, value }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'leading': leading, ...slots });
+
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
@@ -56,7 +63,10 @@
   $effect(() => forwardEvents(el, { 'action': onAction, 'remove': onRemove, 'selected-change': onSelectedChange }));
 </script>
 
-<lab-chip bind:this={el} {...rest}>
+<lab-chip bind:this={el} {...server?.attributes} {...rest}>
+  {@html server?.shadowHtml ?? ''}
   {@render children?.()}
-  {#if leading}<div slot="leading" style="display:contents">{@render leading()}</div>{/if}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-chip>

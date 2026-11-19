@@ -4,9 +4,10 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/number-input';
   import type { LabNumberInput } from '@labpics/ui-core/number-input';
-  import type { Snippet } from 'svelte';
+  import { type Snippet, untrack } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-number-input> — типы взяты прямо из класса ядра (LabNumberInput). */
@@ -33,10 +34,11 @@
     onValueChange?: (event: CustomEvent) => void;
     onValueCommit?: (event: CustomEvent) => void;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { type, size, label, labelHidden, helper, error, value, defaultValue, placeholder, min, max, step, scrubber, allowMouseWheel, readonly, disabled, required, invalid, name, onValueChange, onValueCommit, children, ...rest }: Props = $props();
+  let { type, size, label, labelHidden, helper, error, value, defaultValue, placeholder, min, max, step, scrubber, allowMouseWheel, readonly, disabled, required, invalid, name, onValueChange, onValueCommit, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -60,6 +62,11 @@
     { name: 'name', attr: 'name', kind: 'string' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-number-input', {
+    specs, props: { type, size, label, labelHidden, helper, error, value, defaultValue, placeholder, min, max, step, scrubber, allowMouseWheel, readonly, disabled, required, invalid, name }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
+
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
@@ -68,5 +75,9 @@
   $effect(() => forwardEvents(el, { 'value-change': onValueChange, 'value-commit': onValueCommit }));
 </script>
 
-<lab-number-input bind:this={el} {...rest}>
+<lab-number-input bind:this={el} {...server?.attributes} {...rest}>
+  {@html server?.shadowHtml ?? ''}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-number-input>

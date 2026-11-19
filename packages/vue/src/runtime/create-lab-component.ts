@@ -1,41 +1,20 @@
+import { type LabPropSpec, forwardDeclared } from '@labpics/ui-core/adapter-runtime';
 /**
  * Фабрика тонких Vue-обёрток над Lit web-components (ADR-0001, A-prime).
  *
- * ЕДИНАЯ точка проброса для всех 27 компонентов: генерируемые файлы в
- * `src/generated/*` лишь передают сюда тег, спеки пропов и имена событий — сама
- * логика (атрибут vs свойство, булев флаг, слоты, форвардинг натива и событий)
- * живёт здесь один раз. Это «по образцу Button»: ту же семантику, что вручную
- * несла старая `button.ts`, теперь несёт фабрика для всего корпуса — чинит КЛАСС,
- * а не пишет 27 заплаток.
- *
- * Проброс пропов (обоснование `^`/`.` — из источника vuejs/core):
- *   - 'string'  → ключ `^attr`: Vue форсирует АТРИБУТ (иначе для upgraded-элемента
- *     сработало бы `key in el` и значение ушло бы свойством — незаметный дрейф
- *     между SSR и клиентом). Атрибут SSR-безопасен и до upgrade.
- *   - 'boolean' → `.name`: явное false должно переопределять и default=true.
- *     Присутствие HTML-атрибута этого не выражает; отражение выполняет Lit.
- *   - 'prop'    → ключ `.name`: Vue форсирует JS-СВОЙСТВО. Единственный корректный
- *     путь для массивов/объектов (items, value-списки): атрибут из массива стал бы
- *     "[object Object]".
- * Дефолты осей НЕ дублируем — их несёт конструктор элемента (ноль дрейфа).
+ * Генератор передаёт тег, спеки и события. SSR добавляет только shadow root;
+ * host, слоты и нативные события остаются узлами Vue. Общий forwardDeclared
+ * применяет объявленные входы при получении ref и при изменении реактивных props.
+ * Он не повторяет начальную SSR-запись поверх восстановленного ввода пользователя.
  *
  * Регистрация: генерируемый файл делает side-effect импорт
  * `@labpics/ui-core/<subpath>`, поэтому обёртка приносит элемент с собой.
  */
+import { renderElementParts } from '@labpics/ui-core/element-ssr';
 import { type DefineComponent, type VNode, defineComponent, h } from 'vue';
 
 /** Способ проброса одного пропа — зеркалит PropKind манифеста. */
-export type LabPropKind = 'boolean' | 'prop' | 'string';
-
-/** Спека проброса одного пропа. */
-export interface LabPropSpec {
-  /** Имя свойства (camelCase). */
-  readonly name: string;
-  /** Имя атрибута на хосте (для 'string'/'boolean'). */
-  readonly attr: string;
-  /** Способ проброса. */
-  readonly kind: LabPropKind;
-}
+export type { LabPropKind, LabPropSpec } from '@labpics/ui-core/adapter-runtime';
 
 /** Описание компонента для фабрики. */
 export interface LabComponentSpec {
@@ -81,23 +60,42 @@ export function createLabComponent<Props, Events extends string>(
     inheritAttrs: false,
     props: propNames,
     setup(props: Record<string, unknown>, { slots, attrs }) {
+      let element: HTMLElement | undefined;
+      let inputs: Record<string, unknown> = {};
+      const setElement = (node: unknown): void => {
+        element = node instanceof HTMLElement ? node : undefined;
+        forwardDeclared(element, spec.specs, inputs);
+      };
       return () => {
+        // Reading the declared inputs during render tracks Vue's reactive props;
+        // the shared forwarder owns their initial adoption and subsequent changes.
+        inputs = {};
+        for (const s of spec.specs) inputs[s.name] = props[s.name];
+        const server = renderElementParts(tag, {
+          specs: spec.specs,
+          props: inputs,
+          attributes: attrs,
+        });
         // Натив и слушатели событий (onValueChange → 'value-change') — сначала,
         // объявленные пропы форсируем ниже своими ключами (пересечений нет: Vue
         // изымает объявленные пропы из attrs).
-        const bindings: Record<string, unknown> = { ...attrs };
-        for (const s of spec.specs) {
-          const value = props[s.name];
-          if (s.kind === 'prop' || s.kind === 'boolean') {
-            if (value !== undefined) bindings[`.${s.name}`] = value;
-          } else {
-            bindings[`^${s.attr}`] = value;
-          }
-        }
+        const bindings: Record<string, unknown> = {
+          ...server?.attributes,
+          ...attrs,
+          ref: setElement,
+        };
+        if (!server) forwardDeclared(element, spec.specs, inputs);
         // Слоты: default → дети; именованные (в т.ч. динамические content/icon/…)
         // оборачиваем в display:contents-элемент с slot=<name> (нативное слотирование
         // требует РЕНДЕРЯЩИЙСЯ узел в light-DOM; <template> не спроецировался бы).
         const children: unknown[] = [];
+        if (server?.shadowRoot)
+          children.push(
+            h('template', {
+              ...server.shadowRoot.attributes,
+              innerHTML: server.shadowRoot.contents,
+            }),
+          );
         for (const [name, slotFn] of Object.entries(slots)) {
           if (!slotFn) continue;
           if (name === 'default') children.push(slotFn());

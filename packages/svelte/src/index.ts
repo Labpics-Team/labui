@@ -5,9 +5,10 @@
  * поставляется КАК Lit web-components. Компоненты здесь — тонкие обёртки, монтирующие
  * общие `<lab-*>` из @labpics/ui-core и пробрасывающие пропы / события / слоты.
  *
- * Все обёртки СГЕНЕРИРОВАНЫ из ядра (`src/generated/*.svelte`, покрытие всех 27
- * компонентов), общая логика проброса — в рантайм-хелперах (`src/runtime/forward.ts`).
- * SSR — через вход `@labpics/ui-svelte/ssr`.
+ * Все обёртки СГЕНЕРИРОВАНЫ из ядра (`src/generated/*.svelte`),
+ * общая логика проброса — в рантайм-хелперах (`src/runtime/forward.ts`).
+ * Обычный Svelte SSR сохраняет host/snippets Svelte и добавляет DSD ядра;
+ * `/ssr` возвращает статические HTML-фрагменты.
  */
 export * from './generated/index.js';
 export {

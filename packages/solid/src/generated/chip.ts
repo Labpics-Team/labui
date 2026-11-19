@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/chip';
 import type { LabChip } from '@labpics/ui-core/chip';
-import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-chip>, взятые прямо из класса ядра (LabChip). */
 export type ChipProps = Pick<LabChip, 'mode' | 'size' | 'sharp' | 'active' | 'selected' | 'defaultSelected' | 'controlled' | 'disabled' | 'loading' | 'showLeading' | 'name' | 'value'>;

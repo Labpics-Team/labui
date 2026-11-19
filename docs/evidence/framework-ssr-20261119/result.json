@@ -1,0 +1,302 @@
+{
+  "archives": [
+    {
+      "name": "@labpics/ui-tokens",
+      "sha256": "32a0c13811235938dc1cf90409ec327fcc069e063a5bcfd719d4cdf342d7dabd"
+    },
+    {
+      "name": "@labpics/ui-shadow",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "@labui/colors",
+      "sha256": "2dfc01336750f554b4a4e46155bb10caaf3c804df98ec237008961fee268decb"
+    },
+    {
+      "name": "@labpics/ui-materials",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "@labpics/ui-core",
+      "sha256": "65b6d91a8d02d87dedf3c0d8308595787a115ed57fd67b95b329bdc196fbe957"
+    },
+    {
+      "name": "@labpics/ui-vue",
+      "sha256": "53131c5dbb481a07e940b90756b6e235aedd5c65595066694a2eff98810599c3"
+    },
+    {
+      "name": "@labpics/ui-solid",
+      "sha256": "cbd30fc777389ce71e694fb4a2dab119d123fc5003175feec35804369c37d424"
+    },
+    {
+      "name": "@labpics/ui-svelte",
+      "sha256": "dc73349434a44cb4a2da8ff89b00cf37740e27a05c6c5d757be4c8235ca0ab21"
+    }
+  ],
+  "qualification": {
+    "records": [
+      {
+        "name": "vue",
+        "browserModules": 154,
+        "browserProviders": [
+          "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
+        ],
+        "serverEngineInBrowser": false
+      },
+      {
+        "name": "solid",
+        "browserModules": 150,
+        "browserProviders": [
+          "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
+        ],
+        "serverEngineInBrowser": false
+      },
+      {
+        "name": "svelte",
+        "browserModules": 444,
+        "browserProviders": [
+          "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
+        ],
+        "serverEngineInBrowser": false
+      }
+    ],
+    "nodeEsm": ["vue", "solid", "svelte"],
+    "nodeCjs": ["vue", "solid"],
+    "viteSsr": true,
+    "types": {
+      "nodeNextEsm": true,
+      "nodeNextCjs": true,
+      "svelteSlots": true
+    }
+  },
+  "records": [
+    {
+      "framework": "vue",
+      "browser": "chromium",
+      "before": {
+        "defined": false,
+        "hosts": 1,
+        "hostCount": 6,
+        "labels": ["Draft", "History"],
+        "height": 56,
+        "background": "rgba(120, 120, 128, 0.08)",
+        "styles": 1,
+        "selected": "true",
+        "field": "Server field"
+      },
+      "after": {
+        "hosts": 1,
+        "allHosts": true,
+        "host": true,
+        "editor": true,
+        "save": true,
+        "footer": true,
+        "trigger": true,
+        "panel": true,
+        "field": true,
+        "text": "Typed before hydration & retained",
+        "selection": [6, 12],
+        "fieldText": "Dirty component field",
+        "fieldSelection": [2, 8],
+        "tabs": 2,
+        "collapsible": false,
+        "nullValue": null,
+        "arrow": false,
+        "defaultArrow": true
+      },
+      "events": 2,
+      "clicks": 1,
+      "errors": []
+    },
+    {
+      "framework": "solid",
+      "browser": "chromium",
+      "before": {
+        "defined": false,
+        "hosts": 1,
+        "hostCount": 6,
+        "labels": ["Draft", "History"],
+        "height": 56,
+        "background": "rgba(120, 120, 128, 0.08)",
+        "styles": 1,
+        "selected": "true",
+        "field": "Server field"
+      },
+      "after": {
+        "hosts": 1,
+        "allHosts": true,
+        "host": true,
+        "editor": true,
+        "save": true,
+        "footer": true,
+        "trigger": true,
+        "panel": true,
+        "field": true,
+        "text": "Typed before hydration & retained",
+        "selection": [6, 12],
+        "fieldText": "Dirty component field",
+        "fieldSelection": [2, 8],
+        "tabs": 2,
+        "collapsible": false,
+        "nullValue": null,
+        "arrow": false,
+        "defaultArrow": true
+      },
+      "events": 2,
+      "clicks": 1,
+      "errors": []
+    },
+    {
+      "framework": "svelte",
+      "browser": "chromium",
+      "before": {
+        "defined": false,
+        "hosts": 1,
+        "hostCount": 6,
+        "labels": ["Draft", "History"],
+        "height": 56,
+        "background": "rgba(120, 120, 128, 0.08)",
+        "styles": 1,
+        "selected": "true",
+        "field": "Server field"
+      },
+      "after": {
+        "hosts": 1,
+        "allHosts": true,
+        "host": true,
+        "editor": true,
+        "save": true,
+        "footer": true,
+        "trigger": true,
+        "panel": true,
+        "field": true,
+        "text": "Typed before hydration & retained",
+        "selection": [6, 12],
+        "fieldText": "Dirty component field",
+        "fieldSelection": [2, 8],
+        "tabs": 2,
+        "collapsible": false,
+        "nullValue": null,
+        "arrow": false,
+        "defaultArrow": true
+      },
+      "events": 2,
+      "clicks": 1,
+      "errors": []
+    },
+    {
+      "framework": "vue",
+      "browser": "webkit",
+      "before": {
+        "defined": false,
+        "hosts": 1,
+        "hostCount": 6,
+        "labels": ["Draft", "History"],
+        "height": 56,
+        "background": "rgba(120, 120, 128, 0.08)",
+        "styles": 1,
+        "selected": "true",
+        "field": "Server field"
+      },
+      "after": {
+        "hosts": 1,
+        "allHosts": true,
+        "host": true,
+        "editor": true,
+        "save": true,
+        "footer": true,
+        "trigger": true,
+        "panel": true,
+        "field": true,
+        "text": "Typed before hydration & retained",
+        "selection": [6, 12],
+        "fieldText": "Dirty component field",
+        "fieldSelection": [2, 8],
+        "tabs": 2,
+        "collapsible": false,
+        "nullValue": null,
+        "arrow": false,
+        "defaultArrow": true
+      },
+      "events": 2,
+      "clicks": 1,
+      "errors": []
+    },
+    {
+      "framework": "solid",
+      "browser": "webkit",
+      "before": {
+        "defined": false,
+        "hosts": 1,
+        "hostCount": 6,
+        "labels": ["Draft", "History"],
+        "height": 56,
+        "background": "rgba(120, 120, 128, 0.08)",
+        "styles": 1,
+        "selected": "true",
+        "field": "Server field"
+      },
+      "after": {
+        "hosts": 1,
+        "allHosts": true,
+        "host": true,
+        "editor": true,
+        "save": true,
+        "footer": true,
+        "trigger": true,
+        "panel": true,
+        "field": true,
+        "text": "Typed before hydration & retained",
+        "selection": [6, 12],
+        "fieldText": "Dirty component field",
+        "fieldSelection": [2, 8],
+        "tabs": 2,
+        "collapsible": false,
+        "nullValue": null,
+        "arrow": false,
+        "defaultArrow": true
+      },
+      "events": 2,
+      "clicks": 1,
+      "errors": []
+    },
+    {
+      "framework": "svelte",
+      "browser": "webkit",
+      "before": {
+        "defined": false,
+        "hosts": 1,
+        "hostCount": 6,
+        "labels": ["Draft", "History"],
+        "height": 56,
+        "background": "rgba(120, 120, 128, 0.08)",
+        "styles": 1,
+        "selected": "true",
+        "field": "Server field"
+      },
+      "after": {
+        "hosts": 1,
+        "allHosts": true,
+        "host": true,
+        "editor": true,
+        "save": true,
+        "footer": true,
+        "trigger": true,
+        "panel": true,
+        "field": true,
+        "text": "Typed before hydration & retained",
+        "selection": [6, 12],
+        "fieldText": "Dirty component field",
+        "fieldSelection": [2, 8],
+        "tabs": 2,
+        "collapsible": false,
+        "nullValue": null,
+        "arrow": false,
+        "defaultArrow": true
+      },
+      "events": 2,
+      "clicks": 1,
+      "errors": []
+    }
+  ]
+}

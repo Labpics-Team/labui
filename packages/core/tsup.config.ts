@@ -38,6 +38,8 @@ export default libraryPreset({
     'src/components/breadcrumb/contract.ts',
     'src/components/pagination/contract.ts',
     'src/ssr/index.ts',
+    'src/ssr/element.ts',
+    'src/ssr/element-browser.ts',
     'src/proof/lab-proof.ts',
     'src/components/dialog/shared.ts',
     'src/components/sheet/positions.ts',

@@ -4,9 +4,10 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/snackbar';
   import type { LabSnackbar } from '@labpics/ui-core/snackbar';
-  import type { Snippet } from 'svelte';
+  import { type Snippet, untrack } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-snackbar> — типы взяты прямо из класса ядра (LabSnackbar). */
@@ -20,10 +21,11 @@
     onLabError?: (event: CustomEvent) => void;
     onLabOpenChange?: (event: CustomEvent) => void;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { open, message, duration, actionLabel, notificationKey, onLabAction, onLabError, onLabOpenChange, children, ...rest }: Props = $props();
+  let { open, message, duration, actionLabel, notificationKey, onLabAction, onLabError, onLabOpenChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'open', attr: 'open', kind: 'boolean' },
@@ -33,6 +35,11 @@
     { name: 'notificationKey', attr: 'notification-key', kind: 'string' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-snackbar', {
+    specs, props: { open, message, duration, actionLabel, notificationKey }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
+
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
@@ -41,5 +48,9 @@
   $effect(() => forwardEvents(el, { 'lab-action': onLabAction, 'lab-error': onLabError, 'lab-open-change': onLabOpenChange }));
 </script>
 
-<lab-snackbar bind:this={el} {...rest}>
+<lab-snackbar bind:this={el} {...server?.attributes} {...rest}>
+  {@html server?.shadowHtml ?? ''}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-snackbar>

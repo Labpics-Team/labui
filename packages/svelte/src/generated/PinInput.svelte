@@ -4,9 +4,10 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/pin-input';
   import type { LabPinInput } from '@labpics/ui-core/pin-input';
-  import type { Snippet } from 'svelte';
+  import { type Snippet, untrack } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-pin-input> — типы взяты прямо из класса ядра (LabPinInput). */
@@ -33,10 +34,11 @@
     onValueComplete?: (event: CustomEvent) => void;
     onValueInvalid?: (event: CustomEvent) => void;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { type, size, label, labelHidden, helper, error, count, valueType, mask, otp, placeholder, value, defaultValue, readonly, disabled, required, invalid, name, onValueChange, onValueComplete, onValueInvalid, children, ...rest }: Props = $props();
+  let { type, size, label, labelHidden, helper, error, count, valueType, mask, otp, placeholder, value, defaultValue, readonly, disabled, required, invalid, name, onValueChange, onValueComplete, onValueInvalid, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -59,6 +61,11 @@
     { name: 'name', attr: 'name', kind: 'string' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-pin-input', {
+    specs, props: { type, size, label, labelHidden, helper, error, count, valueType, mask, otp, placeholder, value, defaultValue, readonly, disabled, required, invalid, name }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
+
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
@@ -67,5 +74,9 @@
   $effect(() => forwardEvents(el, { 'value-change': onValueChange, 'value-complete': onValueComplete, 'value-invalid': onValueInvalid }));
 </script>
 
-<lab-pin-input bind:this={el} {...rest}>
+<lab-pin-input bind:this={el} {...server?.attributes} {...rest}>
+  {@html server?.shadowHtml ?? ''}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-pin-input>

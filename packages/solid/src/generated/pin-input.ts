@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/pin-input';
 import type { LabPinInput } from '@labpics/ui-core/pin-input';
-import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-pin-input>, взятые прямо из класса ядра (LabPinInput). */
 export type PinInputProps = Pick<LabPinInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'count' | 'valueType' | 'mask' | 'otp' | 'placeholder' | 'value' | 'defaultValue' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>;

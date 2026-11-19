@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/tags-input';
 import type { LabTagsInput } from '@labpics/ui-core/tags-input';
-import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-tags-input>, взятые прямо из класса ядра (LabTagsInput). */
 export type TagsInputProps = Pick<LabTagsInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'placeholder' | 'max' | 'delimiter' | 'editable' | 'addOnPaste' | 'allowDuplicates' | 'value' | 'defaultValue' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>;

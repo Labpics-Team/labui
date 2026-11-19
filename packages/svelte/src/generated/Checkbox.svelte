@@ -4,9 +4,10 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/checkbox';
   import type { LabCheckbox } from '@labpics/ui-core/checkbox';
-  import type { Snippet } from 'svelte';
+  import { type Snippet, untrack } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-checkbox> — типы взяты прямо из класса ядра (LabCheckbox). */
@@ -28,10 +29,11 @@
     icon?: Snippet;
     labelStart?: Snippet;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { type, size, variant, checked, indeterminate, defaultChecked, defaultIndeterminate, controlled, disabled, required, name, value, onCheckedChange, children, description, icon, labelStart, ...rest }: Props = $props();
+  let { type, size, variant, checked, indeterminate, defaultChecked, defaultIndeterminate, controlled, disabled, required, name, value, onCheckedChange, children, slots, description, icon, labelStart, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -48,6 +50,11 @@
     { name: 'value', attr: 'value', kind: 'string' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-checkbox', {
+    specs, props: { type, size, variant, checked, indeterminate, defaultChecked, defaultIndeterminate, controlled, disabled, required, name, value }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'description': description, 'icon': icon, 'label-start': labelStart, ...slots });
+
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
@@ -56,9 +63,10 @@
   $effect(() => forwardEvents(el, { 'checked-change': onCheckedChange }));
 </script>
 
-<lab-checkbox bind:this={el} {...rest}>
+<lab-checkbox bind:this={el} {...server?.attributes} {...rest}>
+  {@html server?.shadowHtml ?? ''}
   {@render children?.()}
-  {#if description}<div slot="description" style="display:contents">{@render description()}</div>{/if}
-  {#if icon}<div slot="icon" style="display:contents">{@render icon()}</div>{/if}
-  {#if labelStart}<div slot="label-start" style="display:contents">{@render labelStart()}</div>{/if}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-checkbox>

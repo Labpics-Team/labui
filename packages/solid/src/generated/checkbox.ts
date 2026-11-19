@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/checkbox';
 import type { LabCheckbox } from '@labpics/ui-core/checkbox';
-import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-checkbox>, взятые прямо из класса ядра (LabCheckbox). */
 export type CheckboxProps = Pick<LabCheckbox, 'type' | 'size' | 'variant' | 'checked' | 'indeterminate' | 'defaultChecked' | 'defaultIndeterminate' | 'controlled' | 'disabled' | 'required' | 'name' | 'value'>;

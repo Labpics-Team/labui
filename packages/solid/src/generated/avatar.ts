@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/avatar';
 import type { LabAvatar } from '@labpics/ui-core/avatar';
-import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-avatar>, взятые прямо из класса ядра (LabAvatar). */
 export type AvatarProps = Pick<LabAvatar, 'size' | 'color' | 'status' | 'src' | 'name'>;

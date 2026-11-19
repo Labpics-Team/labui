@@ -9,6 +9,7 @@ import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ChipHarness from './fixtures/ChipHarness.svelte';
 import Harness from './fixtures/Harness.svelte';
+import SlotsHarness from './fixtures/SlotsHarness.svelte';
 
 let host: HTMLElement;
 let instance: ReturnType<typeof mount> | undefined;
@@ -20,6 +21,22 @@ afterEach(() => {
 });
 
 describe('Svelte mount (проброс на <lab-*>)', () => {
+  it('renders fixed snippet props and explicit named content without a scalar-prop collision', () => {
+    host = document.createElement('div');
+    document.body.append(host);
+    instance = mount(SlotsHarness, { target: host });
+    flushSync();
+    expect(host.querySelector('#fixed-slot [slot="description"]')?.textContent).toBe(
+      'Fixed description',
+    );
+    expect(host.querySelectorAll('#override-slot [slot="description"]')).toHaveLength(1);
+    expect(host.querySelector('#override-slot')?.textContent).toContain('Rich named content');
+    expect(host.querySelector('#override-slot')?.textContent).not.toContain('Replaced description');
+    expect(host.querySelector('#collision-slot [slot="content"]')?.textContent).toBe(
+      'Rich named content',
+    );
+    expect(host.querySelector('[slots]')).toBeNull();
+  });
   it.each([false, true])(
     'withdrawing a boolean is independent of an intervening Lit update (%s)',
     async (interveningUpdate) => {

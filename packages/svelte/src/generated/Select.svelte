@@ -4,9 +4,10 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/select';
   import type { LabSelect } from '@labpics/ui-core/select';
-  import type { Snippet } from 'svelte';
+  import { type Snippet, untrack } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-select> — типы взяты прямо из класса ядра (LabSelect). */
@@ -24,10 +25,11 @@
     onOpenChange?: (event: CustomEvent) => void;
     onValueChange?: (event: CustomEvent) => void;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { size, placement, multiple, disabled, name, placeholder, label, value, defaultValue, items, onOpenChange, onValueChange, children, ...rest }: Props = $props();
+  let { size, placement, multiple, disabled, name, placeholder, label, value, defaultValue, items, onOpenChange, onValueChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
@@ -42,6 +44,11 @@
     { name: 'items', attr: 'items', kind: 'prop' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-select', {
+    specs, props: { size, placement, multiple, disabled, name, placeholder, label, value, defaultValue, items }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
+
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
@@ -50,5 +57,9 @@
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange, 'value-change': onValueChange }));
 </script>
 
-<lab-select bind:this={el} {...rest}>
+<lab-select bind:this={el} {...server?.attributes} {...rest}>
+  {@html server?.shadowHtml ?? ''}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-select>

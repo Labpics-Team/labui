@@ -1,4 +1,5 @@
 import { type LabPropSpec, forwardDeclared } from '@labpics/ui-core/adapter-runtime';
+import { renderElementParts } from '@labpics/ui-core/element-ssr';
 /**
  * Фабрика тонких Solid-обёрток над Lit web-components (ADR-0001, A-prime).
  *
@@ -19,7 +20,7 @@ import {
   onCleanup,
   splitProps,
 } from 'solid-js';
-import { Dynamic } from 'solid-js/web';
+import { Dynamic, ssr } from 'solid-js/web';
 export type { LabPropKind, LabPropSpec } from '@labpics/ui-core/adapter-runtime';
 
 /** Описание компонента для фабрики. */
@@ -74,6 +75,7 @@ export function createLabComponent<Props, Events extends string>(
     // Разделяем: объявленные пропы + обработчики + дети форвардим сами, остальное
     // (нативные атрибуты) спредим на элемент.
     const [, rest] = splitProps(all, [...propNames, ...handlerNames, 'children']);
+    const server = renderElementParts(tag, { specs: spec.specs, props: all, attributes: rest });
     // Реактивный проброс объявленных пропов.
     createEffect(() => {
       const node = el();
@@ -98,9 +100,10 @@ export function createLabComponent<Props, Events extends string>(
     });
     return createComponent(
       Dynamic,
-      mergeProps({ component: tag, ref: setEl }, rest, {
+      mergeProps({ component: tag, ref: setEl }, server?.attributes ?? {}, rest, {
         get children() {
-          return (all as { children?: JSX.Element }).children;
+          const children = (all as { children?: JSX.Element }).children;
+          return server ? [ssr(server.shadowHtml), children] : children;
         },
       }) as Parameters<typeof Dynamic>[0],
     );

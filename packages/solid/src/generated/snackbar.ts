@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/snackbar';
 import type { LabSnackbar } from '@labpics/ui-core/snackbar';
-import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-snackbar>, взятые прямо из класса ядра (LabSnackbar). */
 export type SnackbarProps = Pick<LabSnackbar, 'open' | 'message' | 'duration' | 'actionLabel' | 'notificationKey'>;

@@ -23,9 +23,9 @@ function componentFile(c: ComponentMeta): string {
   const events = tsStringUnion(c.events);
   const specs = c.props.map(specLiteral).join('\n');
   return `${generatedHeader()}
+import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/${c.subpath}';
 import type { ${c.className} } from '@labpics/ui-core/${c.subpath}';
-import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <${c.tag}>, взятые прямо из класса ядра (${c.className}). */
 export type ${c.pascal}Props = ${propsType};

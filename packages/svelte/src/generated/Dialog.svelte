@@ -4,9 +4,10 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/dialog';
   import type { LabDialog } from '@labpics/ui-core/dialog';
-  import type { Snippet } from 'svelte';
+  import { type Snippet, untrack } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-dialog> — типы взяты прямо из класса ядра (LabDialog). */
@@ -19,10 +20,11 @@
     onOpenChange?: (event: CustomEvent) => void;
     content?: Snippet;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { size, modal, closable, heading, description, onOpenChange, children, content, ...rest }: Props = $props();
+  let { size, modal, closable, heading, description, onOpenChange, children, slots, content, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
@@ -32,6 +34,11 @@
     { name: 'description', attr: 'description', kind: 'string' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-dialog', {
+    specs, props: { size, modal, closable, heading, description }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'content': content, ...slots });
+
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
@@ -40,7 +47,10 @@
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
 </script>
 
-<lab-dialog bind:this={el} {...rest}>
+<lab-dialog bind:this={el} {...server?.attributes} {...rest}>
+  {@html server?.shadowHtml ?? ''}
   {@render children?.()}
-  {#if content}<div slot="content" style="display:contents">{@render content()}</div>{/if}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-dialog>

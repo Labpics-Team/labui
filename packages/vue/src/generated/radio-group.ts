@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/radio-group';
 import type { LabRadioGroup } from '@labpics/ui-core/radio-group';
-import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-radio-group>, взятые прямо из класса ядра (LabRadioGroup). */
 export type RadioGroupProps = Pick<LabRadioGroup, 'type' | 'size' | 'variant' | 'orientation' | 'value' | 'defaultValue' | 'controlled' | 'disabled' | 'required' | 'name' | 'label' | 'items'>;

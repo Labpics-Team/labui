@@ -4,9 +4,10 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/sheet';
   import type { LabSheet } from '@labpics/ui-core/sheet';
-  import type { Snippet } from 'svelte';
+  import { type Snippet, untrack } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-sheet> — типы взяты прямо из класса ядра (LabSheet). */
@@ -23,10 +24,11 @@
     content?: Snippet;
     trigger?: Snippet;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { open, position, modal, closable, heading, description, onMotionError, onOpenChange, onPositionChange, children, content, trigger, ...rest }: Props = $props();
+  let { open, position, modal, closable, heading, description, onMotionError, onOpenChange, onPositionChange, children, slots, content, trigger, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'open', attr: 'open', kind: 'boolean' },
@@ -37,6 +39,11 @@
     { name: 'description', attr: 'description', kind: 'string' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-sheet', {
+    specs, props: { open, position, modal, closable, heading, description }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'content': content, 'trigger': trigger, ...slots });
+
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
@@ -45,8 +52,10 @@
   $effect(() => forwardEvents(el, { 'motion-error': onMotionError, 'open-change': onOpenChange, 'position-change': onPositionChange }));
 </script>
 
-<lab-sheet bind:this={el} {...rest}>
+<lab-sheet bind:this={el} {...server?.attributes} {...rest}>
+  {@html server?.shadowHtml ?? ''}
   {@render children?.()}
-  {#if content}<div slot="content" style="display:contents">{@render content()}</div>{/if}
-  {#if trigger}<div slot="trigger" style="display:contents">{@render trigger()}</div>{/if}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-sheet>

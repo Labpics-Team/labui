@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/sheet';
 import type { LabSheet } from '@labpics/ui-core/sheet';
-import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-sheet>, взятые прямо из класса ядра (LabSheet). */
 export type SheetProps = Pick<LabSheet, 'open' | 'position' | 'modal' | 'closable' | 'heading' | 'description'>;

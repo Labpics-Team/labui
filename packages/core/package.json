@@ -9,6 +9,26 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./element-ssr": {
+      "browser": {
+        "import": {
+          "types": "./dist/ssr/element-browser.d.ts",
+          "default": "./dist/ssr/element-browser.js"
+        },
+        "require": {
+          "types": "./dist/ssr/element-browser.d.cts",
+          "default": "./dist/ssr/element-browser.cjs"
+        }
+      },
+      "import": {
+        "types": "./dist/ssr/element.d.ts",
+        "default": "./dist/ssr/element.js"
+      },
+      "require": {
+        "types": "./dist/ssr/element.d.cts",
+        "default": "./dist/ssr/element.cjs"
+      }
+    },
     "./adapter-runtime": {
       "import": {
         "types": "./dist/adapter-runtime.d.ts",
@@ -246,6 +266,7 @@
   },
   "files": ["dist"],
   "sideEffects": [
+    "./src/ssr/environment.ts",
     "./src/components/*/index.ts",
     "./dist/theme.css",
     "./dist/selection.css",

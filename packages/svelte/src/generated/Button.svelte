@@ -4,9 +4,10 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/button';
   import type { LabButton } from '@labpics/ui-core/button';
-  import type { Snippet } from 'svelte';
+  import { type Snippet, untrack } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-button> — типы взяты прямо из класса ядра (LabButton). */
@@ -21,10 +22,11 @@
     description?: Snippet;
     iconEnd?: Snippet;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { type, kind, size, icon, loading, disabled, htmlType, children, description, iconEnd, ...rest }: Props = $props();
+  let { type, kind, size, icon, loading, disabled, htmlType, children, slots, description, iconEnd, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -36,6 +38,11 @@
     { name: 'htmlType', attr: 'html-type', kind: 'string' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-button', {
+    specs, props: { type, kind, size, icon, loading, disabled, htmlType }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'description': description, 'icon-end': iconEnd, ...slots });
+
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
@@ -44,8 +51,10 @@
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-button bind:this={el} {...rest}>
+<lab-button bind:this={el} {...server?.attributes} {...rest}>
+  {@html server?.shadowHtml ?? ''}
   {@render children?.()}
-  {#if description}<div slot="description" style="display:contents">{@render description()}</div>{/if}
-  {#if iconEnd}<div slot="icon-end" style="display:contents">{@render iconEnd()}</div>{/if}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-button>

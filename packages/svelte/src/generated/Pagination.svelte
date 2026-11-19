@@ -4,9 +4,10 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/pagination';
   import type { LabPagination } from '@labpics/ui-core/pagination';
-  import type { Snippet } from 'svelte';
+  import { type Snippet, untrack } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-pagination> — типы взяты прямо из класса ядра (LabPagination). */
@@ -27,10 +28,11 @@
     pageLabel?: LabPagination['pageLabel'];
     onPageChange?: (event: CustomEvent) => void;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { count, pageSize, page, defaultPage, siblingCount, variant, disabled, ambient, progress, href, label, previousLabel, nextLabel, pageLabel, onPageChange, children, ...rest }: Props = $props();
+  let { count, pageSize, page, defaultPage, siblingCount, variant, disabled, ambient, progress, href, label, previousLabel, nextLabel, pageLabel, onPageChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'count', attr: 'count', kind: 'string' },
@@ -49,6 +51,11 @@
     { name: 'pageLabel', attr: 'page-label', kind: 'string' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-pagination', {
+    specs, props: { count, pageSize, page, defaultPage, siblingCount, variant, disabled, ambient, progress, href, label, previousLabel, nextLabel, pageLabel }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
+
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
@@ -57,5 +64,9 @@
   $effect(() => forwardEvents(el, { 'page-change': onPageChange }));
 </script>
 
-<lab-pagination bind:this={el} {...rest}>
+<lab-pagination bind:this={el} {...server?.attributes} {...rest}>
+  {@html server?.shadowHtml ?? ''}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-pagination>

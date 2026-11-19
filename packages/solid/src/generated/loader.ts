@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/loader';
 import type { LabLoader } from '@labpics/ui-core/loader';
-import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-loader>, взятые прямо из класса ядра (LabLoader). */
 export type LoaderProps = Pick<LabLoader, 'size' | 'label' | 'value' | 'min' | 'max'>;

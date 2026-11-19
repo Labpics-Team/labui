@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/select';
 import type { LabSelect } from '@labpics/ui-core/select';
-import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-select>, взятые прямо из класса ядра (LabSelect). */
 export type SelectProps = Pick<LabSelect, 'size' | 'placement' | 'multiple' | 'disabled' | 'name' | 'placeholder' | 'label' | 'value' | 'defaultValue' | 'items'>;

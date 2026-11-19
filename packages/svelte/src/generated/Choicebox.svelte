@@ -4,9 +4,10 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/choicebox';
   import type { LabChoicebox } from '@labpics/ui-core/choicebox';
-  import type { Snippet } from 'svelte';
+  import { type Snippet, untrack } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-choicebox> — типы взяты прямо из класса ядра (LabChoicebox). */
@@ -23,10 +24,11 @@
     items?: LabChoicebox['items'];
     onValueChange?: (event: CustomEvent) => void;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { layout, multiple, value, defaultValue, controlled, disabled, required, name, label, items, onValueChange, children, ...rest }: Props = $props();
+  let { layout, multiple, value, defaultValue, controlled, disabled, required, name, label, items, onValueChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'layout', attr: 'layout', kind: 'string' },
@@ -41,6 +43,11 @@
     { name: 'items', attr: 'items', kind: 'prop' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-choicebox', {
+    specs, props: { layout, multiple, value, defaultValue, controlled, disabled, required, name, label, items }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
+
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
@@ -49,6 +56,10 @@
   $effect(() => forwardEvents(el, { 'value-change': onValueChange }));
 </script>
 
-<lab-choicebox bind:this={el} {...rest}>
+<lab-choicebox bind:this={el} {...server?.attributes} {...rest}>
+  {@html server?.shadowHtml ?? ''}
   {@render children?.()}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-choicebox>

@@ -21,6 +21,7 @@ export function forwardDeclared(
 ): void {
   if (!element) return;
   let previous = forwarded.get(element);
+  const initial = previous === undefined;
   if (!previous) {
     previous = new Map();
     forwarded.set(element, previous);
@@ -41,6 +42,10 @@ export function forwardDeclared(
     } else if (value === undefined || value === null) {
       element.removeAttribute(spec.attr);
     } else {
+      // Hydration adopts an existing attribute. Writing the same initial value
+      // again fires attributeChangedCallback and can undo a control's recovery
+      // of input typed before JS. Later caller changes must still reach it.
+      if (initial && element.getAttribute(spec.attr) === String(value)) continue;
       element.setAttribute(spec.attr, String(value));
     }
   }
