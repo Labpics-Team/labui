@@ -7,17 +7,15 @@ import { authoredTextStyles, buildTextStyleTokens } from '../src/domain/text-sty
 import { generate, generateFromOverride } from '../src/generate/index.js';
 import { resolveTextStyles } from '../src/resolve-text-styles.mjs';
 
-const source = JSON.parse(
-  readFileSync(
-    new URL('../../../docs/evidence/typography-20261119/source-text.json', import.meta.url),
-    'utf8',
-  ),
-);
+const sourceText = [
+  '../../../docs/evidence/typography-20261119/source-text.json',
+  '../../../docs/evidence/segmented-20261119/source-text.json',
+].flatMap((path) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8')).text);
 
 describe('authored text roles', () => {
   it('preserves each complete source style, including distinct Regular and Medium tracking', () => {
     for (const [role, actual] of Object.entries(authoredTextStyles)) {
-      const expected = source.text.find((text: { id: string }) => text.id === actual.sourceNode);
+      const expected = sourceText.find((text: { id: string }) => text.id === actual.sourceNode);
       expect(expected, role).toBeDefined();
       expect(actual.fontFamily).toBe(expected.style.fontFamily);
       expect(actual.fontSize).toBe(expected.style.fontSize);

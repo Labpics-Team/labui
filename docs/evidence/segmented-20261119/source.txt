@@ -1,1 +1,4 @@
 Segmented source 2423213750570316842: 42 groups and 24 parts match shared geometry and Caption/S.
+source-text.json preserves Caption/S node 7555:14405 directly from this REST snapshot.
+The token test compares it alongside the four roles from typography-20261119/source-text.json;
+the two snapshots retain their own versions, and expected styles are not generated from tokens.
