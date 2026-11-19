@@ -2,7 +2,7 @@
   "archives": [
     {
       "name": "labpics-ui-tokens-0.0.0.tgz",
-      "sha256": "cdbaefc3caae97b20d57335a588843c85382af904558c7b2fd97d43827a83af5"
+      "sha256": "f241d1dc873d2bf8ce06177be416493b5f923bdac42e1772ec46949b0bf5d156"
     },
     {
       "name": "labpics-ui-shadow-0.0.0.tgz",
@@ -14,27 +14,27 @@
     },
     {
       "name": "labpics-ui-core-0.0.0.tgz",
-      "sha256": "7057ac129c76b5e2a0c488af1929051336d7f79ffbbde9d8e18bcdda575cace9"
+      "sha256": "436fe33f7eae80131b588122672ad884193a2f536e5aa30f190746c8b9d751db"
     },
     {
       "name": "labpics-ui-react-0.0.0.tgz",
-      "sha256": "9ad1ae893609656e16e5c59db4d8c58ac7ce0a46cdd7fa32cbd9316b8f3c5b26"
+      "sha256": "15d08437ec1bb00ac6823991a875754936445b4623932c45f9057b7bc759a75b"
     },
     {
       "name": "labpics-ui-vue-0.0.0.tgz",
-      "sha256": "cf5171fb88a4e35f9592af05df3336c999bb4a73d4dcb7f84b86a10c02da6d1f"
+      "sha256": "2edceaaed018a68c447f2937a1ff8bab5834a90ee833d4e6c9537c145b1e7092"
     },
     {
       "name": "labpics-ui-solid-0.0.0.tgz",
-      "sha256": "59b6a8d0618069088ba49474704e452deafed93d63989136a4ff424e15dde5ac"
+      "sha256": "8520f6be6f4a2f18e26a03fcc35c44cd0ef0e96fa7c37441409d1a1137cd83c9"
     },
     {
       "name": "labpics-ui-svelte-0.0.0.tgz",
-      "sha256": "94965d19312d7ae253290a3f501a3183de0c77642d5977a9ed5f15ff05ef9309"
+      "sha256": "294895541b7f0f7caa5d862f4b8ca08c58b2b1b4a629eafe69f93ff9ab9f7520"
     },
     {
       "name": "labpics-ui-astro-0.0.0.tgz",
-      "sha256": "9fcf41d1e095f52b96fa09803a7885dc5596a737d629667bcf408886a585bce2"
+      "sha256": "53062f5b4b4ab093fc41926fbdebad1acf244b975d21a926e7dbe89d289ca855"
     }
   ],
   "serverHtmlBytes": 7988,
@@ -56,33 +56,15 @@
   "sizes": [
     {
       "root": 16,
-      "widths": [
-        24,
-        24,
-        24,
-        24,
-        24
-      ]
+      "widths": [24, 24, 24, 24, 24]
     },
     {
       "root": 20,
-      "widths": [
-        30,
-        30,
-        30,
-        30,
-        30
-      ]
+      "widths": [30, 30, 30, 30, 30]
     },
     {
       "root": 32,
-      "widths": [
-        48,
-        48,
-        48,
-        48,
-        48
-      ]
+      "widths": [48, 48, 48, 48, 48]
     }
   ],
   "checks": [
