@@ -49,3 +49,12 @@ $env:SKIKO_RENDER_API = 'SOFTWARE'
 Для installed consumer сначала публикуют `desktop` и `kotlinMultiplatform` для корневого проекта и `ui-colors` в локальный DistributionRepository с `publicationVersion`/`publicationRepository`. В `native/compose/consumer` задают те же `uiVersion`/`uiRepository`, а также `iconsVersion=0.4.0-semantic.6`/`iconsRepository`, затем запускают `../gradlew.bat :desktopTest --tests pics.lab.ui.sample.SegmentedConsumerTest --no-daemon --console=plain`.
 
 Ограничения рендера: у Regular источник использует corner smoothing 0.6 для оболочки и 0 для контрола. Web применяет системный superellipse к оболочке с round fallback; Compose использует round contour. Windows WebKit рисует Geist заметно тоньше Chromium/Skia, хотя прямой computed-style замер в `packed.json` подтверждает загруженный Geist 500, 14 px / 12 px в обоих браузерах. Эти отличия raster/contour не скрыты заменой авторской типографики.
+
+После выделения статических accessibility-правил и локального порядка слоёв
+снова прошли все workspace unit-тесты, сборка, Biome, 10 сценариев Selection
+в Chromium/WebKit и установленный Segmented consumer. `packed.json` содержит
+новые контрольные суммы архивов. Два обновлённых Chromium dark-снимка просмотрены:
+геометрия сохранена, заметны различия сглаживания текста и округления каналов
+цвета (основной фон активного сегмента отличается на единицу синего канала).
+Этот прогон подтверждает установленный компонент и его поведение;
+нового заявления о попиксельном совпадении с Figma он не добавляет.
