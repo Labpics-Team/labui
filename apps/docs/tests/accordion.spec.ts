@@ -19,7 +19,8 @@ import { type Locator, type Page, expect, test } from '@playwright/test';
  *   - disclosure axes: `multiple` (many panels open at once) and `collapsible` (a
  *     single open panel can close back to none) are asserted on dedicated specimens,
  *     each with three ENABLED headers so Home/End land on genuine first/last triggers.
- * Nothing the machine does not give is asserted (honesty — same discipline as Tabs).
+ * The authored runtime additionally retains panel content, moves focus out of
+ * programmatically closed panels and coordinates their disclosure motion.
  */
 
 function litHost(page: Page, testid: string): Locator {
@@ -276,6 +277,60 @@ test('controlled refusal preserves the open panel and draft on both renderers', 
     await expect(host.getByRole('textbox')).toHaveValue('Unfinished draft');
   }
 });
+
+for (const renderer of ['lit', 'react']) {
+  test(`${renderer}: programmatic close returns nested LabTextarea focus to its own header`, async ({
+    page,
+  }) => {
+    const example = page.getByTestId(`${renderer}-focus`);
+    const draft = example.getByRole('textbox', { name: 'Panel one draft' });
+    const trigger = example.getByRole('button', { name: 'Panel one', exact: true });
+    await draft.fill('Unfinished shadow draft');
+    await expect(draft).toBeFocused();
+    // Programmatic activation changes the controlled value without moving focus
+    // to the example's control before the Accordion observes the close.
+    await example.locator('[data-action="close-all"]').dispatchEvent('click');
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    await expect(trigger).toBeFocused();
+    await expect(draft).toBeHidden();
+    await example.locator('[data-action="open-both"]').dispatchEvent('click');
+    await expect(draft).toHaveValue('Unfinished shadow draft');
+    await expect(trigger).toBeFocused();
+  });
+
+  test(`${renderer}: controlled refusal keeps nested LabTextarea and an unchanged open value preserves focus`, async ({
+    page,
+  }) => {
+    const example = page.getByTestId(`${renderer}-focus`);
+    const draft = example.getByRole('textbox', { name: 'Panel one draft' });
+    const trigger = example.getByRole('button', { name: 'Panel one', exact: true });
+    await draft.fill('Retained on refusal');
+    await trigger.click();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(trigger).toBeFocused();
+    await expect(draft).toHaveValue('Retained on refusal');
+    await draft.focus();
+    await example.locator('[data-action="open-both"]').dispatchEvent('click');
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    await expect(draft).toBeFocused();
+  });
+
+  test(`${renderer}: closing another panel preserves nested LabTextarea focus`, async ({
+    page,
+  }) => {
+    const example = page.getByTestId(`${renderer}-focus`);
+    const draft = example.getByRole('textbox', { name: 'Panel two draft' });
+    await draft.fill('Draft in the remaining panel');
+    await example.locator('[data-action="close-first"]').dispatchEvent('click');
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    await expect(example.getByRole('button', { name: 'Panel one', exact: true })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    await expect(draft).toBeFocused();
+    await expect(draft).toHaveValue('Draft in the remaining panel');
+  });
+}
 
 test('motion retains content, excludes closed controls immediately and settles after reversal', async ({
   page,

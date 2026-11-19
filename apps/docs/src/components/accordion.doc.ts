@@ -11,7 +11,7 @@ function makeAccordion(attrs: Readonly<Record<string, string | boolean>>): HTMLE
   for (const [value, text] of [
     ['details', 'Макеты, компоненты и исходные файлы.'],
     ['access', 'Участники команды, которых вы пригласите.'],
-  ]) {
+  ] as const) {
     const panel = document.createElement('div');
     panel.slot = value;
     panel.textContent = text;

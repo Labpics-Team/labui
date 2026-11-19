@@ -33,7 +33,7 @@ node --test packages/react/test/accordion-ssr.test.mjs
 
 Browser suite проверяет клавиатуру, relationships, controlled отказ, disabled,
 промежуточные кадры и retarget, немедленные inert/aria-hidden, reduced motion и
-точную medium геометрию: 34/34 проверки в Chromium и WebKit. Core SSR — 5/5,
+точную medium геометрию: 46/46 проверок в Chromium и WebKit. Core SSR — 5/5,
 React SSR ESM/CJS — 2/2. Packed consumer устанавливает tarball всех зависимостей
 во временную папку; проверяет no-JS первый кадр, четыре SSR helper, Lit upgrade
 без клиентской подстановки items, React hydration, прежние DOM/id и введённый до
@@ -43,3 +43,11 @@ upgrade: открытый заголовок имеет `aria-disabled=true` д�
 [WAI-ARIA APG](https://www.w3.org/WAI/ARIA/apg/patterns/accordion/).
 Оба браузера прошли проверку; результат и хеши архивов — `packed.json`.
 Полноценный стандартный SSR Vue/Solid/Svelte не обозначается покрытым этим helper.
+
+Регрессия фокуса использует публичный `LabTextarea` внутри Lit и React Accordion:
+закрытие всех панелей программным изменением `value` возвращает фокус из внутреннего
+textarea к заголовку нужной панели. После повторного открытия черновик сохраняется.
+Отказ controlled изменения, неизменный открытый `value` и закрытие соседней панели
+не теряют фокус. Четыре проверки возврата фокуса падали на прежнем runtime во всех
+сочетаниях Lit/React × Chromium/WebKit; после обхода composed ancestry все проходят.
+Core build, Core/docs typecheck и Biome изменённых TS/TSX также прошли.

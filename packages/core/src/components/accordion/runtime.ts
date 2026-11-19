@@ -1,5 +1,18 @@
 import { type Playback, scope } from '@labpics/motion';
 import { motionSemanticRuntime } from '@labpics/ui-tokens';
+import { getActiveElement, getParentNode } from '@zag-js/dom-query';
+
+function containsFocus(panel: HTMLElement): boolean {
+  let node: Node | null = getActiveElement(panel.ownerDocument);
+  while (node) {
+    if (node === panel) return true;
+    // Follow assigned slots and shadow hosts, which Node.contains cannot cross.
+    const parent = getParentNode(node);
+    if (parent === node) break;
+    node = parent;
+  }
+  return false;
+}
 
 /** Disclosure state is immediate. One scalar moves its geometry and decoration. */
 export function mountAccordionMotion(root: HTMLElement): { update(): void; dispose(): void } {
@@ -55,18 +68,9 @@ export function mountAccordionMotion(root: HTMLElement): { update(): void; dispo
         continue;
       }
       if (existing.open === open) continue;
-      // Move focus out before a programmatically closed panel becomes inert.
-      if (!open) {
-        let active = root.ownerDocument.activeElement;
-        while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
-        const containsFocus =
-          !!active &&
-          (panel.contains(active) ||
-            [...panel.querySelectorAll('slot')].some((slot) =>
-              slot.assignedElements().some((element) => element.contains(active)),
-            ));
-        if (containsFocus) item.querySelector<HTMLButtonElement>('.lab-accordion-trigger')?.focus();
-      }
+      // A controlled close returns focus only from this panel to its header.
+      if (!open && containsFocus(panel))
+        item.querySelector<HTMLButtonElement>('.lab-accordion-trigger')?.focus();
       if (!item.hasAttribute('data-disclosing'))
         item.style.setProperty('--_accordion-open', existing.open ? '1' : '0');
       existing.open = open;
