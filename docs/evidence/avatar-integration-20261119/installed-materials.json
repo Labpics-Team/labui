@@ -4045,9 +4045,7 @@
     "contrast": "normal",
     "density": 1,
     "version": "140.0.7339.186",
-    "files": [
-      "../avatar-20261119/installed-chromium.png"
-    ],
+    "files": ["../avatar-20261119/installed-chromium.png"],
     "materials": [
       {
         "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
@@ -4089,9 +4087,7 @@
     "density": 2,
     "fontScale": 2,
     "version": "140.0.7339.186",
-    "files": [
-      "../avatar-20261119/installed-web-dark-more-zoom200-dpr2.png"
-    ],
+    "files": ["../avatar-20261119/installed-web-dark-more-zoom200-dpr2.png"],
     "materials": [
       {
         "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
@@ -4588,9 +4584,7 @@
     "contrast": "normal",
     "density": 1,
     "version": "141.0",
-    "files": [
-      "installed-firefox-light-normal-100.png"
-    ],
+    "files": ["installed-firefox-light-normal-100.png"],
     "materials": [
       {
         "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
@@ -5087,9 +5081,7 @@
     "contrast": "more",
     "density": 1,
     "version": "141.0",
-    "files": [
-      "installed-firefox-light-more-100.png"
-    ],
+    "files": ["installed-firefox-light-more-100.png"],
     "materials": [
       {
         "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
@@ -5586,9 +5578,7 @@
     "contrast": "normal",
     "density": 1,
     "version": "141.0",
-    "files": [
-      "installed-firefox-dark-normal-100.png"
-    ],
+    "files": ["installed-firefox-dark-normal-100.png"],
     "materials": [
       {
         "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
@@ -6085,9 +6075,7 @@
     "contrast": "more",
     "density": 1,
     "version": "141.0",
-    "files": [
-      "installed-firefox-dark-more-100.png"
-    ],
+    "files": ["installed-firefox-dark-more-100.png"],
     "materials": [
       {
         "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
@@ -6584,9 +6572,7 @@
     "contrast": "normal",
     "density": 1,
     "version": "141.0",
-    "files": [
-      "../avatar-20261119/installed-firefox.png"
-    ],
+    "files": ["../avatar-20261119/installed-firefox.png"],
     "materials": [
       {
         "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",
@@ -6627,9 +6613,7 @@
     "contrast": "normal",
     "density": 1,
     "version": "26.0",
-    "files": [
-      "installed-webkit-light-normal-100.png"
-    ],
+    "files": ["installed-webkit-light-normal-100.png"],
     "materials": [
       {
         "url": "http://127.0.0.1:4390/dist/assets/red-light-normal-HTLAPBQC.webp",
@@ -7126,9 +7110,7 @@
     "contrast": "more",
     "density": 1,
     "version": "26.0",
-    "files": [
-      "installed-webkit-light-more-100.png"
-    ],
+    "files": ["installed-webkit-light-more-100.png"],
     "materials": [
       {
         "url": "http://127.0.0.1:4390/dist/assets/red-light-more-YZZDJC6S.webp",
@@ -7625,9 +7607,7 @@
     "contrast": "normal",
     "density": 1,
     "version": "26.0",
-    "files": [
-      "installed-webkit-dark-normal-100.png"
-    ],
+    "files": ["installed-webkit-dark-normal-100.png"],
     "materials": [
       {
         "url": "http://127.0.0.1:4390/dist/assets/red-dark-normal-GZLXFHM7.webp",
@@ -8124,9 +8104,7 @@
     "contrast": "more",
     "density": 1,
     "version": "26.0",
-    "files": [
-      "installed-webkit-dark-more-100.png"
-    ],
+    "files": ["installed-webkit-dark-more-100.png"],
     "materials": [
       {
         "url": "http://127.0.0.1:4390/dist/assets/red-dark-more-B4UGKR2F.webp",
@@ -8623,9 +8601,7 @@
     "contrast": "normal",
     "density": 1,
     "version": "26.0",
-    "files": [
-      "../avatar-20261119/installed-webkit.png"
-    ],
+    "files": ["../avatar-20261119/installed-webkit.png"],
     "materials": [
       {
         "url": "http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp",

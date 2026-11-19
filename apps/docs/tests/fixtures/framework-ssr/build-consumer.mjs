@@ -125,6 +125,7 @@ for (const [name, source] of Object.entries(frameworks)) {
     bundle: true,
     format: 'esm',
     platform: 'browser',
+    loader: { '.webp': 'file' },
     splitting: true,
     conditions: ['development'],
     tsconfigRaw: {},

@@ -3,6 +3,8 @@ package pics.lab.ui
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import platform.Foundation.NSString
+import platform.Foundation.rangeOfComposedCharacterSequenceAtIndex
+import platform.Foundation.substringToIndex
 
 @OptIn(ExperimentalForeignApi::class)
 internal actual fun avatarFirstGraphemes(text: String, limit: Int): String {

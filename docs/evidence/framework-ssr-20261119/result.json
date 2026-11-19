@@ -2,7 +2,7 @@
   "archives": [
     {
       "name": "@labpics/ui-tokens",
-      "sha256": "14b836f4e35663136afbacc4ef90208150a202f9f6b5692364e46b3b34fbbebb"
+      "sha256": "bda7b8b08f8baa462b8c73bc72974ba13f81ea5374a63e1cc0f9f2036892dba8"
     },
     {
       "name": "@labpics/ui-shadow",
@@ -10,7 +10,7 @@
     },
     {
       "name": "@labui/colors",
-      "sha256": "2dfc01336750f554b4a4e46155bb10caaf3c804df98ec237008961fee268decb"
+      "sha256": "56ba4da1572ea321215974308bf0eb76333e8b583650b69e67d69bffacee7351"
     },
     {
       "name": "@labpics/ui-materials",
@@ -18,26 +18,26 @@
     },
     {
       "name": "@labpics/ui-core",
-      "sha256": "cc55e330dc9b36b6645a61796edf5ef08c247ea0fa77d7717f7eaef62c7cbe03"
+      "sha256": "4d841977e083f6c52658f11747689c03ad23ed06ee6904fd2085e92660225439"
     },
     {
       "name": "@labpics/ui-vue",
-      "sha256": "70671b4125fe497f6eb9867933efa46a0704abf419260ff97bdfe9b6e98212d9"
+      "sha256": "bb844c6cf49e39bae63cf6bd11cbd62d1f0d315be3cbc4b075a80fbb923cd406"
     },
     {
       "name": "@labpics/ui-solid",
-      "sha256": "bf96285fddc1e078a87f5a891d2f7151338626545853fc2668a84091f5077897"
+      "sha256": "2be505c21d88373a57fb4195e6ece2daa45a4f55895430bb37db0b5d0800ee03"
     },
     {
       "name": "@labpics/ui-svelte",
-      "sha256": "9249e14ba0d95a0270ef6fa78e15ef118f4e3ebc35be7d34897e63591b1303e6"
+      "sha256": "3a608e6b6fd641fcbcd5675969ffbc4971b0f5d9688fabf94f1fad2556cd24af"
     }
   ],
   "qualification": {
     "records": [
       {
         "name": "vue",
-        "browserModules": 183,
+        "browserModules": 226,
         "browserProviders": [
           "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
         ],
@@ -45,7 +45,7 @@
       },
       {
         "name": "solid",
-        "browserModules": 179,
+        "browserModules": 222,
         "browserProviders": [
           "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
         ],
@@ -53,7 +53,7 @@
       },
       {
         "name": "svelte",
-        "browserModules": 453,
+        "browserModules": 499,
         "browserProviders": [
           "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
         ],
