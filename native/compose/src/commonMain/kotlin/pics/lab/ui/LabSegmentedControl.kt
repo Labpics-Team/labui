@@ -181,7 +181,7 @@ private fun SegmentedOption(item: LabSegmentedItem, selected: Boolean, enabled: 
                 val paragraph = child.measure(constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity))
                 val height = LabComponents.SegmentedLineHeight.sp.roundToPx()
                 layout(paragraph.width, constraints.constrainHeight(height)) { paragraph.placeRelative(0, (height - paragraph.height) / 2) }
-            }, style = LabType.body().copy(color = color, fontSize = LabComponents.SegmentedFontSize.sp,
+            }, style = LabType.body().withTypography(color = color, fontSize = LabComponents.SegmentedFontSize.sp,
                 lineHeight = LabComponents.SegmentedLineHeight.sp, fontWeight = FontWeight(LabComponents.SegmentedFontWeight.toInt()),
                 letterSpacing = LabComponents.SegmentedLetterSpacing.sp,
                 lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None, LineHeightStyle.Mode.Fixed)), softWrap = false)
