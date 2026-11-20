@@ -7,7 +7,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium, firefox, webkit } from '@playwright/test';
 import { build } from 'vite';
 import { displayPixels } from '../../../docs/evidence/materials-20261117/display-pixels.mjs';
-import { materialPaintOver, parseRgb } from '../../../packages/materials/dist/index.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const output = process.env.MATERIAL_OUTPUT
@@ -132,41 +131,6 @@ try {
         await document.querySelector('lab-alert').updateComplete;
         await document.fonts.ready;
       });
-      // Diagnostic branch: move authored group opacity to the actual capture.
-      // Keep the production recipes and geometry to isolate the tree boundary.
-      await page.locator('lab-alert').evaluate((host) => {
-        const style = document.createElement('style');
-        style.textContent = `
-          .lab-alert-layer { --_probe-alpha: var(--_alert-layer-opacity); }
-          .lab-alert-layer[data-opacity-control] { --_probe-alpha: 1; }
-          .lab-alert-layer > .lab-material { opacity: 1 !important; }
-          .lab-alert-layer > .lab-material > .lab-material__paint { opacity: 1; }
-          .lab-alert-layer > .lab-material::before,
-          .lab-alert-layer > .lab-material::after { opacity: var(--_probe-alpha); }
-          :host([data-opacity-probe^="nested"]) .lab-alert-layer .lab-material__capture,
-          :host([data-opacity-probe^="capture-alpha"]) .lab-alert-layer .lab-material__capture { opacity: var(--_probe-alpha); }
-          :host([data-opacity-probe="nested-opaque"]) .lab-alert-layer .lab-material__capture { opacity: 1; }
-          :host([data-opacity-probe^="nested"]) .lab-material__capture > div { position: absolute; inset: 0; border-radius: inherit; }
-          :host([data-opacity-probe="nested-bare"]) .lab-alert-layer .lab-material__capture > div,
-          :host([data-opacity-probe="nested-no-blend"]) .lab-alert-layer .lab-material__blend,
-          :host([data-opacity-probe="nested-no-blend"]) .lab-alert-layer .lab-material__grain { display: none; }
-          :host([data-opacity-probe="capture-alpha-no-clip"]) .lab-alert-layer { overflow: visible; }
-          :host([data-opacity-probe="host-bare"]) .lab-alert-layer > .lab-material { opacity: var(--_probe-alpha) !important; background: transparent; backdrop-filter: blur(var(--_blur)); -webkit-backdrop-filter: blur(var(--_blur)); }
-          :host([data-opacity-probe="host-bare"]) .lab-alert-layer .lab-material__paint { display: none; }
-          :host([data-opacity-probe^="group-"]) .lab-alert-layer .lab-material__paint { opacity: var(--_probe-alpha); }
-          :host([data-opacity-probe="group-identity"]) .lab-alert-layer .lab-material__paint { backdrop-filter: opacity(1); -webkit-backdrop-filter: opacity(1); }
-          :host([data-opacity-probe="group-zero-blur"]) .lab-alert-layer .lab-material__paint { backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
-          :host([data-opacity-probe="group-tiny-blur"]) .lab-alert-layer .lab-material__paint { backdrop-filter: blur(0.001px); -webkit-backdrop-filter: blur(0.001px); }
-          :host([data-opacity-probe="group-host-identity"]) .lab-alert-layer > .lab-material { backdrop-filter: opacity(1); -webkit-backdrop-filter: opacity(1); }
-          :host([data-opacity-probe^="affine-"]) .lab-alert-layer .lab-material__capture { filter: var(--_probe-transfer); opacity: var(--_probe-alpha); }
-          :host([data-opacity-probe^="affine-"]) .lab-alert-layer .lab-material__normal,
-          :host([data-opacity-probe^="affine-"]) .lab-alert-layer .lab-material__blend,
-          :host([data-opacity-probe="affine-bare"]) .lab-alert-layer .lab-material__grain { display: none; }
-          :host([data-opacity-probe^="affine-"]) .lab-alert-layer .lab-material__grain { opacity: var(--_probe-alpha); }
-        `;
-        host.shadowRoot.append(style);
-      });
-      for (const probe of ['affine-after', 'affine-bare']) {
       for (const theme of ['light', 'dark'])
         for (const material of ['acrylic', 'glass']) {
           await page.evaluate(
@@ -176,43 +140,6 @@ try {
             },
             { theme, material },
           );
-          await page.waitForFunction(() => {
-            const materials = document.querySelector('lab-alert').shadowRoot.querySelectorAll('.lab-alert-layer > .lab-material');
-            return materials.length === 2 && [...materials].every(el => el.querySelector('.lab-material__paint > .lab-material__capture'));
-          });
-          await page.locator('lab-alert').evaluate((host, probe) => {
-            host.dataset.opacityProbe = probe;
-            for (const material of host.shadowRoot.querySelectorAll('.lab-alert-layer > .lab-material')) {
-              const paint = material.querySelector('.lab-material__paint');
-              const capture = paint.querySelector('.lab-material__capture');
-              if (probe.startsWith('nested')) {
-                for (const layer of [...paint.children]) if (layer !== capture) capture.append(layer);
-              } else {
-                paint.append(...capture.children);
-              }
-            }
-          }, probe);
-          const rawPaints = await page.locator('lab-alert').evaluate(host => [...host.shadowRoot.querySelectorAll('.lab-alert-layer > .lab-material')].map(el => {
-            const style = getComputedStyle(el);
-            return { normal: style.getPropertyValue('--_tint'), blend: style.getPropertyValue('--_blend') };
-          }));
-          const transfers = rawPaints.map(paint => {
-            const spec = { normal: parseRgb(paint.normal), blend: parseRgb(paint.blend), blendMode: theme === 'light' ? 'color-dodge' : 'overlay' };
-            const out = value => materialPaintOver(spec, { r: value, g: value, b: value, a: 1 });
-            const black = out(0);
-            const white = out(255);
-            const slope = (white.r - black.r) / 255;
-            const intercept = black.r / 255;
-            for (let i = 0; i <= 255; i++) {
-              const actual = out(i);
-              for (const c of ['r', 'g', 'b']) assert.ok(Math.abs(actual[c] - (slope * i + intercept * 255)) < 1e-8, 'diagnostic recipe is neutral and affine');
-            }
-            const gain = slope + 2 * intercept;
-            return `contrast(${slope / gain}) brightness(${gain})`;
-          });
-          await page.locator('lab-alert').evaluate((host, transfers) => {
-            [...host.shadowRoot.querySelectorAll('.lab-alert-layer > .lab-material')].forEach((el, i) => el.style.setProperty('--_probe-transfer', transfers[i]));
-          }, transfers);
           await settle(page);
           const geometry = await page.locator('lab-alert').evaluate((host) => {
             const surfaces = [
@@ -240,11 +167,7 @@ try {
               { name: 'raw-fixed', points: cluster(x, 220) },
               { name: 'raw-moving', points: cluster(x + Math.floor((near + far) / 2), 220) },
             );
-            const planes = surfaces.map((surface) => [...surface.querySelectorAll('.lab-material, .lab-material__paint, .lab-material__capture')].map((el) => {
-              const cs = getComputedStyle(el); const rect = el.getBoundingClientRect();
-              return { className: el.className, opacity: cs.opacity, filter: cs.filter, backdrop: cs.backdropFilter, blur: cs.getPropertyValue('--_blur'), bounds: {x:rect.x,y:rect.y,width:rect.width,height:rect.height} };
-            }));
-            return { groups, center: x, near, far, planes };
+            return { groups, center: x, near, far };
           });
           assert.equal(
             geometry.groups.length,
@@ -254,10 +177,10 @@ try {
           const captureTriplet = async () => {
             const frames = [];
             for (const radius of [geometry.far, geometry.near, geometry.far]) {
-              await page.evaluate(
-                ({ center, radius }) => window.moveBackdrop(center, radius),
-                { center: geometry.center, radius },
-              );
+              await page.evaluate(({ center, radius }) => window.moveBackdrop(center, radius), {
+                center: geometry.center,
+                radius,
+              });
               await settle(page);
               frames.push(await sample(page, geometry.groups));
             }
@@ -280,9 +203,8 @@ try {
           await page.locator('lab-alert').evaluate((host) => {
             for (const layer of host.shadowRoot.querySelectorAll('[part="stack"]')) {
               const material = layer.querySelector('.lab-material');
-              layer.style.opacity = getComputedStyle(layer).getPropertyValue('--_alert-layer-opacity');
-              layer.setAttribute('data-opacity-control', '');
-              material.style.opacity = '1';
+              layer.style.opacity = getComputedStyle(material).opacity;
+              material.style.setProperty('--_material-layer-opacity', '1');
             }
           });
           const control = await captureTriplet();
@@ -292,33 +214,62 @@ try {
           await page.locator('lab-alert').evaluate((host) => {
             for (const layer of host.shadowRoot.querySelectorAll('[part="stack"]')) {
               layer.style.removeProperty('opacity');
-              layer.removeAttribute('data-opacity-control');
-              layer.querySelector('.lab-material').style.removeProperty('opacity');
+              layer
+                .querySelector('.lab-material')
+                .style.removeProperty('--_material-layer-opacity');
             }
           });
           await settle(page);
           const restored = await sample(page, geometry.groups);
-          const groupAlpha = await page.locator('lab-alert').evaluate((host) => {
-            return [...host.shadowRoot.querySelectorAll('[part="stack"]')].map(layer => {
-              return Number(getComputedStyle(layer).getPropertyValue('--_alert-layer-opacity'));
-            });
-          });
-          const compositeFrames = [];
           const compositeError = [];
-          // Other layers stay at their authored alpha: their paint is part of
-          // this capture's backdrop, so changing all alphas is not a linear test.
-          for (const [index, weight] of groupAlpha.entries()) {
+          // Hold the other layers fixed: they are part of this layer's actual
+          // backdrop. Changing all group alphas together is not a linear test.
+          for (let index = 0; index < 2; index++) {
+            const alpha = await page
+              .locator('lab-alert')
+              .evaluate(
+                (host, index) =>
+                  Number(
+                    getComputedStyle(
+                      host.shadowRoot.querySelectorAll('[part="stack"]')[index],
+                    ).getPropertyValue('--_alert-layer-opacity'),
+                  ),
+                index,
+              );
             const endpoints = [];
-            for (const alpha of ['0', '1']) {
-              await page.locator('lab-alert').evaluate((host, {index, alpha}) => {
-                host.shadowRoot.querySelectorAll('[part="stack"]')[index].style.setProperty('--_probe-alpha', alpha);
-              }, {index, alpha});
+            for (const weight of ['0', '1']) {
+              await page.locator('lab-alert').evaluate(
+                (host, { index, weight }) => {
+                  host.shadowRoot
+                    .querySelectorAll('[part="stack"]')
+                    [index].querySelector('.lab-material')
+                    .style.setProperty('--_material-layer-opacity', weight);
+                },
+                { index, weight },
+              );
               await settle(page);
-              endpoints.push((await sample(page, geometry.groups))[index+1].rgb);
+              endpoints.push((await sample(page, geometry.groups))[index + 1].rgb);
             }
-            compositeFrames.push(endpoints);
-            compositeError.push(Math.max(...[0,1,2].map(c => Math.abs(original[0][index+1].rgb[c] - (endpoints[0][c] * (1-weight) + endpoints[1][c] * weight)))));
-            await page.locator('lab-alert').evaluate((host, index) => host.shadowRoot.querySelectorAll('[part="stack"]')[index].style.removeProperty('--_probe-alpha'), index);
+            compositeError.push(
+              Math.max(
+                ...[0, 1, 2].map((c) =>
+                  Math.abs(
+                    original[0][index + 1].rgb[c] -
+                      (endpoints[0][c] * (1 - alpha) + endpoints[1][c] * alpha),
+                  ),
+                ),
+              ),
+            );
+            await page
+              .locator('lab-alert')
+              .evaluate(
+                (host, index) =>
+                  host.shadowRoot
+                    .querySelectorAll('[part="stack"]')
+                    [index].querySelector('.lab-material')
+                    .style.removeProperty('--_material-layer-opacity'),
+                index,
+              );
             await settle(page);
           }
           const restoreError = original[0]
@@ -328,7 +279,6 @@ try {
             engine === 'chromium' ||
             (display && (process.platform === 'darwin' || engine === 'firefox'));
           const row = {
-            probe,
             engine,
             version: browser.version(),
             theme,
@@ -343,14 +293,18 @@ try {
             controlResponse,
             restoreError,
             compositeError,
-            compositeFrames,
             original,
             control,
             restored,
           };
           rows.push(row);
           try {
-            if (false && measurable) {
+            if (measurable) {
+              for (const error of compositeError)
+                assert.ok(
+                  error <= rgbTolerance,
+                  `authored group alpha is preserved within ${rgbTolerance} RGB, observed ${error}`,
+                );
               for (const [i, value] of response.entries())
                 assert.ok(
                   value > minimumResponse,
@@ -377,7 +331,7 @@ try {
                 );
               }
             }
-            row.qualified = false; // Diagnostic matrix: raw observations only.
+            row.qualified = measurable;
           } finally {
             const { original, control, restored, ...summary } = row;
             const medians = (frames) =>
@@ -387,13 +341,15 @@ try {
             );
           }
         }
-      }
       assert.deepEqual(errors, []);
     } finally {
       await browser.close();
     }
   }
-  assert.ok(rows.length > 0, 'diagnostic observations exist');
+  assert.ok(
+    rows.some((row) => row.measurable),
+    'at least one optical capture is measurable',
+  );
 } finally {
   await new Promise((resolve) => server.close(resolve));
   await mkdir(output, { recursive: true });

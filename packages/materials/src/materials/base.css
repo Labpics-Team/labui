@@ -13,6 +13,7 @@
   --_if-glass: ;
 }
 .lab-material {
+  --_material-layer-opacity: 1;
   --_material-paint-blend-mode: color-dodge;
   --_surface-paint: var(--_if-solid, var(--_solid))
     var(--_if-translucent, var(--_first-paint, var(--_tint)));
@@ -26,6 +27,7 @@
   --_rim: var(--_if-glass, var(--_glass-rim));
   position: relative;
   isolation: isolate;
+  opacity: var(--_material-layer-opacity, 1);
   border-radius: var(--lab-radius-card, 1rem);
   background: var(--_noise), var(--_surface-paint);
   background-size: var(--_acrylic-noise-size, auto);
@@ -57,9 +59,38 @@
  * runway; sticky positioning follows scrolling without per-frame JS work.
  */
 .lab-material[data-lab-material-paint-renderer="capture-svg"],
+.lab-material[data-lab-material-paint-renderer="capture-affine"],
 .lab-material[data-lab-material-paint-renderer="capture-blend"] {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+}
+.lab-material[data-lab-material-paint-renderer="capture-svg"],
+.lab-material[data-lab-material-paint-renderer="capture-affine"] {
+  opacity: 1;
+}
+.lab-material[data-lab-material-paint-renderer="capture-svg"] > .lab-material__paint,
+.lab-material[data-lab-material-paint-renderer="capture-svg"]
+  > .lab-material__paint-runway
+  > .lab-material__paint,
+.lab-material[data-lab-material-paint-renderer="capture-affine"] > .lab-material__paint > div,
+.lab-material[data-lab-material-paint-renderer="capture-affine"]
+  > .lab-material__paint-runway
+  > .lab-material__paint
+  > div,
+.lab-material[data-lab-material-paint-renderer="capture-svg"]::before,
+.lab-material[data-lab-material-paint-renderer="capture-svg"]::after,
+.lab-material[data-lab-material-paint-renderer="capture-affine"]::before,
+.lab-material[data-lab-material-paint-renderer="capture-affine"]::after {
+  opacity: var(--_material-layer-opacity, 1);
+}
+.lab-material[data-lab-material-paint-renderer="capture-affine"]
+  > .lab-material__paint
+  > .lab-material__capture,
+.lab-material[data-lab-material-paint-renderer="capture-affine"]
+  > .lab-material__paint-runway
+  > .lab-material__paint
+  > .lab-material__capture {
+  filter: var(--_material-affine-filter);
 }
 .lab-material__paint,
 .lab-material__paint > div {
@@ -177,6 +208,13 @@
   -webkit-mask-composite: source-over;
 }
 .lab-material[data-lab-material-paint-renderer="capture-svg"]
+  > .lab-material__contour
+  > .lab-material__contour-face,
+.lab-material[data-lab-material-paint-renderer="capture-affine"]
+  > .lab-material__contour
+  > .lab-material__contour-face,
+.lab-material[data-lab-material-paint-renderer="capture-affine"]
+  > .lab-material__paint-runway
   > .lab-material__contour
   > .lab-material__contour-face,
 .lab-material[data-lab-material-paint-renderer="capture-blend"]
