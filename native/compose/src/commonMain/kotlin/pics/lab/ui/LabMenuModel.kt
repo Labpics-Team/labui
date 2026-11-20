@@ -2,6 +2,7 @@ package pics.lab.ui
 
 import androidx.compose.runtime.Immutable
 import pics.lab.icons.SymbolData
+import pics.lab.icons.IconVariant
 
 public enum class LabMenuTone { Neutral, Accent, Danger }
 public enum class LabMenuPlacement { BottomStart, BottomEnd, TopStart, TopEnd }
@@ -16,6 +17,8 @@ public sealed interface LabMenuItem {
         public val tone: LabMenuTone
         public val icon: SymbolData?
         public val iconEnd: SymbolData?
+        public val iconVariant: IconVariant
+        public val iconEndVariant: IconVariant
         public val shortcut: List<String>
     }
 
@@ -24,6 +27,7 @@ public sealed interface LabMenuItem {
         override val value: String, override val label: String,
         override val disabled: Boolean = false, override val tone: LabMenuTone = LabMenuTone.Neutral,
         override val icon: SymbolData? = null, override val iconEnd: SymbolData? = null,
+        override val iconVariant: IconVariant = IconVariant.Outline, override val iconEndVariant: IconVariant = IconVariant.Outline,
         override val shortcut: List<String> = emptyList(), public val closeOnSelect: Boolean = true,
     ) : Entry
 
@@ -32,6 +36,7 @@ public sealed interface LabMenuItem {
         override val value: String, override val label: String,
         override val disabled: Boolean = false, override val tone: LabMenuTone = LabMenuTone.Neutral,
         override val icon: SymbolData? = null, override val iconEnd: SymbolData? = null,
+        override val iconVariant: IconVariant = IconVariant.Outline, override val iconEndVariant: IconVariant = IconVariant.Outline,
         override val shortcut: List<String> = emptyList(), public val closeOnSelect: Boolean = true,
     ) : Entry
 
@@ -40,6 +45,7 @@ public sealed interface LabMenuItem {
         override val value: String, override val label: String, public val group: String,
         override val disabled: Boolean = false, override val tone: LabMenuTone = LabMenuTone.Neutral,
         override val icon: SymbolData? = null, override val iconEnd: SymbolData? = null,
+        override val iconVariant: IconVariant = IconVariant.Outline, override val iconEndVariant: IconVariant = IconVariant.Outline,
         override val shortcut: List<String> = emptyList(), public val closeOnSelect: Boolean = true,
     ) : Entry
 
@@ -48,6 +54,7 @@ public sealed interface LabMenuItem {
         override val value: String, override val label: String, public val items: List<LabMenuItem>,
         override val disabled: Boolean = false, override val tone: LabMenuTone = LabMenuTone.Neutral,
         override val icon: SymbolData? = null, override val iconEnd: SymbolData? = null,
+        override val iconVariant: IconVariant = IconVariant.Outline, override val iconEndVariant: IconVariant = IconVariant.Outline,
         override val shortcut: List<String> = emptyList(),
     ) : Entry
 

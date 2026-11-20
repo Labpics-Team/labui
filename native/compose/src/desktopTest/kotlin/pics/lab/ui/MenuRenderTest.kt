@@ -44,6 +44,7 @@ import pics.lab.icons.symbols.plusCircle
 import pics.lab.icons.symbols.earth
 import pics.lab.icons.symbols.arrowRedo
 import pics.lab.icons.symbols.print
+import pics.lab.icons.IconVariant
 
 /** Real Foundation popup, semantics, pointer and keyboard paths, without a native window. */
 class MenuRenderTest {
@@ -324,7 +325,7 @@ class MenuRenderTest {
             for (number in 1..8) {
                 add(LabMenuItem.Action("item-$number", "Label", disabled = number == 7,
                     tone = when (number) { 1 -> LabMenuTone.Accent; 8 -> LabMenuTone.Danger; else -> LabMenuTone.Neutral },
-                    icon = component, shortcut = shortcuts[number] ?: emptyList()))
+                    icon = component, iconVariant = IconVariant.Filled, shortcut = shortcuts[number] ?: emptyList()))
                 if (number in listOf(3, 5, 7)) add(LabMenuItem.Separator("separator-$number"))
             }
         }
@@ -336,14 +337,14 @@ class MenuRenderTest {
             LabMenuItem.Check("o2", "2nd option", shortcut = listOf("⌘", "⇧", "B")),
             LabMenuItem.Check("o3", "3rd option", shortcut = listOf("⌘", "⇧", "C")), LabMenuItem.Separator("s2"),
             LabMenuItem.Submenu("team", "Team", listOf(LabMenuItem.Action("member", "Member"))), LabMenuItem.Separator("s3"),
-            LabMenuItem.Radio("r1", "1st radio", "radio", shortcut = listOf("⌘", "A")),
-            LabMenuItem.Radio("r2", "2nd radio", "radio", shortcut = listOf("⌘", "B")), LabMenuItem.Separator("s4"),
+            LabMenuItem.Radio("r1", "1st option", "radio", shortcut = listOf("⌘", "A")),
+            LabMenuItem.Radio("r2", "2nd option", "radio", shortcut = listOf("⌘", "B")), LabMenuItem.Separator("s4"),
             LabMenuItem.Action("delete", "Delete", icon = bin, tone = LabMenuTone.Danger),
         )
         val file = listOf(LabMenuItem.Action("tab", "New Tab", icon = duplicate, shortcut = listOf("⌘", "T")),
             LabMenuItem.Action("window", "New Window", icon = plusCircle, shortcut = listOf("⌘", "N")),
             LabMenuItem.Action("incognito", "New Incognito Window", icon = earth, disabled = true), LabMenuItem.Separator("s1"),
-            LabMenuItem.Submenu("share", "Share", listOf(LabMenuItem.Action("copy", "Copy link")), icon = arrowRedo), LabMenuItem.Separator("s2"),
+            LabMenuItem.Submenu("share", "Share", listOf(LabMenuItem.Action("copy", "Copy link")), icon = arrowRedo),
             LabMenuItem.Action("print", "Print", icon = print, shortcut = listOf("⌘", "P")))
         for (appearance in LabAppearance.entries) for (family in listOf("dropdown", "context", "menubar")) {
             val state = theme(appearance)
@@ -364,8 +365,26 @@ class MenuRenderTest {
                 if (family == "context") { named(scene, "Team").config[SemanticsActions.RequestFocus].action!!.invoke(); settle(scene) }
                 val panel = nodes(scene).single { it.config.getOrNull(SemanticsProperties.PaneTitle) == if (family == "dropdown") "Dropdown" else if (family == "context") "Context" else "File" }
                 if (family == "dropdown") assertEquals(IntSize(256, 386), panel.size)
+                if (family == "menubar") {
+                    val bar = named(scene, "Menu bar").boundsInRoot
+                    assertEquals(bar.left, panel.boundsInRoot.left)
+                    assertEquals(bar.bottom + 4, panel.boundsInRoot.top)
+                }
                 output.resolve("source-$family-${appearance.name.lowercase()}.png").writeBytes(settle(scene))
             } finally { scene.close() }
         }
+    }
+    @Test fun closedMenubarPaintsKeyboardFocus() {
+        val scene = ImageComposeScene(500, 180) { LabTheme(theme()) { LabScene(Modifier.fillMaxSize(), {}) {
+            Box(Modifier.padding(24.dp)) { LabMenubar(listOf(LabMenubarItem("file", "File", emptyList()), LabMenubarItem("edit", "Edit", emptyList()))) }
+        } } }
+        try {
+            val before = settle(scene)
+            named(scene, "File").config[SemanticsActions.RequestFocus].action!!.invoke()
+            val focused = settle(scene)
+            assertTrue(named(scene, "File").config[SemanticsProperties.Focused])
+            assertFalse(before.contentEquals(focused), "Keyboard focus must change the rendered closed control")
+            File("build/menu-evidence/menubar-keyboard-focus.png").writeBytes(focused)
+        } finally { scene.close() }
     }
 }

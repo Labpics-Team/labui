@@ -43,8 +43,12 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -82,6 +86,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
@@ -270,13 +275,14 @@ private fun Menubar(
                 val expanded = menu.value == value && !menu.disabled
                 val interaction = remember { MutableInteractionSource() }
                 val hovered by interaction.collectIsHoveredAsState()
+                var focused by remember { mutableStateOf(false) }
                 LaunchedEffect(hovered) { if (hovered && !menu.disabled && value != null && value != menu.value) { active = menu.value; focusInitial = false; onValueChange(menu.value) } }
                 val shape = RoundedCornerShape((if (expanded) LabComponents.MenuMenubarActiveRadius else LabComponents.MenuMenubarItemRadius).dp)
                 Box {
                     LabText(menu.label, Modifier.onGloballyPositioned { triggerBounds[menu.value] = it.boundsInWindow() }
                         .focusRequester(requesters.getValue(menu.value))
                         .focusProperties { canFocus = !menu.disabled && active == menu.value }
-                        .onFocusChanged { if (it.isFocused) active = menu.value }
+                        .onFocusChanged { focused = it.isFocused; if (it.isFocused) active = menu.value }
                         .onPreviewKeyEvent { event ->
                             if (event.type != KeyEventType.KeyDown || menu.disabled) false
                             else when (event.key) {
@@ -286,6 +292,15 @@ private fun Menubar(
                                 Key.Enter, Key.Spacebar -> { initiallyLast = false; focusInitial = true; onValueChange(if (expanded) null else menu.value); true }
                                 else -> false
                             }
+                        }.drawWithContent {
+                            if (focused && !menu.disabled && !expanded) {
+                                val width = LabTokens.FocusRingWidth.dp.toPx()
+                                val expansion = LabTokens.FocusRingOffset.dp.toPx() + width / 2
+                                drawRoundRect(colors["border-focus"], topLeft = Offset(-expansion, -expansion),
+                                    size = Size(size.width + expansion * 2, size.height + expansion * 2),
+                                    cornerRadius = CornerRadius(LabComponents.MenuMenubarItemRadius.dp.toPx() + expansion), style = Stroke(width))
+                            }
+                            drawContent()
                         }.then(if (expanded) Modifier.labShadow(shape, LabComponents.MenuMenubarActiveShadow) else Modifier)
                         .background(when { expanded -> colors[LabComponents.MenuRolesActiveBackground]; hovered && !menu.disabled -> colors[LabComponents.MenuRolesHighlight]; else -> Color.Transparent }, shape)
                         .clickable(enabled = !menu.disabled, role = Role.Button, interactionSource = interaction, indication = null) {
@@ -294,6 +309,7 @@ private fun Menubar(
                         .padding(horizontal = LabComponents.MenuMenubarPaddingX.dp, vertical = LabComponents.MenuMenubarPaddingY.dp),
                         style = menuTextStyle(colors[when { menu.disabled -> LabComponents.MenuRolesDisabled; expanded -> LabComponents.MenuRolesActiveLabel; else -> LabComponents.MenuRolesLabel }]))
                     if (expanded) MenuPopup(menu.items, menu.label, menu.heading, true, selected, material,
+                        anchorPadding = LabComponents.MenuMenubarPadding.dp,
                         initiallyLast = initiallyLast, focusInitial = focusInitial, close = { restore = menu.value; onValueChange(null) },
                         rootArrow = changeRoot, leave = { backwards -> advance = backwards; restore = menu.value; onValueChange(null) },
                         outsidePointer = { position, event ->
@@ -328,6 +344,7 @@ private fun MenuPopup(
     items: List<LabMenuItem>, label: String, heading: String?, context: Boolean, selected: List<String>,
     material: LabMaterial, placement: LabMenuPlacement = LabMenuPlacement.BottomStart,
     point: IntOffset? = null, initiallyLast: Boolean = false, focusInitial: Boolean = true,
+    anchorPadding: Dp = 0.dp,
     close: () -> Unit, rootArrow: ((Int) -> Unit)? = null,
     leave: (Boolean) -> Unit = { close() },
     outsidePointer: (Offset, PointerEventType) -> Boolean = { _, _ -> false },
@@ -339,7 +356,9 @@ private fun MenuPopup(
     Layout({}, Modifier.onGloballyPositioned { coordinates ->
         coordinates.parentLayoutCoordinates?.let { anchor = it.boundsInWindow().menuRect() }
     }) { _, _ -> layout(0, 0) {} }
-    val rootAnchor = anchor ?: return
+    val measuredAnchor = anchor ?: return
+    val padding = with(density) { anchorPadding.roundToPx() }
+    val rootAnchor = IntRect(measuredAnchor.left - padding, measuredAnchor.top - padding, measuredAnchor.right + padding, measuredAnchor.bottom + padding)
     // One platform popup keeps the whole cascade interactive, including its parent panels.
     // Independent focusable Popup windows consume clicks outside the deepest child on Android.
     Popup(popupPositionProvider = MenuViewportPosition, onDismissRequest = close, properties = PopupProperties(focusable = true)) {
@@ -544,7 +563,7 @@ private fun MenuRow(
         .semantics { if (item is LabMenuItem.Submenu) stateDescription = if (expanded) "Expanded" else "Collapsed" }
         .padding(start = if (context && !leading) LabComponents.MenuContextLabelInset.dp else LabComponents.MenuRowPaddingX.dp,
             end = LabComponents.MenuRowPaddingX.dp, top = LabComponents.MenuRowPaddingY.dp, bottom = LabComponents.MenuRowPaddingY.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(LabComponents.MenuRowLabelGap.dp)) {
+        verticalAlignment = Alignment.CenterVertically) {
         if (leading) Box(Modifier.size(icon).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
             when {
                 item is LabMenuItem.Check && checked -> Icon(checkmark, iconColor, size = icon)
@@ -555,14 +574,15 @@ private fun MenuRow(
                         listOf(colors[LabComponents.MenuRadioHighlightRole].copy(alpha = LabComponents.MenuRadioHighlightOpacity), Color.Transparent),
                         startY = center.y - radius, endY = center.y + radius), radius)
                 }
-                item.icon != null -> Icon(item.icon!!, iconColor, size = icon)
+                item.icon != null -> Icon(item.icon!!, iconColor, variant = item.iconVariant, size = icon)
             }
         }
+        if (leading) Spacer(Modifier.width(LabComponents.MenuRowLabelGap.dp))
         LabText(item.label, Modifier.weight(1f), style = menuTextStyle(labelColor))
-        if (!item.disabled) Row(Modifier.clearAndSetSemantics {}, verticalAlignment = Alignment.CenterVertically,
+        if (!item.disabled && (item.shortcut.isNotEmpty() || item.iconEnd != null || item is LabMenuItem.Submenu)) Row(Modifier.padding(start = LabComponents.MenuRowAccessoryGap.dp).clearAndSetSemantics {}, verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(LabComponents.MenuRowAccessoryGap.dp)) {
             if (item.shortcut.isNotEmpty()) LabKbd(item.shortcut)
-            item.iconEnd?.let { Icon(it, iconColor, size = icon) }
+            item.iconEnd?.let { Icon(it, iconColor, variant = item.iconEndVariant, size = icon) }
             if (item is LabMenuItem.Submenu) Icon(chevronForward, iconColor,
                 Modifier.graphicsLayer { scaleX = if (rtl) -1f else 1f }, size = icon)
         }

@@ -7,6 +7,7 @@
 типографикой и проверяемыми действиями. `source-{dropdown,context,menubar}-*.png`
 воспроизводят шесть авторских композиций. Dropdown измерен как 256×386 dp:
 heading 48, линия 1, восемь строк по 40, три разделителя по 3, padding 4.
+`menubar-keyboard-focus.png` показывает видимый фокус закрытого управления.
 Сами рендеры, включая светлый Dropdown и тёмный Context, осмотрены.
 
 Общий источник — `packages/tokens/src/components.json#menu`, связанный через
@@ -14,13 +15,13 @@ registry с Dropdown Menu, Context Menu и Menubar. Source screenshots роди�
 задача получила read-only через официальный Figma API. Этот каталог содержит
 только собственные native-рендеры.
 
-14 проверок `MenuModelTest`/`MenuRenderTest` прошли: уникальное дерево, radio
+15 проверок `MenuModelTest`/`MenuRenderTest` прошли: уникальное дерево, radio
 между уровнями, контролируемый отказ, локальные defaults, disabled и Icons в
 Check/Radio, nested selection и возврат к родительскому действию, secondary click,
 Menu key/accessible long press, Escape/Tab, RTL, динамический disabled,
 переключение Menubar указателем и клавиатурой, закрытие вне меню и source geometry.
 
-Установленный consumer использует Maven-версию `0.1.0-menu-family-20261120-r4`,
+Установленный consumer использует Maven-версию `0.1.0-menu-family-20261120-r7`,
 без `uiSource`/composite substitution. Проверка подтверждает загрузку JAR через
 `protectionDomain.codeSource`, затем меняет общий check через Menu, запускает
 nested действие через Context Menu и вновь меняет check через Menubar в обеих
@@ -32,9 +33,9 @@ $env:JAVA_TOOL_OPTIONS='-Djava.awt.headless=true'
 $env:SKIKO_RENDER_API='SOFTWARE'
 # native/compose:
 ./gradlew.bat :desktopTest --tests 'pics.lab.ui.MenuRenderTest' --tests 'pics.lab.ui.MenuModelTest'
-./gradlew.bat :publishDesktopPublicationToDistributionRepository :publishKotlinMultiplatformPublicationToDistributionRepository :ui-colors:publishDesktopPublicationToDistributionRepository :ui-colors:publishKotlinMultiplatformPublicationToDistributionRepository '-PpublicationVersion=0.1.0-menu-family-20261120-r4' '-PpublicationRepository=<absolute local Maven directory>'
+./gradlew.bat :publishDesktopPublicationToDistributionRepository :publishKotlinMultiplatformPublicationToDistributionRepository :ui-colors:publishDesktopPublicationToDistributionRepository :ui-colors:publishKotlinMultiplatformPublicationToDistributionRepository '-PpublicationVersion=0.1.0-menu-family-20261120-r7' '-PpublicationRepository=<absolute local Maven directory>'
 # native/compose/consumer:
-../gradlew.bat :desktopTest --tests 'pics.lab.ui.sample.MenuConsumerTest' '-PuiVersion=0.1.0-menu-family-20261120-r4' '-PuiRepository=<same directory>'
+../gradlew.bat :desktopTest --tests 'pics.lab.ui.sample.MenuConsumerTest' '-PuiVersion=0.1.0-menu-family-20261120-r7' '-PuiRepository=<same directory>'
 ```
 
 Native metadata/commonMain и Skiko metadata также скомпилированы при публикации.
