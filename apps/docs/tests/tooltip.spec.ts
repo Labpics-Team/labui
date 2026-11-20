@@ -279,8 +279,11 @@ test('Tab between tooltip controls keeps the newly focused description open', as
   await expect(hosts.nth(0).locator('.lab-tooltip-content')).toBeVisible();
   await expect(hosts.nth(1).locator('.lab-tooltip-content')).toBeHidden();
   await hosts.evaluateAll((elements) => {
-    elements[1].querySelector('button')?.focus();
-    queueMicrotask(() => elements[0].querySelector('button')?.focus());
+    const first = elements[0]?.querySelector('button');
+    const second = elements[1]?.querySelector('button');
+    if (!first || !second) throw new Error('Focus transfer requires both Tooltip controls');
+    second.focus();
+    queueMicrotask(() => first.focus());
   });
   await expect(hosts.nth(0).locator('button')).toBeFocused();
   await expect(hosts.nth(0).locator('.lab-tooltip-content')).toBeVisible();

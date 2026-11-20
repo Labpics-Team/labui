@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-19T23:36:26.549Z",
+  "generatedAt": "2026-11-20T03:59:41.554Z",
   "command": "node apps/docs/tests/tooltip-frameworks-packed.mjs",
   "node": "v24.15.0",
   "publicIcons": false,
@@ -19,7 +19,7 @@
       "name": "@labpics/ui-tokens",
       "version": "0.0.0",
       "archive": "labpics-ui-tokens-0.0.0.tgz",
-      "sha256": "5ff504812f97d5ef84dd9d48c79d4345b42c1228750f8ffdf93697bff659d547"
+      "sha256": "6c1f5b4ed6c353af5d62fe2e969322d0c8c1f06cecc0019802ef452b0c67296f"
     },
     {
       "name": "@labpics/ui-shadow",
@@ -43,37 +43,37 @@
       "name": "@labui/colors",
       "version": "0.0.0",
       "archive": "labui-colors-0.0.0.tgz",
-      "sha256": "56ba4da1572ea321215974308bf0eb76333e8b583650b69e67d69bffacee7351"
+      "sha256": "c741313734b87f27e07b6941f6bd717d231a0427d4aaf282fcdee6361ba93f7b"
     },
     {
       "name": "@labpics/ui-core",
       "version": "0.0.0",
       "archive": "labpics-ui-core-0.0.0.tgz",
-      "sha256": "ecb0e4a40c88d8a36ab553ad459ceeefc30d47af76793d3bbdccd8d76e2dce0d"
+      "sha256": "acf317ad9387d4d12fa77a2351636b575bccef50620cd1b64fbff9ceb3be63a4"
     },
     {
       "name": "@labpics/ui-vue",
       "version": "0.0.0",
       "archive": "labpics-ui-vue-0.0.0.tgz",
-      "sha256": "11d044b9a3ae88542d242df2fb11f6da635fba709021b146b73573ffc79de65e"
+      "sha256": "498ee6e0f33bb80533ec93f3c1b2db2d02359cc6db8c56c3c7dd7bbe69312e39"
     },
     {
       "name": "@labpics/ui-solid",
       "version": "0.0.0",
       "archive": "labpics-ui-solid-0.0.0.tgz",
-      "sha256": "523a48fd2750a5ebde8f01f051f82c4da726b7df3de4bd80d0872a8a76874043"
+      "sha256": "3e33858d93cfad0432356a6d0658a0d91748346f7a432be0b5ced3b442d41c1f"
     },
     {
       "name": "@labpics/ui-svelte",
       "version": "0.0.0",
       "archive": "labpics-ui-svelte-0.0.0.tgz",
-      "sha256": "f6e80dcb04e6ca1d7425b830450c92c2e2f681a14823fe4fd6381c366f81b576"
+      "sha256": "077c37cda1cdc195a5f272a398e4e28412fc643f8cab4534849ed28fc4c2d134"
     },
     {
       "name": "@labpics/ui-astro",
       "version": "0.0.0",
       "archive": "labpics-ui-astro-0.0.0.tgz",
-      "sha256": "cf27d0c0b1501e67adc25ce34d7d82254b9bae2ce1cdbbe8b558caa3f21c070d"
+      "sha256": "0bd32100a4160d0b6172ab3303743adbd72ad60f09eff9148634f60dd9063bed"
     },
     {
       "name": "@labpics/icons",
@@ -88,7 +88,7 @@
         "pnpm",
         "pack",
         "--pack-destination",
-        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+        "D:\\AgentTemp\\labui-tooltip-frameworks-V0zG8K\\packs"
       ],
       "cwd": "<repo>\\packages\\tokens"
     },
@@ -97,7 +97,7 @@
         "pnpm",
         "pack",
         "--pack-destination",
-        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+        "D:\\AgentTemp\\labui-tooltip-frameworks-V0zG8K\\packs"
       ],
       "cwd": "<repo>\\packages\\shadow"
     },
@@ -106,7 +106,7 @@
         "pnpm",
         "pack",
         "--pack-destination",
-        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+        "D:\\AgentTemp\\labui-tooltip-frameworks-V0zG8K\\packs"
       ],
       "cwd": "<repo>\\packages\\materials"
     },
@@ -115,7 +115,7 @@
         "pnpm",
         "pack",
         "--pack-destination",
-        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+        "D:\\AgentTemp\\labui-tooltip-frameworks-V0zG8K\\packs"
       ],
       "cwd": "<repo>\\packages\\fonts"
     },
@@ -124,7 +124,7 @@
         "pnpm",
         "pack",
         "--pack-destination",
-        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+        "D:\\AgentTemp\\labui-tooltip-frameworks-V0zG8K\\packs"
       ],
       "cwd": "<repo>\\packages\\colors"
     },
@@ -133,7 +133,7 @@
         "pnpm",
         "pack",
         "--pack-destination",
-        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+        "D:\\AgentTemp\\labui-tooltip-frameworks-V0zG8K\\packs"
       ],
       "cwd": "<repo>\\packages\\core"
     },
@@ -142,7 +142,7 @@
         "pnpm",
         "pack",
         "--pack-destination",
-        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+        "D:\\AgentTemp\\labui-tooltip-frameworks-V0zG8K\\packs"
       ],
       "cwd": "<repo>\\packages\\vue"
     },
@@ -151,7 +151,7 @@
         "pnpm",
         "pack",
         "--pack-destination",
-        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+        "D:\\AgentTemp\\labui-tooltip-frameworks-V0zG8K\\packs"
       ],
       "cwd": "<repo>\\packages\\solid"
     },
@@ -160,7 +160,7 @@
         "pnpm",
         "pack",
         "--pack-destination",
-        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+        "D:\\AgentTemp\\labui-tooltip-frameworks-V0zG8K\\packs"
       ],
       "cwd": "<repo>\\packages\\svelte"
     },
@@ -169,7 +169,7 @@
         "pnpm",
         "pack",
         "--pack-destination",
-        "D:\\AgentTemp\\labui-tooltip-frameworks-mzig5u\\packs"
+        "D:\\AgentTemp\\labui-tooltip-frameworks-V0zG8K\\packs"
       ],
       "cwd": "<repo>\\packages\\astro"
     },
@@ -206,7 +206,7 @@
       "framework": "vue",
       "server": "import {createSSRApp} from 'vue';import {renderToString} from 'vue/server-renderer';import App from './VueApp.vue';export const html=await renderToString(createSSRApp(App));",
       "client": "import {createSSRApp,nextTick} from 'vue';import App from './VueApp.vue';export async function mount(){const app=createSSRApp(App);app.mount('#app');await nextTick();window.unmountTooltip=()=>app.unmount()};",
-      "browserModules": 354,
+      "browserModules": 348,
       "installedBindings": [
         "node_modules/.pnpm/@labpics+ui-vue@file+packs+_2e85176b6c4614f99b0bc32c52d755e5/node_modules/@labpics/ui-vue/dist/index.js"
       ],
@@ -216,7 +216,7 @@
       "framework": "solid",
       "server": "import {renderToString,generateHydrationScript} from 'solid-js/web';import {createComponent} from 'solid-js';import {App} from './solid-app.mjs';export const html=renderToString(()=>createComponent(App,{}));export const hydrationScript=generateHydrationScript();",
       "client": "import {hydrate} from 'solid-js/web';import {createComponent} from 'solid-js';import {App} from './solid-app.mjs';export function mount(){const dispose=hydrate(()=>createComponent(App,{}),document.getElementById('app'));window.unmountTooltip=()=>dispose()};",
-      "browserModules": 351,
+      "browserModules": 345,
       "installedBindings": [
         "node_modules/.pnpm/@labpics+ui-solid@file+pack_6281d7cb0310e94680082c8783b2c86c/node_modules/@labpics/ui-solid/dist/index.js"
       ],
@@ -226,7 +226,7 @@
       "framework": "svelte",
       "server": "import {render} from 'svelte/server';import App from './SvelteApp.svelte';export const html=render(App).body;",
       "client": "import {hydrate,flushSync,unmount} from 'svelte';import App from './SvelteApp.svelte';export function mount(){const app=hydrate(App,{target:document.getElementById('app')});flushSync();window.unmountTooltip=async()=>{await unmount(app);flushSync()}};",
-      "browserModules": 471,
+      "browserModules": 465,
       "installedBindings": [
         "node_modules/.pnpm/@labpics+ui-svelte@file+pac_807e5a864ac18d91f280da4c05418dda/node_modules/@labpics/ui-svelte/dist/generated/Tooltip.svelte",
         "node_modules/.pnpm/@labpics+ui-svelte@file+pac_807e5a864ac18d91f280da4c05418dda/node_modules/@labpics/ui-svelte/dist/generated/index.js",

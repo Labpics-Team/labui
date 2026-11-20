@@ -51,3 +51,10 @@ node apps/docs/tests/tooltip-frameworks-packed.mjs
 The design and runtime contract, deliberate extensions and primary references are in [`docs/reference/tooltip.md`](../../reference/tooltip.md).
 
 [`review.md`](review.md) records the independent review, resolved counterexamples and final verification boundaries.
+
+Integration on 20 November: the combined Icon/Drag Button/Pin Input/Slider/Tooltip
+branch passed the installed React 18 consumer and all eight real framework
+SSR/hydration/build cases after the shared Svelte binding and Icon DOM fixes.
+The four native render tests and common Kotlin metadata passed with public
+Icons Maven 0.4.0. The web tests still use release CI's exact Icons npm archive;
+the public npm check remains pending publication.
