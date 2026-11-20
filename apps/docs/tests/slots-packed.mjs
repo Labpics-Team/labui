@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { copyFile, cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -25,6 +26,7 @@ try {
     esbuild: '0.25.12',
   };
   const overrides = {};
+  const archives = [];
   for (const folder of [
     'tokens',
     'shadow',
@@ -42,10 +44,22 @@ try {
     runPnpm(['pack', '--pack-destination', join(consumer, 'packs')], location);
     const archive = `${pkg.name.replace('@', '').replace('/', '-')}-${pkg.version}.tgz`;
     dependencies[pkg.name] = overrides[pkg.name] = `file:./packs/${archive}`;
+    archives.push({
+      name: archive,
+      sha256: createHash('sha256')
+        .update(await readFile(join(consumer, 'packs', archive)))
+        .digest('hex'),
+    });
   }
   if (process.env.LAB_ICONS_TARBALL) {
     await copyFile(process.env.LAB_ICONS_TARBALL, join(consumer, 'packs/icons.tgz'));
     dependencies['@labpics/icons'] = overrides['@labpics/icons'] = 'file:./packs/icons.tgz';
+    archives.push({
+      name: 'icons.tgz',
+      sha256: createHash('sha256')
+        .update(await readFile(join(consumer, 'packs/icons.tgz')))
+        .digest('hex'),
+    });
   }
   await writePackedConsumerProject(consumer, {
     name: 'labui-slots-consumer',
@@ -167,12 +181,16 @@ try {
               for (const element of await page.locator('[data-first]').all())
                 assert.equal((await element.boundingBox()).width, 17);
               if (framework !== 'render') {
-                const nested = await page
-                  .locator('demo-symbol')
-                  .evaluate(
-                    (el) => el.shadowRoot?.querySelector('svg')?.getBoundingClientRect().width,
-                  );
-                assert.equal(nested, scale * 1.5);
+                const nested = await page.locator('demo-symbol').evaluate((el) =>
+                  ['svg', 'circle'].map((selector) => {
+                    const rect = el.shadowRoot?.querySelector(selector)?.getBoundingClientRect();
+                    return { width: rect?.width, height: rect?.height };
+                  }),
+                );
+                assert.deepEqual(nested, [
+                  { width: scale * 1.5, height: scale * 1.5 },
+                  { width: scale, height: scale },
+                ]);
               }
               records.push({ engine, framework, ssr, phase, scale, sizes });
             }
@@ -232,7 +250,7 @@ try {
   }
   await writeFile(
     join(output, 'packed.json'),
-    `${JSON.stringify({ publicIcons: !process.env.LAB_ICONS_TARBALL, records }, null, 2)}\n`,
+    `${JSON.stringify({ archives, publicIcons: !process.env.LAB_ICONS_TARBALL, records }, null, 2)}\n`,
   );
   console.info(
     'Slot consumers: Vue/Svelte mount + SSR, four generated SSR bindings, delayed hydration, SVG geometry, fragments, escaping and state retention PASS.',
