@@ -693,6 +693,69 @@
       }
     },
     {
+      "tag": "lab-context-menu",
+      "subpath": "context-menu",
+      "pascal": "ContextMenu",
+      "className": "LabContextMenu",
+      "props": [
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "placement",
+          "attr": "placement",
+          "kind": "string"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "checkedValues",
+          "attr": "checked-values",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultCheckedValues",
+          "attr": "default-checked-values",
+          "kind": "prop"
+        },
+        {
+          "name": "heading",
+          "attr": "heading",
+          "kind": "string"
+        },
+        {
+          "name": "items",
+          "attr": "items",
+          "kind": "prop"
+        },
+        {
+          "name": "open",
+          "attr": "open",
+          "kind": "boolean"
+        },
+        {
+          "name": "defaultOpen",
+          "attr": "default-open",
+          "kind": "boolean"
+        }
+      ],
+      "events": [
+        "checked-values-change",
+        "open-change",
+        "select"
+      ],
+      "slots": {
+        "default": true,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
       "tag": "lab-dialog",
       "subpath": "dialog",
       "pascal": "Dialog",
@@ -1060,8 +1123,8 @@
       "className": "LabMenu",
       "props": [
         {
-          "name": "size",
-          "attr": "size",
+          "name": "label",
+          "attr": "label",
           "kind": "string"
         },
         {
@@ -1075,19 +1138,98 @@
           "kind": "boolean"
         },
         {
-          "name": "label",
-          "attr": "label",
+          "name": "checkedValues",
+          "attr": "checked-values",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultCheckedValues",
+          "attr": "default-checked-values",
+          "kind": "prop"
+        },
+        {
+          "name": "heading",
+          "attr": "heading",
           "kind": "string"
         },
         {
           "name": "items",
           "attr": "items",
           "kind": "prop"
+        },
+        {
+          "name": "open",
+          "attr": "open",
+          "kind": "boolean"
+        },
+        {
+          "name": "defaultOpen",
+          "attr": "default-open",
+          "kind": "boolean"
         }
       ],
       "events": [
+        "checked-values-change",
         "open-change",
         "select"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-menubar",
+      "subpath": "menubar",
+      "pascal": "Menubar",
+      "className": "LabMenubar",
+      "props": [
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "placement",
+          "attr": "placement",
+          "kind": "string"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "checkedValues",
+          "attr": "checked-values",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultCheckedValues",
+          "attr": "default-checked-values",
+          "kind": "prop"
+        },
+        {
+          "name": "menus",
+          "attr": "menus",
+          "kind": "prop"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "string"
+        },
+        {
+          "name": "defaultValue",
+          "attr": "default-value",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "checked-values-change",
+        "select",
+        "value-change"
       ],
       "slots": {
         "default": false,

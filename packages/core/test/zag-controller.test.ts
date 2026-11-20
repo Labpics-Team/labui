@@ -129,6 +129,33 @@ async function mount(): Promise<{
 }
 
 describe('ZagController.api — инвариант мемоизации (issue #127)', () => {
+  it('keeps one live props getter after 1000 host updates', () => {
+    const host = new FakeHost();
+    const module = makeToggleModule();
+    let reads = 0;
+    let id = 'initial';
+    const controller = new ZagController<ToggleSchema, string>(
+      host,
+      {
+        machine: module.machine,
+        connect: (service) => String(service.prop('id')),
+      },
+      () => {
+        reads++;
+        return { id };
+      },
+    );
+    controller.hostConnected();
+    for (let i = 0; i < 1000; i++) {
+      id = `updated-${i}`;
+      controller.hostUpdate();
+    }
+    const before = reads;
+    expect(controller.api).toBe('updated-999');
+    // Counts useful work instead of relying on host timing or a private field.
+    expect(reads - before).toBe(1);
+    controller.hostDisconnected();
+  });
   it('два чтения в одном рендере дают тот же object-ref (memo hit)', async () => {
     const { controller } = await mount();
     const a = controller.api;

@@ -10,19 +10,23 @@ import '@labpics/ui-core/menu';
 import type { LabMenu } from '@labpics/ui-core/menu';
 
 /** Пропы <lab-menu>, взятые прямо из класса ядра (LabMenu). */
-export type MenuProps = Pick<LabMenu, 'size' | 'placement' | 'disabled' | 'label' | 'items'>;
+export type MenuProps = Pick<LabMenu, 'label' | 'placement' | 'disabled' | 'checkedValues' | 'defaultCheckedValues' | 'heading' | 'items' | 'open' | 'defaultOpen'>;
 
 /** <Menu> — тонкая Solid-обёртка над <lab-menu>. */
-export const Menu: LabSolidComponent<MenuProps, 'open-change' | 'select'> = createLabComponent<
+export const Menu: LabSolidComponent<MenuProps, 'checked-values-change' | 'open-change' | 'select'> = createLabComponent<
   MenuProps,
-  'open-change' | 'select'
+  'checked-values-change' | 'open-change' | 'select'
 >('lab-menu', {
   specs: [
-    { name: 'size', attr: 'size', kind: 'string' },
+    { name: 'label', attr: 'label', kind: 'string' },
     { name: 'placement', attr: 'placement', kind: 'string' },
     { name: 'disabled', attr: 'disabled', kind: 'boolean' },
-    { name: 'label', attr: 'label', kind: 'string' },
+    { name: 'checkedValues', attr: 'checked-values', kind: 'prop' },
+    { name: 'defaultCheckedValues', attr: 'default-checked-values', kind: 'prop' },
+    { name: 'heading', attr: 'heading', kind: 'string' },
     { name: 'items', attr: 'items', kind: 'prop' },
+    { name: 'open', attr: 'open', kind: 'boolean' },
+    { name: 'defaultOpen', attr: 'default-open', kind: 'boolean' },
   ],
-  events: ['open-change', 'select'],
+  events: ['checked-values-change', 'open-change', 'select'],
 });

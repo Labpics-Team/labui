@@ -89,7 +89,9 @@ export class ZagController<T extends MachineSchema, Api> implements ReactiveCont
     this.apiCache = undefined;
     // Feed the latest host props into the running machine before it renders, so
     // a reflected attribute change (e.g. `disabled`) reaches the machine.
-    this.machine?.updateProps(() => this.machineProps());
+    // The constructor getter already reads current host properties. Vanilla
+    // 1.48 refreshes watchers without retaining another live getter for each render.
+    this.machine?.updateProps({});
   }
 
   hostDisconnected(): void {

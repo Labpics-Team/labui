@@ -103,7 +103,14 @@ export { Pagination, type PaginationProps } from './pagination.js';
 // fuse the keyed-compound group machine (radio-group) with the positioned overlay
 // (popover): a trigger + a body-portalled, machine-positioned listbox / menu.
 export { Select, type SelectProps } from './select.js';
-export { Menu, type MenuProps } from './menu.js';
+export {
+  Menu,
+  type MenuProps,
+  ContextMenu,
+  type ContextMenuProps,
+  Menubar,
+  type MenubarProps,
+} from './menu.js';
 
 // COMPOUND + POSITIONED + FILTERED — the native-React twin of the Lit `<lab-combobox>`,
 // running the SAME `@zag-js/combobox` machine via `useZag`. It FUSES the Select listbox

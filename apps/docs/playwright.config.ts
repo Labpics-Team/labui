@@ -19,6 +19,7 @@ const SMOKE_SPECS = [
   'selection.spec.ts',
   'progress-author.spec.ts',
   'pin-input.spec.ts',
+  'menu.spec.ts',
 ];
 
 const smoke = process.env.E2E_SMOKE === '1';

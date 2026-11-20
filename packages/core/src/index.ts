@@ -161,7 +161,6 @@ export type {
 export type {
   LabMenuItem,
   LabMenuPlacement,
-  LabMenuSize,
 } from './components/menu/lab-menu.js';
 
 // Combobox — the COMPOUND + POSITIONED listbox (the Select canon) FUSED with the

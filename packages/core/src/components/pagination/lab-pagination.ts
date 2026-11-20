@@ -126,7 +126,7 @@ export class LabPagination extends LabElement {
     // A never-started service gives SSR the same range algorithm, without DOM effects.
     return isServer || !this.isConnected
       ? paginationMachine.connect(
-          new VanillaMachine(module.machine, () => this.machineProps()).service,
+          new VanillaMachine<Schema>(module.machine, () => this.machineProps()).service,
           normalizeProps,
         )
       : this.machineCtl.api;

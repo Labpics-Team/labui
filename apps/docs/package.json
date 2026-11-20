@@ -13,6 +13,7 @@
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
     "test:framework-ssr": "node tests/framework-ssr-packed.mjs",
+    "test:menu-packed": "node tests/menu-packed.mjs",
     "test": "node tests/run-node-tests.mjs docs"
   },
   "dependencies": {

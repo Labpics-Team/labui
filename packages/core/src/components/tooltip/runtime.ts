@@ -12,6 +12,7 @@ import { mountSurfaceShape } from '@labpics/ui-materials';
 import { tooltipProfile } from '@labpics/ui-tokens';
 import * as tooltip from '@zag-js/tooltip';
 import { VanillaMachine, normalizeProps, spreadProps } from '@zag-js/vanilla';
+import type { SchemaOf } from '../../behaviors/types.js';
 
 export type LabTooltipPlacement = Placement;
 export type LabTooltipSize = 's' | 'm' | 'l';
@@ -233,7 +234,7 @@ export function mountTooltip(
     positioning: { placement: options.placement },
     onOpenChange: ({ open }: { open: boolean }) => options.onOpenChange?.(open),
   });
-  const machine = new VanillaMachine(behavior, props);
+  const machine = new VanillaMachine<SchemaOf<tooltip.Service>>(behavior, props);
   const paint = () => {
     if (!alive) return;
     for (const clean of spreads) clean();
@@ -299,7 +300,7 @@ export function mountTooltip(
         next.arrow !== options.arrow ||
         next.tail !== options.tail;
       options = next;
-      machine.updateProps(props);
+      machine.updateProps({});
       paint();
       if (reposition) refreshPosition?.();
     },

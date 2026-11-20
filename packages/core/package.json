@@ -360,7 +360,18 @@
         "types": "./dist/components/tooltip/runtime.d.cts",
         "default": "./dist/components/tooltip/runtime.cjs"
       }
-    }
+    },
+    "./menu/runtime": {
+      "import": {
+        "types": "./dist/components/menu/runtime.d.ts",
+        "default": "./dist/components/menu/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/menu/runtime.d.cts",
+        "default": "./dist/components/menu/runtime.cjs"
+      }
+    },
+    "./menu.css": "./dist/menu.css"
   },
   "files": ["dist"],
   "sideEffects": [
@@ -396,7 +407,8 @@
     "./dist/button-fill.css",
     "./dist/pin-input.css",
     "./dist/slider.css",
-    "./dist/tooltip.css"
+    "./dist/tooltip.css",
+    "./dist/menu.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
@@ -427,7 +439,7 @@
     "@zag-js/toggle": "1.41.2",
     "@zag-js/tooltip": "1.41.2",
     "@zag-js/types": "1.41.2",
-    "@zag-js/vanilla": "1.41.2",
+    "@zag-js/vanilla": "1.48.0",
     "lit": "3.3.3",
     "@floating-ui/dom": "1.7.6"
   },
