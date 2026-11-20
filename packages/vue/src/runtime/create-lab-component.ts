@@ -83,7 +83,7 @@ export function createLabComponent<Props, Events extends string>(
           ...(!server && { [`.${LAB_INPUTS_PROPERTY}`]: { specs: spec.specs, props: inputs } }),
         };
         // Named fragments retain framework-owned children. The native projection
-        // forwards only geometry explicitly supplied by the receiving component.
+        // forwards only root styles explicitly supplied by the receiving component.
         const children: unknown[] = [];
         if (server?.shadowRoot)
           children.push(
@@ -97,7 +97,7 @@ export function createLabComponent<Props, Events extends string>(
           if (name === 'default') children.push(slotFn());
           else
             children.push(
-              h('lab-slot', { slot: name }, [
+              h('lab-slot', { key: name, slot: name }, [
                 ...(server
                   ? [h('template', { shadowrootmode: 'open', innerHTML: slotProjectionShadow })]
                   : []),

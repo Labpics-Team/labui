@@ -1,22 +1,46 @@
-/** Framework-owned slot fragments keep their DOM and a native projection boundary.
- * Only geometry explicitly supplied by the receiving component crosses it.
- * The local reset prevents one component's geometry leaking into nested slots.
+/** Root styles explicitly supported across framework-owned slot fragments. */
+const slotProperties = [
+  'inline-size',
+  'block-size',
+  'display',
+  'flex',
+  'margin-inline-start',
+  'margin-inline-end',
+  'border-radius',
+  'background',
+] as const;
+
+type SlotStyles = Partial<Record<(typeof slotProperties)[number], string>>;
+
+/** Frameworks keep their DOM; only explicitly supplied root styles cross.
+ * The local reset prevents those styles leaking into nested independent slots.
+ * display:contents is structural: a projected display value belongs to the roots.
  */
 export const slotProjectionShadow = `<style>
-:host { display: contents; --lab-slot-inline-size: initial; --lab-slot-block-size: initial; }
-::slotted(*) { inline-size: var(--lab-slot-inline-size, revert-layer); block-size: var(--lab-slot-block-size, revert-layer); }
+:host { display: contents !important; ${slotProperties.map((property) => `--lab-slot-${property}: initial;`).join(' ')} }
+::slotted(*) { ${slotProperties.map((property) => `${property}: var(--lab-slot-${property}, revert-layer);`).join(' ')} }
 </style><slot></slot>`;
 
 export const slotProjectionShadowHtml = `<template shadowrootmode="open">${slotProjectionShadow}</template>`;
 
+/** One declaration styles direct elements and projected fragment roots alike. */
+export function slotStyleCss(selector: string, styles: SlotStyles): string {
+  return `${selector} {
+  ${Object.entries(styles)
+    .map(
+      ([property, value]) =>
+        `--lab-slot-${property}: ${value}; ${property}: var(--lab-slot-${property});`,
+    )
+    .join('\n  ')}
+}`;
+}
+
 /** Same dimensions for direct elements and roots of a framework slot fragment. */
 export function slotSizeCss(selector: string, inlineSize: string, blockSize?: string): string {
-  return `${selector} {
-  --lab-slot-inline-size: ${inlineSize};
-  --lab-slot-block-size: ${blockSize ?? 'initial'};
-  inline-size: var(--lab-slot-inline-size);
-  ${blockSize === undefined ? '' : 'block-size: var(--lab-slot-block-size);'}
-}`;
+  return slotStyleCss(selector, {
+    'inline-size': inlineSize,
+    ...(blockSize === undefined ? {} : { 'block-size': blockSize }),
+  });
 }
 
 /** Called by a receiving element, after the browser/SSR environment exists. */

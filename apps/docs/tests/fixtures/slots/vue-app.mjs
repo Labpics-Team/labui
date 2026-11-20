@@ -1,4 +1,6 @@
 import { Alert } from '@labpics/ui-vue/alert';
+import { Badge } from '@labpics/ui-vue/badge';
+import { Button } from '@labpics/ui-vue/button';
 import { Card } from '@labpics/ui-vue/card';
 import { Fragment, h, ref } from 'vue';
 
@@ -55,10 +57,23 @@ export default {
           ]
         : []),
       h(
+        Button,
+        { style: { width: '60px' } },
+        {
+          default: () => 'Long button label',
+          icon: () =>
+            h('svg', { 'data-pressure': '', width: 24, height: 24, viewBox: '0 0 24 24' }, [
+              h('circle', { cx: 12, cy: 12, r: 8 }),
+            ]),
+        },
+      ),
+      h(Badge, {}, { default: () => 'Painted dot', dot: () => h('span', { 'data-dot': '' }) }),
+      h(
         Card,
         {},
         {
           default: () => h('span', { 'data-default': '' }, `Default ${label.value}`),
+          header: shown.value ? () => h('input', { 'data-header-draft': '' }) : undefined,
           footer: () =>
             h(Fragment, {}, [
               h('span', { 'data-first': '', style: 'display:inline-block;width:17px' }, 'A'),

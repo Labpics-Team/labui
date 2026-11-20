@@ -12,6 +12,33 @@ import { runPnpm, writePackedConsumerProject } from './packed-consumer-project.m
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const output = join(root, 'docs/evidence/alert-20261119/slots');
 const consumer = await mkdtemp(join(tmpdir(), 'labui-slots-'));
+async function checkProjectedStyles(page, scale) {
+  const icon = await page.locator('[data-pressure]').evaluate((el) => {
+    const rect = el.getBoundingClientRect();
+    return { width: rect.width, height: rect.height, flex: getComputedStyle(el).flex };
+  });
+  assert.deepEqual(icon, { width: scale * 1.5, height: scale * 1.5, flex: '0 0 auto' });
+  const dot = await page.locator('[data-dot]').evaluate((el) => {
+    const style = getComputedStyle(el);
+    const rect = el.getBoundingClientRect();
+    return {
+      width: rect.width,
+      height: rect.height,
+      font: Number.parseFloat(style.fontSize),
+      background: style.backgroundColor,
+      color: style.color,
+      radius: Number.parseFloat(style.borderTopLeftRadius),
+      gap: Number.parseFloat(style.marginInlineEnd),
+    };
+  });
+  assert.equal(dot.width, dot.font / 2);
+  assert.equal(dot.height, dot.font / 2);
+  assert.equal(dot.background, dot.color);
+  assert.notEqual(dot.background, 'rgba(0, 0, 0, 0)');
+  assert.ok(dot.radius > 0);
+  assert.ok(dot.gap > 0);
+  return { icon, dot };
+}
 let server;
 try {
   await mkdir(output, { recursive: true });
@@ -150,6 +177,7 @@ try {
               .locator('svg[data-icon]')
               .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().width));
             assert.deepEqual(sizes, Array(framework === 'render' ? 4 : 1).fill(48));
+            if (framework !== 'render') await checkProjectedStyles(staticPage, 32);
             records.push({ engine, framework, phase: 'javascript-disabled', scale: 32, sizes });
             await staticPage.close();
           }
@@ -192,7 +220,9 @@ try {
                   { width: scale, height: scale },
                 ]);
               }
-              records.push({ engine, framework, ssr, phase, scale, sizes });
+              const rootStyles =
+                framework === 'render' ? undefined : await checkProjectedStyles(page, scale);
+              records.push({ engine, framework, ssr, phase, scale, sizes, rootStyles });
             }
           };
           if (ssr) {
@@ -221,12 +251,28 @@ try {
           if (framework !== 'render') {
             await page.locator('[data-update]').click();
             await expect(page.locator('[data-default]')).toHaveText('Default Updated < & " text');
-            await expect(page.locator('lab-card lab-slot').first()).toContainText(
+            await expect(page.locator('lab-card lab-slot[slot="footer"]')).toContainText(
               'Updated < & " text',
             );
+            await page.locator('[data-draft]').fill('Neighbor draft');
+            await page.locator('[data-draft]').evaluate((el) => {
+              window.retainedFooter = el;
+            });
             await page.locator('[data-toggle]').click();
             await expect(page.locator('svg[data-icon]')).toHaveCount(0);
+            await expect(page.locator('[data-header-draft]')).toHaveCount(0);
+            assert.equal(
+              await page.locator('[data-draft]').evaluate((el) => el === window.retainedFooter),
+              true,
+            );
+            await expect(page.locator('[data-draft]')).toHaveValue('Neighbor draft');
             await page.locator('[data-toggle]').click();
+            await expect(page.locator('[data-header-draft]')).toHaveCount(1);
+            assert.equal(
+              await page.locator('[data-draft]').evaluate((el) => el === window.retainedFooter),
+              true,
+            );
+            await expect(page.locator('[data-draft]')).toHaveValue('Neighbor draft');
             await check('remounted');
           } else {
             assert.deepEqual(
