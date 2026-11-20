@@ -3,8 +3,16 @@ import { slotSizeCss } from '../../slot-projection.js';
 import { authoredTextBoxCss } from '../../typography.js';
 
 const rem = (px: number) => `${px / 16}rem`;
+// Keep a readable text column before retaining the inline source arrangement.
+const reflowWidth =
+  p.padding * 2 +
+  p.iconSize * 2 +
+  p.actionGap +
+  p.labelGap +
+  p.contentPaddingStart +
+  p.description.fontSize * p.reflow.minContentEm;
 export const alertCss = `
-[data-lab-alert] { display: flex; flex-direction: column; min-inline-size: 0; max-inline-size: 100%; text-align: start; }
+[data-lab-alert] { display: flex; flex-direction: column; min-inline-size: 0; max-inline-size: 100%; text-align: start; container: lab-alert / inline-size; contain-intrinsic-inline-size: ${rem(p.intrinsicWidth)}; }
 [data-lab-alert][hidden] { display: none; }
 .lab-alert-surface {
   box-sizing: border-box; display: flex; align-items: flex-start; min-inline-size: 0;
@@ -29,6 +37,13 @@ ${authoredTextBoxCss('.lab-alert-heading, .lab-alert-description')}
 }
 .lab-alert-close:hover { color: var(--lab-${p.roles.heading}); }
 .lab-alert-close:focus-visible { outline: var(--lab-focus-ring-width) solid var(--lab-${p.roles.focus}); outline-offset: var(--lab-focus-ring-offset); }
+@container lab-alert (inline-size < ${rem(reflowWidth)}) {
+  .lab-alert-surface { display: grid; grid-template-columns: minmax(0, 1fr) auto; row-gap: ${rem(p.labelGap * 2)}; }
+  .lab-alert-label { display: contents; }
+  .lab-alert-icon { grid-row: 1; grid-column: 1; }
+  .lab-alert-close { grid-row: 1; grid-column: 2; }
+  .lab-alert-content { grid-row: 2; grid-column: 1 / -1; padding-inline-start: 0; }
+}
 .lab-alert-layer {
   position: relative; height: ${rem(p.stack.height)}; flex: none; overflow: hidden;
   border-radius: 0 0 ${rem(p.stack.radius)} ${rem(p.stack.radius)}; corner-shape: round; pointer-events: none;

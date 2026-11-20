@@ -66,8 +66,8 @@ try {
   pnpm(['install', '--ignore-scripts', '--prefer-offline'], consumer);
   await writeFile(
     join(consumer, 'shared.mjs'),
-    `import {createElement as h,useState} from 'react';import {Alert} from '@labpics/ui-react/alert';
-    export function App(){const [props,setProps]=useState({});if(typeof window!=='undefined')window.reactProps=setProps;return h(Alert,{heading:'Saved',description:'Changes are available',...props,onDismiss:()=>window.calls.push('react')})}`,
+    `import {createElement as h,useState,useEffect} from 'react';import {Alert} from '@labpics/ui-react/alert';
+    export function App(){const [props,setProps]=useState({});useEffect(()=>{window.reactHydrated=true},[]);if(typeof window!=='undefined')window.reactProps=setProps;return h(Alert,{heading:'Saved',description:'Changes are available',...props,onDismiss:()=>window.calls.push('react')})}`,
   );
   await writeFile(
     join(consumer, 'server.mjs'),
@@ -76,6 +76,7 @@ try {
     for(const renderer of ['vue','solid','svelte','astro']){const {renderAlert}=await import('@labpics/ui-'+renderer+'/ssr');parts.push('<section data-renderer="'+renderer+'">'+renderAlert({heading:'Saved',description:'Changes are available',quantity:3,controlled:true})+'</section>')}
     const {renderAlert}=await import('@labpics/ui-vue/ssr');parts.push('<section id="false">'+renderAlert({heading:'Hidden',open:false,showIcon:false})+'</section>');
     parts.push('<div id="matrix">');for(const quantity of [1,2,3])for(const type of ['neutral','danger'])parts.push('<section data-source="'+type+'-'+quantity+'">'+renderAlert({heading:'Alert',description:'Alert description that warning about something',type,quantity,controlled:true})+'</section>');parts.push('</div>');
+    for(const [layout,style] of Object.entries({flex:'display:flex',column:'display:flex;flex-direction:column;align-items:flex-start',grid:'display:grid;grid-template-columns:auto 1fr',inline:'display:inline-block;width:auto;max-width:450px'})) parts.push('<section data-intrinsic="'+layout+'" style="'+style+'">'+renderAlert({heading:'Alert',description:'Alert description that warning about something'})+'</section>');
     await writeFile('index.html','<!doctype html><html data-theme="light" data-material="solid"><head><meta charset="utf-8"><link rel="stylesheet" href="client.css"><style>body{margin:24px;font-family:Geist;background:var(--lab-bg-primary);color:var(--lab-label-primary)}section{width:450px;max-width:100%;margin-block:24px}#matrix{display:grid;grid-template-columns:450px 450px;gap:32px;background:linear-gradient(120deg,#302bfd,transparent)}#matrix section{margin:0}</style></head><body>'+parts.join('')+'<script type="module" src="client.js"></script></body></html>');`,
   );
   await writeFile(
@@ -180,6 +181,26 @@ try {
       });
       await page.goto(`http://127.0.0.1:${server.address().port}`);
       await page.evaluate(() => document.fonts.ready);
+      for (const section of await page.locator('[data-intrinsic]').all()) {
+        const sizing = await section.locator('[data-lab-alert]').boundingBox();
+        assert.equal(
+          sizing.width,
+          450,
+          'SSR retains its authored intrinsic width in shrink-to-fit layouts',
+        );
+        await section.evaluate((el) => {
+          el.style.width = '260px';
+        });
+        const constrained = await section.locator('[data-lab-alert]').boundingBox();
+        assert.equal(
+          constrained.width,
+          260,
+          'Intrinsic fallback still yields to the available width',
+        );
+        await section.evaluate((el) => {
+          el.style.width = '450px';
+        });
+      }
       const first = page.locator('[data-renderer="vue"] [data-lab-alert]');
       const initial = await first.boundingBox();
       assert.equal(initial.height, 96);
@@ -187,7 +208,7 @@ try {
       assert.equal(await page.locator('#false .lab-alert-icon').count(), 0);
       await page.locator('#origin').focus();
       await page.evaluate(() => window.hydrate());
-      await page.waitForFunction(() => window.ready);
+      await page.waitForFunction(() => window.ready && window.reactHydrated);
       await expect(page.locator('#origin')).toBeFocused();
       await expect(first).toHaveJSProperty('offsetHeight', 96);
       await page.locator('#react .lab-alert-close').focus();
@@ -243,6 +264,7 @@ try {
               const box = panel.getBoundingClientRect();
               const surface = panel.querySelector('.lab-alert-surface').getBoundingClientRect();
               const text = panel.querySelector('.lab-alert-description').getBoundingClientRect();
+              const content = panel.querySelector('.lab-alert-content').getBoundingClientRect();
               const close = panel.querySelector('.lab-alert-close').getBoundingClientRect();
               return {
                 width: box.width,
@@ -252,6 +274,8 @@ try {
                   .borderTopLeftRadius,
                 textRight: text.right,
                 closeX: close.x,
+                closeBottom: close.bottom,
+                contentTop: content.top,
                 stackHeight: box.height - surface.height,
                 lineBoxes: Array.from(
                   panel.querySelectorAll('.lab-alert-heading, .lab-alert-description'),
@@ -293,7 +317,11 @@ try {
             });
             assert.equal(geometry.width, 450);
             assert.ok(Math.abs(geometry.stackHeight - (16 * scale) / 100) < 1);
-            assert.ok(geometry.textRight <= geometry.closeX - (24 * scale) / 100 + 1);
+            assert.ok(
+              geometry.textRight <= geometry.closeX - (24 * scale) / 100 + 1 ||
+                geometry.contentTop >= geometry.closeBottom + (8 * scale) / 100 - 1,
+              'Text and dismissal keep their space in either arrangement',
+            );
             assert.equal(geometry.svg, (24 * scale) / 100);
             for (const text of geometry.lineBoxes) {
               assert.ok(
@@ -322,10 +350,35 @@ try {
         width: el.clientWidth,
         scroll: el.scrollWidth,
         text: el.querySelector('.lab-alert-description').getBoundingClientRect().height,
+        contentWidth: el.querySelector('.lab-alert-content').getBoundingClientRect().width,
+        headingHeight: el.querySelector('.lab-alert-heading').getBoundingClientRect().height,
       }));
       assert.equal(narrow.width, narrow.scroll);
+      assert.equal(narrow.contentWidth, 216, 'Large text receives the full padded width');
+      assert.ok(Math.abs(narrow.headingHeight - 48) < 1, 'The short heading remains a whole word');
       assert.ok(narrow.text > 48);
       await source.screenshot({ path: join(output, `${engine}-narrow-200.png`) });
+      await page.evaluate(() => {
+        window.reactProps({
+          open: true,
+          heading: 'Alert',
+          description: 'Alert description that warning about something',
+        });
+        document.querySelector('#react').style.width = '280px';
+      });
+      const reactClose = page.locator('#react .lab-alert-close');
+      await expect(reactClose).toBeVisible();
+      await reactClose.focus();
+      for (const width of [280, 640, 280]) {
+        await page.locator('#react').evaluate((section, width) => {
+          section.style.width = `${width}px`;
+        }, width);
+        await expect(reactClose).toBeFocused();
+        if (width === 280) {
+          const box = await page.locator('#react .lab-alert-content').boundingBox();
+          assert.equal(box.width, 216, 'React preserves the same readable width');
+        }
+      }
       await page.waitForTimeout(250);
       await page.evaluate(() => {
         window.rafCalls = 0;

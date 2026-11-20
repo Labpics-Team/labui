@@ -5,10 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -38,11 +36,15 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import pics.lab.icons.Icon
 import pics.lab.icons.symbols.alertCircle
 import pics.lab.icons.symbols.close
+import kotlin.math.max
+import kotlin.math.roundToInt
 
 public enum class LabAlertType { Neutral, Danger }
 
@@ -85,21 +87,19 @@ public fun LabAlert(
     val descriptionStyle = LabType.body().withTypography(fontSize = LabComponents.AlertDescriptionFontSize.sp,
         lineHeight = LabComponents.AlertDescriptionLineHeight.sp, fontWeight = FontWeight(LabComponents.AlertDescriptionFontWeight.toInt()),
         letterSpacing = LabComponents.AlertDescriptionLetterSpacing.sp).copy(color = colors[LabComponents.AlertRolesDescription])
-    Column(modifier) {
+    Layout(modifier = modifier, content = {
         LabSurface(LabComponents.AlertMaterial,
             Modifier.fillMaxWidth().border(LabComponents.AlertStrokeWidth.dp, border, shape), material, shape) {
-            Row(Modifier.padding(LabComponents.AlertPadding.dp), horizontalArrangement = Arrangement.spacedBy(LabComponents.AlertActionGap.dp)) {
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(LabComponents.AlertLabelGap.dp)) {
-                    if (showIcon) Box(Modifier.size(size).clearAndSetSemantics {}) {
-                        if (icon == null) Icon(alertCircle, tint = iconColor, size = size)
-                        else LabAlertIconScope(iconColor, size).icon()
-                    }
-                    key(notificationKey) {
-                        Column(Modifier.weight(1f).padding(start = LabComponents.AlertContentPaddingStart.dp)
-                            .semantics(mergeDescendants = true) { liveRegion = announcement }) {
-                            LabText(heading, style = headingStyle)
-                            if (!description.isNullOrEmpty()) LabText(description, style = descriptionStyle)
-                        }
+            Layout(modifier = Modifier.padding(LabComponents.AlertPadding.dp), content = {
+                if (showIcon) Box(Modifier.size(size).clearAndSetSemantics {}) {
+                    if (icon == null) Icon(alertCircle, tint = iconColor, size = size)
+                    else LabAlertIconScope(iconColor, size).icon()
+                }
+                key(notificationKey) {
+                    Column(Modifier
+                        .semantics(mergeDescendants = true) { liveRegion = announcement }) {
+                        LabText(heading, style = headingStyle)
+                        if (!description.isNullOrEmpty()) LabText(description, style = descriptionStyle)
                     }
                 }
                 Box(Modifier.size(size).drawWithContent {
@@ -115,12 +115,50 @@ public fun LabAlert(
                         if (focused) restoreFocus?.requestFocus()
                         onDismiss()
                     }) { Icon(close, tint = closeColor, size = size) }
+            }) { measurables, constraints ->
+                val loose = constraints.copy(minWidth = 0, minHeight = 0)
+                val closeButton = measurables.last().measure(loose)
+                val leading = if (showIcon) measurables.first().measure(loose) else null
+                val text = measurables[measurables.lastIndex - 1]
+                val textStart = (leading?.width?.plus(LabComponents.AlertLabelGap.dp.roundToPx()) ?: 0) +
+                    LabComponents.AlertContentPaddingStart.dp.roundToPx()
+                val occupiedWidth = textStart + closeButton.width + LabComponents.AlertActionGap.dp.roundToPx()
+                val width = constraints.maxWidth
+                val inlineTextWidth = (width - occupiedWidth).coerceAtLeast(0)
+                val minimumTextWidth = (LabComponents.AlertDescriptionFontSize.sp.toPx() *
+                    LabComponents.AlertReflowMinContentEm).roundToInt()
+                val reflow = inlineTextWidth < minimumTextWidth
+                val textWidth = if (reflow) width else inlineTextWidth
+                val content = text.measure(loose.copy(minWidth = textWidth, maxWidth = textWidth))
+                val controlsHeight = max(leading?.height ?: 0, closeButton.height)
+                val contentY = if (reflow) controlsHeight + (LabComponents.AlertLabelGap * 2).dp.roundToPx() else 0
+                val height = constraints.constrainHeight(max(controlsHeight, contentY + content.height))
+                layout(width, height) {
+                    leading?.placeRelative(0, 0)
+                    content.placeRelative(if (reflow) 0 else textStart, contentY)
+                    closeButton.placeRelative((width - closeButton.width).coerceAtLeast(0), 0)
+                }
             }
         }
         if (quantity >= 2) AlertLayer(LabComponents.AlertStackFirstInset.dp, LabComponents.AlertStackFirstOpacity,
             LabComponents.AlertStackFirstMaterial, material)
         if (quantity >= 3) AlertLayer(LabComponents.AlertStackSecondInset.dp, LabComponents.AlertStackSecondOpacity,
             LabComponents.AlertStackSecondMaterial, material)
+    }) { measurables, constraints ->
+        // Resolve the complete stack's width once, including the source padding.
+        val width = if (constraints.hasBoundedWidth) constraints.maxWidth else
+            constraints.constrainWidth(LabComponents.AlertIntrinsicWidth.dp.roundToPx())
+        var remainingHeight = constraints.maxHeight
+        val planes = measurables.map { measurable ->
+            measurable.measure(constraints.copy(minWidth = width, maxWidth = width, minHeight = 0,
+                maxHeight = remainingHeight)).also {
+                    if (constraints.hasBoundedHeight) remainingHeight = (remainingHeight - it.height).coerceAtLeast(0)
+                }
+        }
+        layout(width, constraints.constrainHeight(planes.sumOf { it.height })) {
+            var y = 0
+            for (plane in planes) { plane.placeRelative(0, y); y += plane.height }
+        }
     }
 }
 

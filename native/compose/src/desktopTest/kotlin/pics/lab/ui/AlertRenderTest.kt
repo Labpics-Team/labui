@@ -2,9 +2,12 @@ package pics.lab.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -86,7 +89,9 @@ class AlertRenderTest {
                     val descendants = walk(frame)
                     val close = descendants.single { it.config.getOrNull(SemanticsProperties.ContentDescription)?.contains("Закрыть уведомление") == true }
                     val text = descendants.first { it.config.getOrNull(SemanticsProperties.LiveRegion) != null }
-                    assertTrue(text.boundsInRoot.right + 23.5f <= close.boundsInRoot.left)
+                    assertTrue(text.boundsInRoot.right + 23.5f <= close.boundsInRoot.left ||
+                        text.boundsInRoot.top >= close.boundsInRoot.bottom + 7.5f,
+                        "Text and dismissal keep their space in either arrangement")
                     assertEquals(LiveRegionMode.Polite, text.config[SemanticsProperties.LiveRegion])
                     assertEquals(24f, close.boundsInRoot.width)
                 }
@@ -145,6 +150,10 @@ class AlertRenderTest {
             val frame = nodes(scene).single { it.config.getOrNull(SemanticsProperties.TestTag) == "narrow" }
             assertEquals(280f, frame.boundsInRoot.width)
             assertTrue(frame.boundsInRoot.height > 96)
+            val content = walk(frame).single { it.config.contains(SemanticsProperties.LiveRegion) }
+            val close = walk(frame).single { it.config.getOrNull(SemanticsProperties.ContentDescription)?.contains("Закрыть уведомление") == true }
+            assertEquals(248f, content.boundsInRoot.width, "Large text receives the full padded width")
+            assertTrue(content.boundsInRoot.top >= close.boundsInRoot.bottom + 8f)
             for (text in walk(frame).filter { it.config.contains(SemanticsProperties.Text) }) {
                 assertTrue(text.boundsInRoot.left >= frame.boundsInRoot.left)
                 assertTrue(text.boundsInRoot.right <= frame.boundsInRoot.right)
@@ -152,6 +161,33 @@ class AlertRenderTest {
             }
             File("build/alert-evidence").mkdirs()
             File("build/alert-evidence/native-narrow-200.png").writeBytes(png)
+        } finally { scene.close() }
+    }
+
+    @Test fun unboundedParentKeepsTheSourceFrameAndFullStackWidth() {
+        val preferences = LabPreferences(reducedTransparency = true)
+        val theme = LabThemeState(initialLabColors(preferences), preferences)
+        val ready = AtomicBoolean(false)
+        val scene = ImageComposeScene(600, 160) {
+            val font = labFontFamily(); val resolver = LocalFontFamilyResolver.current
+            LaunchedEffect(font) { resolver.preload(font); ready.set(true) }
+            LabTheme(theme, font) { LabScene(Modifier.fillMaxSize(), background = {}) {
+                Row(Modifier.horizontalScroll(rememberScrollState())) {
+                    LabAlert("Alert", {}, Modifier.testTag("intrinsic"), quantity = 3,
+                        description = "Alert description that warning about something")
+                }
+            } }
+        }
+        try {
+            val png = settle(scene, ready)
+            val frame = nodes(scene).single { it.config.getOrNull(SemanticsProperties.TestTag) == "intrinsic" }
+            assertEquals(450f, frame.boundsInRoot.width)
+            assertEquals(96f, frame.boundsInRoot.height)
+            val bitmap = javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(png))
+            for ((y, left, right) in listOf(Triple(84, 28, 422), Triple(92, 52, 398))) {
+                assertTrue((bitmap.getRGB(left, y) ushr 24) > 0, "Stack start retains the source inset")
+                assertTrue((bitmap.getRGB(right, y) ushr 24) > 0, "Stack end follows the same frame width")
+            }
         } finally { scene.close() }
     }
 

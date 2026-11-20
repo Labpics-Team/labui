@@ -191,6 +191,10 @@ try {
             defined: !!customElements.get('lab-tabs'),
             hosts: document.querySelectorAll('#tabs').length,
             hostCount: window.before.hosts.length,
+            componentIds: window.before.hosts
+              .map((node) => node.id)
+              .filter(Boolean)
+              .sort(),
             labels: [...shadow.querySelectorAll('[role="tab"]')].map((x) => x.textContent.trim()),
             height: window.before.trigger.getBoundingClientRect().height,
             background: getComputedStyle(shadow.querySelector('[role="tablist"]')).backgroundColor,
@@ -202,7 +206,14 @@ try {
         assert.equal(before.defined, false);
         assert.deepEqual(before.labels, ['Draft', 'History']);
         assert.equal(before.hosts, 1);
-        assert.equal(before.hostCount, 6);
+        assert.deepEqual(before.componentIds, [
+          'accordion',
+          'default-tooltip',
+          'field',
+          'null-tabs',
+          'tabs',
+          'tooltip',
+        ]);
         assert.equal(before.selected, 'true');
         assert(before.height > 20);
         assert(!['transparent', 'rgba(0, 0, 0, 0)'].includes(before.background));

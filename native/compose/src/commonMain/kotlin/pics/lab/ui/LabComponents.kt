@@ -827,12 +827,14 @@ internal object LabComponents {
     const val TooltipLineHeight = 24f
     const val TooltipFontWeight = 400f
     const val TooltipLetterSpacing = -0.25f
+    const val AlertIntrinsicWidth = 450f
     const val AlertRadius = 24f
     const val AlertPadding = 16f
     const val AlertActionGap = 24f
     const val AlertLabelGap = 4f
     const val AlertContentPaddingStart = 4f
     const val AlertIconSize = 24f
+    const val AlertReflowMinContentEm = 12f
     const val AlertStrokeWidth = 1f
     val AlertMaterial get() = LabMaterials.elevated
     const val AlertHeadingFontSize = 16f
