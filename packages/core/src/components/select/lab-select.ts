@@ -9,6 +9,7 @@ import { repeat } from 'lit/directives/repeat.js';
 import type { PropTypes, SchemaOf } from '../../behaviors/types.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
+import { slotStyleCss } from '../../slot-projection.js';
 import { selectBehavior } from './behavior.js';
 import { selectCss } from './styles.js';
 
@@ -208,7 +209,7 @@ export class LabSelect extends LabElement {
     :host { display: inline-flex; min-inline-size: 0; max-inline-size: 100%; vertical-align: middle; }
     :host([multiple]) { display: flex; }
     :host(:not(:has([slot='leading']))) .lab-select-leading { display: none; }
-    ::slotted([slot='leading']) { display: inline-flex; }
+    ${unsafeCSS(slotStyleCss("::slotted([slot='leading'])", { display: 'inline-flex' }))}
   `,
   ];
 

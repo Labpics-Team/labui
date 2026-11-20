@@ -1,5 +1,6 @@
 import { type PropertyValues, type TemplateResult, css, html, nothing, unsafeCSS } from 'lit';
 import { LabElement } from '../../lit/lab-element.js';
+import { slotStyleCss } from '../../slot-projection.js';
 import { type LabSwitchSize, type LabSwitchType, switchAppearance } from './contract.js';
 import { type SwitchMotion, mountSwitchMotion } from './runtime.js';
 import { switchCss } from './styles.js';
@@ -81,7 +82,8 @@ export class LabSwitch extends LabElement {
     css`
     :host { display: inline-flex; max-inline-size: 100%; min-inline-size: 0; vertical-align: middle; }
     .lab-switch-label-start { display: contents; }
-    ::slotted([slot='label-start']) { min-inline-size: 0; max-inline-size: 100%; overflow-wrap: anywhere; }
+    ${unsafeCSS(slotStyleCss("::slotted([slot='label-start'])", { 'min-inline-size': '0', 'max-inline-size': '100%' }))}
+    ::slotted([slot='label-start']) { overflow-wrap: anywhere; }
   `,
   ];
   protected override willUpdate(changed: PropertyValues): void {

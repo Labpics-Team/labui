@@ -1,5 +1,6 @@
 ﻿import { type PropertyValues, type TemplateResult, css, html, nothing, unsafeCSS } from 'lit';
 import { LabElement } from '../../lit/lab-element.js';
+import { slotStyleCss } from '../../slot-projection.js';
 import type {
   LabSelectionChecked,
   LabSelectionSize,
@@ -87,7 +88,8 @@ export class LabCheckbox extends LabElement {
     css`
     :host { display: inline-flex; min-inline-size: 0; max-inline-size: 100%; vertical-align: middle; }
     :host([variant='card']), :host([variant='row']) { display: flex; }
-    ::slotted([slot='label-start']) { min-inline-size: 0; overflow-wrap: anywhere; }
+    ${unsafeCSS(slotStyleCss("::slotted([slot='label-start'])", { 'min-inline-size': '0' }))}
+    ::slotted([slot='label-start']) { overflow-wrap: anywhere; }
     .lab-selection-label-start:has(slot:empty) { display: contents; }
   `,
   ];
