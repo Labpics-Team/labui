@@ -26,6 +26,7 @@ import { chipCss } from '../src/components/chip/styles.js';
 import { dragButtonCss } from '../src/components/drag-button/styles.js';
 import { inputCss } from '../src/components/input/styles.js';
 import { kbdCss } from '../src/components/kbd/styles.js';
+import { menuCss } from '../src/components/menu/styles.js';
 import { paginationCss } from '../src/components/pagination/styles.js';
 import { pinInputCss } from '../src/components/pin-input/styles.js';
 import { progressCss } from '../src/components/progress/styles.js';
@@ -85,6 +86,7 @@ function main(): void {
   writeFileSync(join(dist, 'slider.css'), sliderCss);
   writeFileSync(join(dist, 'tabs.css'), tabsCss);
   writeFileSync(join(dist, 'tooltip.css'), tooltipCss);
+  writeFileSync(join(dist, 'menu.css'), menuCss);
   writeFileSync(join(dist, 'selection-controls.css'), selectionCss);
   writeFileSync(join(dist, 'badge.css'), badgeCss);
   writeFileSync(join(dist, 'kbd.css'), kbdCss);

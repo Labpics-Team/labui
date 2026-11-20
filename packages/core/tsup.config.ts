@@ -60,6 +60,7 @@ export default libraryPreset({
     'src/components/textarea/runtime.ts',
     'src/components/tabs/runtime.ts',
     'src/components/tooltip/runtime.ts',
+    'src/components/menu/runtime.ts',
     'src/components/accordion/runtime.ts',
     'src/components/segmented-control/runtime.ts',
     'src/components/drag-button/runtime.ts',

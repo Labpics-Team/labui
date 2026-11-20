@@ -10,7 +10,7 @@ import '@labpics/ui-core/menu';
 import type { LabMenu } from '@labpics/ui-core/menu';
 
 /** SSR-пропы <lab-menu> (атрибуты/свойства), взяты из класса ядра (LabMenu). */
-export type MenuSsrProps = Partial<Pick<LabMenu, 'size' | 'placement' | 'disabled' | 'label' | 'items'>> & { 'aria-label'?: string; 'form'?: string };
+export type MenuSsrProps = Partial<Pick<LabMenu, 'label' | 'placement' | 'disabled' | 'checkedValues' | 'defaultCheckedValues' | 'heading' | 'items' | 'open' | 'defaultOpen'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-menu> — предрендеренные строки контента. */
 export type MenuSsrSlots = Record<never, never>;
 
@@ -23,11 +23,15 @@ export function renderMenu(
   props: MenuSsrProps = {},
 ): string {
   return renderToString(html`<lab-menu
-      size=${ifDefined(props.size)}
+      label=${ifDefined(props.label)}
       placement=${ifDefined(props.placement)}
       .disabled=${props.disabled === undefined ? noChange : props.disabled}
-      label=${ifDefined(props.label)}
+      .checkedValues=${props.checkedValues === undefined ? noChange : props.checkedValues}
+      .defaultCheckedValues=${props.defaultCheckedValues === undefined ? noChange : props.defaultCheckedValues}
+      heading=${ifDefined(props.heading)}
       .items=${props.items === undefined ? noChange : props.items}
+      .open=${props.open === undefined ? noChange : props.open}
+      .defaultOpen=${props.defaultOpen === undefined ? noChange : props.defaultOpen}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}
     ></lab-menu>`);

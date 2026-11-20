@@ -25,6 +25,7 @@ if [ "$#" -eq 0 ]; then
   pnpm --filter @labpics/ui-docs exec playwright install chromium webkit firefox
   pnpm --filter @labpics/ui-docs test:framework-ssr
   pnpm --filter @labpics/ui-docs test:slots
+  pnpm --filter @labpics/ui-docs test:menu-packed
   pnpm --filter @labui/colors fx:render
   pnpm test:e2e
 else

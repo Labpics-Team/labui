@@ -350,6 +350,10 @@
       "web": {
         "subpath": "menu",
         "reactExport": "Menu"
+      },
+      "profile": "menu",
+      "native": {
+        "symbol": "LabMenu"
       }
     },
     {
@@ -357,14 +361,30 @@
       "title": "Context Menu",
       "group": "navigation",
       "kind": "composition",
-      "summary": "Действия над объектом в контекстном меню."
+      "summary": "Действия над объектом в контекстном меню.",
+      "web": {
+        "subpath": "context-menu",
+        "reactExport": "ContextMenu"
+      },
+      "profile": "menu",
+      "native": {
+        "symbol": "LabContextMenu"
+      }
     },
     {
       "slug": "menubar",
       "title": "Menubar",
       "group": "navigation",
       "kind": "composition",
-      "summary": "Горизонтальная группа связанных меню."
+      "summary": "Горизонтальная группа связанных меню.",
+      "web": {
+        "subpath": "menubar",
+        "reactExport": "Menubar"
+      },
+      "profile": "menu",
+      "native": {
+        "symbol": "LabMenubar"
+      }
     },
     {
       "slug": "dock",

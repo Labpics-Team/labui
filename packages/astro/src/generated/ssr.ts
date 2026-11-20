@@ -17,6 +17,7 @@ export { renderCheckbox, type CheckboxSsrProps, type CheckboxSsrSlots } from './
 export { renderChip, type ChipSsrProps, type ChipSsrSlots } from './chip.ssr.js';
 export { renderChoicebox, type ChoiceboxSsrProps, type ChoiceboxSsrSlots } from './choicebox.ssr.js';
 export { renderCombobox, type ComboboxSsrProps, type ComboboxSsrSlots } from './combobox.ssr.js';
+export { renderContextMenu, type ContextMenuSsrProps, type ContextMenuSsrSlots } from './context-menu.ssr.js';
 export { renderDialog, type DialogSsrProps, type DialogSsrSlots } from './dialog.ssr.js';
 export { renderDragButton, type DragButtonSsrProps, type DragButtonSsrSlots } from './drag-button.ssr.js';
 export { renderIcon, type IconSsrProps, type IconSsrSlots } from './icon.ssr.js';
@@ -24,6 +25,7 @@ export { renderInput, type InputSsrProps, type InputSsrSlots } from './input.ssr
 export { renderKbd, type KbdSsrProps, type KbdSsrSlots } from './kbd.ssr.js';
 export { renderLoader, type LoaderSsrProps, type LoaderSsrSlots } from './loader.ssr.js';
 export { renderMenu, type MenuSsrProps, type MenuSsrSlots } from './menu.ssr.js';
+export { renderMenubar, type MenubarSsrProps, type MenubarSsrSlots } from './menubar.ssr.js';
 export { renderNumberInput, type NumberInputSsrProps, type NumberInputSsrSlots } from './number-input.ssr.js';
 export { renderPagination, type PaginationSsrProps, type PaginationSsrSlots } from './pagination.ssr.js';
 export { renderPinInput, type PinInputSsrProps, type PinInputSsrSlots } from './pin-input.ssr.js';

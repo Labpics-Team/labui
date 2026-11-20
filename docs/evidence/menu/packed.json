@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "archives": [
+    {
+      "name": "labpics-ui-tokens-0.0.0.tgz",
+      "sha256": "328ad2f7adbd896251ad7e937c01cf35ba00c7dd6696f67946bab360c7db446b"
+    },
+    {
+      "name": "labpics-ui-shadow-0.0.0.tgz",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "labpics-ui-materials-0.0.0.tgz",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "labpics-fonts-0.0.0.tgz",
+      "sha256": "d0d46708a7b04e7fca9900afc5735ca7a72fa5ae1082787ea603199b632b2fef"
+    },
+    {
+      "name": "labui-colors-0.0.0.tgz",
+      "sha256": "c741313734b87f27e07b6941f6bd717d231a0427d4aaf282fcdee6361ba93f7b"
+    },
+    {
+      "name": "labpics-ui-core-0.0.0.tgz",
+      "sha256": "2dfeb1c5c55e913f2025cb6bb1fe59b6952ed045c10b292fc6d10dc19be820ab"
+    },
+    {
+      "name": "labpics-ui-react-0.0.0.tgz",
+      "sha256": "0788ab904aae7638f2fbe34d2479d24d46d1e6913d12b8d1d3d2bfd77fa993bf"
+    },
+    {
+      "name": "labpics-ui-vue-0.0.0.tgz",
+      "sha256": "b71e74a711a0d2f521782db7e647db145c98d12e1a9e4ef2ba34dda5eb7eb531"
+    },
+    {
+      "name": "labpics-ui-solid-0.0.0.tgz",
+      "sha256": "ab97fc5ae49ef8d00865d10f45b0f056524331cae9f42536dd985ee1fb0f6bee"
+    },
+    {
+      "name": "labpics-ui-svelte-0.0.0.tgz",
+      "sha256": "9f3957e7c3c9304784b71d47aed7d7675f9e298db04677e39226cde7193595ad"
+    },
+    {
+      "name": "labpics-ui-astro-0.0.0.tgz",
+      "sha256": "0db75a45cf32e37b087db873b1658c5621f23607ad3239f799c6e131a678467c"
+    },
+    {
+      "name": "icons-0.4.0",
+      "sha256": "d4962b817d19431393131f0aebb5d70f745e103e4062a6003a52926a8362c3bb"
+    }
+  ],
+  "measurements": [
+    {
+      "browser": "chromium",
+      "updates": 1000,
+      "milliseconds": {
+        "dropdown": 162.39999997615814,
+        "tooltip": 85.39999997615814,
+        "select": 197.29999995231628
+      },
+      "trees": [
+        {
+          "roots": 50,
+          "children": 0,
+          "medianMilliseconds": 33.5
+        },
+        {
+          "roots": 50,
+          "children": 1,
+          "medianMilliseconds": 37
+        },
+        {
+          "roots": 50,
+          "children": 10,
+          "medianMilliseconds": 38.800000071525574
+        }
+      ]
+    },
+    {
+      "browser": "webkit",
+      "updates": 1000,
+      "milliseconds": {
+        "dropdown": 548,
+        "tooltip": 121,
+        "select": 242
+      },
+      "trees": [
+        {
+          "roots": 50,
+          "children": 0,
+          "medianMilliseconds": 84
+        },
+        {
+          "roots": 50,
+          "children": 1,
+          "medianMilliseconds": 101
+        },
+        {
+          "roots": 50,
+          "children": 10,
+          "medianMilliseconds": 106.99999999999909
+        }
+      ]
+    }
+  ],
+  "checks": [
+    "installed ESM declarations",
+    "four adapter SSR hydration paths",
+    "Vue live command",
+    "React StrictMode remount cleanup",
+    "source geometry and 12 renders",
+    "1000 Menu/Tooltip/ZagController updates"
+  ]
+}
