@@ -1,12 +1,17 @@
-<!doctype html><html data-theme="light" data-material="acrylic"><head><meta charset="utf-8"><title>Alert material capture</title>
-<style>
-body { margin: 24px; font-family: Geist; } .row { position: relative; width: 450px; height: 120px; margin-bottom: 24px; overflow: hidden; }
-.backdrop { position: absolute; inset: -150px; background: repeating-linear-gradient(90deg,#000 0 100px,#fff 100px 200px,#0619e8 200px 300px,#fe112a 300px 400px); }
-.plain { position: relative; width: 450px; height: 80px; border-radius: 24px; }
-.raw { isolation: isolate; backdrop-filter: blur(64px); } .raw > div { position: absolute; inset: 0; border-radius: inherit; }
-.raw-normal { background: rgb(255 255 255 / .8); } .raw-blend { background: rgb(38 38 38); mix-blend-mode: color-dodge; }
-</style></head><body>
-<p>Shared Elevated</p><div class="row" id="shared"><div class="backdrop"></div><div class="plain lab-material lab-material--elevated"></div></div>
-<p>Alert Elevated + stack</p><div class="row" id="alert"><div class="backdrop"></div><lab-alert heading="Alert" description="A moving backdrop" quantity="3" controlled></lab-alert></div>
-<p>Raw blur + Normal + Color Dodge</p><div class="row" id="raw"><div class="backdrop"></div><div class="plain raw"><div class="raw-normal"></div><div class="raw-blend"></div></div></div>
-<script type="module" src="./alert-material.ts"></script></body></html>
+<!doctype html>
+<html data-theme="light" data-material="acrylic">
+<head>
+  <meta charset="utf-8">
+  <title>Alert backdrop qualification</title>
+  <style>
+    body { margin: 0; font-family: Geist; }
+    .backdrop { position: fixed; inset: 0; background: linear-gradient(90deg, #000 0 var(--edge, 420px), #fff var(--edge, 420px) 100%); }
+    lab-alert { position: absolute; left: 64px; top: 32px; width: 450px; }
+  </style>
+</head>
+<body>
+  <div class="backdrop"></div>
+  <lab-alert heading="Saved" description="Changes are available" quantity="3" controlled></lab-alert>
+  <script type="module" src="./alert-material.ts"></script>
+</body>
+</html>

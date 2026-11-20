@@ -97,18 +97,44 @@ clipping через layout декоративной плоскости, сохр
 контрастных полос. Никаких собственных paint-рецептов Alert не добавляет.
 
 Windows headless WebKit **не квалифицирует точность полупрозрачных paints**.
-Минимальный `_fixtures/alert-material.html` ставит рядом общий Elevated, Alert
-и raw CSS Blur + Normal + Color Dodge над одинаковыми движущимися полосами.
-WebKit даёт равномерный `[212,212,212]` во всех трёх случаях; raw CSS в Chromium
+Исторический опыт ставил рядом общий Elevated, Alert и raw CSS Blur + Normal +
+Color Dodge над одинаковыми движущимися полосами. WebKit давал равномерный
+`[212,212,212]` во всех трёх случаях; raw CSS в Chromium
 также даёт плоский цвет, тогда как его общий renderer и Alert следуют фону.
-Это не специфическая ошибка wrapper Alert. `alert-material.mjs`, `capture.json`
-и PNG сохраняют воспроизведение; WebKit behavioral/layout проверки не пропущены.
+Это не специфическая ошибка wrapper Alert. `capture.json` и `capture-*.png`
+сохраняют результат; WebKit behavioral/layout проверки не пропущены.
 Причина различия display/snapshot не объявляется доказанной этим опытом.
 
 Прежняя [квалификация общего материала](../materials-20261117/paint-renderers.md)
 объясняет потребность в macOS display capture, но сама по себе новый Alert не
 квалифицирует. Проверка текущего Alert на реальном macOS compositor остаётся
 явной задачей общей интеграции. Новая общая система материалов не вводилась.
+
+Текущий `alert-material.mjs` сам собирает настоящий Alert fixture через Vite и
+обслуживает полный граф assets, без dev server. Для Acrylic/Glass и обеих тем
+он измеряет медианы 3×3 пикселей передней плоскости и центров видимых полос стопки.
+Чёрно-белая граница перемещается с расстояния 120px на 2px от этих точек, затем
+возвращается. Исходный цвет под точками остаётся чёрным; отдельный bare-background
+образец доказывает движение. Поэтому изменение RGB показывает вклад соседнего
+backdrop, а не простое просвечивание фона через opacity.
+
+Отрицательный контроль возвращает opacity на wrapper: отклик стопки должен
+исчезнуть. После снятия контроля исходные пиксели восстанавливаются. Допуск
+возврата — 2 RGB, полезный отклик должен быть больше двойного допуска и столь же
+отчётливо отличаться от контроля. Chromium snapshot на Windows дал 5–17 RGB,
+контроль и обе проверки возврата — 0. WebKit snapshot сохранил `measurable:false`
+и `qualified:false`; этот результат не подменяет macOS.
+
+Workflow `Material pixels` строит core с зависимостями и выполняет ту же проверку
+через `MATERIAL_CAPTURE=display` на hosted macOS, а также Linux Xvfb.
+`display-pixels.mjs` поддерживает координаты каждой плоскости; прежний числовой API
+по y=50 сохранён. Маркер кадра, координаты и scale1/2/3 проверены двумя unit tests.
+`ALERT_MATERIAL_ROW` содержит медианы и результат каждого сценария. JSON artifact
+`alert-material-<os>` сохраняет исходные RGB, SHA256 bundle и GitHub SHA на 7 дней
+для проверки интеграции. Реальный macOS прогон пока не объявляется пройденным.
+
+Основание инварианта: [backdrop-filter operation](https://drafts.csswg.org/filter-effects-2/#backdrop-filter-operation)
+и [WPT opacity backdrop root](https://github.com/web-platform-tests/wpt/blob/master/css/filter-effects/backdrop-filter-backdrop-root-opacity.html).
 
 ## Повторение
 
@@ -119,8 +145,9 @@ $env:PLAYWRIGHT_BROWSERS_PATH = 'D:/AgentWork/.playwright-browsers'
 $env:LAB_ICONS_TARBALL = 'D:/AgentWork/.scratch/icons040-ci-npm-20261120/package.tgz'
 node apps/docs/tests/alert-packed.mjs
 pnpm --filter @labpics/ui-docs test:slots
-# Vite на 5377 либо LABUI_DOCS_URL:
+$env:MATERIAL_BROWSERS = 'chromium,webkit'
 node apps/docs/tests/alert-material.mjs
+# Vite на 5377 либо LABUI_DOCS_URL:
 node apps/docs/tests/alert-catalog.mjs
 
 $env:JAVA_TOOL_OPTIONS = '-Djava.awt.headless=true'

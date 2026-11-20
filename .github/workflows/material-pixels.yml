@@ -16,6 +16,18 @@ on:
       - 'packages/materials/package.json'
       - 'packages/materials/tsconfig*.json'
       - 'packages/materials/tsup.config.ts'
+      - 'packages/core/src/**'
+      - 'packages/core/scripts/**'
+      - 'packages/core/package.json'
+      - 'packages/core/tsconfig*.json'
+      - 'packages/core/tsup.config.ts'
+      - 'packages/tokens/src/**'
+      - 'packages/tokens/scripts/**'
+      - 'packages/fonts/fonts/**'
+      - 'packages/fonts/fonts.css'
+      - 'apps/docs/src/foundation.css'
+      - 'apps/docs/src/_fixtures/alert-material.*'
+      - 'apps/docs/tests/alert-material.mjs'
       - 'packages/colors/contract.css'
       - 'packages/colors/test/fx-render/fx-render.mjs'
       - 'packages/colors/package.json'
@@ -55,18 +67,22 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
+      - name: Select Alert measurement directory
+        run: printf 'MATERIAL_OUTPUT=%s/labui-alert-material\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Install pinned browser tools
         run: pnpm install --frozen-lockfile
       - name: Verify display frame selection
         run: node --test docs/evidence/materials-20261117/display-pixels.test.mjs
       - name: Install browser runtimes
         run: pnpm --filter @labpics/ui-docs exec playwright install --with-deps chromium firefox webkit
-      - name: Build production material renderer
-        run: pnpm --filter @labpics/ui-materials build
+      - name: Build production material renderer and Alert dependencies
+        run: pnpm --filter @labpics/ui-core... build
       - name: Measure production paint rendering
         run: node docs/evidence/materials-20261117/render-material-paints.mjs
       - name: Measure backdrop rendering and neutral paint composition
         run: node docs/evidence/materials-20261117/probe-backdrop-support.mjs
+      - name: Measure actual Alert backdrop and regression control
+        run: node apps/docs/tests/alert-material.mjs
       - name: Measure real Linux compositor
         if: runner.os == 'Linux'
         env:
@@ -75,6 +91,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/labui-display"
           XWD_FILE="$RUNNER_TEMP/labui-display/Xvfb_screen0" xvfb-run -a -s "-screen 0 1280x720x24 -fbdir $RUNNER_TEMP/labui-display" node docs/evidence/materials-20261117/probe-backdrop-support.mjs
           XWD_FILE="$RUNNER_TEMP/labui-display/Xvfb_screen0" xvfb-run -a -s "-screen 0 1280x720x24 -fbdir $RUNNER_TEMP/labui-display" node docs/evidence/materials-20261117/render-material-paints.mjs
+          XWD_FILE="$RUNNER_TEMP/labui-display/Xvfb_screen0" xvfb-run -a -s "-screen 0 1280x720x24 -fbdir $RUNNER_TEMP/labui-display" node apps/docs/tests/alert-material.mjs
       - name: Measure real macOS compositor
         if: runner.os == 'macOS'
         env:
@@ -82,3 +99,12 @@ jobs:
         run: |
           node docs/evidence/materials-20261117/probe-backdrop-support.mjs
           node docs/evidence/materials-20261117/render-material-paints.mjs
+          node apps/docs/tests/alert-material.mjs
+      - name: Preserve Alert compositor measurements
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: alert-material-${{ matrix.os }}
+          path: ${{ env.MATERIAL_OUTPUT }}
+          if-no-files-found: ignore
+          retention-days: 7

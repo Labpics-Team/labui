@@ -4,7 +4,13 @@ import { sampleDisplay } from './display-pixels.mjs';
 
 const oldMarker = [7, 251, 137];
 const nextMarker = [7, 129, 128];
-function frame(marker, scale, value, samples) {
+function frame(
+  marker,
+  scale,
+  value,
+  samples,
+  points = samples.map((_, i) => ({ x: 50 + i * 100, y: 50 })),
+) {
   const width = 200 * scale;
   const height = 100 * scale;
   const pixels = new Uint8Array(width * height * 4).fill(value);
@@ -12,8 +18,8 @@ function frame(marker, scale, value, samples) {
   for (let y = 16 * scale; y < 24 * scale; y++)
     for (let x = 16 * scale; x < 24 * scale; x++) pixels.set([...marker, 255], (y * width + x) * 4);
   for (const [index, sample] of samples.entries()) {
-    const sampleX = (50 + index * 100) * scale;
-    for (let y = 50 * scale; y < 51 * scale; y++)
+    const sampleX = points[index].x * scale;
+    for (let y = points[index].y * scale; y < (points[index].y + 1) * scale; y++)
       for (let x = sampleX; x < sampleX + scale; x++) pixels.set(sample, (y * width + x) * 4);
   }
   return { width, height, pixels };
@@ -35,6 +41,29 @@ test('a previous scene cannot satisfy the next display-frame marker', () => {
     assert.deepEqual(
       sampleDisplay(frame(nextMarker, scale, 255, nextSamples), [50, 150], nextMarker),
       nextSamples,
+    );
+  }
+});
+
+test('component samples retain their own x and y at every screen scale', () => {
+  const points = [
+    { x: 33, y: 28 },
+    { x: 120, y: 70 },
+  ];
+  const pixels = [
+    [21, 92, 103, 255],
+    [184, 76, 13, 255],
+  ];
+  for (const scale of [1, 2, 3]) {
+    const display = frame(nextMarker, scale, 0, pixels, points);
+    assert.deepEqual(sampleDisplay(display, points, nextMarker), pixels);
+    assert.throws(
+      () => sampleDisplay(display, [{ x: -1, y: 28 }], nextMarker),
+      /within the display/,
+    );
+    assert.throws(
+      () => sampleDisplay(display, [{ x: 33, y: -1 }], nextMarker),
+      /within the display/,
     );
   }
 });
