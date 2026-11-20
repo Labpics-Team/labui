@@ -83,6 +83,14 @@ describe('consumed-not-reinvented guard — box-shadow contract', () => {
     expect(scanBoxShadow('p.css', 'box-shadow: var(--lab-elevation-raised);')).toEqual([]);
   });
 
+  it('accepts the material shadow stack without licensing foreign paints or added geometry', () => {
+    expect(scanBoxShadow('p.css', 'box-shadow: var(--lab-material-shadow);')).toEqual([]);
+    expect(scanBoxShadow('p.css', 'box-shadow: var(--lab-material-shadow-color);')).toHaveLength(1);
+    expect(
+      scanBoxShadow('p.css', 'box-shadow: var(--lab-material-shadow), 0 4px 12px red;'),
+    ).toHaveLength(1);
+  });
+
   it('IGNORES box-shadow: none', () => {
     expect(scanBoxShadow('p.css', 'box-shadow: none;')).toEqual([]);
     expect(scanBoxShadow('p.ts', 'box-shadow: none;')).toEqual([]);

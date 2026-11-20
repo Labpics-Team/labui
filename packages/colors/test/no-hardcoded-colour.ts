@@ -339,9 +339,8 @@ export function scanSource(relPath: string, source: string): Violation[] {
   const text = blankLicensedSpans(analyzed.text, relPath);
   // System colours deliberately follow the user's forced palette, not Lab UI's
   // theme. Only this media condition licenses them; literal paints remain errors.
-  const forcedColours = analyzed.declarations.filter(
-    (declaration) =>
-      declaration.complete && declaration.conditions.some((condition) => condition.forcedColours),
+  const forcedColours = analyzed.declarations.filter((declaration) =>
+    declaration.conditions.some((condition) => condition.forcedColours),
   );
   // Mask images describe coverage, not visible paint. Only complete declarations
   // prove that boundary; arbitrary template holes could terminate the rule.
@@ -349,8 +348,69 @@ export function scanSource(relPath: string, source: string): Violation[] {
   // https://www.w3.org/TR/css-masking-1/#MaskValues
   const coverageMasks = analyzed.declarations.filter(
     (declaration) =>
-      declaration.complete && /^(?:-webkit-)?mask(?:-image)?$/.test(declaration.property),
+      declaration.completeValue && /^(?:-webkit-)?mask(?:-image)?$/.test(declaration.property),
   );
+  const privateMasks: { start: number; end: number }[] = [];
+  if (!isCss) {
+    const file = ts.createSourceFile(
+      'source.tsx',
+      clean,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TSX,
+    );
+    const declarations = new Map<string, ts.VariableDeclaration>();
+    const uses = new Map<string, ts.Identifier[]>();
+    const walk = (node: ts.Node): void => {
+      if (
+        ts.isVariableDeclaration(node) &&
+        ts.isIdentifier(node.name) &&
+        node.initializer &&
+        ts.isVariableDeclarationList(node.parent) &&
+        node.parent.flags & ts.NodeFlags.Const
+      )
+        declarations.set(node.name.text, node);
+      if (ts.isIdentifier(node)) {
+        const list = uses.get(node.text) ?? [];
+        list.push(node);
+        uses.set(node.text, list);
+      }
+      ts.forEachChild(node, walk);
+    };
+    walk(file);
+    const maskOnly = (name: string, chain: Set<string>): boolean => {
+      if (chain.has(name)) return false;
+      const declaration = declarations.get(name);
+      if (
+        !declaration?.initializer ||
+        !ts.isVariableStatement(declaration.parent.parent) ||
+        declaration.parent.parent.modifiers?.some(
+          (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+        )
+      )
+        return false;
+      const references = (uses.get(name) ?? []).filter((node) => node !== declaration.name);
+      if (references.length === 0) return false;
+      return references.every((node) => {
+        if (coverageMasks.some((mask) => node.getStart(file) >= mask.start && node.end <= mask.end))
+          return true;
+        let parent: ts.Node | undefined = node.parent;
+        while (parent && !ts.isVariableDeclaration(parent)) parent = parent.parent;
+        return (
+          !!parent &&
+          ts.isVariableDeclaration(parent) &&
+          ts.isIdentifier(parent.name) &&
+          maskOnly(parent.name.text, new Set([...chain, name]))
+        );
+      });
+    };
+    for (const [name, declaration] of declarations)
+      if (maskOnly(name, new Set()) && declaration.initializer)
+        privateMasks.push({
+          start: declaration.initializer.getStart(file),
+          end: declaration.initializer.end,
+        });
+  }
   const out: Violation[] = [];
   const lineAt = (index: number): number =>
     clean.slice(0, analyzed.sourceIndex(index)).split('\n').length;
@@ -366,7 +426,7 @@ export function scanSource(relPath: string, source: string): Violation[] {
     for (let m = re.exec(text); m !== null; m = re.exec(text)) {
       if (
         /^(?:black|white|#000(?:000)?|#fff(?:fff)?)$/i.test(m[0]) &&
-        coverageMasks.some(
+        [...coverageMasks, ...privateMasks].some(
           (declaration) => m.index >= declaration.start && m.index < declaration.end,
         )
       )
@@ -381,7 +441,16 @@ export function scanSource(relPath: string, source: string): Violation[] {
       // A serializer receives every channel from computed data. Keep partially
       // literal colours visible to the scanner, including numeric alpha.
       if (!isCss && re === FUNCTIONAL_HEX_RE && isComputedRgb(text.slice(m.index))) continue;
-      if (gated && !isColourValuePosition(text, m.index)) continue;
+      const cssValue = analyzed.declarations.some((declaration) => {
+        const colon = text.indexOf(':', declaration.start);
+        return (
+          colon >= declaration.start &&
+          colon < declaration.end &&
+          m.index > colon &&
+          m.index < declaration.end
+        );
+      });
+      if (gated && !cssValue && !isColourValuePosition(text, m.index)) continue;
       out.push({
         file: relPath,
         line: lineAt(m.index),

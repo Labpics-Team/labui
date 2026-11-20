@@ -3,7 +3,7 @@
   "archives": [
     {
       "name": "labpics-ui-tokens-0.0.0.tgz",
-      "sha256": "a0c85a183368a2e2b42e4eaed250e2661400e714f8df843a628be954389b1e8c"
+      "sha256": "23e0769099ac53104b28648ca8681f274ba4b0dfa3d224374f293e96fb3774b1"
     },
     {
       "name": "labpics-ui-shadow-0.0.0.tgz",
@@ -19,31 +19,31 @@
     },
     {
       "name": "labui-colors-0.0.0.tgz",
-      "sha256": "c741313734b87f27e07b6941f6bd717d231a0427d4aaf282fcdee6361ba93f7b"
+      "sha256": "ff4932ea0345992005afb8c651a8154dbcc1170b5e7f9e6dda3cd484804d7e4b"
     },
     {
       "name": "labpics-ui-core-0.0.0.tgz",
-      "sha256": "8d19f462f31b239fc4dd2b834d8b346ca3e8378c2431c3c9b6e0ac7d1b054abe"
+      "sha256": "2d4c80a1264d50c65d931eefcb36d359e7d21d1ca4c26adddaee5fe0c5369819"
     },
     {
       "name": "labpics-ui-react-0.0.0.tgz",
-      "sha256": "3f7558e1602c0732bbd903ca9832fb2501e83b6f35c3f24d4a681c746e2c7dc7"
+      "sha256": "31ad07d9256f80dc5d4217175ab5f52036e8415594ba42d08cf5eea2352f8ae7"
     },
     {
       "name": "labpics-ui-vue-0.0.0.tgz",
-      "sha256": "e38be860580c6535d25e4b644d2935cde74e444584e18598a580dcfdd4e7da30"
+      "sha256": "aeb1c7ee27f9b9d1a20e806f0955702d929bc0ead53925384cb83da8ff0d56cc"
     },
     {
       "name": "labpics-ui-solid-0.0.0.tgz",
-      "sha256": "9c0fe9a8dfbb169771099f38d5ad3fde80d761da09402f86f102f4c154fc0f1f"
+      "sha256": "ae750673d7df784f0692426919bcb7c1cf484f4d3d1694a04741100c81ffb17e"
     },
     {
       "name": "labpics-ui-svelte-0.0.0.tgz",
-      "sha256": "185e15a8566f9d38a33ddd869095212eae10e4ec64fc87c5280d91333591919f"
+      "sha256": "3e30745103af0098dae4bfb632414a23cb0aa0aeb310e3f8abffde9f68c7da0f"
     },
     {
       "name": "labpics-ui-astro-0.0.0.tgz",
-      "sha256": "6a2f44405e060cee39eec09a47582515f3f04745f9b6527fd5480f0207496dc2"
+      "sha256": "0d8641a51c920cf79a3131c9823d4025318ef16273884b1e162fbb95424a5b8e"
     },
     {
       "name": "icons-0.4.0",
@@ -55,25 +55,25 @@
       "browser": "chromium",
       "updates": 1000,
       "milliseconds": {
-        "dropdown": 171.39999997615814,
-        "tooltip": 84.10000002384186,
-        "select": 209.29999995231628
+        "dropdown": 170.89999997615814,
+        "tooltip": 83.89999997615814,
+        "select": 209.5
       },
       "trees": [
         {
           "roots": 50,
           "children": 0,
-          "medianMilliseconds": 33.200000047683716
+          "medianMilliseconds": 34
         },
         {
           "roots": 50,
           "children": 1,
-          "medianMilliseconds": 35.10000002384186
+          "medianMilliseconds": 36.799999952316284
         },
         {
           "roots": 50,
           "children": 10,
-          "medianMilliseconds": 40.200000047683716
+          "medianMilliseconds": 41.89999997615814
         }
       ]
     },
@@ -81,25 +81,25 @@
       "browser": "webkit",
       "updates": 1000,
       "milliseconds": {
-        "dropdown": 480,
-        "tooltip": 95.00000000000091,
-        "select": 219.9999999999991
+        "dropdown": 537,
+        "tooltip": 105,
+        "select": 246
       },
       "trees": [
         {
           "roots": 50,
           "children": 0,
-          "medianMilliseconds": 78
+          "medianMilliseconds": 82
         },
         {
           "roots": 50,
           "children": 1,
-          "medianMilliseconds": 97
+          "medianMilliseconds": 98
         },
         {
           "roots": 50,
           "children": 10,
-          "medianMilliseconds": 98
+          "medianMilliseconds": 107
         }
       ]
     }

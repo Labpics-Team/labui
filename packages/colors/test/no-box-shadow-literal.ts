@@ -11,6 +11,7 @@
  * ALLOWED forms (NOT flagged):
  *   - `box-shadow: var(--lab-elevation-*)` — pure contract token.
  *   - `box-shadow: var(--lab-shadow-*)` — pure size token.
+ *   - `box-shadow: var(--lab-material-shadow)` — authored contour shadow stack.
  *   - `box-shadow: none` — explicit clear.
  *   - Focus-ring pattern: `box-shadow: 0 0 0 <token> <token>` where BOTH the
  *     ring width AND colour are `var(--lab-*)`. (A focus ring is not an elevation
@@ -101,6 +102,9 @@ function classify(value: string): 'allowed' | 'violation' {
   // Pure contract token — the only correct form for elevation shadows.
   // Must start with --lab-elevation-* or --lab-shadow-* (and nothing else).
   if (/^var\(\s*--lab-(?:elevation|shadow)-/.test(value)) return 'allowed';
+  // Material contour adapters consume the authored shadow stack through this
+  // exact public input. A similarly named colour or an extra literal ply is not it.
+  if (/^var\(\s*--lab-material-shadow\s*\)\s*$/.test(value)) return 'allowed';
 
   // Focus-ring pattern: `0 0 0 var(--lab-…) var(--lab-…)` or
   // `0 0 0 <literal-width> var(--lab-…)` — structural, not elevation.

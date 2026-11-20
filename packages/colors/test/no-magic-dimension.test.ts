@@ -22,6 +22,30 @@ import {
 describe('no magic dimensions in migrated components (dimension contract)', () => {
   const canon = canonicalTokens();
 
+  it('accepts circular geometry and imported profile lengths, not disguised literals', () => {
+    expect(scanDimensionSource('p.css', '.dot { border-radius: 50%; }')).toEqual([]);
+    expect(scanDimensionSource('p.css', '.dot { border-radius: 48%; }')).toMatchObject([
+      { rule: 'magic-radius' },
+    ]);
+    const prefix =
+      "import { tooltipProfile as p } from '@labpics/ui-tokens'; const rem = (n: number) => `${n / 16}rem`;";
+    expect(
+      scanDimensionSource(
+        'p.ts',
+        `${prefix}const css = \`.x { border-radius: \${rem(p.radius)}; }\`;`,
+      ),
+    ).toEqual([]);
+    expect(
+      scanDimensionSource('p.ts', `${prefix}const css = \`.x { border-radius: \${rem(77)}; }\`;`),
+    ).toMatchObject([{ rule: 'magic-radius' }]);
+    expect(
+      scanDimensionSource(
+        'p.ts',
+        'const p = { radius: 77 }; const rem = (n: number) => `${n / 16}rem`; const css = `.x { border-radius: ${rem(p.radius)}; }`;',
+      ),
+    ).toMatchObject([{ rule: 'magic-radius' }]);
+  });
+
   // ── (1) Утверждение по живому дереву: мигрированные компоненты держат НОЛЬ нарушений.
   it('every MIGRATED component is clean (magic lengths / radii / drifted fallbacks)', () => {
     const violations = scanMigrated();

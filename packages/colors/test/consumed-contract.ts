@@ -78,6 +78,7 @@ export const LOCAL_OR_GAP_PREFIXES = [
   '--lab-contour-clip', // exact: runtime-generated SVG decoration clip URL
   '--lab-contour-inset', // exact: border-box alignment for decorative image children
   '--lab-material-shadow', // exact: author shadow stack resolved by the contour adapter
+  '--lab-drag-progress', // exact: runtime interaction progress in [0, 1], never a palette role
   '--lab-surface-stroke-width', // exact: local inside-stroke geometry
   '--lab-surface-stroke-color', // exact: local paint input, normally bound to a semantic role
 ] as const;

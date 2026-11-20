@@ -9,6 +9,7 @@
 import * as css from 'css-tree';
 import postcss, { type ChildNode, type Root } from 'postcss';
 import ts from 'typescript';
+import { staticCssValues, unknownValue } from './static-css-values.js';
 
 interface Span {
   readonly start: number;
@@ -50,11 +51,17 @@ interface CssText extends Span {
   readonly text: string;
   readonly cooked?: string;
   readonly complete: boolean;
+  readonly completeValue: boolean;
+  readonly rendered?: string;
+  readonly sourceOffset?: (offset: number, end?: boolean) => number;
+  readonly unknownHoles?: readonly Span[];
 }
 
-/** Raw text serves comment scanning; only complete static literals grant proofs. */
+/** Raw text serves comment scanning. Authored profiles and pure local formatters
+ * can resolve template holes; unknown code never grants a syntax proof. */
 function literalCss(file: ts.SourceFile, groupComments = true): CssText[] {
   const texts: CssText[] = [];
+  const values = staticCssValues(file);
   const arrays = new Set<ts.ArrayLiteralExpression>();
   const variables = new Map<string, ts.ArrayLiteralExpression>();
   const scopeKey = (node: ts.Node, name: string): string => {
@@ -94,16 +101,51 @@ function literalCss(file: ts.SourceFile, groupComments = true): CssText[] {
       const start = node.getStart(file) + 1;
       const end = node.end - 1;
       let text = file.text.slice(start, end);
+      let rendered: string | undefined;
+      let sourceOffset: CssText['sourceOffset'];
+      const unknownHoles: Span[] = [];
       if (ts.isTemplateExpression(node)) {
         let previous: ts.TemplateLiteralToken = node.head;
         const holes: Span[] = [];
+        const replacements: { hole: Span; value: string }[] = [];
         for (const span of node.templateSpans) {
-          holes.push({
+          const hole = {
             start: previous.end - 2 - start,
             end: span.literal.getStart(file) + 1 - start,
+          };
+          holes.push(hole);
+          const value = values.evaluate(span.expression);
+          const known =
+            value !== unknownValue && (typeof value === 'string' || typeof value === 'number');
+          if (!known) unknownHoles.push({ start: start + hole.start, end: start + hole.end });
+          replacements.push({
+            hole,
+            value: known
+              ? String(value)
+              : text.slice(hole.start, hole.end).replace(/[^\n\r]/g, ' '),
           });
           previous = span.literal;
         }
+        let cursor = 0;
+        rendered = '';
+        const mapping: { from: number; to: number; hole: Span }[] = [];
+        for (const replacement of replacements) {
+          rendered += text.slice(cursor, replacement.hole.start);
+          const from = rendered.length;
+          rendered += replacement.value;
+          mapping.push({ from, to: rendered.length, hole: replacement.hole });
+          cursor = replacement.hole.end;
+        }
+        rendered += text.slice(cursor);
+        sourceOffset = (offset, end = false) => {
+          let delta = 0;
+          for (const item of mapping) {
+            if (offset < item.from) break;
+            if (offset < item.to) return end ? item.hole.end : item.hole.start;
+            delta += item.hole.end - item.hole.start - (item.to - item.from);
+          }
+          return offset + delta;
+        };
         text = blankSpans(text, holes);
       }
       // Plain labels/import paths cannot grant a CSS exception.
@@ -117,7 +159,11 @@ function literalCss(file: ts.SourceFile, groupComments = true): CssText[] {
         text,
         start,
         end,
-        complete: !ts.isTemplateExpression(node),
+        complete: unknownHoles.length === 0,
+        completeValue: unknownHoles.length === 0,
+        rendered,
+        sourceOffset,
+        unknownHoles,
         cooked: ts.isStringLiteralLike(node) && !rawTag ? node.text : undefined,
       });
     }
@@ -137,7 +183,7 @@ function literalCss(file: ts.SourceFile, groupComments = true): CssText[] {
     let text = file.text.slice(start, end).replace(/[^\r\n]/g, ' ');
     for (const part of parts)
       text = text.slice(0, part.start - start) + part.text + text.slice(part.end - start);
-    grouped.push({ start, end, text, complete: false });
+    grouped.push({ start, end, text, complete: false, completeValue: false });
   }
   return [
     ...grouped,
@@ -194,8 +240,10 @@ export interface CssDeclaration extends Span {
   readonly selectors: readonly (readonly string[])[];
   readonly conditions: readonly CssCondition[];
   readonly document: number;
-  /** Interpolations and composed fragments can reveal resets, never exemptions. */
+  /** The complete stylesheet is known, including resolved profile interpolation. */
   readonly complete: boolean;
+  /** This declaration's property/value is resolved even if other rules are dynamic. */
+  readonly completeValue: boolean;
 }
 
 export interface CssSource {
@@ -260,24 +308,31 @@ function resolvedSelectors(source: string, parents: readonly (readonly string[])
 }
 
 /**
- * Inspect every fragment, but allow exceptions only within complete static CSS.
+ * Inspect every fragment, but allow cascade exceptions only in fully resolved CSS.
+ * A forced-palette condition additionally proves its own complete enclosing block.
  * Cooked literal text comes from TypeScript; String.raw keeps its raw spelling.
  * No decoder/source map is maintained: changed literals report their start.
  */
 export function analyzeCssSource(source: string, isTs: boolean): CssSource {
   const texts = isTs
     ? literalCss(sourceFile(source), false)
-    : [{ text: source, start: 0, end: source.length, complete: true }];
+    : [{ text: source, start: 0, end: source.length, complete: true, completeValue: true }];
   // Small scanner probes can also supply a bare CSS fragment with a TS filename.
   if (texts.length === 0)
-    texts.push({ text: source, start: 0, end: source.length, complete: !isTs });
+    texts.push({
+      text: source,
+      start: 0,
+      end: source.length,
+      complete: !isTs,
+      completeValue: !isTs,
+    });
   const out: CssDeclaration[] = [];
   let text = source;
   const changed: Span[] = [];
   for (const [document, input] of texts.entries()) {
-    const rendered = input.cooked ?? input.text;
+    const rendered = input.rendered ?? input.cooked ?? input.text;
     const cssText = blankSpans(rendered, cssComments(rendered));
-    if (input.complete && cssText !== input.text) {
+    if (input.cooked !== undefined && cssText !== input.text) {
       text =
         text.slice(0, input.start) +
         cssText.padEnd(input.end - input.start) +
@@ -298,9 +353,15 @@ export function analyzeCssSource(source: string, isTs: boolean): CssSource {
       if (node.type === 'decl') {
         if (node.source?.start?.offset === undefined || node.source.end?.offset === undefined)
           return;
+        const start =
+          input.start +
+          (input.sourceOffset?.(node.source.start.offset) ?? node.source.start.offset);
+        const end =
+          input.start +
+          (input.sourceOffset?.(node.source.end.offset + 1, true) ?? node.source.end.offset + 1);
         out.push({
-          start: input.start + node.source.start.offset,
-          end: input.start + node.source.end.offset + 1,
+          start,
+          end,
           property: node.prop.toLowerCase(),
           value: node.value.trim(),
           important: !!node.important,
@@ -308,6 +369,9 @@ export function analyzeCssSource(source: string, isTs: boolean): CssSource {
           conditions,
           document,
           complete: input.complete,
+          completeValue:
+            input.complete ||
+            !input.unknownHoles?.some((hole) => hole.start < end && hole.end > start),
         });
       } else if (node.type === 'rule') {
         const resolved = resolvedSelectors(node.selector, selectors);
@@ -318,7 +382,18 @@ export function analyzeCssSource(source: string, isTs: boolean): CssSource {
         if (node.name.toLowerCase() === 'media') {
           try {
             const query = css.parse(params, { context: 'mediaQueryList' });
-            forcedColours = forcesColours(query);
+            const from =
+              input.start +
+              (input.sourceOffset?.(node.source?.start?.offset ?? 0) ??
+                node.source?.start?.offset ??
+                0);
+            const to =
+              input.start +
+              (input.sourceOffset?.((node.source?.end?.offset ?? rendered.length) + 1, true) ??
+                (node.source?.end?.offset ?? rendered.length) + 1);
+            forcedColours =
+              forcesColours(query) &&
+              !input.unknownHoles?.some((hole) => hole.start < to && hole.end > from);
             params = css.generate(query);
           } catch {
             /* Unknown conditions cannot grant exceptions. */

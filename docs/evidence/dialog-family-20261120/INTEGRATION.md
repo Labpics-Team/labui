@@ -1,0 +1,38 @@
+# Интеграция Dialog и проверки стилей
+
+Dialog-family объединено с Menu в `feat/web-icon-integrated-20261119`:
+`e5643a46` — исходники, `470e4147` — пересобранный каталог, `b9ad9ec7` — результат
+предыдущего независимого ревью. В конфликтах сохранены CSS side effects и exports
+обоих семейств; каталог получен из объединённого источника.
+
+До исправления Colors: 250/257, семь отказов. Шесть относились к прежним
+ограничениям сканеров, седьмой проверял уже удалённый React menu.css. После
+исправления и добавления контрпримеров: 263/263. Tooltip S/L и viewport gap
+получили те же числовые значения из общего профиля; геометрия не менялась.
+Смысл новых проверок описан в `docs/reference/style-contract-checks.md`.
+
+После объединения прошли typecheck Colors/Core/React, сборки Core/React и
+Vue/Solid/Svelte/Astro, браузерный Dialog source/matrix/IME/viewport в Chromium
+и WebKit. Установленные tarballs Dialog прошли 5 frameworks × 2 engines;
+Menu — Chromium и WebKit. Результаты находятся в `packed.json` этого каталога
+и `docs/evidence/menu/packed.json`. Icons 0.4 в этих проверках установлен из
+точного CI tarball; публикацию в npm это не подтверждает.
+
+## Native CI 44694428312
+
+[Запуск](https://github.com/Labpics-Team/labui/actions/runs/44694428312) проверял
+`23f029c6`. iOS application interaction и Android API 33/35 прошли.
+
+Windows (`136147679706`), Ubuntu (`136147679707`) и macOS 15 (`136147679823`)
+имели одинаковый результат: 154 теста, один отказ, без ошибок и пропусков.
+`MenuRenderTest.closedMenubarPaintsKeyboardFocus:387` не смог записать
+`build/menu-evidence/menubar-keyboard-focus.png`, потому что отсутствовал каталог.
+Проверки фокуса и рендера на строках 385–386 успели пройти. `c7ac8170` добавляет
+`parentFile.mkdirs()` именно перед записью; исправление уже входит в общую ветку.
+
+Шаги установщика и packaged Java Accessibility/AT-SPI-Orca в этих jobs не
+запускались после отказа compile-and-verify. Для их фактического результата нужен
+новый `workflow_dispatch` на итоговом SHA: rerun прежнего запуска снова проверит
+`23f029c6`. Причины сверены независимым агентом по логам и JUnit-артефактам.
+
+Native Acrylic исправляется отдельно в `7749579c`; здесь материалы не менялись.

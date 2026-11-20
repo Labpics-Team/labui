@@ -752,6 +752,11 @@ internal object LabComponents {
     const val TooltipPadding = 12f
     const val TooltipMinWidth = 48f
     const val TooltipMaxWidth = 352f
+    const val TooltipViewportGap = 8f
+    const val TooltipSizeExtensionsSPadding = 8f
+    const val TooltipSizeExtensionsSFontSize = 14f
+    const val TooltipSizeExtensionsSLineHeight = 20f
+    const val TooltipSizeExtensionsLPadding = 16f
     const val TooltipGap = 4f
     const val TooltipTailWidth = 28f
     const val TooltipTailHeight = 8f

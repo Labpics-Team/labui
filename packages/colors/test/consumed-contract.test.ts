@@ -34,6 +34,11 @@ import {
 // suites stay independent — a change to one cannot silently weaken the other).
 const css = readFileSync(resolve(repoRoot, 'packages/colors/contract.css'), 'utf8');
 
+it('classifies the exact interaction progress input without opening a new colour namespace', () => {
+  expect(classify('--lab-drag-progress')).toBe('local-or-gap');
+  expect(classify('--lab-drag-progress-colour')).toBe('unclassified');
+});
+
 function scopeBody(source: string, selectorPrefix: string): string {
   const start = source.indexOf(selectorPrefix);
   if (start === -1) throw new Error(`scope not found: ${selectorPrefix}`);

@@ -14,7 +14,7 @@ const mask = (data: string, transform = '') =>
 export const tooltipCss = `
 .lab-tooltip-positioner {
   position: fixed; inset: auto; margin: 0; padding: 0; border: 0;
-  width: max-content; max-width: min(${rem(p.maxWidth)}, calc(100vw - 16px));
+  width: max-content; max-width: min(${rem(p.maxWidth)}, calc(100vw - ${p.viewportGap * 2}px));
   background: transparent; color: inherit; overflow: visible;
   z-index: var(--lab-z-tooltip); font-family: var(--lab-font-family);
 }
@@ -45,8 +45,8 @@ ${Object.entries(p.types)
   )
   .join('\n')}
 /* S/L are explicit compatibility extensions; M is the authored Body specimen. */
-.lab-tooltip-content[data-size="s"] { padding: 8px; font-size: 14px; line-height: 20px; }
-.lab-tooltip-content[data-size="l"] { padding: 16px; }
+.lab-tooltip-content[data-size="s"] { padding: ${p.sizeExtensions.s.padding}px; font-size: ${p.sizeExtensions.s.fontSize}px; line-height: ${p.sizeExtensions.s.lineHeight}px; }
+.lab-tooltip-content[data-size="l"] { padding: ${p.sizeExtensions.l.padding}px; }
 .lab-tooltip-content[hidden] { display: none; }
 .lab-tooltip-arrow {
   position: absolute; width: ${rem(p.tail.width)}; height: ${rem(p.tail.height)};

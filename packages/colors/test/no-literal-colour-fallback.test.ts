@@ -18,7 +18,7 @@ describe('no colour-role literal-colour fallback (recurrence guard)', () => {
     expect(files).toContain('packages/core/src/components/select/lab-select.ts');
     expect(files).toContain('packages/core/src/components/menu/lab-menu.ts');
     expect(files).toContain('packages/core/src/components/select/styles.ts');
-    expect(files).toContain('packages/react/src/menu.css');
+    expect(files).toContain('packages/core/src/components/menu/styles.ts');
     expect(files.length).toBeGreaterThan(4);
   });
 

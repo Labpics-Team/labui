@@ -97,6 +97,38 @@ describe('local integer layers need an effective isolation declaration', () => {
 });
 
 describe('exceptions require complete static CSS in the source', () => {
+  it('resolves imported authored profiles and pure formatters without executing source', () => {
+    const prefix =
+      "import { tooltipProfile as p } from '@labpics/ui-tokens'; const rem = (n: number) => `${n / 16}rem`;";
+    const styles =
+      'const styles = `.surface { isolation: isolate; padding: ${rem(p.padding)}; } .surface::before { z-index: -1; }`;';
+    expect(scanZIndexSource('p.ts', prefix + styles)).toEqual([]);
+    expect(scanZIndexSource('p.ts', styles)).toMatchObject([{ rule: 'magic-zindex' }]);
+    expect(
+      scanZIndexSource('p.ts', `${prefix} p.padding = readUserValue(); ${styles}`),
+    ).toMatchObject([{ rule: 'magic-zindex' }]);
+    expect(
+      scanZIndexSource(
+        'p.ts',
+        `${prefix} const reset = '.surface { isolation: auto; }'; ${styles.replace('`;', '${reset}`;')}`,
+      ),
+    ).toMatchObject([{ rule: 'magic-zindex' }]);
+  });
+
+  it('proves a complete forced-colors block even when another rule is dynamic', () => {
+    const prefix =
+      "import { dialogProfile as p } from '@labpics/ui-tokens'; const rem = (n: number) => `${n / 16}rem`;";
+    const block =
+      '@media (forced-colors: active) { .x { outline: ${rem(p.strokeWidth)} solid CanvasText; } }';
+    expect(scanSource('p.ts', `${prefix} const styles = \`\${unknown}\n${block}\`;`)).toEqual([]);
+    expect(
+      scanSource(
+        'p.ts',
+        `${prefix} const styles = \`${block.replace('.x {', '${unknown} .x {')}\`;`,
+      ),
+    ).toHaveLength(1);
+  });
+
   it.each([
     '.surface${suffix} { isolation: isolate; } .surface .paint { z-index: 9999; }',
     '.surface { isolation: isolate; ${reset} } .surface .paint { z-index: 9999; }',

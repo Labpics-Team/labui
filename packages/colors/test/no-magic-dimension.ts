@@ -7,8 +7,8 @@
  * Закрываются три класса:
  *
  *   1. MAGIC LENGTH — голый литерал `<n>px|rem|em` в значении декларации.
- *      Каждый размер обязан ехать на `--lab-*` токене (или calc/пропорции над
- *      ним). Единственные легитимные голые px — хэйрлайны контракта
+ *      Размер потребляет `--lab-*` токен либо числовое поле авторского профиля
+ *      из ui-tokens (включая чистый перевод единиц). Голые px — хэйрлайны контракта
  *      (§4: 0 / ±1px / ±2px — значения, которые Figma-коллекция Unit держит
  *      инвариантными во всех четырёх режимах масштаба).
  *   2. MAGIC RADIUS — `border-radius`, чьё значение не составлено чисто из
@@ -29,6 +29,7 @@ import { classify } from './consumed-contract.js';
 import { cssImports, stripComments } from './css-source.js';
 export { stripComments } from './css-source.js';
 import { repoRoot } from './no-literal-colour-fallback.js';
+import { staticCssValues } from './static-css-values.js';
 
 /** Migration status is per component; source files follow its actual imports. */
 const MIGRATED_COMPONENTS = [
@@ -234,13 +235,51 @@ export function scanDimensionSource(
 ): DimensionViolation[] {
   const out: DimensionViolation[] = [];
   const isTs = /\.tsx?$/.test(relPath);
-  const text = stripComments(isTs ? normalizeLit(source) : source, isTs);
+  let profileSource = source;
+  if (isTs) {
+    const file = ts.createSourceFile(
+      'source.tsx',
+      source,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TSX,
+    );
+    const values = staticCssValues(file);
+    const spans: { start: number; end: number }[] = [];
+    const visit = (node: ts.Node): void => {
+      if (ts.isTemplateExpression(node)) {
+        let previous: ts.TemplateLiteralToken = node.head;
+        for (const span of node.templateSpans) {
+          if (values.isProfileInterpolation(span.expression)) {
+            const start = previous.end - 2;
+            const end = span.literal.getStart(file) + 1;
+            spans.push({
+              start,
+              end: end + (/^(?:px|rem|em)\b/.exec(source.slice(end))?.[0].length ?? 0),
+            });
+          }
+          previous = span.literal;
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(file);
+    for (const span of spans.sort((a, b) => b.start - a.start))
+      profileSource =
+        profileSource.slice(0, span.start) +
+        '0'.padEnd(span.end - span.start) +
+        profileSource.slice(span.end);
+  }
+  const text = stripComments(isTs ? normalizeLit(profileSource) : source, isTs);
   const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
 
   // Правило 2 — magic radius: после снятия var()-групп значение border-radius
   // может держать только структурные calc-слова, операторы, пропорции и `inherit`/`0`.
   for (const m of text.matchAll(/border-radius:\s*([^;]+);/g)) {
     const at = m.index ?? 0;
+    // A circle/ellipse follows the element's own dimensions; it is geometry,
+    // unlike a fixed corner size copied from a component profile.
+    if ((m[1] as string).trim() === '50%') continue;
     const cleaned = consumeVarGroups(m[1] as string, relPath, () => lineAt(at), out, canon);
     const residue = cleaned
       .replace(/\b(?:max|min|calc|clamp|inherit)\b/g, ' ')

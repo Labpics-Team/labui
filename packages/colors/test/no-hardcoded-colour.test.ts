@@ -65,7 +65,13 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
       const rule = `.x { ${property}: linear-gradient(black, #000000, white, #FFF, transparent); }`;
       expect(scanSource('p.css', rule)).toEqual([]);
       expect(scanSource('p.ts', `const css = \`${rule}\`;`)).toEqual([]);
-      expect(scanSource('p.ts', `const css = \`${rule}\${unknown}\`;`)).toHaveLength(4);
+      expect(scanSource('p.ts', `const css = \`${rule}\${unknown}\`;`)).toEqual([]);
+      expect(
+        scanSource(
+          'p.ts',
+          `const css = \`${rule.replace('linear-gradient(', '${unknown}linear-gradient(')}\`;`,
+        ),
+      ).toHaveLength(4);
       expect(scanSource('p.css', `${rule} .y { background: white; color: #000; }`)).toHaveLength(2);
       expect(scanSource('p.css', `.x { ${property}: linear-gradient(red, #123); }`)).toHaveLength(
         2,
@@ -168,6 +174,28 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
     expect(scanSource('p.css', 'color: #FFF;')).toHaveLength(1);
     expect(scanSource('p.css', 'background: RGB(0 0 0);')).toHaveLength(1);
     expect(scanSource('p.css', 'color: BLACK;')).toHaveLength(1);
+  });
+
+  it('follows a private SVG producer only when every use is a mask', () => {
+    const helper =
+      'const image = (path: string) => `url("data:image/svg+xml,${encodeURIComponent(`<svg><path fill="white" d="${path}"/></svg>`)}")`;';
+    const mask = 'const styles = `.x { mask-image: ${image("M0 0")}; }`;';
+    expect(scanSource('p.ts', helper + mask)).toEqual([]);
+    expect(
+      scanSource('p.ts', helper.replace('white', 'red') + mask).map((hit) => hit.token),
+    ).toEqual(['red']);
+    expect(scanSource('p.ts', `export ${helper}${mask}`).map((hit) => hit.token)).toEqual([
+      'white',
+    ]);
+    expect(
+      scanSource(
+        'p.ts',
+        `${helper + mask}const visible = \`.y { background-image: \${image("M0 0")}; }\`;`,
+      ).map((hit) => hit.token),
+    ).toEqual(['white']);
+    expect(
+      scanSource('p.ts', `${helper + mask}window.icon = image("M0 0");`).map((hit) => hit.token),
+    ).toEqual(['white']);
   });
 
   // ── (2b) Positional class lock — a named / system colour must be caught in EVERY

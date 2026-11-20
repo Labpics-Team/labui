@@ -195,7 +195,10 @@ export function scanZIndexSource(
           isolation.selectors.some((root) => {
             if (
               !root.every((atom, i) => atom === selector[i]) ||
-              ![' ', '>'].includes(selector[root.length] ?? '')
+              !(
+                [' ', '>'].includes(selector[root.length] ?? '') ||
+                /^(?:::before|::after)$/.test(selector[root.length] ?? '')
+              )
             )
               return false;
             const matching = isolations.filter(

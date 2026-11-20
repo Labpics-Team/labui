@@ -1540,6 +1540,11 @@
     "padding": 12,
     "minWidth": 48,
     "maxWidth": 352,
+    "viewportGap": 8,
+    "sizeExtensions": {
+      "s": { "padding": 8, "fontSize": 14, "lineHeight": 20 },
+      "l": { "padding": 16 }
+    },
     "gap": 4,
     "tail": {
       "width": 28,
