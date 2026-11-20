@@ -88,7 +88,7 @@ export async function verifyScrollPaint(page, origin, browser, display) {
       if (display) await page.waitForTimeout(150);
     };
     await settle();
-    const measure = async (stage) => {
+    const measure = async (stage, paintChannel = 255) => {
       const result = await page.evaluate(() => {
         const host = document.getElementById('scroll-host');
         const peer = document.getElementById('scroll-peer');
@@ -170,10 +170,10 @@ export async function verifyScrollPaint(page, origin, browser, display) {
       }
       for (const rgb of pixels)
         assert(
-          rgb.slice(0, 3).every((c) => c >= 254),
+          rgb.slice(0, 3).every((c) => Math.abs(c - paintChannel) <= 1),
           `${browser}/${layout}/${stage}: opaque paint remains visible ${rgb}`,
         );
-      const row = { browser, layout, stage, ...result, pixels };
+      const row = { browser, layout, stage, ...result, paintChannel, pixels };
       rows.push(row);
       console.info(`MATERIAL_SCROLL_ROW=${JSON.stringify(row)}`);
     };
@@ -269,6 +269,11 @@ export async function verifyScrollPaint(page, origin, browser, display) {
     });
     await settle();
     await measure('negative-end');
+    await page
+      .locator('#scroll-host')
+      .evaluate((host) => host.style.setProperty('--_tint', 'rgb(0 0 0)'));
+    await settle();
+    await measure('opaque-black', 0);
     await page.evaluate(() => window.stopScrollPaint());
     assert.equal(
       await page
