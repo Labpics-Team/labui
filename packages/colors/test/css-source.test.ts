@@ -134,9 +134,22 @@ describe('exceptions require complete static CSS in the source', () => {
     '[p.padding] = [77];',
     'p.shadow.map((layer) => layer.x = 77);',
     'p.shadow.map(update);',
+    'const read = (o, unused = Object.assign(o, { padding: 77 })) => o.padding; read(p);',
+    'const read = (o, [unused = Object.assign(o, { padding: 77 })]) => o.padding; read(p, []);',
+    '(p.padding as number) = 77;',
+    'p.padding! = 77;',
+    '(p.padding satisfies number) = 77;',
+    '((p.padding as number)!)++;',
   ])('revokes profile syntax proof after mutation or object escape: %s', (change) => {
     const source = `import { tooltipProfile as p } from '@labpics/ui-tokens'; ${change} const css = \`.surface { isolation: isolate; padding: \${p.padding}px; } .surface::before { z-index: -1; }\`;`;
     expect(scanZIndexSource('p.ts', source)).toMatchObject([{ rule: 'magic-zindex' }]);
+  });
+
+  it('does not skip an executed unknown default even if the parameter is unused', () => {
+    const prefix = "const mode = (unused = effect()) => 'active';";
+    const css = 'const css = `@media (forced-colors: ${mode()}) { .x { color: CanvasText; } }`;';
+    expect(scanSource('p.ts', prefix + css).map((hit) => hit.token)).toEqual(['CanvasText']);
+    expect(scanSource('p.ts', prefix + css.replace('mode()', "mode('supplied')"))).toEqual([]);
   });
 
   it('resolves imported authored profiles and pure formatters without executing source', () => {

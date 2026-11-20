@@ -86,6 +86,13 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
     ).toHaveLength(2);
   });
 
+  it.each([
+    "const mask = (unused = paint('#fff')) => 'url(mask.svg)'; const css = `.x { mask-image: ${mask()}; }`;",
+    "const mask = ([unused = paint('#fff')]) => 'url(mask.svg)'; const css = `.x { mask-image: ${mask([])}; }`;",
+  ])('keeps paint visible when a mask call has an unknown default effect: %s', (source) => {
+    expect(scanSource('p.ts', source).map((hit) => hit.token)).toEqual(['#fff']);
+  });
+
   it('distinguishes numeric colour serialization and property access from hardcoded paints', () => {
     expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / ${c.a})`;')).toEqual([]);
     expect(

@@ -31,6 +31,9 @@ describe('no magic dimensions in migrated components (dimension contract)', () =
     'const css = `.x { border-radius: ${p.radius / p.radius * 77}px; }`;',
     'const css = `.x { border-radius: ${p.radius + 77}px; }`;',
     'const alias = p; alias.radius = 77; const css = `.x { border-radius: ${rem(p.radius)}; }`;',
+    'const read = (o, unused = Object.assign(o, { radius: 77 })) => o.radius; read(p); const css = `.x { border-radius: ${rem(p.radius)}; }`;',
+    '(p.radius as number) = 77; const css = `.x { border-radius: ${rem(p.radius)}; }`;',
+    'p.radius! = 77; const css = `.x { border-radius: ${rem(p.radius)}; }`;',
   ])('does not confuse a profile name or cancelled term with authored geometry: %s', (source) => {
     const prefix =
       "import { tooltipProfile as p } from '@labpics/ui-tokens'; const rem = (n: number) => `${n / 16}rem`;";

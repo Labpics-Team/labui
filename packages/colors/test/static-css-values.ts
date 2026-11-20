@@ -7,6 +7,32 @@ interface FunctionValue {
   readonly expression: ts.ArrowFunction;
   readonly scope: Scope;
 }
+function isTransparentExpression(
+  node: ts.Node,
+): node is
+  | ts.ParenthesizedExpression
+  | ts.AsExpression
+  | ts.NonNullExpression
+  | ts.SatisfiesExpression {
+  return (
+    ts.isParenthesizedExpression(node) ||
+    ts.isAsExpression(node) ||
+    ts.isNonNullExpression(node) ||
+    ts.isSatisfiesExpression(node)
+  );
+}
+
+function rootExpression(expression: ts.Expression): ts.Expression {
+  let root = expression;
+  while (
+    ts.isPropertyAccessExpression(root) ||
+    ts.isElementAccessExpression(root) ||
+    isTransparentExpression(root)
+  )
+    root = root.expression;
+  return root;
+}
+
 function isFunctionValue(value: unknown): value is FunctionValue {
   if (!value || typeof value !== 'object' || !('expression' in value) || !('scope' in value))
     return false;
@@ -80,16 +106,7 @@ export function staticCssValues(file: ts.SourceFile) {
   const invalid = new Set<ts.Symbol>();
   const writtenGlobals = new Set<string>();
   const rootSymbol = (expression: ts.Expression): ts.Symbol | undefined => {
-    let root = expression;
-    while (
-      ts.isPropertyAccessExpression(root) ||
-      ts.isElementAccessExpression(root) ||
-      ts.isParenthesizedExpression(root) ||
-      ts.isAsExpression(root) ||
-      ts.isNonNullExpression(root) ||
-      ts.isSatisfiesExpression(root)
-    )
-      root = root.expression;
+    const root = rootExpression(expression);
     return ts.isIdentifier(root) ? symbolAt(root) : undefined;
   };
   const invalidateTarget = (target: ts.Node): void => {
@@ -103,7 +120,7 @@ export function staticCssValues(file: ts.SourceFile) {
       for (const element of target.elements) invalidateTarget(element);
     } else if (ts.isSpreadElement(target)) invalidateTarget(target.expression);
     else if (ts.isBinaryExpression(target)) invalidateTarget(target.left);
-    else if (ts.isParenthesizedExpression(target)) invalidateTarget(target.expression);
+    else if (isTransparentExpression(target)) invalidateTarget(target.expression);
     else if (
       ts.isIdentifier(target) ||
       ts.isPropertyAccessExpression(target) ||
@@ -112,9 +129,7 @@ export function staticCssValues(file: ts.SourceFile) {
       const symbol = rootSymbol(target);
       if (symbol) invalid.add(symbol);
       else {
-        let root: ts.Expression = target;
-        while (ts.isPropertyAccessExpression(root) || ts.isElementAccessExpression(root))
-          root = root.expression;
+        const root = rootExpression(target);
         if (ts.isIdentifier(root)) writtenGlobals.add(root.text);
       }
     }
@@ -136,26 +151,32 @@ export function staticCssValues(file: ts.SourceFile) {
     ts.forEachChild(node, invalidateWrites);
   };
   invalidateWrites(file);
-  const bind = (name: ts.BindingName, value: unknown, scope: Map<ts.Symbol, unknown>): void => {
+  const bind = (name: ts.BindingName, value: unknown, scope: Map<ts.Symbol, unknown>): boolean => {
     if (ts.isIdentifier(name)) {
       const symbol = symbolAt(name);
       if (symbol) scope.set(symbol, value);
-    } else if (ts.isArrayBindingPattern(name) && Array.isArray(value))
-      name.elements.forEach((entry, index) => {
-        if (ts.isBindingElement(entry)) bind(entry.name, value[index], scope);
+      return !!symbol;
+    }
+    if (ts.isArrayBindingPattern(name) && Array.isArray(value))
+      return name.elements.every((entry, index) => {
+        if (!ts.isBindingElement(entry)) return true;
+        // Destructuring defaults/rest need further execution semantics. Leave
+        // the whole call unknown instead of silently skipping those effects.
+        return !entry.initializer && !entry.dotDotDotToken && bind(entry.name, value[index], scope);
       });
+    return false;
   };
   const run = (fn: FunctionValue, args: unknown[], depth: number): unknown => {
     const scope = new Map(fn.scope);
-    for (const [index, parameter] of fn.expression.parameters.entries())
-      bind(
-        parameter.name,
-        args[index] ??
-          (parameter.initializer
-            ? evaluate(parameter.initializer, scope, depth + 1)
-            : unknownValue),
-        scope,
-      );
+    for (const [index, parameter] of fn.expression.parameters.entries()) {
+      if (parameter.dotDotDotToken) return unknownValue;
+      let value = args[index];
+      if (value === undefined && parameter.initializer) {
+        value = evaluate(parameter.initializer, scope, depth + 1);
+        if (value === unknownValue) return unknownValue;
+      }
+      if (!bind(parameter.name, value, scope)) return unknownValue;
+    }
     return ts.isBlock(fn.expression.body)
       ? unknownValue
       : evaluate(fn.expression.body, scope, depth + 1);
@@ -165,13 +186,7 @@ export function staticCssValues(file: ts.SourceFile) {
     const next = (value: ts.Expression) => evaluate(value, scope, depth + 1);
     if (ts.isStringLiteralLike(node)) return node.text;
     if (ts.isNumericLiteral(node)) return Number(node.text);
-    if (
-      ts.isParenthesizedExpression(node) ||
-      ts.isAsExpression(node) ||
-      ts.isSatisfiesExpression(node) ||
-      ts.isNonNullExpression(node)
-    )
-      return next(node.expression);
+    if (isTransparentExpression(node)) return next(node.expression);
     if (ts.isIdentifier(node)) {
       const symbol = symbolAt(node);
       if (!symbol || invalid.has(symbol)) return unknownValue;
@@ -330,10 +345,7 @@ export function staticCssValues(file: ts.SourceFile) {
         while (
           (ts.isPropertyAccessExpression(expression.parent) ||
             ts.isElementAccessExpression(expression.parent) ||
-            ts.isParenthesizedExpression(expression.parent) ||
-            ts.isAsExpression(expression.parent) ||
-            ts.isNonNullExpression(expression.parent) ||
-            ts.isSatisfiesExpression(expression.parent)) &&
+            isTransparentExpression(expression.parent)) &&
           expression.parent.expression === expression
         )
           expression = expression.parent;
@@ -364,12 +376,9 @@ export function staticCssValues(file: ts.SourceFile) {
     const symbol = ts.isIdentifier(node) ? symbolAt(node) : undefined;
     if (symbol && argumentsBySymbol.has(symbol))
       return isProfileNumber(argumentsBySymbol.get(symbol) as ts.Expression);
-    if (ts.isParenthesizedExpression(node) || ts.isAsExpression(node))
-      return isProfileNumber(node.expression, argumentsBySymbol);
+    if (isTransparentExpression(node)) return isProfileNumber(node.expression, argumentsBySymbol);
     if (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) {
-      let root: ts.Expression = node;
-      while (ts.isPropertyAccessExpression(root) || ts.isElementAccessExpression(root))
-        root = root.expression;
+      const root = rootExpression(node);
       return (
         ts.isIdentifier(root) &&
         profiles.has(symbolAt(root) as ts.Symbol) &&
