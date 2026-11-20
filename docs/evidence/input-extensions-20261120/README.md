@@ -8,6 +8,7 @@ The three renderers share `input-extensions.css`, semantic colors, a transparent
 
 - Core typecheck and build, React build, docs typecheck and Vite production build passed.
 - 110 core tests passed, including SSR and behavior contracts.
+- All 32 adapter/codegen/catalog tests passed in a clean checkout of web source commit `3e4d681e`. The shared development checkout contains independent, unfinished native work, so its native snapshot cannot represent the committed catalog.
 - 120 Chromium/WebKit tests passed for the three fields and their shared fixture. A later installed-package run exposed delayed Combobox focus restoration; a deterministic regression reproduced it before correction.
 - After that correction, 196 Chromium/WebKit tests passed: input extensions, Combobox, Select and Tabs. The latter two exercise the shared ZagController cleanup change. Number Input and Tags Input implementation was unchanged after their successful full suites.
 - Catalog generation and checking passed against the clean native source tree matching this web branch's base. Native extensions are developed separately and are not in this projection.
