@@ -97,12 +97,23 @@ final class SettingsExperienceTests: XCTestCase {
     }
 
     private func expectValue(_ value: String, in editor: XCUIElement) {
-        // UIKit can finish synthesizing input before Compose publishes the
-        // corresponding accessibility value. Observe the committed editor value.
+        // Compose's UIKit bridge represents an empty EditableText without a
+        // placeholder as nil. Non-empty text must still match exactly, and a
+        // missing element must never be mistaken for a successfully cleared one.
+        var observed: Any?
         let updated = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "value == %@", value), object: editor)
+            predicate: NSPredicate { _, _ in
+                guard editor.exists else { return false }
+                let actual = editor.value
+                observed = actual
+                return (actual as? String) == value || (value.isEmpty && actual == nil)
+            }, object: editor)
         XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed,
-                       "Native input did not reach the expected value: \(value)")
+                       "Native input did not reach \(value.debugDescription); " +
+                       "actual: \(String(reflecting: observed)); " +
+                       "type: \(observed.map { String(reflecting: type(of: $0)) } ?? "nil"); " +
+                       "scalars: \((observed as? String)?.unicodeScalars.map(\.value) ?? [])\n" +
+                       editor.debugDescription)
     }
 
     private func message(_ label: String, in app: XCUIApplication) -> XCUIElement {
