@@ -9,6 +9,7 @@
   import type { LabDragButton } from '@labpics/ui-core/drag-button';
   import { type Snippet, untrack } from 'svelte';
   import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
+  import { slotProjectionShadowHtml } from '@labpics/ui-core/adapter-runtime';
 
   /** Пропы <lab-drag-button> — типы взяты прямо из класса ядра (LabDragButton). */
   interface Props {
@@ -54,6 +55,6 @@
 <lab-drag-button bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { label: prop_label, helperText: prop_helperText, showHelper: prop_showHelper, pendingText: prop_pendingText, successText: prop_successText, dangerText: prop_dangerText, status: prop_status, disabled: prop_disabled, resetKey: prop_resetKey } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
-    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+    {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}
   {/each}
 </lab-drag-button>
