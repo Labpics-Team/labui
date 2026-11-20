@@ -38,7 +38,7 @@ kotlin {
             api("pics.lab:motion-compose:0.1.0")
             implementation(libs.coil.compose)
             implementation(libs.coil.network)
-            implementation(nativeIcons.compose)
+            api(nativeIcons.compose)
         }
         val desktopMain by getting
         desktopMain.dependencies { implementation(libs.ktor.java) }

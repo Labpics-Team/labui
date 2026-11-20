@@ -460,6 +460,12 @@ Dropdown сохраняет размеры 32/48/56 dp и декоративны
 [Контракт](../../docs/reference/select.md) ·
 [offscreen и установленный Maven consumer](../../docs/evidence/select-20261119/README.md).
 
+## Menu, Context Menu и Menubar
+
+Menu, Context Menu и Menubar имеют общий типизированный контракт, управляемое
+открытие/выбор, вложенные Foundation Popup и импортированные Icons.
+[Native API и проверки](docs/menu.md).
+
 ## Источники
 
 - [Lab UI — исходная Figma](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1)
