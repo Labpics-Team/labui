@@ -384,7 +384,7 @@ class MenuRenderTest {
             val focused = settle(scene)
             assertTrue(named(scene, "File").config[SemanticsProperties.Focused])
             assertFalse(before.contentEquals(focused), "Keyboard focus must change the rendered closed control")
-            File("build/menu-evidence/menubar-keyboard-focus.png").writeBytes(focused)
+            File("build/menu-evidence/menubar-keyboard-focus.png").apply { parentFile.mkdirs() }.writeBytes(focused)
         } finally { scene.close() }
     }
 }

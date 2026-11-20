@@ -2,7 +2,7 @@
   "archives": [
     {
       "name": "labpics-ui-tokens-0.0.0.tgz",
-      "sha256": "6c1f5b4ed6c353af5d62fe2e969322d0c8c1f06cecc0019802ef452b0c67296f"
+      "sha256": "a0c85a183368a2e2b42e4eaed250e2661400e714f8df843a628be954389b1e8c"
     },
     {
       "name": "labpics-ui-shadow-0.0.0.tgz",
@@ -22,27 +22,27 @@
     },
     {
       "name": "labpics-ui-core-0.0.0.tgz",
-      "sha256": "acf317ad9387d4d12fa77a2351636b575bccef50620cd1b64fbff9ceb3be63a4"
+      "sha256": "5eede89d15bb710d0b16d4e6be8cbcb6e43e6a58e416311c2c3ad0fd4d5deaa6"
     },
     {
       "name": "labpics-ui-react-0.0.0.tgz",
-      "sha256": "96acaca06612c8494a17e6c059efa04dc6d1a997c8422558eba4f5a4fb626db8"
+      "sha256": "0e4ac72b40b268fe873a400bc0c6e8678916fcd2155250e4460f189c2b5a4dfb"
     },
     {
       "name": "labpics-ui-vue-0.0.0.tgz",
-      "sha256": "498ee6e0f33bb80533ec93f3c1b2db2d02359cc6db8c56c3c7dd7bbe69312e39"
+      "sha256": "e38be860580c6535d25e4b644d2935cde74e444584e18598a580dcfdd4e7da30"
     },
     {
       "name": "labpics-ui-solid-0.0.0.tgz",
-      "sha256": "3e33858d93cfad0432356a6d0658a0d91748346f7a432be0b5ced3b442d41c1f"
+      "sha256": "9c0fe9a8dfbb169771099f38d5ad3fde80d761da09402f86f102f4c154fc0f1f"
     },
     {
       "name": "labpics-ui-svelte-0.0.0.tgz",
-      "sha256": "077c37cda1cdc195a5f272a398e4e28412fc643f8cab4534849ed28fc4c2d134"
+      "sha256": "185e15a8566f9d38a33ddd869095212eae10e4ec64fc87c5280d91333591919f"
     },
     {
       "name": "labpics-ui-astro-0.0.0.tgz",
-      "sha256": "0bd32100a4160d0b6172ab3303743adbd72ad60f09eff9148634f60dd9063bed"
+      "sha256": "6a2f44405e060cee39eec09a47582515f3f04745f9b6527fd5480f0207496dc2"
     }
   ],
   "reactVersion": "18.3.1",

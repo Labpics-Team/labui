@@ -1,6 +1,6 @@
 {
-  "revision": "22006d2d7b9872a26056286eb83777035fbadb34",
-  "sourceDigest": "sha256:22ef47149bc462a7ee0dc35e648fc4e8d3b7a8a20b612930285b47e7bf966a3d",
+  "revision": "13ce9d2ee63eb06b7111317ff6a432969a595daa",
+  "sourceDigest": "sha256:9c30cbe1d625632293a67f50c3c814c1d62d826f9f47f129c74b0318d47d015d",
   "symbols": [
     {
       "name": "LabAccordion",
@@ -77,6 +77,22 @@
     {
       "name": "LabVeils",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt"
+    },
+    {
+      "name": "LabMenu",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMenu.kt"
+    },
+    {
+      "name": "LabContextMenu",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMenu.kt"
+    },
+    {
+      "name": "LabMenubar",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMenu.kt"
+    },
+    {
+      "name": "LabMenubar",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMenu.kt"
     },
     {
       "name": "LabPagination",

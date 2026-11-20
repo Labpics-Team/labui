@@ -9,6 +9,7 @@
   import type { LabMenubar } from '@labpics/ui-core/menubar';
   import { type Snippet, untrack } from 'svelte';
   import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
+  import { slotProjectionShadowHtml } from '@labpics/ui-core/adapter-runtime';
 
   /** Пропы <lab-menubar> — типы взяты прямо из класса ядра (LabMenubar). */
   interface Props {
@@ -54,6 +55,6 @@
 <lab-menubar bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { label: prop_label, placement: prop_placement, disabled: prop_disabled, checkedValues: prop_checkedValues, defaultCheckedValues: prop_defaultCheckedValues, menus: prop_menus, value: prop_value, defaultValue: prop_defaultValue } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
-    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+    {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}
   {/each}
 </lab-menubar>

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -51,6 +51,16 @@ try {
       name: pkg.name,
       sha256: createHash('sha256')
         .update(await readFile(join(consumer, 'packs', name)))
+        .digest('hex'),
+    });
+  }
+  if (process.env.LAB_ICONS_TARBALL) {
+    await copyFile(process.env.LAB_ICONS_TARBALL, join(consumer, 'packs/icons.tgz'));
+    dependencies['@labpics/icons'] = overrides['@labpics/icons'] = 'file:./packs/icons.tgz';
+    archives.push({
+      name: '@labpics/icons',
+      sha256: createHash('sha256')
+        .update(await readFile(join(consumer, 'packs/icons.tgz')))
         .digest('hex'),
     });
   }

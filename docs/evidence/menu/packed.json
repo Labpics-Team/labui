@@ -3,7 +3,7 @@
   "archives": [
     {
       "name": "labpics-ui-tokens-0.0.0.tgz",
-      "sha256": "328ad2f7adbd896251ad7e937c01cf35ba00c7dd6696f67946bab360c7db446b"
+      "sha256": "a0c85a183368a2e2b42e4eaed250e2661400e714f8df843a628be954389b1e8c"
     },
     {
       "name": "labpics-ui-shadow-0.0.0.tgz",
@@ -23,27 +23,27 @@
     },
     {
       "name": "labpics-ui-core-0.0.0.tgz",
-      "sha256": "2dfeb1c5c55e913f2025cb6bb1fe59b6952ed045c10b292fc6d10dc19be820ab"
+      "sha256": "8d19f462f31b239fc4dd2b834d8b346ca3e8378c2431c3c9b6e0ac7d1b054abe"
     },
     {
       "name": "labpics-ui-react-0.0.0.tgz",
-      "sha256": "0788ab904aae7638f2fbe34d2479d24d46d1e6913d12b8d1d3d2bfd77fa993bf"
+      "sha256": "3f7558e1602c0732bbd903ca9832fb2501e83b6f35c3f24d4a681c746e2c7dc7"
     },
     {
       "name": "labpics-ui-vue-0.0.0.tgz",
-      "sha256": "b71e74a711a0d2f521782db7e647db145c98d12e1a9e4ef2ba34dda5eb7eb531"
+      "sha256": "e38be860580c6535d25e4b644d2935cde74e444584e18598a580dcfdd4e7da30"
     },
     {
       "name": "labpics-ui-solid-0.0.0.tgz",
-      "sha256": "ab97fc5ae49ef8d00865d10f45b0f056524331cae9f42536dd985ee1fb0f6bee"
+      "sha256": "9c0fe9a8dfbb169771099f38d5ad3fde80d761da09402f86f102f4c154fc0f1f"
     },
     {
       "name": "labpics-ui-svelte-0.0.0.tgz",
-      "sha256": "9f3957e7c3c9304784b71d47aed7d7675f9e298db04677e39226cde7193595ad"
+      "sha256": "185e15a8566f9d38a33ddd869095212eae10e4ec64fc87c5280d91333591919f"
     },
     {
       "name": "labpics-ui-astro-0.0.0.tgz",
-      "sha256": "0db75a45cf32e37b087db873b1658c5621f23607ad3239f799c6e131a678467c"
+      "sha256": "6a2f44405e060cee39eec09a47582515f3f04745f9b6527fd5480f0207496dc2"
     },
     {
       "name": "icons-0.4.0",
@@ -55,25 +55,25 @@
       "browser": "chromium",
       "updates": 1000,
       "milliseconds": {
-        "dropdown": 162.39999997615814,
-        "tooltip": 85.39999997615814,
-        "select": 197.29999995231628
+        "dropdown": 171.39999997615814,
+        "tooltip": 84.10000002384186,
+        "select": 209.29999995231628
       },
       "trees": [
         {
           "roots": 50,
           "children": 0,
-          "medianMilliseconds": 33.5
+          "medianMilliseconds": 33.200000047683716
         },
         {
           "roots": 50,
           "children": 1,
-          "medianMilliseconds": 37
+          "medianMilliseconds": 35.10000002384186
         },
         {
           "roots": 50,
           "children": 10,
-          "medianMilliseconds": 38.800000071525574
+          "medianMilliseconds": 40.200000047683716
         }
       ]
     },
@@ -81,25 +81,25 @@
       "browser": "webkit",
       "updates": 1000,
       "milliseconds": {
-        "dropdown": 548,
-        "tooltip": 121,
-        "select": 242
+        "dropdown": 480,
+        "tooltip": 95.00000000000091,
+        "select": 219.9999999999991
       },
       "trees": [
         {
           "roots": 50,
           "children": 0,
-          "medianMilliseconds": 84
+          "medianMilliseconds": 78
         },
         {
           "roots": 50,
           "children": 1,
-          "medianMilliseconds": 101
+          "medianMilliseconds": 97
         },
         {
           "roots": 50,
           "children": 10,
-          "medianMilliseconds": 106.99999999999909
+          "medianMilliseconds": 98
         }
       ]
     }
