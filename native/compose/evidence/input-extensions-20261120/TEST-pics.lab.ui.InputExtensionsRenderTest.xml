@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="InputExtensionsRenderTest[desktop]" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-20T17:24:35.454Z" hostname="DESKTOP-NFO26JA" time="20.915">
+  <properties/>
+  <testcase name="pendingPasteCannotOutliveItsFocusSelectionDraftOrComponent[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="7.907"/>
+  <testcase name="comboboxFiltersOnlyQueryAndKeepsEditorFocusDuringAcceptedAndRejectedRequests[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="1.624"/>
+  <testcase name="tagEditingCannotOverwriteAnExternallyReplacedItemAndRtlNavigationIsLogical[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="1.349"/>
+  <testcase name="multipleComboboxKeepsSelectionControlledAndScrollsActiveOptionInsideViewport[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="1.212"/>
+  <testcase name="openingTheNativeContextMenuDoesNotReadOrInsertClipboardContent[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="0.63"/>
+  <testcase name="pasteConsumesOnlyCompletedEditorTransactionsAndKeepsUndo[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="1.388"/>
+  <testcase name="tagsUseOnlyAcceptedValuesAndKeepRejectedOrInvalidDraftsEditable[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="2.551"/>
+  <testcase name="compositionSurvivesRecompositionAndItsCommitDoesNotSelectOrCreateValues[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="1.704"/>
+  <testcase name="authoredFieldsAndGrowingChipsRenderAtBothThemesAndTextScales[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="0.758"/>
+  <testcase name="disabledAndReadOnlyControlsCannotChangeValuesThroughTheirActions[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="0.548"/>
+  <testcase name="overlappingPasteRequestsApplyOnlyTheLatestAndReplaceTheCapturedSelection[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="1.238"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

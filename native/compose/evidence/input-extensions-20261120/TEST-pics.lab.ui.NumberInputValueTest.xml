@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="NumberInputValueTest[desktop]" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-20T15:20:17.379Z" hostname="DESKTOP-NFO26JA" time="0.214">
+  <properties/>
+  <testcase name="configurationAndWorkAreBoundedBeforeArithmetic[desktop]" classname="pics.lab.ui.NumberInputValueTest" time="0.003"/>
+  <testcase name="signedDecimalAdditionAndComparisonMatchIndependentBigDecimalOracle[desktop]" classname="pics.lab.ui.NumberInputValueTest" time="0.197"/>
+  <testcase name="commitClampsOnlyValidNumbersAndRetainsExactDraftDigits[desktop]" classname="pics.lab.ui.NumberInputValueTest" time="0.002"/>
+  <testcase name="emptyAndOutOfRangeDraftsRecoverToTheNearestPermittedNumber[desktop]" classname="pics.lab.ui.NumberInputValueTest" time="0.001"/>
+  <testcase name="decimalStepsDoNotAccumulateBinaryRounding[desktop]" classname="pics.lab.ui.NumberInputValueTest" time="0.01"/>
+  <testcase name="finiteDomainIncludesSubnormalsAndRejectsOverflowAndUnavailableSteps[desktop]" classname="pics.lab.ui.NumberInputValueTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -79,8 +79,9 @@ public fun LabChip(
     showLeading: Boolean = false,
     leading: (@Composable LabChipLeadingScope.() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
+    readOnly: Boolean = false,
 ) {
-    require(when (mode) {
+    require(readOnly || when (mode) {
         LabChipMode.Filter -> onSelectedChange != null
         LabChipMode.Action -> onAction != null
         LabChipMode.Remove -> onRemove != null && !accessibilityLabel.isNullOrBlank()
@@ -95,9 +96,10 @@ public fun LabChip(
     val hovered by interactions.collectIsHoveredAsState()
     val focused by interactions.collectIsFocusedAsState()
     val isSelected = selected || mode == LabChipMode.Remove
-    val isPressed = enabled && !loading && pressed
-    val isActive = enabled && !loading && active && !isPressed
-    val isHovered = enabled && !loading && hovered && !isPressed && !isActive
+    val interactive = enabled && !loading && !readOnly
+    val isPressed = interactive && pressed
+    val isActive = interactive && active && !isPressed
+    val isHovered = interactive && hovered && !isPressed && !isActive
     val radius = if (sharp) LabComponents.ChipSharpRadius else metrics.radius
     val shape = RoundedCornerShape(radius.dp)
     val fill = when {
@@ -125,7 +127,7 @@ public fun LabChip(
         fontWeight = FontWeight(metrics.fontWeight.toInt()), letterSpacing = metrics.letterSpacing.sp,
         lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None, LineHeightStyle.Mode.Tight),
     )
-    val action = when (mode) {
+    val action = if (readOnly) Modifier else when (mode) {
         LabChipMode.Filter -> Modifier.toggleable(selected, enabled = enabled, role = Role.Button,
             interactionSource = interactions, indication = null) { if (!loading) onSelectedChange?.invoke(it) }
         else -> Modifier.clickable(enabled = enabled, role = Role.Button,
@@ -140,7 +142,7 @@ public fun LabChip(
         if (accessibilityLabel != null) contentDescription = accessibilityLabel
         if (loading) { disabled(); stateDescription = loadingDescription }
     }.drawWithContent {
-        if (focused && enabled) {
+        if (focused && enabled && !readOnly) {
             val width = LabComponents.ChipFocusWidth.dp.toPx()
             val expansion = LabComponents.ChipFocusOffset.dp.toPx() + width / 2
             drawRoundRect(colors[LabComponents.ChipRolesFocus], topLeft = Offset(-expansion, -expansion),
@@ -178,7 +180,7 @@ public fun LabChip(
                 LabText(text, Modifier.weight(1f, fill = false).alpha(if (loading) 0f else 1f).then(
                     if (accessibilityLabel != null) Modifier.clearAndSetSemantics {} else Modifier,
                 ), style)
-                if (isSelected) ChipClose(size, metrics.closeSize.dp, close, Modifier.alpha(if (loading) 0f else 1f))
+                if (isSelected && !readOnly) ChipClose(size, metrics.closeSize.dp, close, Modifier.alpha(if (loading) 0f else 1f))
             }
         }
         if (isPressed && isSelected) ChipGlow(Modifier.matchParentSize(), shape, direction, true, colors[LabComponents.ChipRolesGlow])

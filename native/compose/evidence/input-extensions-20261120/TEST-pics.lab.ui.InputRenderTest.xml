@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="InputRenderTest[desktop]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-20T15:19:27.109Z" hostname="DESKTOP-NFO26JA" time="41.258">
+  <properties/>
+  <testcase name="labelsRemainReadableAndFieldsKeepAuthoredGeometry[desktop]" classname="pics.lab.ui.InputRenderTest" time="16.054"/>
+  <testcase name="textareaStatesKeepHelpersAtTheAuthoredCaptionSize[desktop]" classname="pics.lab.ui.InputRenderTest" time="0.635"/>
+  <testcase name="textareaUsesItsAuthoredProfileAndKeepsEveryLabelLine[desktop]" classname="pics.lab.ui.InputRenderTest" time="24.569"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

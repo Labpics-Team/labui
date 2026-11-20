@@ -16,4 +16,37 @@ Combobox отправляет выбранные ключи, Tags Input — ме
 
 Размеры заданы относительными единицами; длинные метки переносятся. Подпись остаётся связанной с полем при 200% масштабе. Общий ZagController хранит одно завершение подписки на текущий DOM-узел, освобождает удалённые узлы после рендера и все ресурсы при disconnect.
 
+## Compose
+
+`LabCombobox` и `LabTagsInput` принимают `value: List<String>` и `onValueChange`.
+Список принадлежит приложению: callback запрашивает изменение, а новый `value`
+подтверждает его. Отклонённое добавление сохраняет редактируемый текст. Переданный
+`TextFieldState` хранит один настоящий editor, его выделение и IME composition.
+`LabNumberInput` принимает `TextFieldState`; `min`, `max` и положительный `step`
+задаются конечными `Double`. Подробности числовой модели и проверки находятся в native evidence.
+
+Combobox сохраняет фокус в editor при открытом списке, пропускает disabled-варианты
+и прокручивает активный вариант в доступную область окна. Кнопка открытия показывает
+все варианты; поиск начинается после изменения текста. Multiple использует те же
+авторские Chip S Sharp внутри общей рамки Input.
+
+Tags Input добавляет метку по Enter, экранному Done или `delimiter`. Пустой draft
+и Backspace сначала выделяют последнюю метку; следующий Backspace удаляет её.
+Стрелки учитывают направление текста. Enter на выделенной метке включает
+редактирование, Escape отменяет его. Изменение редактируемого элемента приложением
+блокирует фиксацию старого draft, чтобы не перезаписать другой элемент списка.
+`max` и `allowDuplicates` проверяют весь предлагаемый список до callback.
+В readOnly метки сохраняют обычный контраст и не предлагают удаление;
+`LabChip(readOnly = true)` переиспользует selected-профиль без действий и крестика.
+
+`addOnPaste` разделяет завершённую вставку по `delimiter` и переносам строк.
+Отменённое чтение, потеря фокуса, смена draft/выделения или удаление editor во время
+чтения не добавляют меток. Undo обычного editor сохраняет вставку; историю принятого
+списка хранит приложение. Платформенная граница Paste и проверки при обновлении
+Compose описаны в [native evidence](../../native/compose/evidence/input-extensions-20261120/README.md).
+
+Рамка, подпись, helper/error и размеры для всех расширений остаются в `LabInput`.
+Его `contentDecorator`, `trailing`, `inputModifier` и `onKeyboardAction` позволяют
+композиции работать с тем же полем без второй рамки или второго состояния ввода.
+
 Источники: [Combobox APG](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/), [Spinbutton APG](https://www.w3.org/WAI/ARIA/apg/patterns/spinbutton/), [Popover](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/popover).

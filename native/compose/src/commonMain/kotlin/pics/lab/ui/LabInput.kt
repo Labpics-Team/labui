@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -16,6 +17,9 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.TextFieldDecorator
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -64,10 +68,16 @@ public fun LabInput(
     singleLine: Boolean = true,
     size: LabControlSize = LabControlSize.Medium,
     placeholder: String? = null,
+    inputModifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource? = null,
+    inputTransformation: InputTransformation? = null,
+    contentDecorator: TextFieldDecorator? = null,
+    trailing: (@Composable () -> Unit)? = null,
+    onKeyboardAction: KeyboardActionHandler? = null,
 ) {
     val colors = LocalLabTheme.current.colors
     val focusManager = LocalFocusManager.current
-    val interactions = remember { MutableInteractionSource() }
+    val interactions = interactionSource ?: remember { MutableInteractionSource() }
     val focused by interactions.collectIsFocusedAsState()
     val hovered by interactions.collectIsHoveredAsState()
     val metrics =
@@ -155,11 +165,13 @@ public fun LabInput(
                     if (singleLine) TextFieldLineLimits.SingleLine
                     else TextFieldLineLimits.MultiLine(minHeightInLines = LabComponents.TextareaRows.toInt()),
                 keyboardOptions = keyboardOptions,
+                onKeyboardAction = onKeyboardAction,
+                inputTransformation = inputTransformation,
                 interactionSource = interactions,
                 textStyle = body,
                 cursorBrush = SolidColor(colors["label-accent"]),
                 modifier =
-                    Modifier.fillMaxWidth()
+                    Modifier.fillMaxWidth().then(inputModifier)
                         .onPreviewKeyEvent { event ->
                             if (event.key == Key.Tab && event.type == KeyEventType.KeyDown) {
                                 focusManager.moveFocus(
@@ -204,18 +216,30 @@ public fun LabInput(
                             if (error != null) error(error)
                         },
                 decorator = { innerTextField ->
-                    Box(
-                        Modifier.defaultMinSize(minHeight = metrics.contentHeight.dp),
-                        contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart,
-                    ) {
-                        if (state.text.isEmpty() && placeholder != null)
-                            LabText(
-                                placeholder,
-                                Modifier.clearAndSetSemantics {},
-                                style = body.copy(color = colors[
-                                    if (!enabled && !singleLine) "label-quaternary" else "label-tertiary"]),
-                            )
-                        innerTextField()
+                    val editor: @Composable () -> Unit = {
+                        Box(
+                            Modifier.defaultMinSize(minHeight = metrics.contentHeight.dp),
+                            contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart,
+                        ) {
+                            if (state.text.isEmpty() && placeholder != null)
+                                LabText(
+                                    placeholder,
+                                    Modifier.clearAndSetSemantics {},
+                                    style = body.copy(color = colors[
+                                        if (!enabled && !singleLine) "label-quaternary" else "label-tertiary"]),
+                                )
+                            innerTextField()
+                        }
+                    }
+                    val decorated: @Composable () -> Unit = {
+                        if (contentDecorator != null) with(contentDecorator) { Decoration(editor) }
+                        else editor()
+                    }
+                    if (trailing == null) decorated()
+                    else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(LabComponents.SelectLeadingGap.dp)) {
+                        Box(Modifier.weight(1f)) { decorated() }
+                        trailing()
                     }
                 },
             )
