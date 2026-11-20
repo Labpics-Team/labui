@@ -6,7 +6,7 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chromium, expect } from '@playwright/test';
+import { chromium, expect, webkit } from '@playwright/test';
 import { runPnpm as pnpm, writePackedConsumerProject } from './packed-consumer-project.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -172,6 +172,7 @@ try {
     import{build}from'esbuild';import{writeFile}from'node:fs/promises';
     const options={outdir:'web',bundle:true,format:'esm',splitting:true,minify:true,metafile:true};
     const result=await build({...options,entryPoints:['client.js']});await writeFile('meta.json',JSON.stringify(result.metafile));
+    await build({...options,entryPoints:['client.js'],outdir:'web/development',conditions:['development'],minify:false,define:{'process.env.NODE_ENV':'"development"'}});
     const pure=await build({...options,stdin:{contents:"import{iconMarkup}from'@labpics/ui-core/icon/runtime';import{symbol}from'@labpics/icons/symbols/plus';console.log(iconMarkup({symbol}));",resolveDir:process.cwd()},outdir:'static'});await writeFile('static-meta.json',JSON.stringify(pure.metafile));
   `,
   );
@@ -219,6 +220,10 @@ try {
     ['plus.js'],
   );
   await copyFile(join(consumer, 'index.html'), join(consumer, 'web/index.html'));
+  await writeFile(
+    join(consumer, 'web/development.html'),
+    html.replace('src="/client.js"', 'src="/development/client.js"'),
+  );
   server = createServer(async (request, response) => {
     const path = resolve(consumer, 'web', `.${request.url === '/' ? '/index.html' : request.url}`);
     if (!path.startsWith(join(consumer, 'web'))) return response.writeHead(403).end();
@@ -460,12 +465,66 @@ try {
     await failed.evaluate(() => window.expected({ state: 'selected' })),
   );
   await failed.close();
+  const development = [];
+  for (const [name, engine] of [
+    ['chromium', chromium],
+    ['webkit', webkit],
+  ]) {
+    const devBrowser = await engine.launch({ headless: true });
+    try {
+      const devPage = await devBrowser.newPage();
+      const devErrors = [];
+      devPage.on('pageerror', (error) => devErrors.push(error.message));
+      await devPage.goto(`${url}/development.html`);
+      await devPage.waitForFunction(() => window.ready);
+      await devPage.evaluate(async () => {
+        await window.upgrade();
+        await window.hydrate();
+        for (const size of [24, 48, 24, 32, 24]) await window.update({ size });
+        await window.update({ symbol: 'bookmark', state: 'selected', duration: 0 });
+        await window.update({ label: 'Saved item', size: 32 });
+      });
+      assert.deepEqual(
+        await devPage
+          .locator('svg')
+          .evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().width)),
+        [32, 32, 32, 32, 32],
+      );
+      assert.deepEqual(await devPage.evaluate(() => window.lifecycle()), {
+        reconnected: true,
+        detachedFrames: 0,
+        hasMotionParts: false,
+      });
+      await devPage.evaluate(async () => {
+        await window.update({ state: 'unselected', duration: 30 });
+        await window.update({ label: 'Item', size: 24 });
+      });
+      await devPage.waitForFunction(() =>
+        [...document.querySelectorAll('lab-icon')].every((icon) =>
+          icon.shadowRoot.querySelector('[data-part]'),
+        ),
+      );
+      await devPage.evaluate(() => window.update({ label: 'Updated item' }));
+      assert.deepEqual(devErrors, []);
+      development.push({
+        engine: name,
+        repeatedSizeUpdates: true,
+        reconnect: true,
+        motionUpdates: true,
+        errors: 0,
+      });
+    } finally {
+      await devBrowser.close();
+    }
+  }
   const result = {
     archives,
     serverHtmlBytes: Buffer.byteLength(html),
     staticBytes: [...staticOutputs].reduce((n, path) => n + staticMeta.outputs[path].bytes, 0),
     idle,
     sizes,
+    development,
+    publicIcons: !process.env.LAB_ICONS_TARBALL,
     checks: [
       'ESM+CJS SSR',
       'installed NodeNext types',

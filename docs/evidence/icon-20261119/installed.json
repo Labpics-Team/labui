@@ -2,7 +2,7 @@
   "archives": [
     {
       "name": "labpics-ui-tokens-0.0.0.tgz",
-      "sha256": "cdbaefc3caae97b20d57335a588843c85382af904558c7b2fd97d43827a83af5"
+      "sha256": "749f646996796452ed8d4055bd79a91e251045132d3580955c15ba63b8175d03"
     },
     {
       "name": "labpics-ui-shadow-0.0.0.tgz",
@@ -14,30 +14,30 @@
     },
     {
       "name": "labpics-ui-core-0.0.0.tgz",
-      "sha256": "7057ac129c76b5e2a0c488af1929051336d7f79ffbbde9d8e18bcdda575cace9"
+      "sha256": "1230e921c2a6a37e5e903cf180bc164ce5e64b3f34157bb8551d31f236d47b41"
     },
     {
       "name": "labpics-ui-react-0.0.0.tgz",
-      "sha256": "9ad1ae893609656e16e5c59db4d8c58ac7ce0a46cdd7fa32cbd9316b8f3c5b26"
+      "sha256": "30706bba8b1c57771caa3b3e95da0d2907f2cb90b3eff8ceb2405642799853b0"
     },
     {
       "name": "labpics-ui-vue-0.0.0.tgz",
-      "sha256": "cf5171fb88a4e35f9592af05df3336c999bb4a73d4dcb7f84b86a10c02da6d1f"
+      "sha256": "6a7a379c00506b6292c3ed650cf2535616d4861c2d1af2ff1aab9a367f2cac46"
     },
     {
       "name": "labpics-ui-solid-0.0.0.tgz",
-      "sha256": "59b6a8d0618069088ba49474704e452deafed93d63989136a4ff424e15dde5ac"
+      "sha256": "e94c4d1da4c6524978956ba84808ed34f0e85127ca3ca52903069531cdd925d0"
     },
     {
       "name": "labpics-ui-svelte-0.0.0.tgz",
-      "sha256": "94965d19312d7ae253290a3f501a3183de0c77642d5977a9ed5f15ff05ef9309"
+      "sha256": "0a13e0d07ca68b62db503ebfa6b8cd6a9d577d730bbf4c9c419afc5ec27c1891"
     },
     {
       "name": "labpics-ui-astro-0.0.0.tgz",
-      "sha256": "9fcf41d1e095f52b96fa09803a7885dc5596a737d629667bcf408886a585bce2"
+      "sha256": "e40dc91c7ab5bd5d48d77c84a9896eb06fa45dea64b08a2088e9ddcb830bae18"
     }
   ],
-  "serverHtmlBytes": 7988,
+  "serverHtmlBytes": 8232,
   "staticBytes": 25634,
   "idle": [
     {
@@ -85,6 +85,23 @@
       ]
     }
   ],
+  "development": [
+    {
+      "engine": "chromium",
+      "repeatedSizeUpdates": true,
+      "reconnect": true,
+      "motionUpdates": true,
+      "errors": 0
+    },
+    {
+      "engine": "webkit",
+      "repeatedSizeUpdates": true,
+      "reconnect": true,
+      "motionUpdates": true,
+      "errors": 0
+    }
+  ],
+  "publicIcons": false,
   "checks": [
     "ESM+CJS SSR",
     "installed NodeNext types",

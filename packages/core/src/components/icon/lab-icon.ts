@@ -65,14 +65,14 @@ export class LabIcon extends LabElement implements IconOptions {
     this.label = '';
   }
   static override styles =
-    css`:host{display:inline-flex;flex:none;line-height:0;vertical-align:middle}span{display:inline-flex;flex:none;line-height:0}`;
+    css`:host{display:inline-flex;flex:none;line-height:0;vertical-align:middle}span{display:inline-flex;flex:none;line-height:0}.artwork{width:100%;height:100%}`;
   override connectedCallback(): void {
     super.connectedCallback();
     this.requestUpdate();
   }
   override updated(_changed: PropertyValues): void {
     if (!this.isConnected) return;
-    const root = this.renderRoot.querySelector<HTMLElement>('span');
+    const root = this.renderRoot.querySelector<HTMLElement>('.artwork');
     if (!root) return;
     if (!this.controller) this.controller = createIconController(root, this.options());
     else this.controller.update(this.options());
@@ -104,7 +104,9 @@ export class LabIcon extends LabElement implements IconOptions {
     super.disconnectedCallback();
   }
   override render() {
-    if (!this.controller) this.firstMarkup = iconMarkup(this);
+    // The opaque artwork subtree belongs to the controller. Lit's part markers
+    // stay outside it, including when motion replaces the initial server SVG.
+    if (!this.controller) this.firstMarkup = `<span class="artwork">${iconMarkup(this)}</span>`;
     const size = resolveTypographySize(this.size, this.scale).css;
     return html`<span aria-hidden=${this.label ? 'false' : 'true'} role=${this.label ? 'img' : 'presentation'} aria-label=${this.label} style=${styleMap({ width: size, height: size })}>${unsafeHTML(this.firstMarkup)}</span>`;
   }
