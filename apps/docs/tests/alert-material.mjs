@@ -203,7 +203,14 @@ try {
           await page.locator('lab-alert').evaluate((host) => {
             for (const layer of host.shadowRoot.querySelectorAll('[part="stack"]')) {
               const material = layer.querySelector('.lab-material');
-              layer.style.opacity = getComputedStyle(material).opacity;
+              const alpha = Number(
+                getComputedStyle(layer).getPropertyValue('--_alert-layer-opacity'),
+              );
+              if (!(alpha > 0 && alpha < 1))
+                throw new Error('negative control needs authored partial alpha');
+              layer.style.opacity = String(alpha);
+              if (Number(getComputedStyle(layer).opacity) !== alpha)
+                throw new Error('negative control did not create wrapper opacity');
               material.style.setProperty('--_material-layer-opacity', '1');
             }
           });
