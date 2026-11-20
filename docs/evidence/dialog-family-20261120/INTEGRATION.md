@@ -18,6 +18,11 @@ Menu — Chromium и WebKit. Результаты находятся в `packed.
 и `docs/evidence/menu/packed.json`. Icons 0.4 в этих проверках установлен из
 точного CI tarball; публикацию в npm это не подтверждает.
 
+Итоговые проверки Colors: 263/263 и typecheck; Biome — 14 изменённых файлов.
+После commit исходников `ffed6ca1` каталог пересобран и `catalog:check` прошёл
+(47 families, 103 semantic source references). Adapter-codegen: 32/32;
+typecheck приложения документации также прошёл.
+
 ## Native CI 44694428312
 
 [Запуск](https://github.com/Labpics-Team/labui/actions/runs/44694428312) проверял
