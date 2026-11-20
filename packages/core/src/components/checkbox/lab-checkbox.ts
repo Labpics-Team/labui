@@ -88,7 +88,6 @@ export class LabCheckbox extends LabElement {
     :host { display: inline-flex; min-inline-size: 0; max-inline-size: 100%; vertical-align: middle; }
     :host([variant='card']), :host([variant='row']) { display: flex; }
     ::slotted([slot='label-start']) { min-inline-size: 0; overflow-wrap: anywhere; }
-    ::slotted([slot='icon']) { inline-size: 100%; block-size: 100%; }
     .lab-selection-label-start:has(slot:empty) { display: contents; }
   `,
   ];

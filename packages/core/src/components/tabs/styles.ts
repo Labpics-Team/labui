@@ -1,5 +1,6 @@
 import { shadowProfile } from '@labpics/ui-shadow';
 import { tabsProfile as p } from '@labpics/ui-tokens';
+import { slotSizeCss } from '../../slot-projection.js';
 
 const rem = (px: number) => `${px / 16}rem`;
 const role = (name: string) => `var(--lab-${name})`;
@@ -93,7 +94,7 @@ ${sizes}
   background: ${role(p.roles.indicator)}; box-shadow: ${activeShadow};
 }
 .lab-tabs-trigger > .lab-tabs-icon { display: inline-flex; flex: none; inline-size: var(--_tabs-icon); block-size: var(--_tabs-icon); }
-.lab-tabs-trigger > .lab-tabs-icon > * { inline-size: 100%; block-size: 100%; }
+${slotSizeCss('.lab-tabs-trigger > .lab-tabs-icon > *, .lab-tabs-trigger > .lab-tabs-icon ::slotted(*)', '100%', '100%')}
 .lab-tabs-trigger[data-icon-only] { --_tabs-icon: var(--_tabs-icon-only); }
 .lab-tabs-trigger[data-icon-only] > .lab-tabs-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 [data-lab-tabs][data-size="m"][data-variant="underlined"][data-orientation="horizontal"][data-edge="end"] > .lab-tabs-list > .lab-tabs-trigger[data-icon-only] {

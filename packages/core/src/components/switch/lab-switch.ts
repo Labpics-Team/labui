@@ -82,7 +82,6 @@ export class LabSwitch extends LabElement {
     :host { display: inline-flex; max-inline-size: 100%; min-inline-size: 0; vertical-align: middle; }
     .lab-switch-label-start { display: contents; }
     ::slotted([slot='label-start']) { min-inline-size: 0; max-inline-size: 100%; overflow-wrap: anywhere; }
-    ::slotted(svg), ::slotted(img), ::slotted(lab-icon) { inline-size: 100%; block-size: 100%; }
   `,
   ];
   protected override willUpdate(changed: PropertyValues): void {

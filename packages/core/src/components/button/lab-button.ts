@@ -35,10 +35,11 @@
  * loading), and optional attributes use `ifDefined`, so `@lit-labs/ssr` emits a
  * meaningful, styled `<button>` in the declarative shadow DOM before any JS.
  */
-import { type TemplateResult, css, html } from 'lit';
+import { type TemplateResult, css, html, unsafeCSS } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
+import { slotSizeCss } from '../../slot-projection.js';
 
 /** Semantic intent of the action. */
 export type LabButtonType = 'accent' | 'neutral' | 'danger';
@@ -315,11 +316,8 @@ export class LabButton extends LabElement {
     :host([type='accent'][kind='ghost']) slot[name='description'] {
       color: color-mix(in srgb, currentColor var(--_description-accent-plain), transparent);
     }
-    ::slotted([slot='icon']), ::slotted([slot='icon-end']) {
-      width: var(--_icon);
-      height: var(--_icon);
-      flex: none;
-    }
+    ${unsafeCSS(slotSizeCss("::slotted([slot='icon']), ::slotted([slot='icon-end'])", 'var(--_icon)', 'var(--_icon)'))}
+    ::slotted([slot='icon']), ::slotted([slot='icon-end']) { flex: none; }
 
 :host([type='accent']) { --_hover-fill: var(--lab-fill-brand-tertiary); --_pressed-fill: var(--lab-fill-brand-primary); --_rest-border: var(--lab-border-brand-soft); --_pressed-border: var(--lab-border-brand-base); }
 :host([type='neutral']) { --_hover-fill: var(--lab-fill-quaternary); --_pressed-fill: var(--lab-fill-tertiary); --_rest-border: var(--lab-border-soft); --_pressed-border: var(--lab-border-base); }

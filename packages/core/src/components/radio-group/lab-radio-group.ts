@@ -79,7 +79,6 @@ export class LabRadioGroup extends LabElement {
     unsafeCSS(selectionCss),
     css`
     :host { display: block; min-inline-size: 0; max-inline-size: 100%; }
-    ::slotted([slot^='icon-']) { inline-size: 100%; block-size: 100%; }
     .lab-selection-description { display: block; }
   `,
   ];

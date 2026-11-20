@@ -1,6 +1,7 @@
 import { materialCss } from '@labpics/ui-materials/css';
 import { type TemplateResult, css, html, nothing, unsafeCSS } from 'lit';
 import { LabElement } from '../../lit/lab-element.js';
+import { slotSizeCss } from '../../slot-projection.js';
 import { mountCardRuntime } from './runtime.js';
 import { cardCss } from './styles.js';
 
@@ -59,8 +60,9 @@ export class LabCard extends LabElement {
         border-start-start-radius: var(--_card-slotted-top-radius);
         border-start-end-radius: var(--_card-slotted-top-radius);
       }
-      ::slotted([slot='media']) { display: block; width: 100%; }
-      ::slotted(img[slot='media']) { height: auto; }
+      /* Media fills the card and keeps its natural aspect ratio. */
+      ${unsafeCSS(slotSizeCss("::slotted([slot='media'])", '100%', 'auto'))}
+      ::slotted([slot='media']) { display: block; }
     `,
   ];
 

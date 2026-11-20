@@ -59,7 +59,6 @@ export class LabSegmentedControl extends LabElement {
     unsafeCSS(segmentedCss),
     css`
     :host { display: block; min-inline-size: 0; max-inline-size: 100%; }
-    .lab-segment-icon ::slotted(*) { width: 100%; height: 100%; }
   `,
   ];
   get selectedValue(): string | null {

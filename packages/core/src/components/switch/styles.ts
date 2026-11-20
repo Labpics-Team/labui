@@ -1,5 +1,6 @@
 import { shadowProfile } from '@labpics/ui-shadow';
 import { switchProfile as p } from '@labpics/ui-tokens';
+import { slotSizeCss } from '../../slot-projection.js';
 
 const rem = (px: number): string => `${px / 16}rem`;
 const role = (name: string): string => `var(--lab-${name})`;
@@ -179,7 +180,7 @@ ${p.cutout.hideOnColoredPressed ? '[data-lab-switch][data-pressed]:not([data-app
   line-height: 1;
   pointer-events: none;
 }
-[data-lab-switch] .lab-switch-icon > :is(svg, img, lab-icon) { inline-size: 100%; block-size: 100%; }
+${slotSizeCss('[data-lab-switch] .lab-switch-icon > *, [data-lab-switch] .lab-switch-icon ::slotted(*)', '100%', '100%')}
 [data-lab-switch]:not([data-checked]) .lab-switch-icon-on,
 [data-lab-switch][data-checked] .lab-switch-icon-off { display: none; }
 [data-lab-switch] .lab-switch-label {

@@ -66,7 +66,6 @@ export class LabChip extends LabElement {
     unsafeCSS(chipCss),
     css`
     :host { display: inline-flex; max-inline-size: 100%; min-inline-size: 0; vertical-align: middle; }
-    ::slotted([slot='leading']) { inline-size: 100%; block-size: 100%; }
   `,
   ];
   protected override willUpdate(changed: PropertyValues): void {
