@@ -1618,6 +1618,34 @@
       "data": "M0 19.2C0 12.4794 0 9.11905 1.30792 6.55211C2.4584 4.29417 4.29417 2.4584 6.55211 1.30792C9.11905 0 12.4794 0 19.2 0L182.8 0C189.521 0 192.881 0 195.448 1.30792C197.706 2.4584 199.542 4.29417 200.692 6.55211C202 9.11905 202 12.4794 202 19.2L202 28.8C202 35.5206 202 38.8809 200.692 41.4479C199.542 43.7058 197.706 45.5416 195.448 46.6921C192.881 48 189.521 48 182.8 48L19.2 48C12.4794 48 9.11905 48 6.55211 46.6921C4.29417 45.5416 2.4584 43.7058 1.30792 41.4479C0 38.8809 0 35.5206 0 28.8L0 19.2Z"
     }
   },
+  "dialog": {
+    "sourceRef": {
+      "key": "component/Alert Dialog/Alert Dialog",
+      "readAt": "2026-11-20"
+    },
+    "intrinsicWidth": 480,
+    "radius": 24,
+    "padding": 36,
+    "contentGap": 36,
+    "labelGap": 12,
+    "actionGap": 8,
+    "strokeWidth": 1,
+    "viewportGap": 16,
+    "anchorGap": 8,
+    "actionMinInlineEm": 8,
+    "iconSize": 24,
+    "material": "elevated",
+    "heading": { "$textStyle": "headline-emphasized" },
+    "description": { "$textStyle": "body" },
+    "widths": { "s": 360, "m": 480, "l": 640 },
+    "popoverWidths": { "s": 240, "m": 320, "l": 400 },
+    "roles": {
+      "heading": "label-primary",
+      "description": "label-secondary",
+      "border": "border-base",
+      "scrim": "bg-overlay-base"
+    }
+  },
   "alert": {
     "sourceRef": {
       "key": "component-set/Alert/Alert",

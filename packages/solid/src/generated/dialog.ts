@@ -10,7 +10,7 @@ import '@labpics/ui-core/dialog';
 import type { LabDialog } from '@labpics/ui-core/dialog';
 
 /** Пропы <lab-dialog>, взятые прямо из класса ядра (LabDialog). */
-export type DialogProps = Pick<LabDialog, 'size' | 'modal' | 'closable' | 'heading' | 'description'>;
+export type DialogProps = Pick<LabDialog, 'open' | 'controlled' | 'size' | 'modal' | 'closable' | 'heading' | 'description' | 'closeLabel'>;
 
 /** <Dialog> — тонкая Solid-обёртка над <lab-dialog>. */
 export const Dialog: LabSolidComponent<DialogProps, 'open-change'> = createLabComponent<
@@ -18,11 +18,14 @@ export const Dialog: LabSolidComponent<DialogProps, 'open-change'> = createLabCo
   'open-change'
 >('lab-dialog', {
   specs: [
+    { name: 'open', attr: 'open', kind: 'boolean' },
+    { name: 'controlled', attr: 'controlled', kind: 'boolean' },
     { name: 'size', attr: 'size', kind: 'string' },
-    { name: 'modal', attr: 'modal', kind: 'string' },
-    { name: 'closable', attr: 'closable', kind: 'boolean' },
+    { name: 'modal', attr: 'modal', kind: 'prop' },
+    { name: 'closable', attr: 'closable', kind: 'prop' },
     { name: 'heading', attr: 'heading', kind: 'string' },
     { name: 'description', attr: 'description', kind: 'string' },
+    { name: 'closeLabel', attr: 'close-label', kind: 'string' },
   ],
   events: ['open-change'],
 });

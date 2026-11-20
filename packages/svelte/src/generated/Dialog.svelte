@@ -13,39 +13,47 @@
 
   /** Пропы <lab-dialog> — типы взяты прямо из класса ядра (LabDialog). */
   interface Props {
+    open?: LabDialog['open'];
+    controlled?: LabDialog['controlled'];
     size?: LabDialog['size'];
     modal?: LabDialog['modal'];
     closable?: LabDialog['closable'];
     heading?: LabDialog['heading'];
     description?: LabDialog['description'];
+    closeLabel?: LabDialog['closeLabel'];
     onOpenChange?: (event: CustomEvent) => void;
+    actions?: Snippet;
     content?: Snippet;
+    trigger?: Snippet;
     children?: Snippet;
     slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description, onOpenChange, children, slots, content: slot_content, ...rest }: Props = $props();
+  let { open: prop_open, controlled: prop_controlled, size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description, closeLabel: prop_closeLabel, onOpenChange, children, slots, actions: slot_actions, content: slot_content, trigger: slot_trigger, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
+    { name: 'open', attr: 'open', kind: 'boolean' },
+    { name: 'controlled', attr: 'controlled', kind: 'boolean' },
     { name: 'size', attr: 'size', kind: 'string' },
-    { name: 'modal', attr: 'modal', kind: 'string' },
-    { name: 'closable', attr: 'closable', kind: 'boolean' },
+    { name: 'modal', attr: 'modal', kind: 'prop' },
+    { name: 'closable', attr: 'closable', kind: 'prop' },
     { name: 'heading', attr: 'heading', kind: 'string' },
     { name: 'description', attr: 'description', kind: 'string' },
+    { name: 'closeLabel', attr: 'close-label', kind: 'string' },
   ];
 
   const server = untrack(() => renderElementParts('lab-dialog', {
-    specs, props: { size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description }, attributes: rest,
+    specs, props: { open: prop_open, controlled: prop_controlled, size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description, closeLabel: prop_closeLabel }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'content': slot_content, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'actions': slot_actions, 'content': slot_content, 'trigger': slot_trigger, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
 </script>
 
-<lab-dialog bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description } } }}>
+<lab-dialog bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { open: prop_open, controlled: prop_controlled, size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description, closeLabel: prop_closeLabel } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

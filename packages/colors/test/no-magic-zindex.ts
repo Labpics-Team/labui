@@ -252,7 +252,7 @@ export function scanZIndexSource(
  * (materialsZIndexLiterals: изолированные плоскости тени, paint, rim и stroke),
  * и её стережёт отдельный тест списком, а не поверхностный скан.
  */
-function zSurfaceFiles(): string[] {
+export function zSurfaceFiles(): string[] {
   return fallbackSurfaceFiles().filter((rel) => !rel.startsWith('packages/materials/'));
 }
 
@@ -309,11 +309,12 @@ export function cssArtifactSources(source: string): Map<string, string> {
       node.expression.text === 'writeFileSync'
     ) {
       const [target, value] = node.arguments;
-      if (target && value && ts.isCallExpression(target) && ts.isIdentifier(value)) {
+      const binding = value && (ts.isCallExpression(value) ? value.expression : value);
+      if (target && binding && ts.isCallExpression(target) && ts.isIdentifier(binding)) {
         const filename = target.arguments.find(
           (part) => ts.isStringLiteral(part) && part.text.endsWith('.css'),
         );
-        const imported = bindings.get(value.text);
+        const imported = bindings.get(binding.text);
         if (filename && ts.isStringLiteral(filename) && imported)
           artifacts.set(filename.text, imported);
       }

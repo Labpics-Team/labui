@@ -82,13 +82,10 @@ export {
 } from './accordion.js';
 export { Progress, type ProgressProps } from './progress.js';
 
-// POSITIONED OVERLAYS — native-React twins of the Lit `<lab-tooltip>` /
-// `<lab-popover>`, running the SAME `@zag-js/{tooltip,popover}` machines via `useZag`.
+// Positioned surfaces share their browser runtime with Lit.
 export { Tooltip, type TooltipProps } from './tooltip.js';
 export { Popover, type PopoverProps } from './popover.js';
-// MODAL OVERLAYS — native-React twins of the Lit `<lab-dialog>` / `<lab-alert-dialog>`,
-// running the SAME `@zag-js/dialog` machine via `useZag`. The floating layer is portalled
-// to <body> so the modal focus-trap contains the dialog body with no caveat.
+// Modal surfaces keep consumer DOM in place and use the browser top layer.
 export { Dialog, type DialogProps } from './dialog.js';
 export { AlertDialog, type AlertDialogProps } from './alert-dialog.js';
 // PRODUCTION navigation — native-React twins of the Lit `<lab-tabs>` /

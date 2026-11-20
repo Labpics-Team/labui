@@ -45,6 +45,23 @@ export function slotSizeCss(selector: string, inlineSize: string, blockSize?: st
   });
 }
 
+/** A named adapter slot may contain framework-owned projection fragments.
+ * Resolve their roots without moving nodes or walking inside actual controls.
+ */
+export function projectedSlotNodes(slot: HTMLSlotElement | null): Node[] {
+  const roots = (node: Node): Node[] =>
+    node instanceof Element && node.localName === 'lab-slot'
+      ? Array.from(node.childNodes)
+          .filter((child) => !(child instanceof Element) || child.localName !== 'template')
+          .flatMap(roots)
+      : [node];
+  return (slot?.assignedNodes({ flatten: true }) ?? []).flatMap(roots);
+}
+
+export function projectedSlotElements(slot: HTMLSlotElement | null): Element[] {
+  return projectedSlotNodes(slot).filter((node): node is Element => node instanceof Element);
+}
+
 /** Called by a receiving element, after the browser/SSR environment exists. */
 export function ensureSlotProjection(): void {
   if (typeof customElements === 'undefined' || customElements.get('lab-slot')) return;

@@ -4,6 +4,8 @@ import { composedAncestors } from './focus.js';
 export interface NativeDialogOptions {
   content(): HTMLElement | null;
   trigger(): HTMLElement | null;
+  initialFocus?(): HTMLElement | null;
+  dismissOnOutside?(): boolean;
   onDismiss(): void;
 }
 
@@ -53,6 +55,8 @@ export function mountNativeDialog(
   let requestedOpen = false;
   let unlock: (() => void) | undefined;
   let outsidePointer: number | undefined;
+  let composing = false;
+  let composingEscape = false;
   const listeners = new AbortController();
   const eventOptions = { signal: listeners.signal };
   const boundaries = dialogBoundaries.get(dialog.ownerDocument) ?? new Set<DialogBoundary>();
@@ -108,15 +112,37 @@ export function mountNativeDialog(
     'cancel',
     (event) => {
       event.preventDefault();
-      dismiss();
+      const fromComposition = composing || composingEscape;
+      composingEscape = false;
+      if (!fromComposition) dismiss();
     },
     eventOptions,
   );
+  dialog.addEventListener(
+    'compositionstart',
+    () => {
+      composing = true;
+    },
+    eventOptions,
+  );
+  dialog.addEventListener(
+    'compositionend',
+    () => {
+      composing = false;
+    },
+    eventOptions,
+  );
+  // WebKit can issue a native cancel as the default action of a composing
+  // Escape, deferred beyond timers. Leave the IME key untouched and consume
+  // only that close request; the next user interaction replaces this intent.
   // Non-modal popovers do not receive the native dialog cancel event.
   dialog.addEventListener(
     'keydown',
     (event) => {
-      if (!currentModal && event.key === 'Escape' && !event.defaultPrevented) {
+      composingEscape =
+        event.key === 'Escape' && (composing || event.isComposing || event.keyCode === 229);
+      if (event.key !== 'Escape') return;
+      if (!currentModal && !event.defaultPrevented && !composingEscape) {
         event.preventDefault();
         dismiss();
       }
@@ -126,6 +152,7 @@ export function mountNativeDialog(
   dialog.ownerDocument.addEventListener(
     'pointerdown',
     (event) => {
+      composingEscape = false;
       if (!dialog.open || (currentModal && !event.composedPath().includes(dialog))) return;
       const trigger = options.trigger();
       outsidePointer =
@@ -143,7 +170,7 @@ export function mountNativeDialog(
     (event) => {
       const outside = event.pointerId === outsidePointer && isOutside(event);
       outsidePointer = undefined;
-      if (outside) dismiss();
+      if (outside && options.dismissOnOutside?.() !== false) dismiss();
     },
     eventOptions,
   );
@@ -177,6 +204,8 @@ export function mountNativeDialog(
   );
 
   function close(restore: boolean): void {
+    composingEscape = false;
+    composing = false;
     const wasPresent = dialog.open || !!unlock;
     const restoreFocus = shouldRestoreFocus();
     closeDescendants();
@@ -214,6 +243,7 @@ export function mountNativeDialog(
         dialog.show();
         dialog.showPopover();
       }
+      options.initialFocus?.()?.focus({ preventScroll: true });
     },
     dispose() {
       if (disposed) return;

@@ -252,11 +252,11 @@ export class LabButton extends LabElement {
 
     /* ── type=neutral ──────────────────────────────────────────────────── */
     :host([type='neutral'][kind='fill']) button {
-      background-color: ${litVar('--lab-fill-neutral')};
-      color: ${litVar('--lab-label-on-neutral')};
+      background-color: ${litVar('--lab-button-fill-neutral')};
+      color: ${litVar('--lab-button-label-on-neutral')};
     }
     :host([type='neutral'][kind='tinted']) button {
-      background-color: ${litVar('--lab-fill-primary')};
+      background-color: ${litVar('--lab-button-tint-neutral')};
       color: ${litVar('--lab-label-primary')};
     }
     :host([type='neutral'][kind='border']) button {
@@ -338,6 +338,7 @@ export class LabButton extends LabElement {
     :host([type][kind='border']) button:disabled,
     :host([type][kind='ghost']) button:disabled { background-color: transparent; }
     :host([type][kind='border']) button:disabled { border-color: var(--lab-border-soft); }
+    :host([type='neutral'][kind='fill']) slot[name='description'] { color: var(--lab-button-description-on-neutral); }
     :host([type='neutral']:not([kind='fill'])) slot[name='description'] { color: var(--lab-label-secondary); }
     :host([type][kind]) button:disabled slot[name='description'] { color: inherit; }
 

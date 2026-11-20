@@ -10,6 +10,7 @@ import {
   scanZIndexSource,
   scanZIndexSurface,
   zLevelsByComponent,
+  zSurfaceFiles,
 } from './no-magic-zindex.js';
 
 /**
@@ -175,7 +176,8 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
     const { core, react } = zLevelsByComponent();
     const shared = [...core.keys()].filter((name) => react.has(name)).sort();
     // Shared stylesheets include Select and Sheet, even without a React-local CSS file.
-    expect(shared).toEqual(['combobox', 'dialog', 'menu', 'popover', 'select', 'sheet', 'tooltip']);
+    // Dialog/Popover use the browser top layer; they have no numeric z layer.
+    expect(shared).toEqual(['combobox', 'menu', 'select', 'sheet', 'tooltip']);
     for (const name of shared) {
       const coreSet = [...(core.get(name) as Set<string>)].sort();
       const reactSet = [...(react.get(name) as Set<string>)].sort();
@@ -188,9 +190,13 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
       ...cssArtifactSources(`
       import { sharedCss as paint } from '../src/components/field/appearance.js';
       writeFileSync(join(dist, 'choice.css'), paint);
+      writeFileSync(join(dist, 'called.css'), paint('.control'));
       writeFileSync(join(dist, 'ignored.json'), paint);
     `),
-    ]).toEqual([['choice.css', '../src/components/field/appearance.js']]);
+    ]).toEqual([
+      ['choice.css', '../src/components/field/appearance.js'],
+      ['called.css', '../src/components/field/appearance.js'],
+    ]);
     const { core, react } = zLevelsByComponent();
     expect([...(core.get('select') ?? [])]).toEqual(['--lab-z-dropdown']);
     expect([...(react.get('select') ?? [])]).toEqual(['--lab-z-dropdown']);
@@ -203,15 +209,18 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
   // ── (7) Доказательство скоупа — поверхность накрывает реальные компонент-файлы
   // (устаревший/суженный список = тихая дыра, как в MIGRATED-гарде).
   it('the enforced surface covers the real floating-layer component files', () => {
-    // Взгляд «в лоб»: если бы поверхность не читала dialog, пронос бы не поймали.
-    const dialogCore = readFileSync(
-      resolve(repoRoot, 'packages/core/src/components/dialog/lab-dialog.ts'),
-      'utf8',
-    );
-    expect(dialogCore).toContain("litVar('--lab-z-modal', '1200')");
-    const { core, react } = zLevelsByComponent();
-    expect(core.has('dialog')).toBe(true);
-    expect(react.has('dialog')).toBe(true);
+    const files = zSurfaceFiles();
+    for (const file of [
+      'packages/core/src/components/dialog/styles.ts',
+      'packages/react/src/dialog.tsx',
+    ]) {
+      expect(files).toContain(file);
+      // Mutation still fails when a top-layer component adds a numeric layer.
+      const source = readFileSync(resolve(repoRoot, file), 'utf8');
+      expect(
+        scanZIndexSource(file, `${source}\nconst accidental = css\`.overlay { z-index: 9999; }\`;`),
+      ).toMatchObject([{ rule: 'magic-zindex' }]);
+    }
   });
 
   // ── (8) Приватный стек материалов: тень -3, paint -2, rim -1, inside stroke 2.

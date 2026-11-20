@@ -66,6 +66,28 @@
         }
       }
     },
+    "headline-emphasized": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Geist",
+        "fontSize": {
+          "value": 20,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "letterSpacing": {
+          "value": -0.33,
+          "unit": "px"
+        },
+        "lineHeight": 1
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "sourceNode": "6109:3684",
+          "sourceTextStyle": "S:cbd7d07e3ad5eeafeec093667b7c00ec6110d854,"
+        }
+      }
+    },
     "caption-xs": {
       "$type": "typography",
       "$value": {

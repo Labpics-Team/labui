@@ -1,0 +1,134 @@
+{
+  "archives": [
+    {
+      "name": "labpics-ui-tokens-0.0.0.tgz",
+      "sha256": "9ad4f18a591d356af4cbf123fceed44c83be7a1d53b9fd5bf84267c1cb9de772"
+    },
+    {
+      "name": "labpics-ui-shadow-0.0.0.tgz",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "labpics-ui-materials-0.0.0.tgz",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "labpics-fonts-0.0.0.tgz",
+      "sha256": "d0d46708a7b04e7fca9900afc5735ca7a72fa5ae1082787ea603199b632b2fef"
+    },
+    {
+      "name": "labui-colors-0.0.0.tgz",
+      "sha256": "ff4932ea0345992005afb8c651a8154dbcc1170b5e7f9e6dda3cd484804d7e4b"
+    },
+    {
+      "name": "labpics-ui-core-0.0.0.tgz",
+      "sha256": "d29ebc2232bd958eaa36934d59b23d8b3951af6fb277d28e4da46e61e9aaf05d"
+    },
+    {
+      "name": "labpics-ui-react-0.0.0.tgz",
+      "sha256": "3009874359e5cc47192a89a8efed178772f9c8a570b882fda9588ed41e3ad4c5"
+    },
+    {
+      "name": "labpics-ui-vue-0.0.0.tgz",
+      "sha256": "33d9e0c11babc40920736c09f8589cae644ee50b492ca140e906e8a84dfd2e60"
+    },
+    {
+      "name": "labpics-ui-solid-0.0.0.tgz",
+      "sha256": "86c62c2cdf51507d27baccd7470854d085815a7e82be88ed9ff52e3a805b4f0a"
+    },
+    {
+      "name": "labpics-ui-svelte-0.0.0.tgz",
+      "sha256": "22ebecb2d27d686cb5d59169b6bc80038ec6161a4e9e7b07d26e7e1c80ffa831"
+    },
+    {
+      "name": "labpics-ui-astro-0.0.0.tgz",
+      "sha256": "c279e4bb1a01139908fa85634bc7244613639fd27b6e32e757b540d00c8867d7"
+    },
+    {
+      "name": "icons.tgz",
+      "sha256": "d4962b817d19431393131f0aebb5d70f745e103e4062a6003a52926a8362c3bb"
+    }
+  ],
+  "checks": [
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "hydration": true,
+      "drafts": true,
+      "confirmation": true,
+      "popover": true
+    },
+    {
+      "engine": "chromium",
+      "renderer": "vue",
+      "hydration": true,
+      "drafts": true,
+      "confirmation": true,
+      "popover": true
+    },
+    {
+      "engine": "chromium",
+      "renderer": "solid",
+      "hydration": true,
+      "drafts": true,
+      "confirmation": true,
+      "popover": true
+    },
+    {
+      "engine": "chromium",
+      "renderer": "svelte",
+      "hydration": true,
+      "drafts": true,
+      "confirmation": true,
+      "popover": true
+    },
+    {
+      "engine": "chromium",
+      "renderer": "astro",
+      "hydration": true,
+      "drafts": true,
+      "confirmation": true,
+      "popover": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "hydration": true,
+      "drafts": true,
+      "confirmation": true,
+      "popover": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "vue",
+      "hydration": true,
+      "drafts": true,
+      "confirmation": true,
+      "popover": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "solid",
+      "hydration": true,
+      "drafts": true,
+      "confirmation": true,
+      "popover": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "svelte",
+      "hydration": true,
+      "drafts": true,
+      "confirmation": true,
+      "popover": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "astro",
+      "hydration": true,
+      "drafts": true,
+      "confirmation": true,
+      "popover": true
+    }
+  ]
+}

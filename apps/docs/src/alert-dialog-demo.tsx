@@ -23,17 +23,8 @@ createRoot(mount).render(
       <AlertDialog
         heading="Delete this item?"
         description="This action cannot be undone."
-        closable
-        content={
-          <>
-            <button type="button" data-testid="react-alert-confirm">
-              Delete
-            </button>
-            <button type="button" data-testid="react-alert-cancel">
-              Cancel
-            </button>
-          </>
-        }
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
       >
         Delete item
       </AlertDialog>

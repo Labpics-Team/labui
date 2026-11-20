@@ -13,43 +13,51 @@
 
   /** Пропы <lab-popover> — типы взяты прямо из класса ядра (LabPopover). */
   interface Props {
-    placement?: LabPopover['placement'];
+    open?: LabPopover['open'];
+    controlled?: LabPopover['controlled'];
     size?: LabPopover['size'];
     modal?: LabPopover['modal'];
     closable?: LabPopover['closable'];
-    arrow?: LabPopover['arrow'];
     heading?: LabPopover['heading'];
     description?: LabPopover['description'];
+    closeLabel?: LabPopover['closeLabel'];
+    placement?: LabPopover['placement'];
+    arrow?: LabPopover['arrow'];
     onOpenChange?: (event: CustomEvent) => void;
+    actions?: Snippet;
     content?: Snippet;
+    trigger?: Snippet;
     children?: Snippet;
     slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { placement: prop_placement, size: prop_size, modal: prop_modal, closable: prop_closable, arrow: prop_arrow, heading: prop_heading, description: prop_description, onOpenChange, children, slots, content: slot_content, ...rest }: Props = $props();
+  let { open: prop_open, controlled: prop_controlled, size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description, closeLabel: prop_closeLabel, placement: prop_placement, arrow: prop_arrow, onOpenChange, children, slots, actions: slot_actions, content: slot_content, trigger: slot_trigger, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
-    { name: 'placement', attr: 'placement', kind: 'string' },
+    { name: 'open', attr: 'open', kind: 'boolean' },
+    { name: 'controlled', attr: 'controlled', kind: 'boolean' },
     { name: 'size', attr: 'size', kind: 'string' },
-    { name: 'modal', attr: 'modal', kind: 'boolean' },
-    { name: 'closable', attr: 'closable', kind: 'boolean' },
-    { name: 'arrow', attr: 'arrow', kind: 'boolean' },
+    { name: 'modal', attr: 'modal', kind: 'prop' },
+    { name: 'closable', attr: 'closable', kind: 'prop' },
     { name: 'heading', attr: 'heading', kind: 'string' },
     { name: 'description', attr: 'description', kind: 'string' },
+    { name: 'closeLabel', attr: 'close-label', kind: 'string' },
+    { name: 'placement', attr: 'placement', kind: 'string' },
+    { name: 'arrow', attr: 'arrow', kind: 'prop' },
   ];
 
   const server = untrack(() => renderElementParts('lab-popover', {
-    specs, props: { placement: prop_placement, size: prop_size, modal: prop_modal, closable: prop_closable, arrow: prop_arrow, heading: prop_heading, description: prop_description }, attributes: rest,
+    specs, props: { open: prop_open, controlled: prop_controlled, size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description, closeLabel: prop_closeLabel, placement: prop_placement, arrow: prop_arrow }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'content': slot_content, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'actions': slot_actions, 'content': slot_content, 'trigger': slot_trigger, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
 </script>
 
-<lab-popover bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { placement: prop_placement, size: prop_size, modal: prop_modal, closable: prop_closable, arrow: prop_arrow, heading: prop_heading, description: prop_description } } }}>
+<lab-popover bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { open: prop_open, controlled: prop_controlled, size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description, closeLabel: prop_closeLabel, placement: prop_placement, arrow: prop_arrow } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

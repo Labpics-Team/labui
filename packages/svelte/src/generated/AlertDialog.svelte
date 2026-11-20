@@ -13,39 +13,55 @@
 
   /** Пропы <lab-alert-dialog> — типы взяты прямо из класса ядра (LabAlertDialog). */
   interface Props {
+    open?: LabAlertDialog['open'];
+    controlled?: LabAlertDialog['controlled'];
     size?: LabAlertDialog['size'];
     modal?: LabAlertDialog['modal'];
     closable?: LabAlertDialog['closable'];
     heading?: LabAlertDialog['heading'];
     description?: LabAlertDialog['description'];
+    closeLabel?: LabAlertDialog['closeLabel'];
+    confirmLabel?: LabAlertDialog['confirmLabel'];
+    cancelLabel?: LabAlertDialog['cancelLabel'];
+    pending?: LabAlertDialog['pending'];
+    onCancel?: (event: CustomEvent) => void;
+    onConfirm?: (event: CustomEvent) => void;
     onOpenChange?: (event: CustomEvent) => void;
+    actions?: Snippet;
     content?: Snippet;
+    trigger?: Snippet;
     children?: Snippet;
     slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description, onOpenChange, children, slots, content: slot_content, ...rest }: Props = $props();
+  let { open: prop_open, controlled: prop_controlled, size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description, closeLabel: prop_closeLabel, confirmLabel: prop_confirmLabel, cancelLabel: prop_cancelLabel, pending: prop_pending, onCancel, onConfirm, onOpenChange, children, slots, actions: slot_actions, content: slot_content, trigger: slot_trigger, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
+    { name: 'open', attr: 'open', kind: 'boolean' },
+    { name: 'controlled', attr: 'controlled', kind: 'boolean' },
     { name: 'size', attr: 'size', kind: 'string' },
-    { name: 'modal', attr: 'modal', kind: 'string' },
-    { name: 'closable', attr: 'closable', kind: 'boolean' },
+    { name: 'modal', attr: 'modal', kind: 'prop' },
+    { name: 'closable', attr: 'closable', kind: 'prop' },
     { name: 'heading', attr: 'heading', kind: 'string' },
     { name: 'description', attr: 'description', kind: 'string' },
+    { name: 'closeLabel', attr: 'close-label', kind: 'string' },
+    { name: 'confirmLabel', attr: 'confirm-label', kind: 'string' },
+    { name: 'cancelLabel', attr: 'cancel-label', kind: 'string' },
+    { name: 'pending', attr: 'pending', kind: 'boolean' },
   ];
 
   const server = untrack(() => renderElementParts('lab-alert-dialog', {
-    specs, props: { size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description }, attributes: rest,
+    specs, props: { open: prop_open, controlled: prop_controlled, size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description, closeLabel: prop_closeLabel, confirmLabel: prop_confirmLabel, cancelLabel: prop_cancelLabel, pending: prop_pending }, attributes: rest,
   }));
-  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'content': slot_content, ...slots });
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'actions': slot_actions, 'content': slot_content, 'trigger': slot_trigger, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
+  $effect(() => forwardEvents(el, { 'cancel': onCancel, 'confirm': onConfirm, 'open-change': onOpenChange }));
 </script>
 
-<lab-alert-dialog bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description } } }}>
+<lab-alert-dialog bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { open: prop_open, controlled: prop_controlled, size: prop_size, modal: prop_modal, closable: prop_closable, heading: prop_heading, description: prop_description, closeLabel: prop_closeLabel, confirmLabel: prop_confirmLabel, cancelLabel: prop_cancelLabel, pending: prop_pending } } }}>
   {@html server?.shadowHtml ?? ''}
   {@render children?.()}
   {#each Object.entries(namedContent) as [name, content] (name)}

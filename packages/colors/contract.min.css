@@ -122,6 +122,9 @@
   --lab-fx-glow-info-subtle-core: rgb(62 135 255);
   --lab-fx-glow-info-bloom: rgb(62 135 255 / 0.522);
   --lab-fx-glow-info-bloom-core: rgb(62 135 255);
+  --lab-button-fill-neutral: rgb(16 16 18);
+  --lab-button-label-on-neutral: rgb(255 255 255);
+  --lab-button-description-on-neutral: rgb(176 176 185 / 0.72);
   --lab-bg-material-base-01: rgb(153 153 153 / 0.96);
   --lab-bg-material-base-02: rgb(92 92 92);
   --lab-bg-material-elevated-01: rgb(255 255 255 / 0.8);
@@ -166,6 +169,7 @@
   --lab-label-on-neutral: rgb(16 16 18);
   --lab-fx-control-inner: rgb(16 16 18 / 0.12);
   --lab-fx-skeleton-base: rgb(120 120 128 / 0.08);
+  --lab-button-tint-neutral: rgb(120 120 128 / 0.12);
   --lab-badge-base-primary: rgb(16 16 18);
   --lab-badge-base-inverted: rgb(255 255 255);
   --lab-badge-base-secondary: rgb(60 60 67 / 0.72);
@@ -427,6 +431,9 @@
   --lab-fx-glow-info-subtle-core: rgb(86 150 255);
   --lab-fx-glow-info-bloom: rgb(86 150 255 / 0.522);
   --lab-fx-glow-info-bloom-core: rgb(86 150 255);
+  --lab-button-fill-neutral: rgb(246 248 250);
+  --lab-button-label-on-neutral: rgb(16 16 18);
+  --lab-button-description-on-neutral: rgb(60 60 67 / 0.72);
   --lab-bg-material-base-01: rgb(37 37 37 / 0.92);
   --lab-bg-material-base-02: rgb(124 124 124);
   --lab-bg-material-elevated-01: rgb(130 130 130 / 0.8);
@@ -471,6 +478,7 @@
   --lab-label-on-neutral: rgb(246 248 250);
   --lab-fx-control-inner: rgb(16 16 18 / 0.2);
   --lab-fx-skeleton-base: rgb(120 120 128 / 0.12);
+  --lab-button-tint-neutral: rgb(120 120 128 / 0.24);
   --lab-badge-base-primary: rgb(246 248 250);
   --lab-badge-base-inverted: rgb(16 16 18);
   --lab-badge-base-secondary: rgb(176 176 185 / 0.72);
@@ -733,6 +741,9 @@
   --lab-fx-glow-info-subtle-core: rgb(86 150 255);
   --lab-fx-glow-info-bloom: rgb(86 150 255 / 0.522);
   --lab-fx-glow-info-bloom-core: rgb(86 150 255);
+  --lab-button-fill-neutral: rgb(246 248 250);
+  --lab-button-label-on-neutral: rgb(16 16 18);
+  --lab-button-description-on-neutral: rgb(60 60 67 / 0.72);
   --lab-bg-material-base-01: rgb(37 37 37 / 0.92);
   --lab-bg-material-base-02: rgb(124 124 124);
   --lab-bg-material-elevated-01: rgb(130 130 130 / 0.8);
@@ -777,6 +788,7 @@
   --lab-label-on-neutral: rgb(246 248 250);
   --lab-fx-control-inner: rgb(16 16 18 / 0.2);
   --lab-fx-skeleton-base: rgb(120 120 128 / 0.12);
+  --lab-button-tint-neutral: rgb(120 120 128 / 0.24);
   --lab-badge-base-primary: rgb(246 248 250);
   --lab-badge-base-inverted: rgb(16 16 18);
   --lab-badge-base-secondary: rgb(176 176 185 / 0.72);
@@ -1040,6 +1052,9 @@
   --lab-fx-glow-info-subtle-core: rgb(62 135 255);
   --lab-fx-glow-info-bloom: rgb(62 135 255 / 0.522);
   --lab-fx-glow-info-bloom-core: rgb(62 135 255);
+  --lab-button-fill-neutral: rgb(0 0 0);
+  --lab-button-label-on-neutral: rgb(255 255 255);
+  --lab-button-description-on-neutral: rgb(196 197 205);
   --lab-bg-material-base-01: rgb(153 153 153 / 0.96);
   --lab-bg-material-base-02: rgb(92 92 92);
   --lab-bg-material-elevated-01: rgb(255 255 255 / 0.8);
@@ -1080,6 +1095,7 @@
   --lab-label-on-neutral: rgb(16 16 18);
   --lab-fx-control-inner: rgb(16 16 18 / 0.12);
   --lab-fx-skeleton-base: rgb(114 114 122 / 0.12);
+  --lab-button-tint-neutral: rgb(114 114 122 / 0.2);
   --lab-badge-base-primary: rgb(0 0 0);
   --lab-badge-base-inverted: rgb(255 255 255);
   --lab-badge-base-secondary: rgb(53 53 60);
@@ -1345,6 +1361,9 @@
   --lab-fx-glow-info-subtle-core: rgb(86 150 255);
   --lab-fx-glow-info-bloom: rgb(86 150 255 / 0.522);
   --lab-fx-glow-info-bloom-core: rgb(86 150 255);
+  --lab-button-fill-neutral: rgb(255 255 255);
+  --lab-button-label-on-neutral: rgb(0 0 0);
+  --lab-button-description-on-neutral: rgb(53 53 60);
   --lab-bg-material-base-01: rgb(37 37 37 / 0.92);
   --lab-bg-material-base-02: rgb(124 124 124);
   --lab-bg-material-elevated-01: rgb(130 130 130 / 0.8);
@@ -1385,6 +1404,7 @@
   --lab-label-on-neutral: rgb(246 248 250);
   --lab-fx-control-inner: rgb(16 16 18 / 0.2);
   --lab-fx-skeleton-base: rgb(114 114 122 / 0.16);
+  --lab-button-tint-neutral: rgb(114 114 122 / 0.32);
   --lab-badge-base-primary: rgb(255 255 255);
   --lab-badge-base-inverted: rgb(0 0 0);
   --lab-badge-base-secondary: rgb(196 197 205);
@@ -1651,6 +1671,9 @@
   --lab-fx-glow-info-subtle-core: rgb(86 150 255);
   --lab-fx-glow-info-bloom: rgb(86 150 255 / 0.522);
   --lab-fx-glow-info-bloom-core: rgb(86 150 255);
+  --lab-button-fill-neutral: rgb(255 255 255);
+  --lab-button-label-on-neutral: rgb(0 0 0);
+  --lab-button-description-on-neutral: rgb(53 53 60);
   --lab-bg-material-base-01: rgb(37 37 37 / 0.92);
   --lab-bg-material-base-02: rgb(124 124 124);
   --lab-bg-material-elevated-01: rgb(130 130 130 / 0.8);
@@ -1691,6 +1714,7 @@
   --lab-label-on-neutral: rgb(246 248 250);
   --lab-fx-control-inner: rgb(16 16 18 / 0.2);
   --lab-fx-skeleton-base: rgb(114 114 122 / 0.16);
+  --lab-button-tint-neutral: rgb(114 114 122 / 0.32);
   --lab-badge-base-primary: rgb(255 255 255);
   --lab-badge-base-inverted: rgb(0 0 0);
   --lab-badge-base-secondary: rgb(196 197 205);

@@ -187,6 +187,14 @@
         "light": [114, 114, 122],
         "dark": [114, 114, 122]
       }
+    },
+    "neutral-4": {
+      "light": [176, 176, 185],
+      "dark": [60, 60, 67],
+      "increased": {
+        "light": [196, 197, 205],
+        "dark": [53, 53, 60]
+      }
     }
   },
   "roles": {
@@ -542,9 +550,21 @@
       "anchor": "paper",
       "opacity": 1
     },
-    "slider-track": { "anchor": "brand", "opacity": 0.12, "increasedOpacity": 0.32 },
-    "slider-large-track": { "anchor": "blue", "opacity": 0.12, "increasedOpacity": 0.24 },
-    "slider-large-label": { "anchor": "brand", "opacity": 0.32, "increasedOpacity": 1 },
+    "slider-track": {
+      "anchor": "brand",
+      "opacity": 0.12,
+      "increasedOpacity": 0.32
+    },
+    "slider-large-track": {
+      "anchor": "blue",
+      "opacity": 0.12,
+      "increasedOpacity": 0.24
+    },
+    "slider-large-label": {
+      "anchor": "brand",
+      "opacity": 0.32,
+      "increasedOpacity": 1
+    },
     "fill-accent": "@border-brand-strong",
     "fill-danger": "@border-danger-strong",
     "fill-accent-tinted": "@fill-brand-primary",
@@ -696,6 +716,21 @@
     "fx-glow-info-bloom-core": {
       "anchor": "info",
       "opacity": 1
+    },
+    "button-fill-neutral": {
+      "anchor": "neutral-12",
+      "opacity": 1,
+      "increasedOpacity": 1
+    },
+    "button-label-on-neutral": {
+      "anchor": "neutral-0",
+      "opacity": 1,
+      "increasedOpacity": 1
+    },
+    "button-description-on-neutral": {
+      "anchor": "neutral-4",
+      "opacity": 0.72,
+      "increasedOpacity": 1
     }
   },
   "themes": {
@@ -894,6 +929,11 @@
         "anchor": "skeleton-neutral",
         "opacity": 0.08,
         "increasedOpacity": 0.12
+      },
+      "button-tint-neutral": {
+        "anchor": "neutral-6",
+        "opacity": 0.12,
+        "increasedOpacity": 0.2
       }
     },
     "dark": {
@@ -1091,6 +1131,11 @@
         "anchor": "skeleton-neutral",
         "opacity": 0.12,
         "increasedOpacity": 0.16
+      },
+      "button-tint-neutral": {
+        "anchor": "neutral-6",
+        "opacity": 0.24,
+        "increasedOpacity": 0.32
       }
     }
   },

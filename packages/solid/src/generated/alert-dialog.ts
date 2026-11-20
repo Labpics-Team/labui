@@ -10,19 +10,25 @@ import '@labpics/ui-core/alert-dialog';
 import type { LabAlertDialog } from '@labpics/ui-core/alert-dialog';
 
 /** Пропы <lab-alert-dialog>, взятые прямо из класса ядра (LabAlertDialog). */
-export type AlertDialogProps = Pick<LabAlertDialog, 'size' | 'modal' | 'closable' | 'heading' | 'description'>;
+export type AlertDialogProps = Pick<LabAlertDialog, 'open' | 'controlled' | 'size' | 'modal' | 'closable' | 'heading' | 'description' | 'closeLabel' | 'confirmLabel' | 'cancelLabel' | 'pending'>;
 
 /** <AlertDialog> — тонкая Solid-обёртка над <lab-alert-dialog>. */
-export const AlertDialog: LabSolidComponent<AlertDialogProps, 'open-change'> = createLabComponent<
+export const AlertDialog: LabSolidComponent<AlertDialogProps, 'cancel' | 'confirm' | 'open-change'> = createLabComponent<
   AlertDialogProps,
-  'open-change'
+  'cancel' | 'confirm' | 'open-change'
 >('lab-alert-dialog', {
   specs: [
+    { name: 'open', attr: 'open', kind: 'boolean' },
+    { name: 'controlled', attr: 'controlled', kind: 'boolean' },
     { name: 'size', attr: 'size', kind: 'string' },
-    { name: 'modal', attr: 'modal', kind: 'string' },
-    { name: 'closable', attr: 'closable', kind: 'boolean' },
+    { name: 'modal', attr: 'modal', kind: 'prop' },
+    { name: 'closable', attr: 'closable', kind: 'prop' },
     { name: 'heading', attr: 'heading', kind: 'string' },
     { name: 'description', attr: 'description', kind: 'string' },
+    { name: 'closeLabel', attr: 'close-label', kind: 'string' },
+    { name: 'confirmLabel', attr: 'confirm-label', kind: 'string' },
+    { name: 'cancelLabel', attr: 'cancel-label', kind: 'string' },
+    { name: 'pending', attr: 'pending', kind: 'boolean' },
   ],
-  events: ['open-change'],
+  events: ['cancel', 'confirm', 'open-change'],
 });

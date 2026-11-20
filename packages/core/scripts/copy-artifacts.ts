@@ -1,4 +1,3 @@
-import { alertCss } from '../src/components/alert/styles.js';
 /**
  * Copy the non-JS artifacts (CSS) from `src/` into `dist/` after tsup has built
  * the JS/types, so the package's `./theme.css` export resolves for consumers.
@@ -17,12 +16,14 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { accordionCss } from '../src/components/accordion/styles.js';
+import { alertCss } from '../src/components/alert/styles.js';
 import { avatarCss } from '../src/components/avatar/styles.js';
 import { badgeCss } from '../src/components/badge/styles.js';
 import { breadcrumbCss } from '../src/components/breadcrumb/styles.js';
 import { buttonFillCss } from '../src/components/button/fill.js';
 import { cardCss } from '../src/components/card/styles.js';
 import { chipCss } from '../src/components/chip/styles.js';
+import { dialogCss } from '../src/components/dialog/styles.js';
 import { dragButtonCss } from '../src/components/drag-button/styles.js';
 import { inputCss } from '../src/components/input/styles.js';
 import { kbdCss } from '../src/components/kbd/styles.js';
@@ -53,6 +54,7 @@ const tokensPkg = require.resolve('@labpics/ui-tokens/tokens.css');
 function main(): void {
   mkdirSync(dist, { recursive: true });
   writeFileSync(join(dist, 'alert.css'), alertCss);
+  writeFileSync(join(dist, 'dialog.css'), dialogCss);
 
   // Own source CSS files. selection.css — the UA-chrome binding layer
   // (selection/caret/accent/scrollbar), axis 10 of the foundations census (task 125).

@@ -1,129 +1,173 @@
-/**
- * <Dialog> — the native-React twin of the Lit `<lab-dialog>` (ADR-0001).
- *
- * Same axes, same `@zag-js/dialog` machine through the SAME Behaviors seam — here via
- * `useZag`. The machine owns open-on-click, focus move-in + restore-on-close, dismiss
- * (Escape / outside-click), the modal focus-trap + scroll-lock + outside-content
- * hiding, `role="dialog"` + `aria-modal`/`aria-labelledby`/`aria-describedby`. The
- * component spreads prop-getters and paints with the SAME `--lab-*` roles — parity is
- * CSS, not a second behaviour.
- *
- * ── The overlay canon (React half) — the trap is REAL here for free ──────────────
- * The floating layer renders into a `createPortal` at `document.body` and the dialog
- * body (`content`) is a React child of the portalled `.content` element. Because
- * React's portal moves the actual DOM into body, the body's focusables physically live
- * inside the content element's subtree that Zag's trap walks — so the modal trap
- * contains them with no caveat. This is exactly what the Lit twin reconstructs by
- * relocating its slotted body into a body portal; React gets it from `createPortal`.
- * The portal is gated on a `mounted` flag so the server emits nothing for it (a dialog
- * is client-only).
- *
- * Client Component: a dialog is interactive (open state, focus, scroll-lock). It is a
- * leaf under a Server Component shell — never a `'use client'` page (dive-next P1).
- */
 'use client';
-
-import type { MachineModule, SchemaOf } from '@labpics/ui-core';
-import type { LabDialogRole, LabDialogSize } from '@labpics/ui-core/dialog';
-import * as dialogMachine from '@zag-js/dialog';
-import { type ReactNode, useEffect, useId, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { useZag } from './use-zag.js';
-import './dialog.css';
-
-type DialogSchema = SchemaOf<dialogMachine.Service>;
-type DialogApi = dialogMachine.Api;
-
-const dialogModule: MachineModule<DialogSchema, DialogApi> = dialogMachine;
+import { symbol as close } from '@labpics/icons/symbols/close';
+import {
+  type DialogOptions,
+  type LabDialogRole,
+  type LabDialogSize,
+  type LabPopoverPlacement,
+  mountDialog,
+} from '@labpics/ui-core/dialog/runtime';
+import { dialogProfile } from '@labpics/ui-tokens';
+import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { type ModalTrigger, useModalTrigger } from './components/modal-trigger.js';
+import { Icon } from './icon.js';
+import '@labpics/ui-materials/material.css';
+import '@labpics/ui-core/dialog.css';
 
 export interface DialogProps {
-  /** The dialog body (parity with the Lit slot="content"). */
   content?: ReactNode;
-  /** Optional dialog heading — wires aria-labelledby on the content. */
   heading?: ReactNode;
-  /** Optional dialog description — wires aria-describedby on the content. */
   description?: ReactNode;
-  /** Control size — drives panel width band and padding. */
+  actions?: ReactNode | ((controls: { close(): void }) => ReactNode);
   size?: LabDialogSize;
-  /** When true (default): focus trap + scroll lock + outside content hidden + scrim. */
+  open?: boolean;
+  defaultOpen?: boolean;
   modal?: boolean;
-  /** Render a built-in close button wired to the machine. */
   closable?: boolean;
-  /** The dialog's ARIA role. `alertdialog` is the stricter variant (no outside-click
-   * dismissal). Defaults to `dialog`; `<AlertDialog>` sets `alertdialog`. */
+  closeLabel?: string;
   role?: LabDialogRole;
-  /** Fires when the machine opens or closes (machine is the source of truth). */
+  'aria-label'?: string;
+  initialFocus?: () => HTMLElement | null;
   onOpenChange?: (open: boolean) => void;
-  /** The trigger content — wrapped in the accessible trigger button. */
+  trigger?: ModalTrigger;
   children?: ReactNode;
 }
+const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
-/**
- * The shared dialog implementation. `<Dialog>` and `<AlertDialog>` are thin presets
- * over it — the ONLY difference is the `role` the machine reads (which flips
- * outside-click dismissal and the announced role), so they share one component and one
- * stylesheet rather than duplicating the floating tree.
- */
-export function Dialog({
+/** DOM and React state remain in their original tree; the shared Core runtime
+ * supplies top-layer modality, focus restoration and anchored positioning. */
+export function DialogSurface({
   content,
   heading,
   description,
+  actions,
   size = 'm',
+  open,
+  defaultOpen = false,
   modal = true,
   closable = true,
+  closeLabel = 'Закрыть',
   role = 'dialog',
+  'aria-label': ariaLabel = 'Диалог',
+  initialFocus,
   onOpenChange,
+  trigger,
   children,
-}: DialogProps): ReactNode {
-  const api = useZag(dialogModule, {
-    id: useId(),
+  placement,
+  arrow = false,
+}: DialogProps & { placement?: LabPopoverPlacement; arrow?: boolean }): ReactNode {
+  const [localOpen, setLocalOpen] = useState(defaultOpen);
+  const isOpen = open ?? localOpen;
+  const isModal = role === 'alertdialog' || modal;
+  const id = useId();
+  const plane = useRef<HTMLDialogElement>(null);
+  const positioner = useRef<HTMLDivElement>(null);
+  const surface = useRef<HTMLDivElement | null>(null);
+  const runtime = useRef<ReturnType<typeof mountDialog>>();
+  const mountedTrigger = useRef<HTMLButtonElement | null>(null);
+  const { triggerEl, renderTrigger } = useModalTrigger('LabDialog', trigger, children);
+  const hasHeading = heading != null && heading !== false && heading !== '';
+  const hasDescription = description != null && description !== false && description !== '';
+  function changeOpen(next: boolean): void {
+    if (next === isOpen) return;
+    if (open === undefined) setLocalOpen(next);
+    onOpenChange?.(next);
+  }
+  const options = useRef<DialogOptions>(null as unknown as DialogOptions);
+  options.current = {
+    open: isOpen,
+    modal: isModal,
     role,
-    modal,
-    onOpenChange: onOpenChange ? (details) => onOpenChange(details.open) : undefined,
+    heading: hasHeading,
+    description: hasDescription,
+    ariaLabel,
+    initialFocus,
+    onOpenChange: changeOpen,
+    placement,
+    arrow,
+  };
+  useClientLayoutEffect(() => {
+    const target = triggerEl();
+    if (target !== mountedTrigger.current) {
+      runtime.current?.dispose();
+      runtime.current = undefined;
+      mountedTrigger.current = target;
+      if (target && plane.current && positioner.current && surface.current)
+        runtime.current = mountDialog(
+          target,
+          plane.current,
+          positioner.current,
+          surface.current,
+          options.current,
+        );
+    }
+    runtime.current?.update(options.current);
   });
-
-  // Dialogs are client-only: gate the body portal on mount so SSR/first hydration emit
-  // nothing for the floating layer.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  const floating = (
-    <>
-      {modal && api.open && <div {...api.getBackdropProps()} className="lab-dialog-backdrop" />}
-      <div
-        {...api.getPositionerProps()}
-        className="lab-dialog-positioner"
-        data-open={api.open || undefined}
-        data-modal={modal || undefined}
-      >
-        <div {...api.getContentProps()} className="lab-dialog-content" data-size={size}>
-          {heading != null && (
-            <h2 {...api.getTitleProps()} className="lab-dialog-heading">
-              {heading}
-            </h2>
-          )}
-          {description != null && (
-            <p {...api.getDescriptionProps()} className="lab-dialog-description">
-              {description}
-            </p>
-          )}
-          <div className="lab-dialog-body">{content}</div>
-          {closable && (
-            <button {...api.getCloseTriggerProps()} className="lab-dialog-close" aria-label="Close">
-              ×
-            </button>
-          )}
-        </div>
-      </div>
-    </>
+  useClientLayoutEffect(
+    () => () => {
+      runtime.current?.dispose();
+      runtime.current = undefined;
+      mountedTrigger.current = null;
+    },
+    [],
   );
-
+  const closeDialog = () => changeOpen(false);
+  const actionContent = typeof actions === 'function' ? actions({ close: closeDialog }) : actions;
   return (
     <>
-      <button type="button" {...api.getTriggerProps()} className="lab-dialog-trigger">
-        {children}
-      </button>
-      {mounted && createPortal(floating, document.body)}
+      {renderTrigger({
+        id: `${id}-trigger`,
+        'aria-haspopup': 'dialog',
+        'aria-expanded': isOpen,
+        ...{ 'data-scope': 'dialog', 'data-part': 'trigger', 'data-ownedby': id },
+      })}
+      <dialog ref={plane} id={id} className="lab-dialog-plane">
+        {isModal && <div className="lab-dialog-backdrop" aria-hidden="true" />}
+        <div
+          ref={positioner}
+          className={placement ? 'lab-popover-positioner' : 'lab-dialog-positioner'}
+          data-size={size}
+        >
+          <div
+            ref={surface}
+            className="lab-dialog-content lab-material lab-material--elevated"
+            data-size={size}
+          >
+            {(hasHeading || hasDescription || closable) && (
+              <div className="lab-dialog-header">
+                <div className="lab-dialog-labels">
+                  {hasHeading && (
+                    <h2 id={`${id}-heading`} className="lab-dialog-heading">
+                      {heading}
+                    </h2>
+                  )}
+                  {hasDescription && (
+                    <p id={`${id}-description`} className="lab-dialog-description">
+                      {description}
+                    </p>
+                  )}
+                </div>
+                {closable && (
+                  <button
+                    type="button"
+                    className="lab-dialog-close"
+                    aria-label={closeLabel}
+                    onClick={closeDialog}
+                  >
+                    <Icon symbol={close} size={dialogProfile.iconSize} />
+                  </button>
+                )}
+              </div>
+            )}
+            {content != null && <div className="lab-dialog-body">{content}</div>}
+            {actionContent != null && <div className="lab-dialog-actions">{actionContent}</div>}
+          </div>
+          {placement && arrow && <span className="lab-popover-arrow" aria-hidden="true" />}
+        </div>
+      </dialog>
     </>
   );
+}
+export function Dialog(props: DialogProps): ReactNode {
+  return <DialogSurface {...props} />;
 }

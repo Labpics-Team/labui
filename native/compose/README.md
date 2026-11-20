@@ -482,3 +482,7 @@ Menu, Context Menu и Menubar имеют общий типизированный
 
 Шрифты Geist распространяются по SIL Open Font License; лицензия находится
 рядом с файлами шрифтов. Код Lab UI — MIT.
+
+## Диалоги и Popover
+
+`LabDialogHost`, `LabAlertDialogHost`, `LabPopoverHost` используют общий авторский профиль, Lab Motion и штатные Icons. Подтверждение получает начальный фокус на Отмена и ждёт завершения операции; крупный текст складывает действия в колонку. Popover меняет сторону у края окна и поддерживает указатель. [API, жизненный цикл и проверки](../../docs/reference/dialog-family.md).

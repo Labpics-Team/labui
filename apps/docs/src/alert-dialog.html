@@ -1,5 +1,5 @@
 <!doctype html>
-<html class="lab-scope" lang="en" data-theme="dark" data-material="ambient">
+<html class="lab-scope" lang="en" data-theme="dark" data-material="solid">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -19,11 +19,9 @@
         <code>&lt;AlertDialog&gt;</code> (React)
       </h1>
       <p>
-        The stricter dialog: <code>role="alertdialog"</code>, which the
-        <code>@zag-js/dialog</code> machine reads to REFUSE outside-click dismissal —
-        the decision must be an explicit confirm or cancel (Escape still cancels). Same
-        body portal, focus-trap, scroll-lock and aria as the dialog. Both renderers
-        paint with the same <code>--lab-*</code> roles.
+        Confirmation opens with focus on Cancel. Confirm reports intent and keeps the
+        panel open until the application finishes. Escape cancels; outside clicks leave
+        the panel open. Both renderers preserve content in its original tree.
       </p>
 
       <div class="row">
@@ -42,13 +40,10 @@
             data-testid="lit-alert"
             heading="Delete this item?"
             description="This action cannot be undone."
-            closable
+            confirm-label="Delete" cancel-label="Cancel"
           >
             Delete item
-            <div slot="content">
-              <button type="button" data-testid="lit-alert-confirm">Delete</button>
-              <button type="button" data-testid="lit-alert-cancel">Cancel</button>
-            </div>
+
           </lab-alert-dialog>
         </div>
       </section>

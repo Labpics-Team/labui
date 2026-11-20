@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru" data-theme="light" data-material="solid">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dialog family qualification</title>
+<style>body { margin: 0; padding: 48px; min-height: 100vh; box-sizing: border-box; font-family: Geist; background: var(--lab-bg-primary); color: var(--lab-label-primary); } .source { display: flex; gap: 20px; flex-wrap: wrap; } input { font: inherit; max-width: 100%; box-sizing: border-box; } #local { margin-top: 48px; padding: 16px; transform: translateZ(0); overflow: hidden; } </style></head>
+<body>
+<div class="source">
+  <lab-alert-dialog id="lit-alert" heading="Are you absolutely sure?" description="This action cannot be undone. This will permanently delete your account and remove your data from our servers." confirm-label="Continue" cancel-label="Cancel">
+    <lab-button slot="trigger" type="neutral">Lit alert</lab-button>
+  </lab-alert-dialog>
+  <lab-dialog id="lit-dialog" heading="Настройки" description="Изменения сохранятся после подтверждения.">
+    <lab-button slot="trigger">Lit dialog</lab-button>
+    <div slot="content"><label>Название <input aria-label="Lit dialog draft" value="Draft"></label><lab-popover id="nested" heading="Дополнительно"><button slot="trigger" type="button">Lit nested popover</button><div slot="content"><input aria-label="Lit nested draft" value="Nested"></div></lab-popover></div>
+    <button type="button" slot="actions" id="save-lit">Сохранить</button>
+  </lab-dialog>
+</div>
+<div id="local" data-theme="dark"><lab-popover id="lit-popover" heading="Локальная тема" description="Поверхность привязана к кнопке." closable>
+  <lab-button slot="trigger">Lit popover</lab-button><div slot="content"><input aria-label="Popover draft" value="Popover"></div>
+</lab-popover></div>
+<div id="react" class="source"></div>
+<button type="button" id="outside">Outside</button>
+<input aria-label="Outside input">
+<script type="module" src="./dialog-family.tsx"></script>
+</body></html>

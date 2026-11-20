@@ -318,6 +318,12 @@
       "--lab-avatar-fill-indigo",
       "--lab-avatar-fill-purple",
       "--lab-avatar-fill-pink"
+    ],
+    "AuthoredButton": [
+      "--lab-button-fill-neutral",
+      "--lab-button-label-on-neutral",
+      "--lab-button-description-on-neutral",
+      "--lab-button-tint-neutral"
     ]
   },
   "aliases": []
