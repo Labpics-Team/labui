@@ -76,6 +76,10 @@ jobs:
       - name: Install browser runtimes
         run: pnpm --filter @labpics/ui-docs exec playwright install --with-deps chromium firefox webkit
       - name: Build production material renderer and Alert dependencies
+        env:
+          # The complete core declaration graph runs in a tsup worker. Give it
+          # the same 4 GiB heap used by a successful local production build.
+          NODE_OPTIONS: --max-old-space-size=4096
         run: pnpm --filter @labpics/ui-core... build
       - name: Measure production paint rendering
         run: node docs/evidence/materials-20261117/render-material-paints.mjs
