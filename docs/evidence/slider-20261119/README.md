@@ -126,3 +126,9 @@ Maven publish использует `publicationVersion=0.1.0-slider-20261120.3` 
 Это проверка локально опубликованных Maven-байтов, не публичный выпуск.
 Android/iOS-устройства и системные screen readers этим прогоном не покрыты;
 окон, NVDA и звука не было.
+
+Интеграция 20 ноября: все 15 `SliderRenderTest` и common Kotlin metadata прошли
+на общей ветке Icon/Drag Button/Pin Input/Slider с публичным Icons Maven 0.4.0.
+Установленный web-потребитель повторно прошёл 48 жестов Chromium/WebKit.
+До публикации npm Icons 0.4.0 использован точный архив release CI через
+`LAB_ICONS_TARBALL`; это пока не проверка установки Icons из публичного npm.
