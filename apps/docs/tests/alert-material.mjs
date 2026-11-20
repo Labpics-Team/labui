@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium, firefox, webkit } from '@playwright/test';
 import { build } from 'vite';
 import { displayPixels } from '../../../docs/evidence/materials-20261117/display-pixels.mjs';
-import { compileMaterialPaint, parseRgb } from '../../../packages/materials/dist/index.js';
+import { materialPaintOver, parseRgb } from '../../../packages/materials/dist/index.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const output = process.env.MATERIAL_OUTPUT
@@ -197,12 +197,16 @@ try {
             return { normal: style.getPropertyValue('--_tint'), blend: style.getPropertyValue('--_blend') };
           }));
           const transfers = rawPaints.map(paint => {
-            const compiled = compileMaterialPaint({ normal: parseRgb(paint.normal), blend: parseRgb(paint.blend), blendMode: theme === 'light' ? 'color-dodge' : 'overlay' });
-            assert.ok(compiled.affine, 'probe transfer is actually affine');
-            assert.equal(compiled.fill.r, compiled.fill.g);
-            assert.equal(compiled.fill.g, compiled.fill.b);
-            const slope = 1 - compiled.fill.a;
-            const intercept = compiled.fill.r / 255 * compiled.fill.a;
+            const spec = { normal: parseRgb(paint.normal), blend: parseRgb(paint.blend), blendMode: theme === 'light' ? 'color-dodge' : 'overlay' };
+            const out = value => materialPaintOver(spec, { r: value, g: value, b: value, a: 1 });
+            const black = out(0);
+            const white = out(255);
+            const slope = (white.r - black.r) / 255;
+            const intercept = black.r / 255;
+            for (let i = 0; i <= 255; i++) {
+              const actual = out(i);
+              for (const c of ['r', 'g', 'b']) assert.ok(Math.abs(actual[c] - (slope * i + intercept * 255)) < 1e-8, 'diagnostic recipe is neutral and affine');
+            }
             const gain = slope + 2 * intercept;
             return `contrast(${slope / gain}) brightness(${gain})`;
           });
