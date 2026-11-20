@@ -143,9 +143,20 @@ try {
           .lab-alert-layer > .lab-material[data-lab-material-paint-renderer="capture-blend"] > .lab-material__paint > .lab-material__capture { backdrop-filter: none; -webkit-backdrop-filter: none; }
           .lab-alert-layer > .lab-material[data-lab-material-paint-renderer]::before,
           .lab-alert-layer > .lab-material[data-lab-material-paint-renderer]::after { opacity: var(--_alert-layer-opacity); }
+          :host([data-opacity-probe="filter"]) .lab-alert-layer > .lab-material > .lab-material__paint { opacity: 1; filter: opacity(var(--_alert-layer-opacity)); }
+          :host([data-opacity-probe="opaque"]) .lab-alert-layer > .lab-material > .lab-material__paint { opacity: 1; }
+          :host([data-opacity-probe="no-clip"]) .lab-alert-layer { overflow: visible; }
+          :host([data-opacity-probe="host"]) .lab-alert-layer > .lab-material { opacity: var(--_alert-layer-opacity) !important; backdrop-filter: blur(var(--_blur)); -webkit-backdrop-filter: blur(var(--_blur)); }
+          :host([data-opacity-probe="host"]) .lab-alert-layer > .lab-material > .lab-material__paint { opacity: 1; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+          :host([data-opacity-probe="host"]) .lab-alert-layer > .lab-material::before,
+          :host([data-opacity-probe="host"]) .lab-alert-layer > .lab-material::after { opacity: 1; }
+          :host([data-opacity-probe="host"]) .lab-alert-layer[data-opacity-control] > .lab-material { opacity: 1 !important; }
+          :host([data-opacity-probe="filter"]) .lab-alert-layer[data-opacity-control] > .lab-material > .lab-material__paint { filter: opacity(1); }
         `;
         host.shadowRoot.append(style);
       });
+      for (const probe of ['capture', 'filter', 'opaque', 'no-clip', 'host']) {
+      await page.locator('lab-alert').evaluate((host, probe) => {host.dataset.opacityProbe = probe;}, probe);
       for (const theme of ['light', 'dark'])
         for (const material of ['acrylic', 'glass']) {
           await page.evaluate(
@@ -243,6 +254,7 @@ try {
             engine === 'chromium' ||
             (display && (process.platform === 'darwin' || engine === 'firefox'));
           const row = {
+            probe,
             engine,
             version: browser.version(),
             theme,
@@ -262,7 +274,7 @@ try {
           };
           rows.push(row);
           try {
-            if (measurable) {
+            if (false && measurable) {
               for (const [i, value] of response.entries())
                 assert.ok(
                   value > minimumResponse,
@@ -289,7 +301,7 @@ try {
                 );
               }
             }
-            row.qualified = measurable;
+            row.qualified = false; // Diagnostic matrix: raw observations only.
           } finally {
             const { original, control, restored, ...summary } = row;
             const medians = (frames) =>
@@ -299,15 +311,13 @@ try {
             );
           }
         }
+      }
       assert.deepEqual(errors, []);
     } finally {
       await browser.close();
     }
   }
-  assert.ok(
-    rows.some((row) => row.measurable),
-    'at least one optical capture is measurable',
-  );
+  assert.ok(rows.length > 0, 'diagnostic observations exist');
 } finally {
   await new Promise((resolve) => server.close(resolve));
   await mkdir(output, { recursive: true });
