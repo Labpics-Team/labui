@@ -11,7 +11,7 @@ let markerSequence = 0;
  * Read the compositor instead. A page marker determines origin and screen scale,
  * without browser chrome offsets. See Playwright issue43646 / Mozilla1657997.
  */
-export async function displayPixels(page, xs) {
+export async function displayPixels(page, points) {
   // A distinct marker identifies this committed frame, not a previous scene
   // which happened to place the old fixed green marker at the same position.
   const sequence = ++markerSequence;
@@ -34,7 +34,7 @@ export async function displayPixels(page, xs) {
   let staleFrames = 0;
   while (true) {
     try {
-      const pixels = await captureDisplayPixels(page, xs, marker);
+      const pixels = await captureDisplayPixels(page, points, marker);
       if (staleFrames)
         console.info(
           `MATERIAL_DISPLAY_SYNC_ROW=${JSON.stringify({ sequence, marker, staleFrames })}`,
@@ -49,7 +49,7 @@ export async function displayPixels(page, xs) {
   }
 }
 
-async function captureDisplayPixels(page, xs, marker) {
+async function captureDisplayPixels(page, points, marker) {
   let frame;
   if (process.platform === 'linux') {
     const data = await readFile(process.env.XWD_FILE);
@@ -83,7 +83,7 @@ async function captureDisplayPixels(page, xs, marker) {
       // Scan the PNG in the page and transfer only the requested pixels. Sending
       // a full desktop as a JSON array made each macOS sample take seconds.
       return await page.evaluate(
-        `(async ({ base64, xs, marker }) => {
+        `(async ({ base64, points, marker }) => {
         const image = new Image();
         image.src = 'data:image/png;base64,' + base64;
         await image.decode();
@@ -96,8 +96,8 @@ async function captureDisplayPixels(page, xs, marker) {
           width: image.width,
           height: image.height,
           pixels: context.getImageData(0, 0, image.width, image.height).data,
-        }, xs, marker);
-      })(${JSON.stringify({ base64: png.toString('base64'), xs, marker })})`,
+        }, points, marker);
+      })(${JSON.stringify({ base64: png.toString('base64'), points, marker })})`,
       );
     } finally {
       await rm(directory, { recursive: true, force: true });
@@ -105,14 +105,14 @@ async function captureDisplayPixels(page, xs, marker) {
   } else {
     throw new Error('Display capture needs Xvfb on Linux or screencapture on macOS');
   }
-  return sampleDisplay(frame, xs, marker);
+  return sampleDisplay(frame, points, marker);
 }
 
 /** Self-contained so the exact same marker/sample code runs beside the decoded
  * PNG in the browser or the XWD bytes in Node. No desktop pixel array crosses
  * the Playwright protocol.
  */
-export function sampleDisplay(frame, xs, marker) {
+export function sampleDisplay(frame, points, marker) {
   const check = (condition, message = 'sample stays within the display') => {
     if (!condition) throw new Error(message);
   };
@@ -138,11 +138,14 @@ export function sampleDisplay(frame, xs, marker) {
     scale >= 1 && scale <= 3 && Number.isInteger(scale),
     `marker has a whole screen scale (width=${markerWidth}, origin=${x},${y})`,
   );
-  const sampleY = y + (50 - 16) * scale;
-  check(sampleY < height);
-  return xs.map((cssX) => {
-    const sampleX = x + (cssX - 16) * scale;
-    check(sampleX < width);
+  // A number retains the original y=50 swatch API; component probes supply {x,y}.
+  return points.map((point) => {
+    const cssX = typeof point === 'number' ? point : point.x;
+    const cssY = typeof point === 'number' ? 50 : point.y;
+    check(Number.isFinite(cssX) && Number.isFinite(cssY), 'sample has finite page coordinates');
+    const sampleX = Math.round(x + (cssX - 16) * scale);
+    const sampleY = Math.round(y + (cssY - 16) * scale);
+    check(sampleX >= 0 && sampleX < width && sampleY >= 0 && sampleY < height);
     const at = (sampleY * width + sampleX) * 4;
     return Array.from(pixels.slice(at, at + 4));
   });
