@@ -51,12 +51,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15]
+        os: [ubuntu-latest, macos-15]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     env:
       MATERIAL_CONTOUR: '1'
-      MATERIAL_BROWSERS: webkit
+      MATERIAL_BROWSERS: chromium,firefox,webkit
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -90,7 +90,7 @@ jobs:
       - name: Verify display frame selection
         run: node --test docs/evidence/materials-20261117/display-pixels.test.mjs
       - name: Install browser runtimes
-        run: pnpm --filter @labpics/ui-docs exec playwright install --with-deps webkit
+        run: pnpm --filter @labpics/ui-docs exec playwright install --with-deps chromium firefox webkit
       - name: Build production material renderer and Alert dependencies
         env:
           # The complete core declaration graph runs in a tsup worker. Give it
@@ -98,9 +98,9 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=4096
         run: pnpm --filter @labpics/ui-core... build
       - name: Measure production paint rendering
-        run: echo diagnostic-paint-scope
+        run: node docs/evidence/materials-20261117/render-material-paints.mjs
       - name: Measure backdrop rendering and neutral paint composition
-        run: echo diagnostic-backdrop-scope
+        run: node docs/evidence/materials-20261117/probe-backdrop-support.mjs
       - name: Measure actual Alert backdrop and regression control
         run: node apps/docs/tests/alert-material.mjs
       - name: Measure real Linux compositor
@@ -117,6 +117,8 @@ jobs:
         env:
           MATERIAL_CAPTURE: display
         run: |
+          node docs/evidence/materials-20261117/probe-backdrop-support.mjs
+          node docs/evidence/materials-20261117/render-material-paints.mjs
           node apps/docs/tests/alert-material.mjs
       - name: Preserve Alert compositor measurements
         if: always()
