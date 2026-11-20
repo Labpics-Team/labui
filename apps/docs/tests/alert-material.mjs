@@ -153,19 +153,24 @@ try {
           :host([data-opacity-probe="host"]) .lab-alert-layer[data-opacity-control] > .lab-material { opacity: 1 !important; }
           :host([data-opacity-probe="filter"]) .lab-alert-layer[data-opacity-control] > .lab-material > .lab-material__paint { filter: opacity(1); }
           :host([data-opacity-probe="original-opaque"]) .lab-alert-layer > .lab-material > .lab-material__paint,
-          :host([data-opacity-probe="nested"]) .lab-alert-layer > .lab-material > .lab-material__paint { opacity: 1; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+          :host([data-opacity-probe^="nested"]) .lab-alert-layer > .lab-material > .lab-material__paint { opacity: 1; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
           :host([data-opacity-probe="original-opaque"]) .lab-alert-layer > .lab-material > .lab-material__paint > .lab-material__capture,
-          :host([data-opacity-probe="nested"]) .lab-alert-layer > .lab-material > .lab-material__paint > .lab-material__capture { backdrop-filter: blur(var(--_blur)) !important; -webkit-backdrop-filter: blur(var(--_blur)) !important; }
-          :host([data-opacity-probe="nested"]) .lab-alert-layer > .lab-material > .lab-material__paint > .lab-material__capture { opacity: var(--_alert-layer-opacity); }
-          :host([data-opacity-probe="nested"]) .lab-material__capture > div { position: absolute; inset: 0; border-radius: inherit; }
-          :host([data-opacity-probe="nested"]) .lab-alert-layer[data-opacity-control] > .lab-material > .lab-material__paint > .lab-material__capture { opacity: 1; }
+          :host([data-opacity-probe^="nested"]) .lab-alert-layer > .lab-material > .lab-material__paint > .lab-material__capture { backdrop-filter: blur(var(--_blur)) !important; -webkit-backdrop-filter: blur(var(--_blur)) !important; }
+          :host([data-opacity-probe^="nested"]) .lab-alert-layer > .lab-material > .lab-material__paint > .lab-material__capture { opacity: var(--_alert-layer-opacity); }
+          :host([data-opacity-probe^="nested"]) .lab-material__capture > div { position: absolute; inset: 0; border-radius: inherit; }
+          :host([data-opacity-probe^="nested"]) .lab-alert-layer[data-opacity-control] > .lab-material > .lab-material__paint > .lab-material__capture { opacity: 1; }
+          :host([data-opacity-probe="nested-filter"]) .lab-alert-layer .lab-material__capture { opacity: 1 !important; filter: opacity(var(--_alert-layer-opacity)); }
+          :host([data-opacity-probe="nested-mask"]) .lab-alert-layer .lab-material__capture { opacity: 1 !important; -webkit-mask-image: linear-gradient(rgba(0,0,0,var(--_alert-layer-opacity)),rgba(0,0,0,var(--_alert-layer-opacity))); mask-image: linear-gradient(rgba(0,0,0,var(--_alert-layer-opacity)),rgba(0,0,0,var(--_alert-layer-opacity))); }
+          :host([data-opacity-probe="nested-transform"]) .lab-alert-layer .lab-material__capture { transform: translateZ(0); }
+          :host([data-opacity-probe="nested-filter"]) .lab-alert-layer[data-opacity-control] .lab-material__capture { filter: opacity(1); }
+          :host([data-opacity-probe="nested-mask"]) .lab-alert-layer[data-opacity-control] .lab-material__capture { -webkit-mask-image: none; mask-image: none; }
         `;
         host.shadowRoot.append(style);
       });
-      for (const probe of ['original-opaque', 'nested']) {
+      for (const probe of ['nested-filter', 'nested-mask', 'nested-transform']) {
       await page.locator('lab-alert').evaluate((host, probe) => {
         host.dataset.opacityProbe = probe;
-        if (probe === 'nested') {
+        if (probe.startsWith('nested')) {
           for (const material of host.shadowRoot.querySelectorAll('.lab-alert-layer > .lab-material')) {
             const paint = material.querySelector('.lab-material__paint');
             const capture = paint.querySelector('.lab-material__capture');
