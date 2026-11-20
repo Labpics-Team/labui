@@ -9,6 +9,7 @@
   import type { LabPagination } from '@labpics/ui-core/pagination';
   import { type Snippet, untrack } from 'svelte';
   import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
+  import { slotProjectionShadowHtml } from '@labpics/ui-core/adapter-runtime';
 
   /** Пропы <lab-pagination> — типы взяты прямо из класса ядра (LabPagination). */
   interface Props {
@@ -64,6 +65,6 @@
 <lab-pagination bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { count, pageSize, page, defaultPage, siblingCount, variant, disabled, ambient, progress, href, label, previousLabel, nextLabel, pageLabel } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
-    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+    {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}
   {/each}
 </lab-pagination>

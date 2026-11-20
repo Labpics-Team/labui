@@ -9,6 +9,7 @@
   import type { LabSlider } from '@labpics/ui-core/slider';
   import { type Snippet, untrack } from 'svelte';
   import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
+  import { slotProjectionShadowHtml } from '@labpics/ui-core/adapter-runtime';
 
   /** Пропы <lab-slider> — типы взяты прямо из класса ядра (LabSlider). */
   interface Props {
@@ -71,6 +72,6 @@
 <lab-slider bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, orientation, label, labelHidden, helper, error, value, defaultValue, min, max, step, marks, showValue, readonly, disabled, invalid, name } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
-    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+    {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}
   {/each}
 </lab-slider>

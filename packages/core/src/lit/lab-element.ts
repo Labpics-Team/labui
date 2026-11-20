@@ -18,6 +18,7 @@ import type { MachineSchema } from '@zag-js/core';
 import { type CSSResultGroup, type CSSResultOrNative, LitElement, css } from 'lit';
 import { LAB_INPUTS_PROPERTY, type LabInputBinding, forwardDeclared } from '../adapter-runtime.js';
 import type { MachineModule, MachineProps } from '../behaviors/types.js';
+import { ensureSlotProjection } from '../slot-projection.js';
 import type { LabPropertyDeclaration } from './property.js';
 import { LAB_ELEMENT_BRAND, SSR_INPUTS_ATTRIBUTE, parseSsrInputs } from './ssr-inputs.js';
 import { ZagController } from './zag-controller.js';
@@ -43,6 +44,11 @@ const cornerShapeStyles = css`
 export class LabElement extends LitElement {
   static readonly [LAB_ELEMENT_BRAND] = true;
   private restoredServerInputs = false;
+
+  override connectedCallback(): void {
+    ensureSlotProjection();
+    super.connectedCallback();
+  }
 
   /** Keep server artwork until its imported resources reach the upgraded element. */
   protected override shouldUpdate(): boolean {

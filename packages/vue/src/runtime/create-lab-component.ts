@@ -1,4 +1,8 @@
-import { LAB_INPUTS_PROPERTY, type LabPropSpec } from '@labpics/ui-core/adapter-runtime';
+import {
+  LAB_INPUTS_PROPERTY,
+  type LabPropSpec,
+  slotProjectionShadow,
+} from '@labpics/ui-core/adapter-runtime';
 /**
  * Фабрика тонких Vue-обёрток над Lit web-components (ADR-0001, A-prime).
  *
@@ -78,9 +82,8 @@ export function createLabComponent<Props, Events extends string>(
           ...attrs,
           ...(!server && { [`.${LAB_INPUTS_PROPERTY}`]: { specs: spec.specs, props: inputs } }),
         };
-        // Слоты: default → дети; именованные (в т.ч. динамические content/icon/…)
-        // оборачиваем в display:contents-элемент с slot=<name> (нативное слотирование
-        // требует РЕНДЕРЯЩИЙСЯ узел в light-DOM; <template> не спроецировался бы).
+        // Named fragments retain framework-owned children. The native projection
+        // forwards only geometry explicitly supplied by the receiving component.
         const children: unknown[] = [];
         if (server?.shadowRoot)
           children.push(
@@ -92,7 +95,15 @@ export function createLabComponent<Props, Events extends string>(
         for (const [name, slotFn] of Object.entries(slots)) {
           if (!slotFn) continue;
           if (name === 'default') children.push(slotFn());
-          else children.push(h('div', { slot: name, style: 'display:contents' }, slotFn()));
+          else
+            children.push(
+              h('lab-slot', { slot: name }, [
+                ...(server
+                  ? [h('template', { shadowrootmode: 'open', innerHTML: slotProjectionShadow })]
+                  : []),
+                slotFn(),
+              ]),
+            );
         }
         return h(tag, bindings, children as VNode[]);
       };

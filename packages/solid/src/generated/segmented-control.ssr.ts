@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML, slotProjectionShadowHtml } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/segmented-control';
 import type { LabSegmentedControl } from '@labpics/ui-core/segmented-control';
 
@@ -35,5 +35,5 @@ export function renderSegmentedControl(
       .items=${props.items === undefined ? noChange : props.items}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}
-    >${Object.entries(slots.dynamic ?? {}).map(([name, content]) => html`<span slot=${name}>${unsafeHTML(content)}</span>`)}${unsafeHTML(slots.default ?? '')}</lab-segmented-control>`);
+    >${Object.entries(slots.dynamic ?? {}).map(([name, content]) => html`<lab-slot slot=${name}>${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(content)}</lab-slot>`)}${unsafeHTML(slots.default ?? '')}</lab-segmented-control>`);
 }

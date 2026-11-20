@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML, slotProjectionShadowHtml } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/sheet';
 import type { LabSheet } from '@labpics/ui-core/sheet';
 
@@ -32,5 +32,5 @@ export function renderSheet(
       description=${ifDefined(props.description)}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}
-    >${slots.content ? html`<span slot="content">${unsafeHTML(slots.content)}</span>` : ''}${slots.trigger ? html`<span slot="trigger">${unsafeHTML(slots.trigger)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-sheet>`);
+    >${slots.content ? html`<lab-slot slot="content">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.content)}</lab-slot>` : ''}${slots.trigger ? html`<lab-slot slot="trigger">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.trigger)}</lab-slot>` : ''}${unsafeHTML(slots.default ?? '')}</lab-sheet>`);
 }

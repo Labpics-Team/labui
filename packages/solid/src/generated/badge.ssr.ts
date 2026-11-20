@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML, slotProjectionShadowHtml } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/badge';
 import type { LabBadge } from '@labpics/ui-core/badge';
 
@@ -29,5 +29,5 @@ export function renderBadge(
       .disabled=${props.disabled === undefined ? noChange : props.disabled}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}
-    >${slots.dot ? html`<span slot="dot">${unsafeHTML(slots.dot)}</span>` : ''}${slots.icon ? html`<span slot="icon">${unsafeHTML(slots.icon)}</span>` : ''}${slots.iconEnd ? html`<span slot="icon-end">${unsafeHTML(slots.iconEnd)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-badge>`);
+    >${slots.dot ? html`<lab-slot slot="dot">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.dot)}</lab-slot>` : ''}${slots.icon ? html`<lab-slot slot="icon">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.icon)}</lab-slot>` : ''}${slots.iconEnd ? html`<lab-slot slot="icon-end">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.iconEnd)}</lab-slot>` : ''}${unsafeHTML(slots.default ?? '')}</lab-badge>`);
 }

@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML, slotProjectionShadowHtml } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/select';
 import type { LabSelect } from '@labpics/ui-core/select';
 
@@ -39,5 +39,5 @@ export function renderSelect(
       .items=${props.items === undefined ? noChange : props.items}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}
-    >${slots.leading ? html`<span slot="leading">${unsafeHTML(slots.leading)}</span>` : ''}</lab-select>`);
+    >${slots.leading ? html`<lab-slot slot="leading">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.leading)}</lab-slot>` : ''}</lab-select>`);
 }

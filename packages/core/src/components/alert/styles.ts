@@ -1,4 +1,5 @@
 import { alertProfile as p } from '@labpics/ui-tokens';
+import { slotSizeCss } from '../../slot-projection.js';
 import { authoredTextBoxCss } from '../../typography.js';
 
 const rem = (px: number) => `${px / 16}rem`;
@@ -14,7 +15,8 @@ export const alertCss = `
 .lab-alert-label { display: flex; align-items: flex-start; flex: 1 1 auto; min-inline-size: 0; gap: ${rem(p.labelGap)}; }
 .lab-alert-icon { display: inline-flex; flex: none; width: ${rem(p.iconSize)}; height: ${rem(p.iconSize)}; color: var(--lab-${p.roles.icon}); }
 [data-lab-alert][data-type='danger'] .lab-alert-icon { color: var(--lab-${p.roles.dangerIcon}); }
-.lab-alert-icon > *, .lab-alert-close > * { width: 100% !important; height: 100% !important; }
+${slotSizeCss('.lab-alert-icon > *, .lab-alert-icon ::slotted(*)', '100%', '100%')}
+.lab-alert-close > * { width: 100% !important; height: 100% !important; }
 .lab-alert-content { display: flex; flex-direction: column; min-inline-size: 0; padding-inline-start: ${rem(p.contentPaddingStart)}; }
 .lab-alert-heading, .lab-alert-description { margin: 0; overflow-wrap: anywhere; font-family: var(--lab-font-family); }
 .lab-alert-heading { color: var(--lab-${p.roles.heading}); font-size: ${rem(p.heading.fontSize)}; line-height: ${p.heading.lineHeight / p.heading.fontSize}; font-weight: ${p.heading.fontWeight}; letter-spacing: ${p.heading.letterSpacing / p.heading.fontSize}em; }

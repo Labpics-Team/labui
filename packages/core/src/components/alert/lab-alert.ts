@@ -62,7 +62,6 @@ export class LabAlert extends LabElement {
     unsafeCSS(alertCss),
     css`
     :host { display: block; min-width: 0; max-width: 100%; }
-    ::slotted([slot='icon']) { width: 100%; height: 100%; }
   `,
   ];
   private readonly dismiss = () => {

@@ -62,13 +62,13 @@ function ssrFile(c: ComponentMeta): string {
   const namedSlotParts = c.slots.named
     .map(
       (s) =>
-        `\${slots.${camelSlot(s)} ? html\`<span slot="${s}">\${unsafeHTML(slots.${camelSlot(s)})}</span>\` : ''}`,
+        `\${slots.${camelSlot(s)} ? html\`<lab-slot slot="${s}">\${unsafeHTML(slotProjectionShadowHtml)}\${unsafeHTML(slots.${camelSlot(s)})}</lab-slot>\` : ''}`,
     )
     .join('');
   const defaultSlotPart =
     c.slots.default || c.slots.dynamic ? "${unsafeHTML(slots.default ?? '')}" : '';
   const dynamicSlotPart = c.slots.dynamic
-    ? '${Object.entries(slots.dynamic ?? {}).map(([name, content]) => html`<span slot=${name}>${unsafeHTML(content)}</span>`)}'
+    ? '${Object.entries(slots.dynamic ?? {}).map(([name, content]) => html`<lab-slot slot=${name}>${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(content)}</lab-slot>`)}'
     : '';
   const children = `${namedSlotParts}${dynamicSlotPart}${defaultSlotPart}`;
   // Параметр slots — только когда есть слоты (иначе noUnusedParameters).
@@ -85,6 +85,7 @@ function ssrFile(c: ComponentMeta): string {
     usesIfDefined ? 'ifDefined' : '',
     usesNoChange ? 'noChange' : '',
     usesUnsafeHtml ? 'unsafeHTML' : '',
+    c.slots.named.length > 0 || c.slots.dynamic ? 'slotProjectionShadowHtml' : '',
   ].filter(Boolean);
 
   return `${generatedHeader()}

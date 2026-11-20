@@ -9,6 +9,7 @@
   import type { LabIcon } from '@labpics/ui-core/icon';
   import { type Snippet, untrack } from 'svelte';
   import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
+  import { slotProjectionShadowHtml } from '@labpics/ui-core/adapter-runtime';
 
   /** Пропы <lab-icon> — типы взяты прямо из класса ядра (LabIcon). */
   interface Props {
@@ -63,6 +64,6 @@
 <lab-icon bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { symbol, variant, size, scale, weight, opsz, state, date, timeZone, duration, reducedMotion, effect, effectKey, label } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
-    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+    {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}
   {/each}
 </lab-icon>
