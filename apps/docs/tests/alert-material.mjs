@@ -152,11 +152,27 @@ try {
           :host([data-opacity-probe="host"]) .lab-alert-layer > .lab-material::after { opacity: 1; }
           :host([data-opacity-probe="host"]) .lab-alert-layer[data-opacity-control] > .lab-material { opacity: 1 !important; }
           :host([data-opacity-probe="filter"]) .lab-alert-layer[data-opacity-control] > .lab-material > .lab-material__paint { filter: opacity(1); }
+          :host([data-opacity-probe="original-opaque"]) .lab-alert-layer > .lab-material > .lab-material__paint,
+          :host([data-opacity-probe="nested"]) .lab-alert-layer > .lab-material > .lab-material__paint { opacity: 1; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+          :host([data-opacity-probe="original-opaque"]) .lab-alert-layer > .lab-material > .lab-material__paint > .lab-material__capture,
+          :host([data-opacity-probe="nested"]) .lab-alert-layer > .lab-material > .lab-material__paint > .lab-material__capture { backdrop-filter: blur(var(--_blur)) !important; -webkit-backdrop-filter: blur(var(--_blur)) !important; }
+          :host([data-opacity-probe="nested"]) .lab-alert-layer > .lab-material > .lab-material__paint > .lab-material__capture { opacity: var(--_alert-layer-opacity); }
+          :host([data-opacity-probe="nested"]) .lab-material__capture > div { position: absolute; inset: 0; border-radius: inherit; }
+          :host([data-opacity-probe="nested"]) .lab-alert-layer[data-opacity-control] > .lab-material > .lab-material__paint > .lab-material__capture { opacity: 1; }
         `;
         host.shadowRoot.append(style);
       });
-      for (const probe of ['capture', 'filter', 'opaque', 'no-clip', 'host']) {
-      await page.locator('lab-alert').evaluate((host, probe) => {host.dataset.opacityProbe = probe;}, probe);
+      for (const probe of ['original-opaque', 'nested']) {
+      await page.locator('lab-alert').evaluate((host, probe) => {
+        host.dataset.opacityProbe = probe;
+        if (probe === 'nested') {
+          for (const material of host.shadowRoot.querySelectorAll('.lab-alert-layer > .lab-material')) {
+            const paint = material.querySelector('.lab-material__paint');
+            const capture = paint.querySelector('.lab-material__capture');
+            for (const layer of [...paint.children]) if (layer !== capture) capture.append(layer);
+          }
+        }
+      }, probe);
       for (const theme of ['light', 'dark'])
         for (const material of ['acrylic', 'glass']) {
           await page.evaluate(
@@ -193,7 +209,11 @@ try {
               { name: 'raw-fixed', points: cluster(x, 220) },
               { name: 'raw-moving', points: cluster(x + Math.floor((near + far) / 2), 220) },
             );
-            return { groups, center: x, near, far };
+            const planes = surfaces.map((surface) => [...surface.querySelectorAll('.lab-material, .lab-material__paint, .lab-material__capture')].map((el) => {
+              const cs = getComputedStyle(el); const rect = el.getBoundingClientRect();
+              return { className: el.className, opacity: cs.opacity, filter: cs.filter, backdrop: cs.backdropFilter, blur: cs.getPropertyValue('--_blur'), bounds: {x:rect.x,y:rect.y,width:rect.width,height:rect.height} };
+            }));
+            return { groups, center: x, near, far, planes };
           });
           assert.equal(
             geometry.groups.length,
