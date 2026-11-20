@@ -1,4 +1,4 @@
-name: Material pixels
+name: Material pixels with public Icons distribution
 
 on:
   workflow_dispatch:
@@ -69,8 +69,23 @@ jobs:
           node-version: 22
       - name: Select Alert measurement directory
         run: printf 'MATERIAL_OUTPUT=%s/labui-alert-material\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
-      - name: Install pinned browser tools
-        run: pnpm install --frozen-lockfile
+      - name: Install browser tools with the published Icons 0.4 git distribution
+        # Diagnostic branch only: the product branch still consumes npm 0.4.
+        # All 1507 published runtime files match the tested npm archive exactly;
+        # its package.json additionally retains repository scripts/packageManager.
+        run: |
+          curl --fail --location --max-time 180 'https://codeload.github.com/Labpics-Team/lab-icons/tar.gz/983c72ad2958a8a9f2e4fd09a70d2ec38d617903' -o "$RUNNER_TEMP/icons-dist.tgz"
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {createHash} from 'node:crypto';
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const archive = `${process.env.RUNNER_TEMP}/icons-dist.tgz`;
+          assert.equal(createHash('sha256').update(readFileSync(archive)).digest('hex'), '9f9adfa6438519281119e8eb742f2ec785bf44910d0881c69b9e0ae223ce9bcd');
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+          pkg.pnpm.overrides['@labpics/icons'] = `file:${archive}`;
+          writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          NODE
+          pnpm install --no-frozen-lockfile
       - name: Verify display frame selection
         run: node --test docs/evidence/materials-20261117/display-pixels.test.mjs
       - name: Install browser runtimes
