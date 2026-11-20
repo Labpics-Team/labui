@@ -190,6 +190,23 @@
   border-radius: 0;
   clip-path: var(--lab-contour-clip);
 }
+.lab-material[data-lab-material-contour][data-lab-material-paint-renderer="capture-affine"]
+  > .lab-material__paint,
+.lab-material[data-lab-material-contour][data-lab-material-paint-renderer="capture-affine"]
+  > .lab-material__paint-runway
+  > .lab-material__paint {
+  clip-path: none;
+}
+.lab-material[data-lab-material-contour][data-lab-material-paint-renderer="capture-affine"]
+  > .lab-material__paint
+  > div,
+.lab-material[data-lab-material-contour][data-lab-material-paint-renderer="capture-affine"]
+  > .lab-material__paint-runway
+  > .lab-material__paint
+  > div {
+  border-radius: 0;
+  clip-path: var(--lab-contour-clip);
+}
 .lab-material[data-lab-material-contour]::before {
   display: none;
 }
