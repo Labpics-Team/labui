@@ -177,10 +177,10 @@ try {
           const captureTriplet = async () => {
             const frames = [];
             for (const radius of [geometry.far, geometry.near, geometry.far]) {
-              await page.evaluate(
-                ({ center, radius }) => window.moveBackdrop(center, radius),
-                { center: geometry.center, radius },
-              );
+              await page.evaluate(({ center, radius }) => window.moveBackdrop(center, radius), {
+                center: geometry.center,
+                radius,
+              });
               await settle(page);
               frames.push(await sample(page, geometry.groups));
             }
@@ -204,7 +204,7 @@ try {
             for (const layer of host.shadowRoot.querySelectorAll('[part="stack"]')) {
               const material = layer.querySelector('.lab-material');
               layer.style.opacity = getComputedStyle(material).opacity;
-              material.style.opacity = '1';
+              material.style.setProperty('--_material-layer-opacity', '1');
             }
           });
           const control = await captureTriplet();
@@ -214,11 +214,64 @@ try {
           await page.locator('lab-alert').evaluate((host) => {
             for (const layer of host.shadowRoot.querySelectorAll('[part="stack"]')) {
               layer.style.removeProperty('opacity');
-              layer.querySelector('.lab-material').style.removeProperty('opacity');
+              layer
+                .querySelector('.lab-material')
+                .style.removeProperty('--_material-layer-opacity');
             }
           });
           await settle(page);
           const restored = await sample(page, geometry.groups);
+          const compositeError = [];
+          // Hold the other layers fixed: they are part of this layer's actual
+          // backdrop. Changing all group alphas together is not a linear test.
+          for (let index = 0; index < 2; index++) {
+            const alpha = await page
+              .locator('lab-alert')
+              .evaluate(
+                (host, index) =>
+                  Number(
+                    getComputedStyle(
+                      host.shadowRoot.querySelectorAll('[part="stack"]')[index],
+                    ).getPropertyValue('--_alert-layer-opacity'),
+                  ),
+                index,
+              );
+            const endpoints = [];
+            for (const weight of ['0', '1']) {
+              await page.locator('lab-alert').evaluate(
+                (host, { index, weight }) => {
+                  host.shadowRoot
+                    .querySelectorAll('[part="stack"]')
+                    [index].querySelector('.lab-material')
+                    .style.setProperty('--_material-layer-opacity', weight);
+                },
+                { index, weight },
+              );
+              await settle(page);
+              endpoints.push((await sample(page, geometry.groups))[index + 1].rgb);
+            }
+            compositeError.push(
+              Math.max(
+                ...[0, 1, 2].map((c) =>
+                  Math.abs(
+                    original[0][index + 1].rgb[c] -
+                      (endpoints[0][c] * (1 - alpha) + endpoints[1][c] * alpha),
+                  ),
+                ),
+              ),
+            );
+            await page
+              .locator('lab-alert')
+              .evaluate(
+                (host, index) =>
+                  host.shadowRoot
+                    .querySelectorAll('[part="stack"]')
+                    [index].querySelector('.lab-material')
+                    .style.removeProperty('--_material-layer-opacity'),
+                index,
+              );
+            await settle(page);
+          }
           const restoreError = original[0]
             .slice(0, 3)
             .map((frame, i) => distance(frame.rgb, restored[i].rgb));
@@ -239,6 +292,7 @@ try {
             returned,
             controlResponse,
             restoreError,
+            compositeError,
             original,
             control,
             restored,
@@ -246,6 +300,11 @@ try {
           rows.push(row);
           try {
             if (measurable) {
+              for (const error of compositeError)
+                assert.ok(
+                  error <= rgbTolerance,
+                  `authored group alpha is preserved within ${rgbTolerance} RGB, observed ${error}`,
+                );
               for (const [i, value] of response.entries())
                 assert.ok(
                   value > minimumResponse,
