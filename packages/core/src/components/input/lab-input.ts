@@ -7,7 +7,7 @@
 import { type PropertyValues, type TemplateResult, css, html, nothing, unsafeCSS } from 'lit';
 import { live } from 'lit/directives/live.js';
 import { LabElement } from '../../lit/lab-element.js';
-import { slotSizeCss } from '../../slot-projection.js';
+import { slotStyleCss } from '../../slot-projection.js';
 import {
   type FieldA11yInput,
   type LabFieldSize,
@@ -130,8 +130,7 @@ export class LabInput extends LabElement {
     unsafeCSS(inputCss),
     css`
       :host { display: block; min-width: 0; }
-      ${unsafeCSS(slotSizeCss('.lab-input-adornment ::slotted(*)', 'var(--lab-size-input-icon)', 'var(--lab-size-input-icon)'))}
-      .lab-input-adornment ::slotted(*) { flex: none; }
+      ${unsafeCSS(slotStyleCss('.lab-input-adornment ::slotted(*)', { 'inline-size': 'var(--lab-size-input-icon)', 'block-size': 'var(--lab-size-input-icon)', flex: 'none' }))}
     `,
   ];
 

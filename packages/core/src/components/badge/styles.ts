@@ -1,5 +1,5 @@
 import { badgeProfile as p } from '@labpics/ui-tokens';
-import { slotSizeCss } from '../../slot-projection.js';
+import { slotStyleCss } from '../../slot-projection.js';
 
 const variants = Object.keys(p.colors)
   .map(
@@ -43,22 +43,31 @@ export const badgeCss = `
   color: var(--_badge-icon);
   flex: none;
 }
-[data-lab-badge] .lab-badge-icon > *, [data-lab-badge] .lab-badge-icon::slotted(*) {
-  display: block;
-  margin-inline-end: var(--lab-space-badge-gap);
-}
-${slotSizeCss('[data-lab-badge] .lab-badge-icon > *, [data-lab-badge] .lab-badge-icon::slotted(*)', 'var(--lab-size-badge-icon)', 'var(--lab-size-badge-icon)')}
-[data-lab-badge] .lab-badge-label ~ .lab-badge-icon > *, [data-lab-badge] .lab-badge-label ~ .lab-badge-icon::slotted(*) {
-  margin-inline-start: var(--lab-space-badge-gap);
-  margin-inline-end: 0;
-}
+${slotStyleCss(
+  '[data-lab-badge] .lab-badge-icon > *, [data-lab-badge] .lab-badge-icon::slotted(*)',
+  {
+    display: 'block',
+    'margin-inline-end': 'var(--lab-space-badge-gap)',
+    'inline-size': 'var(--lab-size-badge-icon)',
+    'block-size': 'var(--lab-size-badge-icon)',
+  },
+)}
+${slotStyleCss(
+  '[data-lab-badge] .lab-badge-label ~ .lab-badge-icon > *, [data-lab-badge] .lab-badge-label ~ .lab-badge-icon::slotted(*)',
+  {
+    'margin-inline-start': 'var(--lab-space-badge-gap)',
+    'margin-inline-end': '0',
+  },
+)}
 [data-lab-badge] .lab-badge-icon > * > svg { display: block; inline-size: 100%; block-size: 100%; }
 [data-lab-badge] .lab-badge-dot { display: contents; }
-[data-lab-badge] .lab-badge-dot > *, [data-lab-badge] .lab-badge-dot::slotted(*) {
-  border-radius: var(--lab-radius-full); background: currentColor;
-  margin-inline-end: var(--lab-space-badge-gap);
-}
-${slotSizeCss('[data-lab-badge] .lab-badge-dot > *, [data-lab-badge] .lab-badge-dot::slotted(*)', '.5em', '.5em')}
+${slotStyleCss('[data-lab-badge] .lab-badge-dot > *, [data-lab-badge] .lab-badge-dot::slotted(*)', {
+  'border-radius': 'var(--lab-radius-full)',
+  background: 'currentColor',
+  'margin-inline-end': 'var(--lab-space-badge-gap)',
+  'inline-size': '.5em',
+  'block-size': '.5em',
+})}
 ${variants}
 [data-lab-badge][data-disabled="true"][data-color] {
   background-color: var(--lab-${p.disabled.fillRole});

@@ -2,6 +2,8 @@
 const slotProperties = [
   'inline-size',
   'block-size',
+  'min-inline-size',
+  'max-inline-size',
   'display',
   'flex',
   'margin-inline-start',

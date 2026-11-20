@@ -45,11 +45,18 @@ leading входит в padding, а `min-block-size:1lh` сохраняет по
   работает с отключённым JavaScript. Fragments, несколько корней, обычный текст,
   escaping, реактивное обновление и повторное создание проходят без ошибок.
   Отложенная hydration сохраняет исходный input и введённый пользователем текст.
+  Удаление соседнего именованного header сохраняет тот же footer input и draft.
+  Сжатая строка Button сохраняет размер icon; Badge dot сохраняет заливку,
+  скругление и отступ ещё до JavaScript.
   `slots/packed.json` хранит SHA256 архивов и измерения, `slots/*.png` — рендер.
-- `slot-consumers.mjs`: 72 сравнения непосредственных и проецируемых корней в
+- `slot-consumers.mjs`: 96 сравнений непосредственных и проецируемых корней в
   12 компонентах при font-size 16/32 в Chromium/WebKit. Вложенная передача
   Choicebox, несколько корней, Card с естественным aspect ratio 600×300 и
-  пользовательским размером 600×80 — PASS; `slot-consumers.json` хранит размеры.
+  пользовательским размером 600×80, flex/display/min/max-size, окраска и отступы
+  Badge — PASS. Ещё две проверки подтверждают двухуровневую проекцию, local
+  overrides и отсутствие утечки размера/background/flex в независимый slot.
+  `slot-consumers.json` хранит размеры и вычисленные стили.
+  Обе slot-проверки входят в `test:slots` и штатный `browser-check.sh`.
 - После исправления общей проекции: core 97, Vue 10, Svelte 14 и codegen 32
   проверки — PASS; core/Vue/Svelte typecheck и четыре adapter builds — PASS.
 - `AlertRenderTest`: 4 offscreen Compose-теста. Те же варианты, темы, три font
@@ -111,8 +118,7 @@ WebKit даёт равномерный `[212,212,212]` во всех трёх с
 $env:PLAYWRIGHT_BROWSERS_PATH = 'D:/AgentWork/.playwright-browsers'
 $env:LAB_ICONS_TARBALL = 'D:/AgentWork/.scratch/icons040-ci-npm-20261120/package.tgz'
 node apps/docs/tests/alert-packed.mjs
-node apps/docs/tests/slots-packed.mjs
-node apps/docs/tests/slot-consumers.mjs
+pnpm --filter @labpics/ui-docs test:slots
 # Vite на 5377 либо LABUI_DOCS_URL:
 node apps/docs/tests/alert-material.mjs
 node apps/docs/tests/alert-catalog.mjs

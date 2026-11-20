@@ -32,12 +32,12 @@ const result = await build({
       },
       load(id) {
         if (id === `\0${entry}`)
-          return components
+          return `import {slotStyleCss} from '${join(root, 'packages/core/src/slot-projection.ts').replaceAll('\\', '/')}';window.slotStyleCss=slotStyleCss;\n${components
             .map(
               (c, i) =>
                 `import * as c${i} from '${join(root, 'packages/core/src/components', c, 'index.ts').replaceAll('\\', '/')}';window.c${i}=c${i};`,
             )
-            .join('\n');
+            .join('\n')}`;
       },
     },
   ],
@@ -52,7 +52,10 @@ const script = result.output.find((item) => item.type === 'chunk').code;
 const tokens = await readFile(`${root}/packages/core/dist/tokens.css`, 'utf8');
 const cases = [
   { tag: 'button', slots: ['icon', 'icon-end'], props: { size: 'l' } },
+  { tag: 'button', slots: ['icon'], style: { width: '60px' }, text: 'Long button label' },
+  { tag: 'button', slots: ['icon'], roots: 2 },
   { tag: 'input', slots: ['leading', 'trailing'] },
+  { tag: 'input', slots: ['leading', 'trailing'], style: { width: '60px' } },
   { tag: 'chip', slots: ['leading'], props: { size: 'm', showLeading: true } },
   {
     tag: 'select',
@@ -60,6 +63,7 @@ const cases = [
     props: { items: [{ value: 'a', label: 'Option' }], value: ['a'] },
   },
   { tag: 'checkbox', slots: ['icon'], props: { variant: 'card' } },
+  { tag: 'checkbox', slots: ['label-start'], kind: 'text', props: { variant: 'card' } },
   {
     tag: 'radio-group',
     slots: ['icon-a'],
@@ -77,6 +81,7 @@ const cases = [
   },
   { tag: 'switch', slots: ['icon-off'], props: { size: 'l' } },
   { tag: 'switch', slots: ['icon-on'], props: { size: 'l', checked: true } },
+  { tag: 'switch', slots: ['label-start'], kind: 'text' },
   {
     tag: 'tabs',
     slots: ['icon-a', 'icon-end-a'],
@@ -99,6 +104,7 @@ const cases = [
   },
   { tag: 'badge', slots: ['icon', 'icon-end'] },
   { tag: 'badge', slots: ['dot'], kind: 'dot' },
+  { tag: 'badge', slots: ['dot'], kind: 'dot', override: true },
   { tag: 'card', slots: ['media'], kind: 'image' },
   { tag: 'card', slots: ['media'], kind: 'image', override: true },
 ];
@@ -128,20 +134,23 @@ for (const [engine, launcher] of [
               const area = document.createElement('section');
               const host = document.createElement(`lab-${c.tag}`);
               Object.assign(host, c.props ?? {});
-              host.append('Label');
+              Object.assign(host.style, c.style ?? {});
+              host.append(c.text ?? 'Label');
               for (const name of c.slots) {
                 const content =
                   c.kind === 'image'
                     ? `<img data-probe width="24" height="12" ${c.override ? 'style="height:80px"' : ''} src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2712%27%3E%3C/svg%3E">`
                     : c.kind === 'dot'
-                      ? '<span data-probe style="display:inline-block"></span>'
-                      : '<svg data-probe width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>';
+                      ? `<span data-probe ${c.override ? 'style="background:rgb(20,30,40);border-radius:1px;margin-inline-end:9px;flex:1"' : ''}></span>`
+                      : c.kind === 'text'
+                        ? '<span data-probe>UninterruptedLabelThatCanWrapWhenTheControlIsConstrained</span>'
+                        : '<svg data-probe width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>';
                 const holder = document.createElement('div');
                 holder.innerHTML = projected
-                  ? `<lab-slot slot="${name}">${content}</lab-slot>`
-                  : content;
-                if (!projected) holder.firstElementChild.slot = name;
-                host.append(holder.firstElementChild);
+                  ? `<lab-slot slot="${name}">${content.repeat(c.roots ?? 1)}</lab-slot>`
+                  : content.repeat(c.roots ?? 1);
+                if (!projected) for (const child of holder.children) child.slot = name;
+                host.append(...holder.children);
               }
               area.append(host);
               document.body.append(area);
@@ -151,7 +160,19 @@ for (const [engine, launcher] of [
               output.push(
                 [...host.querySelectorAll('[data-probe]')].map((e) => {
                   const r = e.getBoundingClientRect();
-                  return { width: r.width, height: r.height };
+                  const s = getComputedStyle(e);
+                  return {
+                    width: r.width,
+                    height: r.height,
+                    display: s.display,
+                    flex: s.flex,
+                    minInlineSize: s.minInlineSize,
+                    maxInlineSize: s.maxInlineSize,
+                    background: s.backgroundColor,
+                    radius: s.borderTopLeftRadius,
+                    marginStart: s.marginInlineStart,
+                    marginEnd: s.marginInlineEnd,
+                  };
                 }),
               );
             }
@@ -159,13 +180,23 @@ for (const [engine, launcher] of [
           },
           { c, font },
         );
-        for (let i = 0; i < c.slots.length; i++) {
+        assert.equal(data[0].length, c.slots.length * (c.roots ?? 1));
+        assert.equal(data[1].length, data[0].length);
+        for (let i = 0; i < data[0].length; i++) {
           const expected = data[0][i];
           const actual = data[1][i];
           assert.ok(
             expected.width > 0 && expected.height > 0,
             `${engine} ${c.tag} ${c.slots[i]} direct nonzero: ${JSON.stringify(data)}`,
           );
+          const { width: _expectedWidth, height: _expectedHeight, ...expectedStyles } = expected;
+          const { width: _actualWidth, height: _actualHeight, ...actualStyles } = actual;
+          assert.deepEqual(actualStyles, expectedStyles, `${engine} ${c.tag} root styles`);
+          if (c.kind === 'dot') {
+            assert.notEqual(actual.background, 'rgba(0, 0, 0, 0)');
+            assert.ok(Number.parseFloat(actual.radius) > 0);
+            assert.ok(Number.parseFloat(actual.marginEnd) > 0);
+          }
           assert.ok(
             Math.abs(expected.width - actual.width) < 0.1 &&
               Math.abs(expected.height - actual.height) < 0.1,
@@ -174,7 +205,7 @@ for (const [engine, launcher] of [
           if (c.kind === 'image') {
             assert.equal(actual.width, 600);
             assert.equal(actual.height, c.override ? 80 : 300);
-          } else if (font === 32) {
+          } else if (font === 32 && c.kind !== 'text') {
             const base = evidence.find(
               (record) =>
                 record.engine === engine && record.font === 16 && record.caseIndex === caseIndex,
@@ -200,6 +231,52 @@ for (const [engine, launcher] of [
         });
       }
     }
+    const isolation = await page.evaluate(async () => {
+      customElements.define(
+        'projection-stage',
+        class extends HTMLElement {
+          connectedCallback() {
+            const inner = this.hasAttribute('inner');
+            this.attachShadow({ mode: 'open' }).innerHTML = `<style>${window.slotStyleCss(
+              '::slotted(*)',
+              {
+                'inline-size': inner ? '19px' : '48px',
+                'block-size': inner ? '13px' : '48px',
+                background: inner ? 'rgb(40, 50, 60)' : 'rgb(10, 20, 30)',
+                flex: 'none',
+                display: 'inline-block',
+              },
+            )}</style><slot></slot>`;
+          }
+        },
+      );
+      document.body.innerHTML = `<projection-stage><lab-slot>
+        <div data-outer>
+          <lab-slot><span data-independent style="display:inline-block;width:11px;height:7px"></span></lab-slot>
+          <projection-stage inner><lab-slot><span data-inner></span></lab-slot></projection-stage>
+        </div>
+        <span data-override style="inline-size:17px;block-size:9px;background:rgb(70,80,90);flex:1"></span>
+      </lab-slot></projection-stage>`;
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      return Object.fromEntries(
+        ['outer', 'independent', 'inner', 'override'].map((name) => {
+          const el = document.querySelector(`[data-${name}]`);
+          const rect = el.getBoundingClientRect();
+          const s = getComputedStyle(el);
+          return [
+            name,
+            { width: rect.width, height: rect.height, background: s.backgroundColor, flex: s.flex },
+          ];
+        }),
+      );
+    });
+    assert.deepEqual(isolation, {
+      outer: { width: 48, height: 48, background: 'rgb(10, 20, 30)', flex: '0 0 auto' },
+      independent: { width: 11, height: 7, background: 'rgba(0, 0, 0, 0)', flex: '0 1 auto' },
+      inner: { width: 19, height: 13, background: 'rgb(40, 50, 60)', flex: '0 0 auto' },
+      override: { width: 17, height: 9, background: 'rgb(70, 80, 90)', flex: '1 1 0%' },
+    });
+    evidence.push({ engine, component: 'projection-isolation', isolation });
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();
