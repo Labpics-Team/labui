@@ -68,10 +68,14 @@ function acquire(
     return existing;
   }
   if (renderer === 'normal' || renderer === 'capture-blend') {
-    const native =
+    const transfer =
       renderer === 'capture-blend' && (!noiseUrl || authoredNoise)
         ? neutralMaterialFilter(paints)
         : null;
+    // A constant paint must remain actual painted coverage even when a browser
+    // snapshot omits its captured backdrop. Its existing native paints already
+    // compose group alpha correctly and need no capture-dependent transfer.
+    const native = transfer && transfer.contrast > 0 ? transfer : null;
     let fill = 'transparent';
     if (renderer === 'normal') {
       const compiled = compileMaterialPaint(paints);
