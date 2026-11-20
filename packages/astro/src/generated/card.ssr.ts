@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML, slotProjectionShadowHtml } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/card';
 import type { LabCard } from '@labpics/ui-core/card';
 
@@ -36,5 +36,5 @@ export function renderCard(
       lower-caption=${ifDefined(props.lowerCaption)}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}
-    >${slots.badge ? html`<span slot="badge">${unsafeHTML(slots.badge)}</span>` : ''}${slots.footer ? html`<span slot="footer">${unsafeHTML(slots.footer)}</span>` : ''}${slots.header ? html`<span slot="header">${unsafeHTML(slots.header)}</span>` : ''}${slots.media ? html`<span slot="media">${unsafeHTML(slots.media)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-card>`);
+    >${slots.badge ? html`<lab-slot slot="badge">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.badge)}</lab-slot>` : ''}${slots.footer ? html`<lab-slot slot="footer">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.footer)}</lab-slot>` : ''}${slots.header ? html`<lab-slot slot="header">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.header)}</lab-slot>` : ''}${slots.media ? html`<lab-slot slot="media">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.media)}</lab-slot>` : ''}${unsafeHTML(slots.default ?? '')}</lab-card>`);
 }

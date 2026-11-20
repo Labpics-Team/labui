@@ -9,6 +9,7 @@
   import type { LabNumberInput } from '@labpics/ui-core/number-input';
   import { type Snippet, untrack } from 'svelte';
   import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
+  import { slotProjectionShadowHtml } from '@labpics/ui-core/adapter-runtime';
 
   /** Пропы <lab-number-input> — типы взяты прямо из класса ядра (LabNumberInput). */
   interface Props {
@@ -75,6 +76,6 @@
 <lab-number-input bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type: prop_type, size: prop_size, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, value: prop_value, defaultValue: prop_defaultValue, placeholder: prop_placeholder, min: prop_min, max: prop_max, step: prop_step, scrubber: prop_scrubber, allowMouseWheel: prop_allowMouseWheel, readonly: prop_readonly, disabled: prop_disabled, required: prop_required, invalid: prop_invalid, name: prop_name } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
-    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+    {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}
   {/each}
 </lab-number-input>

@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML, slotProjectionShadowHtml } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/alert';
 import type { LabAlert } from '@labpics/ui-core/alert';
 
@@ -36,5 +36,5 @@ export function renderAlert(
       notification-key=${ifDefined(props.notificationKey)}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}
-    >${slots.icon ? html`<span slot="icon">${unsafeHTML(slots.icon)}</span>` : ''}</lab-alert>`);
+    >${slots.icon ? html`<lab-slot slot="icon">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.icon)}</lab-slot>` : ''}</lab-alert>`);
 }

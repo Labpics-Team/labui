@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML, slotProjectionShadowHtml } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/switch';
 import type { LabSwitch } from '@labpics/ui-core/switch';
 
@@ -36,5 +36,5 @@ export function renderSwitch(
       value=${ifDefined(props.value)}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}
-    >${slots.iconOff ? html`<span slot="icon-off">${unsafeHTML(slots.iconOff)}</span>` : ''}${slots.iconOn ? html`<span slot="icon-on">${unsafeHTML(slots.iconOn)}</span>` : ''}${slots.labelStart ? html`<span slot="label-start">${unsafeHTML(slots.labelStart)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-switch>`);
+    >${slots.iconOff ? html`<lab-slot slot="icon-off">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.iconOff)}</lab-slot>` : ''}${slots.iconOn ? html`<lab-slot slot="icon-on">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.iconOn)}</lab-slot>` : ''}${slots.labelStart ? html`<lab-slot slot="label-start">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.labelStart)}</lab-slot>` : ''}${unsafeHTML(slots.default ?? '')}</lab-switch>`);
 }

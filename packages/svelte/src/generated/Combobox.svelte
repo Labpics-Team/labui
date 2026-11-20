@@ -9,6 +9,7 @@
   import type { LabCombobox } from '@labpics/ui-core/combobox';
   import { type Snippet, untrack } from 'svelte';
   import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
+  import { slotProjectionShadowHtml } from '@labpics/ui-core/adapter-runtime';
 
   /** Пропы <lab-combobox> — типы взяты прямо из класса ядра (LabCombobox). */
   interface Props {
@@ -72,6 +73,6 @@
 <lab-combobox bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type: prop_type, size: prop_size, placement: prop_placement, multiple: prop_multiple, disabled: prop_disabled, readonly: prop_readonly, required: prop_required, invalid: prop_invalid, name: prop_name, placeholder: prop_placeholder, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, value: prop_value, defaultValue: prop_defaultValue, items: prop_items } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
-    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+    {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}
   {/each}
 </lab-combobox>

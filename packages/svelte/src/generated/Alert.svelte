@@ -9,6 +9,7 @@
   import type { LabAlert } from '@labpics/ui-core/alert';
   import { type Snippet, untrack } from 'svelte';
   import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
+  import { slotProjectionShadowHtml } from '@labpics/ui-core/adapter-runtime';
 
   /** Пропы <lab-alert> — типы взяты прямо из класса ядра (LabAlert). */
   interface Props {
@@ -57,6 +58,6 @@
 <lab-alert bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { open: prop_open, controlled: prop_controlled, type: prop_type, quantity: prop_quantity, heading: prop_heading, description: prop_description, showIcon: prop_showIcon, closeLabel: prop_closeLabel, announcement: prop_announcement, notificationKey: prop_notificationKey } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
-    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+    {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}
   {/each}
 </lab-alert>

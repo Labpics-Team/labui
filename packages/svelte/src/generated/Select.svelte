@@ -9,6 +9,7 @@
   import type { LabSelect } from '@labpics/ui-core/select';
   import { type Snippet, untrack } from 'svelte';
   import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
+  import { slotProjectionShadowHtml } from '@labpics/ui-core/adapter-runtime';
 
   /** Пропы <lab-select> — типы взяты прямо из класса ядра (LabSelect). */
   interface Props {
@@ -64,6 +65,6 @@
 <lab-select bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size: prop_size, placement: prop_placement, multiple: prop_multiple, disabled: prop_disabled, name: prop_name, required: prop_required, showLabel: prop_showLabel, removeLabel: prop_removeLabel, placeholder: prop_placeholder, label: prop_label, value: prop_value, defaultValue: prop_defaultValue, items: prop_items } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
-    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+    {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}
   {/each}
 </lab-select>

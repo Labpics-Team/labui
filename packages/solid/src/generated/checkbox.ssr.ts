@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML, slotProjectionShadowHtml } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/checkbox';
 import type { LabCheckbox } from '@labpics/ui-core/checkbox';
 
@@ -38,5 +38,5 @@ export function renderCheckbox(
       value=${ifDefined(props.value)}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}
-    >${slots.description ? html`<span slot="description">${unsafeHTML(slots.description)}</span>` : ''}${slots.icon ? html`<span slot="icon">${unsafeHTML(slots.icon)}</span>` : ''}${slots.labelStart ? html`<span slot="label-start">${unsafeHTML(slots.labelStart)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-checkbox>`);
+    >${slots.description ? html`<lab-slot slot="description">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.description)}</lab-slot>` : ''}${slots.icon ? html`<lab-slot slot="icon">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.icon)}</lab-slot>` : ''}${slots.labelStart ? html`<lab-slot slot="label-start">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.labelStart)}</lab-slot>` : ''}${unsafeHTML(slots.default ?? '')}</lab-checkbox>`);
 }

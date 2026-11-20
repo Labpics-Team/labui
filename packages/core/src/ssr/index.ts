@@ -31,3 +31,4 @@ export function renderToString(template: TemplateResult): string {
  */
 export { html, ifDefined, noChange, unsafeHTML };
 export type { TemplateResult };
+export { slotProjectionShadowHtml } from '../slot-projection.js';

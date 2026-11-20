@@ -9,6 +9,7 @@
   import type { LabTagsInput } from '@labpics/ui-core/tags-input';
   import { type Snippet, untrack } from 'svelte';
   import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
+  import { slotProjectionShadowHtml } from '@labpics/ui-core/adapter-runtime';
 
   /** Пропы <lab-tags-input> — типы взяты прямо из класса ядра (LabTagsInput). */
   interface Props {
@@ -76,6 +77,6 @@
 <lab-tags-input bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type: prop_type, size: prop_size, label: prop_label, labelHidden: prop_labelHidden, helper: prop_helper, error: prop_error, placeholder: prop_placeholder, max: prop_max, delimiter: prop_delimiter, editable: prop_editable, addOnPaste: prop_addOnPaste, allowDuplicates: prop_allowDuplicates, value: prop_value, defaultValue: prop_defaultValue, readonly: prop_readonly, disabled: prop_disabled, required: prop_required, invalid: prop_invalid, name: prop_name } } }}>
   {@html server?.shadowHtml ?? ''}
   {#each Object.entries(namedContent) as [name, content] (name)}
-    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+    {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}
   {/each}
 </lab-tags-input>

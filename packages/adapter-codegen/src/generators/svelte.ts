@@ -70,7 +70,7 @@ function componentFile(c: ComponentMeta): string {
 
   const namedValues = namedSlots.map((s) => `'${s.slot}': slot_${s.prop}`).join(', ');
   const namedSlotMarkup = `  {#each Object.entries(namedContent) as [name, content] (name)}
-    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+    {#if content}<lab-slot {...{ slot: name }}>{@html server ? slotProjectionShadowHtml : ''}{@render content()}</lab-slot>{/if}
   {/each}`;
   const renderChildren = c.slots.default || c.slots.dynamic;
   const childrenMarkup = renderChildren ? '\n  {@render children?.()}' : '';
@@ -92,6 +92,7 @@ function componentFile(c: ComponentMeta): string {
   import type { ${c.className} } from '@labpics/ui-core/${c.subpath}';
   import { type Snippet, untrack } from 'svelte';
   import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
+  import { slotProjectionShadowHtml } from '@labpics/ui-core/adapter-runtime';
 
   /** Пропы <${c.tag}> — типы взяты прямо из класса ядра (${c.className}). */
   interface Props {

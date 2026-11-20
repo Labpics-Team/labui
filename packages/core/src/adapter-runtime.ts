@@ -1,3 +1,5 @@
+export { slotProjectionShadow, slotProjectionShadowHtml } from './slot-projection.js';
+
 /** How a declared custom-element input crosses an adapter boundary. */
 export type LabPropKind = 'boolean' | 'prop' | 'string';
 export interface LabPropSpec {
