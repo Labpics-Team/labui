@@ -136,38 +136,26 @@ try {
       await page.locator('lab-alert').evaluate((host) => {
         const style = document.createElement('style');
         style.textContent = `
-          .lab-alert-layer > .lab-material[data-lab-material-paint-renderer] { opacity: 1 !important; }
-          .lab-alert-layer > .lab-material > .lab-material__paint { opacity: var(--_alert-layer-opacity); }
-          .lab-alert-layer[data-opacity-control] > .lab-material > .lab-material__paint { opacity: 1; }
-          .lab-alert-layer > .lab-material[data-lab-material-paint-renderer="capture-blend"] > .lab-material__paint { backdrop-filter: blur(var(--_blur)); -webkit-backdrop-filter: blur(var(--_blur)); }
-          .lab-alert-layer > .lab-material[data-lab-material-paint-renderer="capture-blend"] > .lab-material__paint > .lab-material__capture { backdrop-filter: none; -webkit-backdrop-filter: none; }
-          .lab-alert-layer > .lab-material[data-lab-material-paint-renderer]::before,
-          .lab-alert-layer > .lab-material[data-lab-material-paint-renderer]::after { opacity: var(--_alert-layer-opacity); }
-          :host([data-opacity-probe="filter"]) .lab-alert-layer > .lab-material > .lab-material__paint { opacity: 1; filter: opacity(var(--_alert-layer-opacity)); }
-          :host([data-opacity-probe="opaque"]) .lab-alert-layer > .lab-material > .lab-material__paint { opacity: 1; }
-          :host([data-opacity-probe="no-clip"]) .lab-alert-layer { overflow: visible; }
-          :host([data-opacity-probe="host"]) .lab-alert-layer > .lab-material { opacity: var(--_alert-layer-opacity) !important; backdrop-filter: blur(var(--_blur)); -webkit-backdrop-filter: blur(var(--_blur)); }
-          :host([data-opacity-probe="host"]) .lab-alert-layer > .lab-material > .lab-material__paint { opacity: 1; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-          :host([data-opacity-probe="host"]) .lab-alert-layer > .lab-material::before,
-          :host([data-opacity-probe="host"]) .lab-alert-layer > .lab-material::after { opacity: 1; }
-          :host([data-opacity-probe="host"]) .lab-alert-layer[data-opacity-control] > .lab-material { opacity: 1 !important; }
-          :host([data-opacity-probe="filter"]) .lab-alert-layer[data-opacity-control] > .lab-material > .lab-material__paint { filter: opacity(1); }
-          :host([data-opacity-probe="original-opaque"]) .lab-alert-layer > .lab-material > .lab-material__paint,
-          :host([data-opacity-probe^="nested"]) .lab-alert-layer > .lab-material > .lab-material__paint { opacity: 1; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-          :host([data-opacity-probe="original-opaque"]) .lab-alert-layer > .lab-material > .lab-material__paint > .lab-material__capture,
-          :host([data-opacity-probe^="nested"]) .lab-alert-layer > .lab-material > .lab-material__paint > .lab-material__capture { backdrop-filter: blur(var(--_blur)) !important; -webkit-backdrop-filter: blur(var(--_blur)) !important; }
-          :host([data-opacity-probe^="nested"]) .lab-alert-layer > .lab-material > .lab-material__paint > .lab-material__capture { opacity: var(--_alert-layer-opacity); }
+          .lab-alert-layer { --_probe-alpha: var(--_alert-layer-opacity); }
+          .lab-alert-layer[data-opacity-control] { --_probe-alpha: 1; }
+          .lab-alert-layer > .lab-material { opacity: 1 !important; }
+          .lab-alert-layer > .lab-material > .lab-material__paint { opacity: 1; }
+          .lab-alert-layer > .lab-material::before,
+          .lab-alert-layer > .lab-material::after { opacity: var(--_probe-alpha); }
+          :host([data-opacity-probe^="nested"]) .lab-alert-layer .lab-material__capture,
+          :host([data-opacity-probe^="capture-alpha"]) .lab-alert-layer .lab-material__capture { opacity: var(--_probe-alpha); }
+          :host([data-opacity-probe="nested-opaque"]) .lab-alert-layer .lab-material__capture { opacity: 1; }
           :host([data-opacity-probe^="nested"]) .lab-material__capture > div { position: absolute; inset: 0; border-radius: inherit; }
-          :host([data-opacity-probe^="nested"]) .lab-alert-layer[data-opacity-control] > .lab-material > .lab-material__paint > .lab-material__capture { opacity: 1; }
-          :host([data-opacity-probe="nested-filter"]) .lab-alert-layer .lab-material__capture { opacity: 1 !important; filter: opacity(var(--_alert-layer-opacity)); }
-          :host([data-opacity-probe="nested-mask"]) .lab-alert-layer .lab-material__capture { opacity: 1 !important; -webkit-mask-image: linear-gradient(rgba(0,0,0,var(--_alert-layer-opacity)),rgba(0,0,0,var(--_alert-layer-opacity))); mask-image: linear-gradient(rgba(0,0,0,var(--_alert-layer-opacity)),rgba(0,0,0,var(--_alert-layer-opacity))); }
-          :host([data-opacity-probe="nested-transform"]) .lab-alert-layer .lab-material__capture { transform: translateZ(0); }
-          :host([data-opacity-probe="nested-filter"]) .lab-alert-layer[data-opacity-control] .lab-material__capture { filter: opacity(1); }
-          :host([data-opacity-probe="nested-mask"]) .lab-alert-layer[data-opacity-control] .lab-material__capture { -webkit-mask-image: none; mask-image: none; }
+          :host([data-opacity-probe="nested-bare"]) .lab-alert-layer .lab-material__capture > div,
+          :host([data-opacity-probe="nested-no-blend"]) .lab-alert-layer .lab-material__blend,
+          :host([data-opacity-probe="nested-no-blend"]) .lab-alert-layer .lab-material__grain { display: none; }
+          :host([data-opacity-probe="capture-alpha-no-clip"]) .lab-alert-layer { overflow: visible; }
+          :host([data-opacity-probe="host-bare"]) .lab-alert-layer > .lab-material { opacity: var(--_probe-alpha) !important; background: transparent; backdrop-filter: blur(var(--_blur)); -webkit-backdrop-filter: blur(var(--_blur)); }
+          :host([data-opacity-probe="host-bare"]) .lab-alert-layer .lab-material__paint { display: none; }
         `;
         host.shadowRoot.append(style);
       });
-      for (const probe of ['nested-filter', 'nested-mask', 'nested-transform']) {
+      for (const probe of ['original-opaque', 'nested-opaque', 'nested-opacity', 'nested-bare', 'nested-no-blend', 'capture-alpha', 'capture-alpha-no-clip', 'host-bare']) {
       for (const theme of ['light', 'dark'])
         for (const material of ['acrylic', 'glass']) {
           await page.evaluate(
@@ -186,7 +174,11 @@ try {
             for (const material of host.shadowRoot.querySelectorAll('.lab-alert-layer > .lab-material')) {
               const paint = material.querySelector('.lab-material__paint');
               const capture = paint.querySelector('.lab-material__capture');
-              for (const layer of [...paint.children]) if (layer !== capture) capture.append(layer);
+              if (probe.startsWith('nested')) {
+                for (const layer of [...paint.children]) if (layer !== capture) capture.append(layer);
+              } else {
+                paint.append(...capture.children);
+              }
             }
           }, probe);
           await settle(page);
