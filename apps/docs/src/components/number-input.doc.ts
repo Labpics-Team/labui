@@ -1,15 +1,6 @@
-/*
- * `lab-number-input` documentation config — a MACHINE-DRIVEN numeric form field. It
- * runs the @zag-js/number-input machine through the LabUI seam (the machine owns the
- * parsed value, min/max/step clamping, the spinbutton role + value ARIA, Arrow/PageUp-
- * Down keyboard stepping, and the +/- triggers that disable at the bounds) AND reuses
- * the SAME shared `field-a11y` helper as Input/Textarea for the label/helper/error
- * association — so the matrix below documents real ARIA, not a faked role.
- */
 import '@labpics/ui-core/number-input';
 import type { ComponentDoc } from '../template/component-doc.js';
 
-/** Build a real `<lab-number-input>` with the given attribute map applied. */
 function makeNumberInput(attrs: Readonly<Record<string, string | boolean>>): HTMLElement {
   const el = document.createElement('lab-number-input');
   el.setAttribute('label', 'Quantity');
@@ -33,7 +24,7 @@ export const numberInputDoc: ComponentDoc = {
   tag: 'lab-number-input',
   title: 'Number Input',
   summary:
-    'A numeric form field: a real <input role="spinbutton"> with increment/decrement triggers, min/max/step clamping, and format/parse. Runs the @zag-js/number-input machine through the LabUI seam (the machine owns the value, clamping, the spinbutton role + aria-valuenow/valuemin/valuemax/valuetext, keyboard stepping, and the triggers that disable at the bounds) and reuses the shared field-a11y helper for the label/helper/error association.',
+    'Числовое поле на авторской рамке Input. Дробный шаг, границы, редактируемое промежуточное значение и доступные кнопки изменения. Значение фиксируется при выходе из поля; отменённый сброс формы сохраняет ввод.',
   status: { kind: 'stable' },
 
   statesMatrix: {

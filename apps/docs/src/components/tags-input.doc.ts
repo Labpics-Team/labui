@@ -1,20 +1,6 @@
-/*
- * `lab-tags-input` documentation config — a MACHINE-DRIVEN tokenized text field: a text
- * input plus a row of removable tag chips. Enter adds a tag, Backspace removes the last,
- * each chip has a delete button and (optionally) edit-in-place, paste splits on a
- * delimiter, with a max-tags cap. It REUSES the shared form-field a11y seam (label /
- * helper / error association) on the input, exactly as Input / Combobox do.
- *
- * The matrix and live example render REAL `<lab-tags-input>` elements: typing in any cell
- * genuinely runs the @zag-js/tags-input machine — Enter adds a chip, Backspace removes the
- * last, each chip's × removes it, navigation highlights chips — nothing faked. The default
- * specimens seed a couple of chips so the chip row is visible at rest.
- */
 import '@labpics/ui-core/tags-input';
 import type { ComponentDoc } from '../template/component-doc.js';
 
-/** Build a real `<lab-tags-input>` with the given attribute map applied, seeded with two
- * default chips so the chip row reads at rest. */
 function makeTagsInput(attrs: Readonly<Record<string, string | boolean>>): HTMLElement {
   const el = document.createElement('lab-tags-input');
   el.setAttribute('label', 'Tags');
@@ -37,7 +23,7 @@ export const tagsInputDoc: ComponentDoc = {
   tag: 'lab-tags-input',
   title: 'Tags Input',
   summary:
-    "A tokenized text field — a text input plus a row of removable tag chips. Runs the @zag-js/tags-input machine through the LabUI seam: the machine owns the tag array, the input value, add-on-Enter, Backspace-removes-the-last, the highlighted-tag navigation (Arrow/Home/End), each chip's delete trigger + its accessible name, edit-in-place (Enter / double-click), paste-split on the delimiter, and the max-tags / overflow validity. It REUSES the shared field-a11y helper for the label / helper / error association — the same seam as Input — on the text input (the field's control). The element only paints with semantic --lab-* roles.",
+    'Несколько редактируемых значений внутри авторской рамки Input. Метки используют геометрию Chip, переносятся по ширине и удаляются отдельно. Поддерживаются клавиатура, вставка списка, предел количества и необязательные дубликаты.',
   status: { kind: 'stable' },
 
   statesMatrix: {

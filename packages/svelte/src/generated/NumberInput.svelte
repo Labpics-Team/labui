@@ -48,7 +48,7 @@
     { name: 'labelHidden', attr: 'label-hidden', kind: 'boolean' },
     { name: 'helper', attr: 'helper', kind: 'string' },
     { name: 'error', attr: 'error', kind: 'string' },
-    { name: 'value', attr: 'value', kind: 'string' },
+    { name: 'value', attr: 'value', kind: 'prop' },
     { name: 'defaultValue', attr: 'default-value', kind: 'string' },
     { name: 'placeholder', attr: 'placeholder', kind: 'string' },
     { name: 'min', attr: 'min', kind: 'string' },

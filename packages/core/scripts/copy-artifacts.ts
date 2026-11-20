@@ -25,6 +25,7 @@ import { cardCss } from '../src/components/card/styles.js';
 import { chipCss } from '../src/components/chip/styles.js';
 import { dialogCss } from '../src/components/dialog/styles.js';
 import { dragButtonCss } from '../src/components/drag-button/styles.js';
+import { extensionFieldCss } from '../src/components/field/extension-styles.js';
 import { inputCss } from '../src/components/input/styles.js';
 import { kbdCss } from '../src/components/kbd/styles.js';
 import { menuCss } from '../src/components/menu/styles.js';
@@ -77,6 +78,7 @@ function main(): void {
   );
   writeFileSync(join(dist, 'sheet.css'), sheetCss);
   writeFileSync(join(dist, 'input.css'), inputCss);
+  writeFileSync(join(dist, 'input-extensions.css'), extensionFieldCss);
   writeFileSync(join(dist, 'select.css'), selectCss);
   writeFileSync(join(dist, 'snackbar.css'), snackbarCss);
   writeFileSync(join(dist, 'card.css'), cardCss);

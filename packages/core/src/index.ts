@@ -177,7 +177,7 @@ export type {
   LabComboboxSize,
   LabComboboxType,
 } from './components/combobox/lab-combobox.js';
-export { filterComboboxItems } from './components/combobox/lab-combobox.js';
+export { filterComboboxItems } from './components/combobox/filter.js';
 
 // Advanced form inputs — both machine-driven, both REUSE the SHARED `field-a11y` helper
 // for the label / helper / error association (not a second implementation):
@@ -200,7 +200,7 @@ export type {
   LabTagsInputSize,
   LabTagsInputType,
 } from './components/tags-input/lab-tags-input.js';
-export { tagsInputTranslations } from './components/tags-input/lab-tags-input.js';
+export { tagsInputTranslations } from './components/tags-input/translations.js';
 
 export const PACKAGE_NAME = '@labpics/ui-core';
 

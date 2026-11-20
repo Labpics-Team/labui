@@ -29,7 +29,7 @@ export function renderNumberInput(
       .labelHidden=${props.labelHidden === undefined ? noChange : props.labelHidden}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
-      value=${ifDefined(props.value)}
+      .value=${props.value === undefined ? noChange : props.value}
       default-value=${ifDefined(props.defaultValue)}
       placeholder=${ifDefined(props.placeholder)}
       min=${ifDefined(props.min)}

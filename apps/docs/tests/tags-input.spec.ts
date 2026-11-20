@@ -309,37 +309,22 @@ test('disabled: the input is non-interactive on both renderers', async ({ page }
  * tint (the combobox lesson). Falsifiable: the Lit and React control boxes resolve the SAME
  * border colour, background, and padding, and BOTH carry a real (non-zero) border.
  */
-test('control-surface parity: the control box surface matches React (no double-paint)', async ({
-  page,
-}) => {
-  const readSurface = (el: Element) => {
-    const cs = getComputedStyle(el as HTMLElement);
-    return {
-      borderTopWidth: cs.borderTopWidth,
-      borderColor: cs.borderTopColor,
-      background: cs.backgroundColor,
-      padding: `${cs.paddingTop}/${cs.paddingRight}/${cs.paddingBottom}/${cs.paddingLeft}`,
-    };
-  };
-
-  const litSurface = await litControl(page, 'lit-neutral').evaluate((el, read) => {
-    const fn = new Function(`return (${read})`)() as (el: Element) => unknown;
-    return fn(el);
-  }, readSurface.toString());
-  const reactSurface = await reactControl(page, 'react-neutral').evaluate((el, read) => {
-    const fn = new Function(`return (${read})`)() as (el: Element) => unknown;
-    return fn(el);
-  }, readSurface.toString());
-
-  type Surface = ReturnType<typeof readSurface>;
-  const lit = litSurface as Surface;
-  const react = reactSurface as Surface;
-
-  expect(lit.borderTopWidth, 'Lit control carries a real border').not.toBe('0px');
-  expect(lit.background, 'Lit control has an opaque background').not.toBe('rgba(0, 0, 0, 0)');
-  expect(lit.borderColor, 'control border colour parity').toBe(react.borderColor);
-  expect(lit.background, 'control background parity').toBe(react.background);
-  expect(lit.padding, 'control padding parity').toBe(react.padding);
+test('one transparent Input outline wraps all tags in both renderers', async ({ page }) => {
+  const outlines = [];
+  for (const testid of ['lit-neutral', 'react-neutral']) {
+    const host = page.getByTestId(testid);
+    const outline = host.locator('.lab-input-outline');
+    await expect(outline).toHaveCount(1);
+    await expect(outline).toHaveCSS('border-top-width', '1px');
+    await expect(outline).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    outlines.push(
+      await outline.evaluate((el) => ({
+        color: getComputedStyle(el).borderColor,
+        radius: getComputedStyle(el).borderRadius,
+      })),
+    );
+  }
+  expect(outlines[0]).toEqual(outlines[1]);
 });
 
 test('visual parity: Lit and React resolve the same control border colour', async ({ page }) => {

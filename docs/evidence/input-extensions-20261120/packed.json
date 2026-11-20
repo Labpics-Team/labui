@@ -1,0 +1,134 @@
+{
+  "archives": [
+    {
+      "name": "@labpics/ui-tokens",
+      "sha256": "a0139b06ec0fc566b272969399964f86599a7431b9ba48183383b0a02df97600"
+    },
+    {
+      "name": "@labpics/ui-shadow",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "@labpics/ui-materials",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "@labpics/fonts",
+      "sha256": "d0d46708a7b04e7fca9900afc5735ca7a72fa5ae1082787ea603199b632b2fef"
+    },
+    {
+      "name": "@labui/colors",
+      "sha256": "c741313734b87f27e07b6941f6bd717d231a0427d4aaf282fcdee6361ba93f7b"
+    },
+    {
+      "name": "@labpics/ui-core",
+      "sha256": "d7c4b0615a8e3729560dfe43b622ad3e9fb55c50a1a282b86d8bdaf19353d6ec"
+    },
+    {
+      "name": "@labpics/ui-react",
+      "sha256": "c273e91b802b5c71aaae71fa07fe3561ca9e5e5031a9f99293813d33cc1f7695"
+    },
+    {
+      "name": "@labpics/ui-vue",
+      "sha256": "75c71099c745cd35aa5ffeb2f16db0e721b2e4e54d2932910c81a11d97149689"
+    },
+    {
+      "name": "@labpics/ui-solid",
+      "sha256": "672b639a8499bb85929cc0708603e0a5fc82faef37fb905f90bb4d53d8fde916"
+    },
+    {
+      "name": "@labpics/ui-svelte",
+      "sha256": "309fb537a6c21646a0461a1b3ad0dde01230c733db68f37d4031babf7b44c784"
+    },
+    {
+      "name": "@labpics/ui-astro",
+      "sha256": "4e4e58d6eb02c168107b0ca615335cf70b64898e5b93155bc8abac864050442f"
+    },
+    {
+      "name": "@labpics/icons",
+      "sha256": "d4962b817d19431393131f0aebb5d70f745e103e4062a6003a52926a8362c3bb"
+    }
+  ],
+  "records": [
+    {
+      "engine": "chromium",
+      "renderer": "react",
+      "forms": true,
+      "hydration": true,
+      "keyboard": true,
+      "reset": true
+    },
+    {
+      "engine": "chromium",
+      "renderer": "vue",
+      "forms": true,
+      "hydration": true,
+      "keyboard": true,
+      "reset": true
+    },
+    {
+      "engine": "chromium",
+      "renderer": "solid",
+      "forms": true,
+      "hydration": true,
+      "keyboard": true,
+      "reset": true
+    },
+    {
+      "engine": "chromium",
+      "renderer": "svelte",
+      "forms": true,
+      "hydration": true,
+      "keyboard": true,
+      "reset": true
+    },
+    {
+      "engine": "chromium",
+      "renderer": "astro",
+      "forms": true,
+      "hydration": true,
+      "keyboard": true,
+      "reset": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "react",
+      "forms": true,
+      "hydration": true,
+      "keyboard": true,
+      "reset": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "vue",
+      "forms": true,
+      "hydration": true,
+      "keyboard": true,
+      "reset": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "solid",
+      "forms": true,
+      "hydration": true,
+      "keyboard": true,
+      "reset": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "svelte",
+      "forms": true,
+      "hydration": true,
+      "keyboard": true,
+      "reset": true
+    },
+    {
+      "engine": "webkit",
+      "renderer": "astro",
+      "forms": true,
+      "hydration": true,
+      "keyboard": true,
+      "reset": true
+    }
+  ]
+}

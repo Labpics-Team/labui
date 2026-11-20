@@ -1,21 +1,7 @@
-/*
- * `lab-combobox` documentation config — the COMPOUND + POSITIONED + FILTERED canon: a
- * text input that NARROWS a positioned listbox of options as the user types. It FUSES
- * the Select listbox (machine-positioned, dismissable) with a typeable input and the
- * shared form-field a11y seam (label / helper / error association).
- *
- * The matrix and live example render REAL `<lab-combobox>` elements. The listbox is
- * hidden until the machine opens it (on focus / type), so the grid shows the live
- * INPUTS across size and sentiment; focusing any cell genuinely opens the listbox,
- * filters as you type, navigates with Arrow/Home/End, selects on Enter/click, and
- * dismisses on Escape / outside-click — all from the @zag-js/combobox machine, nothing
- * faked. The live controls re-point the same axes the machine reads.
- */
 import '@labpics/ui-core/combobox';
 import type { LabComboboxItem } from '@labpics/ui-core/combobox';
 import type { ComponentDoc } from '../template/component-doc.js';
 
-/** The shared option set for every documented specimen. */
 const FRUITS: readonly LabComboboxItem[] = [
   { value: 'apple', label: 'Apple' },
   { value: 'apricot', label: 'Apricot' },
@@ -25,8 +11,6 @@ const FRUITS: readonly LabComboboxItem[] = [
   { value: 'elderberry', label: 'Elderberry' },
 ];
 
-/** Build a real `<lab-combobox>` with the given attribute map applied. The options ride
- * the JSON `items` attribute; a `placeholder` makes the empty input legible. */
 function makeCombobox(attrs: Readonly<Record<string, string | boolean>>): HTMLElement {
   const el = document.createElement('lab-combobox');
   el.setAttribute('items', JSON.stringify(FRUITS));
@@ -49,7 +33,7 @@ export const comboboxDoc: ComponentDoc = {
   tag: 'lab-combobox',
   title: 'Combobox',
   summary:
-    'A text input with a filterable listbox (autocomplete / typeahead). Runs the @zag-js/combobox machine through the LabUI seam: the machine owns open-on-focus/type, the filterable listbox, single/multiple selection, Arrow/Home/End navigation, Escape / outside-click dismiss, focus restoration, role="combobox"/listbox/option + aria-expanded/controls/activedescendant/autocomplete, and dynamic positioning (Floating UI). The typed query narrows the options (the shared default filter). It REUSES the shared field-a11y helper for the label / helper / error association — the same seam as Input — so the ARIA contract is one source of truth across both renderers. The element only paints with semantic --lab-* roles.',
+    'Выбор из списка с поиском. Прозрачная рамка и подпись Input, строки Dropdown. Ввод сохраняет фокус; список открывается поверх обрезающих контейнеров. Поддерживаются одиночный и множественный выбор, недоступные варианты и управление значением извне.',
   status: { kind: 'stable' },
 
   statesMatrix: {

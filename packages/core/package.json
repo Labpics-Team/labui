@@ -403,7 +403,28 @@
         "default": "./dist/components/menu/runtime.cjs"
       }
     },
-    "./menu.css": "./dist/menu.css"
+    "./menu.css": "./dist/menu.css",
+    "./input-extensions.css": "./dist/input-extensions.css",
+    "./number-input/behavior": {
+      "import": {
+        "types": "./dist/components/number-input/behavior.d.ts",
+        "default": "./dist/components/number-input/behavior.js"
+      },
+      "require": {
+        "types": "./dist/components/number-input/behavior.d.cts",
+        "default": "./dist/components/number-input/behavior.cjs"
+      }
+    },
+    "./combobox/runtime": {
+      "import": {
+        "types": "./dist/components/combobox/runtime.d.ts",
+        "default": "./dist/components/combobox/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/combobox/runtime.d.cts",
+        "default": "./dist/components/combobox/runtime.cjs"
+      }
+    }
   },
   "files": ["dist"],
   "sideEffects": [
@@ -442,7 +463,8 @@
     "./dist/tooltip.css",
     "./dist/alert.css",
     "./dist/menu.css",
-    "./dist/dialog.css"
+    "./dist/dialog.css",
+    "./dist/input-extensions.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
