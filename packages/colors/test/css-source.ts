@@ -61,7 +61,7 @@ interface CssText extends Span {
  * can resolve template holes; unknown code never grants a syntax proof. */
 function literalCss(file: ts.SourceFile, groupComments = true): CssText[] {
   const texts: CssText[] = [];
-  const values = staticCssValues(file);
+  let values: ReturnType<typeof staticCssValues> | undefined;
   const arrays = new Set<ts.ArrayLiteralExpression>();
   const variables = new Map<string, ts.ArrayLiteralExpression>();
   const scopeKey = (node: ts.Node, name: string): string => {
@@ -114,7 +114,8 @@ function literalCss(file: ts.SourceFile, groupComments = true): CssText[] {
             end: span.literal.getStart(file) + 1 - start,
           };
           holes.push(hole);
-          const value = values.evaluate(span.expression);
+          if (!groupComments && !values) values = staticCssValues(file);
+          const value = values?.evaluate(span.expression) ?? unknownValue;
           const known =
             value !== unknownValue && (typeof value === 'string' || typeof value === 'number');
           if (!known) unknownHoles.push({ start: start + hole.start, end: start + hole.end });

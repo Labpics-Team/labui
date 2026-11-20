@@ -2,7 +2,7 @@ import ts from 'typescript';
 import components from '../../tokens/src/components.js';
 
 export const unknownValue = Symbol('unknown static CSS value');
-type Scope = ReadonlyMap<string, unknown>;
+type Scope = ReadonlyMap<ts.Symbol, unknown>;
 interface FunctionValue {
   readonly expression: ts.ArrowFunction;
   readonly scope: Scope;
@@ -24,8 +24,32 @@ function isFunctionValue(value: unknown): value is FunctionValue {
  * TypeScript owns syntax; unsupported expressions remain unknown.
  */
 export function staticCssValues(file: ts.SourceFile) {
-  const initial = new Map<string, unknown>();
-  const definitions = new Map<string, ts.Expression>();
+  // Let TypeScript bind declarations, parameters and block scopes. No imports,
+  // libraries, filesystem access or type diagnostics are needed for this proof.
+  const checker = ts
+    .createProgram(
+      [file.fileName],
+      { noLib: true, noResolve: true },
+      {
+        getSourceFile: (name) => (name === file.fileName ? file : undefined),
+        getDefaultLibFileName: () => '',
+        writeFile: () => {},
+        getCurrentDirectory: () => '',
+        getDirectories: () => [],
+        fileExists: (name) => name === file.fileName,
+        readFile: (name) => (name === file.fileName ? file.text : undefined),
+        getCanonicalFileName: (name) => name,
+        useCaseSensitiveFileNames: () => true,
+        getNewLine: () => '\n',
+      },
+    )
+    .getTypeChecker();
+  const symbolAt = (node: ts.Node) =>
+    ts.isExportSpecifier(node.parent)
+      ? checker.getExportSpecifierLocalTargetSymbol(node.parent)
+      : checker.getSymbolAtLocation(node);
+  const initial = new Map<ts.Symbol, unknown>();
+  const definitions = new Map<ts.Symbol, ts.Expression>();
   for (const statement of file.statements) {
     if (
       ts.isImportDeclaration(statement) &&
@@ -41,36 +65,82 @@ export function staticCssValues(file: ts.SourceFile) {
               `${key.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())}Profile` ===
               name,
           );
-          if (profile) initial.set(entry.name.text, profile[1]);
+          const symbol = symbolAt(entry.name);
+          if (profile && symbol) initial.set(symbol, profile[1]);
         }
     }
     if (ts.isVariableStatement(statement) && statement.declarationList.flags & ts.NodeFlags.Const)
       for (const declaration of statement.declarationList.declarations)
-        if (ts.isIdentifier(declaration.name) && declaration.initializer)
-          definitions.set(declaration.name.text, declaration.initializer);
+        if (ts.isIdentifier(declaration.name) && declaration.initializer) {
+          const symbol = symbolAt(declaration.name);
+          if (symbol) definitions.set(symbol, declaration.initializer);
+        }
   }
-  const profileNames = new Set(initial.keys());
+  const profiles = new Set(initial.keys());
+  const invalid = new Set<ts.Symbol>();
+  const writtenGlobals = new Set<string>();
+  const rootSymbol = (expression: ts.Expression): ts.Symbol | undefined => {
+    let root = expression;
+    while (
+      ts.isPropertyAccessExpression(root) ||
+      ts.isElementAccessExpression(root) ||
+      ts.isParenthesizedExpression(root) ||
+      ts.isAsExpression(root) ||
+      ts.isNonNullExpression(root) ||
+      ts.isSatisfiesExpression(root)
+    )
+      root = root.expression;
+    return ts.isIdentifier(root) ? symbolAt(root) : undefined;
+  };
+  const invalidateTarget = (target: ts.Node): void => {
+    if (ts.isObjectLiteralExpression(target)) {
+      for (const property of target.properties) {
+        if (ts.isPropertyAssignment(property)) invalidateTarget(property.initializer);
+        else if (ts.isShorthandPropertyAssignment(property)) invalidateTarget(property.name);
+        else if (ts.isSpreadAssignment(property)) invalidateTarget(property.expression);
+      }
+    } else if (ts.isArrayLiteralExpression(target)) {
+      for (const element of target.elements) invalidateTarget(element);
+    } else if (ts.isSpreadElement(target)) invalidateTarget(target.expression);
+    else if (ts.isBinaryExpression(target)) invalidateTarget(target.left);
+    else if (ts.isParenthesizedExpression(target)) invalidateTarget(target.expression);
+    else if (
+      ts.isIdentifier(target) ||
+      ts.isPropertyAccessExpression(target) ||
+      ts.isElementAccessExpression(target)
+    ) {
+      const symbol = rootSymbol(target);
+      if (symbol) invalid.add(symbol);
+      else {
+        let root: ts.Expression = target;
+        while (ts.isPropertyAccessExpression(root) || ts.isElementAccessExpression(root))
+          root = root.expression;
+        if (ts.isIdentifier(root)) writtenGlobals.add(root.text);
+      }
+    }
+  };
   const invalidateWrites = (node: ts.Node): void => {
-    if (
+    const target =
       ts.isBinaryExpression(node) &&
       node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment &&
       node.operatorToken.kind <= ts.SyntaxKind.LastAssignment
-    ) {
-      let root = node.left;
-      while (ts.isPropertyAccessExpression(root) || ts.isElementAccessExpression(root))
-        root = root.expression;
-      if (ts.isIdentifier(root)) {
-        initial.delete(root.text);
-        definitions.delete(root.text);
-        profileNames.delete(root.text);
-      }
-    }
+        ? node.left
+        : (ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) &&
+            (node.operator === ts.SyntaxKind.PlusPlusToken ||
+              node.operator === ts.SyntaxKind.MinusMinusToken)
+          ? node.operand
+          : ts.isDeleteExpression(node)
+            ? node.expression
+            : undefined;
+    if (target) invalidateTarget(target);
     ts.forEachChild(node, invalidateWrites);
   };
   invalidateWrites(file);
-  const bind = (name: ts.BindingName, value: unknown, scope: Map<string, unknown>): void => {
-    if (ts.isIdentifier(name)) scope.set(name.text, value);
-    else if (ts.isArrayBindingPattern(name) && Array.isArray(value))
+  const bind = (name: ts.BindingName, value: unknown, scope: Map<ts.Symbol, unknown>): void => {
+    if (ts.isIdentifier(name)) {
+      const symbol = symbolAt(name);
+      if (symbol) scope.set(symbol, value);
+    } else if (ts.isArrayBindingPattern(name) && Array.isArray(value))
       name.elements.forEach((entry, index) => {
         if (ts.isBindingElement(entry)) bind(entry.name, value[index], scope);
       });
@@ -103,9 +173,17 @@ export function staticCssValues(file: ts.SourceFile) {
     )
       return next(node.expression);
     if (ts.isIdentifier(node)) {
-      if (scope.has(node.text)) return scope.get(node.text);
-      const definition = definitions.get(node.text);
-      return definition ? evaluate(definition, initial, depth + 1) : unknownValue;
+      const symbol = symbolAt(node);
+      if (!symbol || invalid.has(symbol)) return unknownValue;
+      if (scope.has(symbol)) return scope.get(symbol);
+      const definition = definitions.get(symbol);
+      const value = definition ? evaluate(definition, initial, depth + 1) : unknownValue;
+      // A const object is still mutable. Do not infer its identity, alias graph
+      // or effect history. Only imported authored profiles and callback inputs
+      // carry object values; local consts may provide primitives or formatters.
+      return value !== null && typeof value === 'object' && !isFunctionValue(value)
+        ? unknownValue
+        : value;
     }
     if (ts.isArrowFunction(node)) return { expression: node, scope } satisfies FunctionValue;
     if (ts.isTemplateExpression(node)) {
@@ -181,8 +259,8 @@ export function staticCssValues(file: ts.SourceFile) {
       if (
         ts.isIdentifier(node.expression) &&
         node.expression.text === 'encodeURIComponent' &&
-        !definitions.has('encodeURIComponent') &&
-        !scope.has('encodeURIComponent') &&
+        !symbolAt(node.expression) &&
+        !writtenGlobals.has('encodeURIComponent') &&
         typeof args[0] === 'string'
       )
         return encodeURIComponent(args[0]);
@@ -192,8 +270,8 @@ export function staticCssValues(file: ts.SourceFile) {
           ts.isIdentifier(member.expression) &&
           member.expression.text === 'Object' &&
           member.name.text === 'entries' &&
-          !definitions.has('Object') &&
-          !scope.has('Object') &&
+          !symbolAt(member.expression) &&
+          !writtenGlobals.has('Object') &&
           args[0] !== null &&
           typeof args[0] === 'object'
         )
@@ -202,8 +280,8 @@ export function staticCssValues(file: ts.SourceFile) {
           ts.isIdentifier(member.expression) &&
           member.expression.text === 'Array' &&
           member.name.text === 'from' &&
-          !definitions.has('Array') &&
-          !scope.has('Array') &&
+          !symbolAt(member.expression) &&
+          !writtenGlobals.has('Array') &&
           args[0] &&
           typeof args[0] === 'object' &&
           'length' in args[0] &&
@@ -240,31 +318,90 @@ export function staticCssValues(file: ts.SourceFile) {
     }
     return unknownValue;
   };
+
+  // A profile may be read as primitive fields, or consumed immediately by a
+  // fully understood pure expression (entries/map/join). Any object alias,
+  // export or unknown call can expose mutable data, so revoke that profile.
+  const inspectProfileReferences = (node: ts.Node): void => {
+    if (ts.isIdentifier(node)) {
+      const symbol = symbolAt(node);
+      if (symbol && profiles.has(symbol) && !ts.isImportSpecifier(node.parent)) {
+        let expression: ts.Expression = node;
+        while (
+          (ts.isPropertyAccessExpression(expression.parent) ||
+            ts.isElementAccessExpression(expression.parent) ||
+            ts.isParenthesizedExpression(expression.parent) ||
+            ts.isAsExpression(expression.parent) ||
+            ts.isNonNullExpression(expression.parent) ||
+            ts.isSatisfiesExpression(expression.parent)) &&
+          expression.parent.expression === expression
+        )
+          expression = expression.parent;
+        const value = evaluate(expression);
+        if ((value !== null && typeof value === 'object') || value === unknownValue) {
+          // Widen only through call/member chains, never through declarations
+          // or function bodies. Evaluation rejects assignments and unknown calls.
+          let consumer = expression;
+          while (
+            ts.isCallExpression(consumer.parent) ||
+            ((ts.isPropertyAccessExpression(consumer.parent) ||
+              ts.isElementAccessExpression(consumer.parent)) &&
+              consumer.parent.expression === consumer)
+          )
+            consumer = consumer.parent as ts.Expression;
+          const result = evaluate(consumer);
+          if (typeof result !== 'string' && typeof result !== 'number') invalid.add(symbol);
+        }
+      }
+    }
+    ts.forEachChild(node, inspectProfileReferences);
+  };
+  inspectProfileReferences(file);
   const isProfileNumber = (
     node: ts.Expression,
-    argumentsByName = new Map<string, ts.Expression>(),
+    argumentsBySymbol = new Map<ts.Symbol, ts.Expression>(),
   ): boolean => {
-    if (ts.isIdentifier(node) && argumentsByName.has(node.text))
-      return isProfileNumber(argumentsByName.get(node.text) as ts.Expression);
+    const symbol = ts.isIdentifier(node) ? symbolAt(node) : undefined;
+    if (symbol && argumentsBySymbol.has(symbol))
+      return isProfileNumber(argumentsBySymbol.get(symbol) as ts.Expression);
     if (ts.isParenthesizedExpression(node) || ts.isAsExpression(node))
-      return isProfileNumber(node.expression, argumentsByName);
+      return isProfileNumber(node.expression, argumentsBySymbol);
     if (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) {
       let root: ts.Expression = node;
       while (ts.isPropertyAccessExpression(root) || ts.isElementAccessExpression(root))
         root = root.expression;
       return (
-        ts.isIdentifier(root) && profileNames.has(root.text) && typeof evaluate(node) === 'number'
+        ts.isIdentifier(root) &&
+        profiles.has(symbolAt(root) as ts.Symbol) &&
+        typeof evaluate(node) === 'number'
       );
     }
-    if (ts.isBinaryExpression(node))
+    if (ts.isBinaryExpression(node)) {
+      const literalScale = (value: ts.Expression) => {
+        if (!ts.isNumericLiteral(value)) return false;
+        const scale = Number(value.text);
+        return Number.isFinite(scale) && scale !== 0;
+      };
+      if (node.operatorToken.kind === ts.SyntaxKind.AsteriskToken)
+        return (
+          (isProfileNumber(node.left, argumentsBySymbol) && literalScale(node.right)) ||
+          (literalScale(node.left) && isProfileNumber(node.right, argumentsBySymbol))
+        );
       return (
-        isProfileNumber(node.left, argumentsByName) || isProfileNumber(node.right, argumentsByName)
+        node.operatorToken.kind === ts.SyntaxKind.SlashToken &&
+        isProfileNumber(node.left, argumentsBySymbol) &&
+        literalScale(node.right)
       );
-    return ts.isPrefixUnaryExpression(node) && isProfileNumber(node.operand, argumentsByName);
+    }
+    return (
+      ts.isPrefixUnaryExpression(node) &&
+      (node.operator === ts.SyntaxKind.PlusToken || node.operator === ts.SyntaxKind.MinusToken) &&
+      isProfileNumber(node.operand, argumentsBySymbol)
+    );
   };
   const isProfileInterpolation = (node: ts.Expression): boolean => {
     if (typeof evaluate(node) === 'number') return isProfileNumber(node);
-    if (!ts.isCallExpression(node)) return false;
+    if (!ts.isCallExpression(node) || typeof evaluate(node) !== 'string') return false;
     const fn = evaluate(node.expression);
     if (!isFunctionValue(fn)) return false;
     const body = fn.expression.body;
@@ -275,10 +412,10 @@ export function staticCssValues(file: ts.SourceFile) {
       !/^(?:px|rem|em)$/.test(body.templateSpans[0]?.literal.text ?? '')
     )
       return false;
-    const args = new Map<string, ts.Expression>();
+    const args = new Map<ts.Symbol, ts.Expression>();
     fn.expression.parameters.forEach((parameter, index) => {
-      if (ts.isIdentifier(parameter.name) && node.arguments[index])
-        args.set(parameter.name.text, node.arguments[index] as ts.Expression);
+      const symbol = ts.isIdentifier(parameter.name) && symbolAt(parameter.name);
+      if (symbol && node.arguments[index]) args.set(symbol, node.arguments[index] as ts.Expression);
     });
     return isProfileNumber(body.templateSpans[0]?.expression as ts.Expression, args);
   };

@@ -22,6 +22,23 @@ import {
 describe('no magic dimensions in migrated components (dimension contract)', () => {
   const canon = canonicalTokens();
 
+  it.each([
+    'function stylesheet(p) { return `.x { border-radius: ${p.radius}px; }`; } stylesheet({radius: 77});',
+    'function stylesheet(p) { return `.x { border-radius: ${rem(p.radius)}; }`; } stylesheet({radius: 77});',
+    'const css = `.x { border-radius: ${p.radius * 0 + 77}px; }`;',
+    'const css = `.x { border-radius: ${rem(p.radius * 0 + 77)}; }`;',
+    'const css = `.x { border-radius: ${p.radius - p.radius + 77}px; }`;',
+    'const css = `.x { border-radius: ${p.radius / p.radius * 77}px; }`;',
+    'const css = `.x { border-radius: ${p.radius + 77}px; }`;',
+    'const alias = p; alias.radius = 77; const css = `.x { border-radius: ${rem(p.radius)}; }`;',
+  ])('does not confuse a profile name or cancelled term with authored geometry: %s', (source) => {
+    const prefix =
+      "import { tooltipProfile as p } from '@labpics/ui-tokens'; const rem = (n: number) => `${n / 16}rem`;";
+    expect(
+      scanDimensionSource('p.ts', prefix + source).some((hit) => hit.rule === 'magic-radius'),
+    ).toBe(true);
+  });
+
   it('accepts circular geometry and imported profile lengths, not disguised literals', () => {
     expect(scanDimensionSource('p.css', '.dot { border-radius: 50%; }')).toEqual([]);
     expect(scanDimensionSource('p.css', '.dot { border-radius: 48%; }')).toMatchObject([

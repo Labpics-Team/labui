@@ -97,6 +97,48 @@ describe('local integer layers need an effective isolation declaration', () => {
 });
 
 describe('exceptions require complete static CSS in the source', () => {
+  it.each([
+    "const mode = 'active'; function stylesheet(mode) { return `@media (forced-colors: ${mode}) { .x { color: CanvasText; } }`; } stylesheet('none');",
+    "const mode = 'active'; { const mode = 'none'; const css = `@media (forced-colors: ${mode}) { .x { color: CanvasText; } }`; }",
+    "const prefs = { mode: 'active' }; const alias = prefs; alias.mode = 'none'; const css = `@media (forced-colors: ${prefs.mode}) { .x { color: CanvasText; } }`;",
+    "const prefs = { mode: 'active' }; Object.assign(prefs, { mode: 'none' }); const css = `@media (forced-colors: ${prefs.mode}) { .x { color: CanvasText; } }`;",
+    "const prefs = { mode: 'active' }; update(prefs); const css = `@media (forced-colors: ${prefs.mode}) { .x { color: CanvasText; } }`;",
+    "Object.entries = () => [['mode', 'none']]; const css = `@media (forced-colors: ${Object.entries({ mode: 'active' }).map(([, value]) => value).join('')}) { .x { color: CanvasText; } }`;",
+    "const mode = 'active'; function stylesheet(Object) { return `@media (forced-colors: ${Object.entries({ mode }).map(([, value]) => value).join('')}) { .x { color: CanvasText; } }`; }",
+  ])('keeps system paint visible when a binding or object is not proved: %s', (source) => {
+    expect(scanSource('p.ts', source).map((hit) => hit.token)).toEqual(['CanvasText']);
+  });
+
+  it('resolves an unshadowed primitive const while preserving a formatter lexical scope', () => {
+    expect(
+      scanSource(
+        'p.ts',
+        "const mode = 'active'; const css = `@media (forced-colors: ${mode}) { .x { color: CanvasText; } }`;",
+      ),
+    ).toEqual([]);
+    const source =
+      "const mode = 'none'; const read = () => mode; const css = `@media (forced-colors: ${['active'].map((mode) => read()).join('')}) { .x { color: CanvasText; } }`;";
+    expect(scanSource('p.ts', source).map((hit) => hit.token)).toEqual(['CanvasText']);
+  });
+
+  it.each([
+    'const alias = p; alias.padding = 77;',
+    'const alias = p.tail; alias.width = 77;',
+    'Object.assign(p, { padding: 77 });',
+    'update(p);',
+    'update(p.tail);',
+    'export { p };',
+    'p.padding++;',
+    'delete p.padding;',
+    '({ padding: p.padding } = { padding: 77 });',
+    '[p.padding] = [77];',
+    'p.shadow.map((layer) => layer.x = 77);',
+    'p.shadow.map(update);',
+  ])('revokes profile syntax proof after mutation or object escape: %s', (change) => {
+    const source = `import { tooltipProfile as p } from '@labpics/ui-tokens'; ${change} const css = \`.surface { isolation: isolate; padding: \${p.padding}px; } .surface::before { z-index: -1; }\`;`;
+    expect(scanZIndexSource('p.ts', source)).toMatchObject([{ rule: 'magic-zindex' }]);
+  });
+
   it('resolves imported authored profiles and pure formatters without executing source', () => {
     const prefix =
       "import { tooltipProfile as p } from '@labpics/ui-tokens'; const rem = (n: number) => `${n / 16}rem`;";
