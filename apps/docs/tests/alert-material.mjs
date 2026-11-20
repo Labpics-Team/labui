@@ -158,13 +158,16 @@ try {
                 points: cluster(x, Math.floor(rect.top + rect.height / 2)),
               };
             });
-            const near = x + 2;
-            const far = x + 120;
+            // A narrow black band keeps every sample black while exposing both
+            // sides of the blur kernel to white. A single edge gives weak
+            // signal in the translucent stack on some compositor backends.
+            const near = 2;
+            const far = 120;
             groups.push(
               { name: 'raw-fixed', points: cluster(x, 220) },
-              { name: 'raw-moving', points: cluster(Math.floor((near + far) / 2), 220) },
+              { name: 'raw-moving', points: cluster(x + Math.floor((near + far) / 2), 220) },
             );
-            return { groups, near, far };
+            return { groups, center: x, near, far };
           });
           assert.equal(
             geometry.groups.length,
@@ -173,8 +176,11 @@ try {
           );
           const captureTriplet = async () => {
             const frames = [];
-            for (const edge of [geometry.far, geometry.near, geometry.far]) {
-              await page.evaluate((edge) => window.moveBackdrop(edge), edge);
+            for (const radius of [geometry.far, geometry.near, geometry.far]) {
+              await page.evaluate(
+                ({ center, radius }) => window.moveBackdrop(center, radius),
+                { center: geometry.center, radius },
+              );
               await settle(page);
               frames.push(await sample(page, geometry.groups));
             }
