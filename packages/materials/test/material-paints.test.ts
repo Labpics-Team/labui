@@ -4,12 +4,101 @@ import {
   compileMaterialPaint,
   materialPaintOver,
   materialPaintTables,
+  neutralMaterialFilter,
   screenNoiseApproximation,
 } from '../src/material-paints';
 import { MATERIAL_TIERS, materialBlendMode, materialProfile } from '../src/profile';
 import { readContractMaterials } from './contract-values';
 
 describe('encoded sRGB author paints', () => {
+  it('executes neutral affine paints as native filters without clipping or neutralising colour inputs', () => {
+    const { fills } = readContractMaterials();
+    const accepted: string[] = [];
+    const clamp = (value: number) => Math.min(1, Math.max(0, value));
+    for (const theme of ['light', 'dark'] as const)
+      for (const tier of MATERIAL_TIERS) {
+        const fill = fills.get(`${theme}/${tier}`);
+        if (!fill?.blend) throw new Error('Missing author paints');
+        const paints = {
+          normal: fill.tint,
+          blend: fill.blend,
+          blendMode: materialBlendMode(theme),
+        };
+        const filter = neutralMaterialFilter(paints);
+        if (!filter) continue;
+        accepted.push(`${theme}/${tier}`);
+        // RGB channels vary independently, including values between 8-bit knots.
+        for (let i = 0; i <= 1024; i++) {
+          const input = {
+            r: (i / 1024) * 255,
+            g: ((1024 - i) / 1024) * 255,
+            b: (((i * 379) % 1025) / 1024) * 255,
+            a: 1,
+          };
+          const expected = materialPaintOver(paints, input);
+          for (const key of ['r', 'g', 'b'] as const) {
+            const contrasted = clamp((input[key] / 255 - 0.5) * filter.contrast + 0.5);
+            expect(clamp(contrasted * filter.brightness) * 255).toBeCloseTo(expected[key], 8);
+          }
+        }
+      }
+    expect(accepted).toContain('light/base');
+    expect(accepted).toContain('light/muted');
+    expect(accepted).toContain('dark/base');
+    expect(accepted).toContain('dark/muted');
+    expect(accepted).not.toContain('dark/elevated');
+    expect(accepted).not.toContain('light/elevated');
+    expect(
+      neutralMaterialFilter({
+        normal: { r: 20, g: 40, b: 60, a: 0.3 },
+        blend: { r: 0, g: 0, b: 0, a: 0 },
+        blendMode: 'overlay',
+      }),
+    ).toBeNull();
+  });
+  it('bounds the moved spatial Screen grain while changing blur and group alpha', () => {
+    const { fills } = readContractMaterials();
+    const maxAlpha = Math.round(materialProfile.noise.opacity * 255) / 255;
+    const bound = Math.max(...materialProfile.noise.color) * maxAlpha;
+    expect(bound).toBeLessThan(0.197);
+    for (const theme of ['light', 'dark'] as const)
+      for (const tier of MATERIAL_TIERS) {
+        const fill = fills.get(`${theme}/${tier}`);
+        if (!fill?.blend) throw new Error('Missing author paints');
+        const paints = {
+          normal: fill.tint,
+          blend: fill.blend,
+          blendMode: materialBlendMode(theme),
+        };
+        if (!neutralMaterialFilter(paints)) continue;
+        for (const blurred of [0, 0.11, 0.49, 0.73, 1])
+          for (const raw of [0, 0.19, 0.81, 1])
+            for (const alpha of [0, 0.2, 0.52, 0.76, 1]) {
+              for (const noise of materialProfile.noise.color) {
+                const grain = (noise / 255) * maxAlpha;
+                const screened = blurred + (1 - blurred) * grain;
+                const before =
+                  materialPaintOver(paints, {
+                    r: screened * 255,
+                    g: screened * 255,
+                    b: screened * 255,
+                    a: 1,
+                  }).r / 255;
+                const painted =
+                  materialPaintOver(paints, {
+                    r: blurred * 255,
+                    g: blurred * 255,
+                    b: blurred * 255,
+                    a: 1,
+                  }).r / 255;
+                const expected = alpha * before + (1 - alpha) * raw;
+                const base = alpha * painted + (1 - alpha) * raw;
+                const actual = base + (1 - base) * grain * alpha;
+                expect(Math.abs(actual - expected) * 255).toBeLessThanOrEqual(bound + 1e-10);
+              }
+            }
+      }
+  });
   it('does not classify the pure-white color-dodge discontinuity as affine', () => {
     const compiled = compileMaterialPaint({
       normal: { r: 0, g: 0, b: 0, a: 0 },

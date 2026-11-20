@@ -29,6 +29,55 @@ export interface CompiledMaterialPaint {
  * fallbackError bounds the normal-only chord, not table interpolation error.
  */
 export function compileMaterialPaint(paints: MaterialPaints): CompiledMaterialPaint {
+  const { fill, maximumError } = analyseMaterialPaint(paints);
+  const keys = ['r', 'g', 'b'] as const;
+  const gain = 1 - fill.a;
+  const offsets = keys.map((key) => fill[key] * fill.a);
+  const rows: number[][] = [[], [], []];
+  for (let i = 0; i < TRANSFER_SAMPLES; i++) {
+    const value = (i / (TRANSFER_SAMPLES - 1)) * 255;
+    const out = materialPaintOver(paints, { r: value, g: value, b: value, a: 1 });
+    for (const [index, key] of keys.entries())
+      rows[index]?.push(
+        gain > 1e-10
+          ? Math.min(1, Math.max(0, (out[key] - (offsets[index] ?? 0)) / (255 * gain)))
+          : i / (TRANSFER_SAMPLES - 1),
+      );
+  }
+  return {
+    fill,
+    tables: rows.map((row) => row.map((value) => Number(value.toFixed(8))).join(' ')) as [
+      string,
+      string,
+      string,
+    ],
+    affine: maximumError < 1e-8,
+    fallbackError: maximumError,
+  };
+}
+
+/** A neutral affine paint needs no SVG table or nested blend group. CSS applies
+ * contrast before brightness: k(c x + (1-c)/2) = m x + b, with k=m+2b.
+ * Since 0<=c<=1 the intermediate operation never clips. The endpoint/breakpoint
+ * analysis rejects coloured and nonlinear recipes instead of fitting a chord.
+ */
+export function neutralMaterialFilter(
+  paints: MaterialPaints,
+): { contrast: number; brightness: number } | null {
+  const { fill, maximumError } = analyseMaterialPaint(paints);
+  if (
+    maximumError >= 1e-8 ||
+    Math.abs(fill.r - fill.g) > 1e-10 ||
+    Math.abs(fill.g - fill.b) > 1e-10
+  )
+    return null;
+  const slope = 1 - fill.a;
+  const intercept = (fill.r * fill.a) / 255;
+  const brightness = slope + 2 * intercept;
+  return { contrast: brightness > 0 ? slope / brightness : 1, brightness };
+}
+
+function analyseMaterialPaint(paints: MaterialPaints): { fill: Rgba; maximumError: number } {
   const black = materialPaintOver(paints, { r: 0, g: 0, b: 0, a: 1 });
   const white = materialPaintOver(paints, { r: 255, g: 255, b: 255, a: 1 });
   const keys = ['r', 'g', 'b'] as const;
@@ -66,28 +115,7 @@ export function compileMaterialPaint(paints: MaterialPaints): CompiledMaterialPa
         Math.abs(exact[key] - ((offsets[index] ?? 0) + gain * point * 255)),
       );
   }
-  const affine = maximumError < 1e-8;
-  const rows: number[][] = [[], [], []];
-  for (let i = 0; i < TRANSFER_SAMPLES; i++) {
-    const value = (i / (TRANSFER_SAMPLES - 1)) * 255;
-    const out = materialPaintOver(paints, { r: value, g: value, b: value, a: 1 });
-    for (const [index, key] of keys.entries())
-      rows[index]?.push(
-        gain > 1e-10
-          ? Math.min(1, Math.max(0, (out[key] - (offsets[index] ?? 0)) / (255 * gain)))
-          : i / (TRANSFER_SAMPLES - 1),
-      );
-  }
-  return {
-    fill,
-    tables: rows.map((row) => row.map((value) => Number(value.toFixed(8))).join(' ')) as [
-      string,
-      string,
-      string,
-    ],
-    affine,
-    fallbackError: maximumError,
-  };
+  return { fill, maximumError };
 }
 
 /** W3C Compositing & Blending, separable blend functions, encoded sRGB.
