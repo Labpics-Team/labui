@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium, firefox, webkit } from '@playwright/test';
 import { build } from 'vite';
 import { displayPixels } from '../../../docs/evidence/materials-20261117/display-pixels.mjs';
+import { compileMaterialPaint, parseRgb } from '../../../packages/materials/dist/index.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const output = process.env.MATERIAL_OUTPUT
@@ -157,10 +158,15 @@ try {
           :host([data-opacity-probe="group-zero-blur"]) .lab-alert-layer .lab-material__paint { backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
           :host([data-opacity-probe="group-tiny-blur"]) .lab-alert-layer .lab-material__paint { backdrop-filter: blur(0.001px); -webkit-backdrop-filter: blur(0.001px); }
           :host([data-opacity-probe="group-host-identity"]) .lab-alert-layer > .lab-material { backdrop-filter: opacity(1); -webkit-backdrop-filter: opacity(1); }
+          :host([data-opacity-probe^="affine-"]) .lab-alert-layer .lab-material__capture { filter: var(--_probe-transfer); opacity: var(--_probe-alpha); }
+          :host([data-opacity-probe^="affine-"]) .lab-alert-layer .lab-material__normal,
+          :host([data-opacity-probe^="affine-"]) .lab-alert-layer .lab-material__blend,
+          :host([data-opacity-probe="affine-bare"]) .lab-alert-layer .lab-material__grain { display: none; }
+          :host([data-opacity-probe^="affine-"]) .lab-alert-layer .lab-material__grain { opacity: var(--_probe-alpha); }
         `;
         host.shadowRoot.append(style);
       });
-      for (const probe of ['group-identity', 'group-zero-blur', 'group-tiny-blur', 'group-host-identity']) {
+      for (const probe of ['affine-after', 'affine-bare']) {
       for (const theme of ['light', 'dark'])
         for (const material of ['acrylic', 'glass']) {
           await page.evaluate(
@@ -186,6 +192,23 @@ try {
               }
             }
           }, probe);
+          const rawPaints = await page.locator('lab-alert').evaluate(host => [...host.shadowRoot.querySelectorAll('.lab-alert-layer > .lab-material')].map(el => {
+            const style = getComputedStyle(el);
+            return { normal: style.getPropertyValue('--_tint'), blend: style.getPropertyValue('--_blend') };
+          }));
+          const transfers = rawPaints.map(paint => {
+            const compiled = compileMaterialPaint({ normal: parseRgb(paint.normal), blend: parseRgb(paint.blend), blendMode: theme === 'light' ? 'color-dodge' : 'overlay' });
+            assert.ok(compiled.affine, 'probe transfer is actually affine');
+            assert.equal(compiled.fill.r, compiled.fill.g);
+            assert.equal(compiled.fill.g, compiled.fill.b);
+            const slope = 1 - compiled.fill.a;
+            const intercept = compiled.fill.r / 255 * compiled.fill.a;
+            const gain = slope + 2 * intercept;
+            return `contrast(${slope / gain}) brightness(${gain})`;
+          });
+          await page.locator('lab-alert').evaluate((host, transfers) => {
+            [...host.shadowRoot.querySelectorAll('.lab-alert-layer > .lab-material')].forEach((el, i) => el.style.setProperty('--_probe-transfer', transfers[i]));
+          }, transfers);
           await settle(page);
           const geometry = await page.locator('lab-alert').evaluate((host) => {
             const surfaces = [
