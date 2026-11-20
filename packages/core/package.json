@@ -109,6 +109,17 @@
         "default": "./dist/components/dialog/shared.cjs"
       }
     },
+    "./dialog.css": "./dist/dialog.css",
+    "./dialog/runtime": {
+      "import": {
+        "types": "./dist/components/dialog/runtime.d.ts",
+        "default": "./dist/components/dialog/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/dialog/runtime.d.cts",
+        "default": "./dist/components/dialog/runtime.cjs"
+      }
+    },
     "./sheet/positions": {
       "import": {
         "types": "./dist/components/sheet/positions.d.ts",
@@ -383,9 +394,7 @@
       }
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "sideEffects": [
     "./src/ssr/environment.ts",
     "./src/components/*/index.ts",
@@ -420,7 +429,8 @@
     "./dist/pin-input.css",
     "./dist/slider.css",
     "./dist/tooltip.css",
-    "./dist/alert.css"
+    "./dist/alert.css",
+    "./dist/dialog.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

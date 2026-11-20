@@ -137,6 +137,16 @@
       "className": "LabAlertDialog",
       "props": [
         {
+          "name": "open",
+          "attr": "open",
+          "kind": "boolean"
+        },
+        {
+          "name": "controlled",
+          "attr": "controlled",
+          "kind": "boolean"
+        },
+        {
           "name": "size",
           "attr": "size",
           "kind": "string"
@@ -144,12 +154,12 @@
         {
           "name": "modal",
           "attr": "modal",
-          "kind": "string"
+          "kind": "prop"
         },
         {
           "name": "closable",
           "attr": "closable",
-          "kind": "boolean"
+          "kind": "prop"
         },
         {
           "name": "heading",
@@ -160,15 +170,39 @@
           "name": "description",
           "attr": "description",
           "kind": "string"
+        },
+        {
+          "name": "closeLabel",
+          "attr": "close-label",
+          "kind": "string"
+        },
+        {
+          "name": "confirmLabel",
+          "attr": "confirm-label",
+          "kind": "string"
+        },
+        {
+          "name": "cancelLabel",
+          "attr": "cancel-label",
+          "kind": "string"
+        },
+        {
+          "name": "pending",
+          "attr": "pending",
+          "kind": "boolean"
         }
       ],
       "events": [
+        "cancel",
+        "confirm",
         "open-change"
       ],
       "slots": {
         "default": true,
         "named": [
-          "content"
+          "actions",
+          "content",
+          "trigger"
         ],
         "dynamic": false
       }
@@ -767,6 +801,16 @@
       "className": "LabDialog",
       "props": [
         {
+          "name": "open",
+          "attr": "open",
+          "kind": "boolean"
+        },
+        {
+          "name": "controlled",
+          "attr": "controlled",
+          "kind": "boolean"
+        },
+        {
           "name": "size",
           "attr": "size",
           "kind": "string"
@@ -774,12 +818,12 @@
         {
           "name": "modal",
           "attr": "modal",
-          "kind": "string"
+          "kind": "prop"
         },
         {
           "name": "closable",
           "attr": "closable",
-          "kind": "boolean"
+          "kind": "prop"
         },
         {
           "name": "heading",
@@ -790,6 +834,11 @@
           "name": "description",
           "attr": "description",
           "kind": "string"
+        },
+        {
+          "name": "closeLabel",
+          "attr": "close-label",
+          "kind": "string"
         }
       ],
       "events": [
@@ -798,7 +847,9 @@
       "slots": {
         "default": true,
         "named": [
-          "content"
+          "actions",
+          "content",
+          "trigger"
         ],
         "dynamic": false
       }
@@ -1476,9 +1527,14 @@
       "className": "LabPopover",
       "props": [
         {
-          "name": "placement",
-          "attr": "placement",
-          "kind": "string"
+          "name": "open",
+          "attr": "open",
+          "kind": "boolean"
+        },
+        {
+          "name": "controlled",
+          "attr": "controlled",
+          "kind": "boolean"
         },
         {
           "name": "size",
@@ -1488,17 +1544,12 @@
         {
           "name": "modal",
           "attr": "modal",
-          "kind": "boolean"
+          "kind": "prop"
         },
         {
           "name": "closable",
           "attr": "closable",
-          "kind": "boolean"
-        },
-        {
-          "name": "arrow",
-          "attr": "arrow",
-          "kind": "boolean"
+          "kind": "prop"
         },
         {
           "name": "heading",
@@ -1509,6 +1560,21 @@
           "name": "description",
           "attr": "description",
           "kind": "string"
+        },
+        {
+          "name": "closeLabel",
+          "attr": "close-label",
+          "kind": "string"
+        },
+        {
+          "name": "placement",
+          "attr": "placement",
+          "kind": "string"
+        },
+        {
+          "name": "arrow",
+          "attr": "arrow",
+          "kind": "prop"
         }
       ],
       "events": [
@@ -1517,7 +1583,9 @@
       "slots": {
         "default": true,
         "named": [
-          "content"
+          "actions",
+          "content",
+          "trigger"
         ],
         "dynamic": false
       }

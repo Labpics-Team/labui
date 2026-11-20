@@ -72,13 +72,14 @@ describe('анализатор ядра → манифест', () => {
   it('alert-dialog наследует пропы/события dialog', () => {
     const alert = byTag('lab-alert-dialog');
     expect(alert.props.map((p) => p.name)).toEqual([
-      'size',
-      'modal',
-      'closable',
-      'heading',
-      'description',
+      ...byTag('lab-dialog').props.map((p) => p.name),
+      'confirmLabel',
+      'cancelLabel',
+      'pending',
     ]);
     expect(alert.events).toContain('open-change');
+    expect(alert.events).toContain('confirm');
+    expect(alert.events).toContain('cancel');
   });
 
   it('события собираются из new CustomEvent', () => {

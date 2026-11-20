@@ -49,6 +49,7 @@ export default libraryPreset({
     'src/ssr/element-browser.ts',
     'src/proof/lab-proof.ts',
     'src/components/dialog/shared.ts',
+    'src/components/dialog/runtime.ts',
     'src/components/sheet/positions.ts',
     'src/components/sheet/measure.ts',
     'src/components/snackbar/runtime.ts',

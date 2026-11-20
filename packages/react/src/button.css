@@ -108,11 +108,11 @@
 
 /* ── type=neutral ────────────────────────────────────────────────────────── */
 [data-lab-button][data-type="neutral"][data-kind="fill"] {
-  background-color: var(--lab-fill-neutral);
-  color: var(--lab-label-on-neutral);
+  background-color: var(--lab-button-fill-neutral);
+  color: var(--lab-button-label-on-neutral);
 }
 [data-lab-button][data-type="neutral"][data-kind="tinted"] {
-  background-color: var(--lab-fill-primary);
+  background-color: var(--lab-button-tint-neutral);
   color: var(--lab-label-primary);
 }
 [data-lab-button][data-type="neutral"][data-kind="border"] {
@@ -229,6 +229,9 @@
 }
 [data-lab-button][data-type][data-kind="border"]:disabled {
   border-color: var(--lab-border-soft);
+}
+[data-lab-button][data-type="neutral"][data-kind="fill"] .lab-button-description {
+  color: var(--lab-button-description-on-neutral);
 }
 [data-lab-button][data-type="neutral"]:not([data-kind="fill"]) .lab-button-description {
   color: var(--lab-label-secondary);

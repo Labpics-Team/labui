@@ -29,6 +29,13 @@ export const textStyle = {
     fontWeight: 'var(--lab-text-headline-font-weight)',
     letterSpacing: 'var(--lab-text-headline-letter-spacing)',
   },
+  'headline-emphasized': {
+    fontFamily: 'var(--lab-font-family)',
+    fontSize: 'var(--lab-text-headline-emphasized-font-size)',
+    lineHeight: 'var(--lab-text-headline-emphasized-line-height)',
+    fontWeight: 'var(--lab-text-headline-emphasized-font-weight)',
+    letterSpacing: 'var(--lab-text-headline-emphasized-letter-spacing)',
+  },
   'caption-xs': {
     fontFamily: 'var(--lab-font-family)',
     fontSize: 'var(--lab-text-caption-xs-font-size)',
@@ -65,6 +72,12 @@ export const textStyleMetrics = {
     "fontSize": 20,
     "lineHeight": 20,
     "fontWeight": 500,
+    "letterSpacing": -0.33
+  },
+  "headline-emphasized": {
+    "fontSize": 20,
+    "lineHeight": 20,
+    "fontWeight": 600,
     "letterSpacing": -0.33
   },
   "caption-xs": {

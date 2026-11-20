@@ -10,7 +10,9 @@ import { renderPopover } from '@labpics/ui-astro/ssr';
 
 const dsd = renderPopover(Astro.props, {
   default: Astro.slots.has('default') ? await Astro.slots.render('default') : undefined,
+  actions: Astro.slots.has('actions') ? await Astro.slots.render('actions') : undefined,
   content: Astro.slots.has('content') ? await Astro.slots.render('content') : undefined,
+  trigger: Astro.slots.has('trigger') ? await Astro.slots.render('trigger') : undefined,
 });
 ---
 <Fragment set:html={dsd} />

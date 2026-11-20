@@ -10,7 +10,7 @@ import '@labpics/ui-core/popover';
 import type { LabPopover } from '@labpics/ui-core/popover';
 
 /** Пропы <lab-popover>, взятые прямо из класса ядра (LabPopover). */
-export type PopoverProps = Pick<LabPopover, 'placement' | 'size' | 'modal' | 'closable' | 'arrow' | 'heading' | 'description'>;
+export type PopoverProps = Pick<LabPopover, 'open' | 'controlled' | 'size' | 'modal' | 'closable' | 'heading' | 'description' | 'closeLabel' | 'placement' | 'arrow'>;
 
 /**
  * <Popover> — тонкая Vue-обёртка над <lab-popover>.
@@ -21,13 +21,16 @@ export const Popover: LabComponent<PopoverProps, 'open-change'> = createLabCompo
   'open-change'
 >('lab-popover', {
   specs: [
-      { name: 'placement', attr: 'placement', kind: 'string' },
+      { name: 'open', attr: 'open', kind: 'boolean' },
+      { name: 'controlled', attr: 'controlled', kind: 'boolean' },
       { name: 'size', attr: 'size', kind: 'string' },
-      { name: 'modal', attr: 'modal', kind: 'boolean' },
-      { name: 'closable', attr: 'closable', kind: 'boolean' },
-      { name: 'arrow', attr: 'arrow', kind: 'boolean' },
+      { name: 'modal', attr: 'modal', kind: 'prop' },
+      { name: 'closable', attr: 'closable', kind: 'prop' },
       { name: 'heading', attr: 'heading', kind: 'string' },
       { name: 'description', attr: 'description', kind: 'string' },
+      { name: 'closeLabel', attr: 'close-label', kind: 'string' },
+      { name: 'placement', attr: 'placement', kind: 'string' },
+      { name: 'arrow', attr: 'arrow', kind: 'prop' },
   ],
   events: ['open-change'],
 });

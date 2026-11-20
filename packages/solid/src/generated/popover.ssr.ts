@@ -10,9 +10,9 @@ import '@labpics/ui-core/popover';
 import type { LabPopover } from '@labpics/ui-core/popover';
 
 /** SSR-пропы <lab-popover> (атрибуты/свойства), взяты из класса ядра (LabPopover). */
-export type PopoverSsrProps = Partial<Pick<LabPopover, 'placement' | 'size' | 'modal' | 'closable' | 'arrow' | 'heading' | 'description'>> & { 'aria-label'?: string; 'form'?: string };
+export type PopoverSsrProps = Partial<Pick<LabPopover, 'open' | 'controlled' | 'size' | 'modal' | 'closable' | 'heading' | 'description' | 'closeLabel' | 'placement' | 'arrow'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-popover> — предрендеренные строки контента. */
-export type PopoverSsrSlots = { default?: string; content?: string };
+export type PopoverSsrSlots = { default?: string; actions?: string; content?: string; trigger?: string };
 
 /**
  * Рендерит <lab-popover> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
@@ -24,14 +24,17 @@ export function renderPopover(
   slots: PopoverSsrSlots = {},
 ): string {
   return renderToString(html`<lab-popover
-      placement=${ifDefined(props.placement)}
+      .open=${props.open === undefined ? noChange : props.open}
+      .controlled=${props.controlled === undefined ? noChange : props.controlled}
       size=${ifDefined(props.size)}
       .modal=${props.modal === undefined ? noChange : props.modal}
       .closable=${props.closable === undefined ? noChange : props.closable}
-      .arrow=${props.arrow === undefined ? noChange : props.arrow}
       heading=${ifDefined(props.heading)}
       description=${ifDefined(props.description)}
+      close-label=${ifDefined(props.closeLabel)}
+      placement=${ifDefined(props.placement)}
+      .arrow=${props.arrow === undefined ? noChange : props.arrow}
       aria-label=${ifDefined(props['aria-label'])}
       form=${ifDefined(props['form'])}
-    >${slots.content ? html`<lab-slot slot="content">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.content)}</lab-slot>` : ''}${unsafeHTML(slots.default ?? '')}</lab-popover>`);
+    >${slots.actions ? html`<lab-slot slot="actions">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.actions)}</lab-slot>` : ''}${slots.content ? html`<lab-slot slot="content">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.content)}</lab-slot>` : ''}${slots.trigger ? html`<lab-slot slot="trigger">${unsafeHTML(slotProjectionShadowHtml)}${unsafeHTML(slots.trigger)}</lab-slot>` : ''}${unsafeHTML(slots.default ?? '')}</lab-popover>`);
 }

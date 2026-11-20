@@ -97,15 +97,15 @@ public fun LabButton(
     val family = when (intent) { LabIntent.Accent -> "brand"; LabIntent.Danger -> "danger"; LabIntent.Neutral -> null }
     val fill = when {
         disabled -> if (kind == LabButtonKind.Fill || kind == LabButtonKind.Tinted) colors["fill-quaternary"] else Color.Transparent
-        kind == LabButtonKind.Fill -> colors["fill-$intentName"]
+        kind == LabButtonKind.Fill -> colors[if (family == null) "button-fill-neutral" else "fill-$intentName"]
         pressed -> if (kind == LabButtonKind.Tinted) colors[if (family == null) "fill-tertiary" else "fill-$family-primary"] else Color.Transparent
         hovered -> colors[if (family == null) "fill-quaternary" else "fill-$family-tertiary"]
-        kind == LabButtonKind.Tinted -> colors[if (family == null) "fill-primary" else "fill-$intentName-tinted"]
+        kind == LabButtonKind.Tinted -> colors[if (family == null) "button-tint-neutral" else "fill-$intentName-tinted"]
         else -> Color.Transparent
     }
     val label = when {
         disabled -> colors["label-quaternary"]
-        kind == LabButtonKind.Fill -> colors["label-on-$intentName"]
+        kind == LabButtonKind.Fill -> colors[if (family == null) "button-label-on-neutral" else "label-on-$intentName"]
         intent == LabIntent.Neutral -> colors["label-primary"]
         else -> colors["label-$intentName"]
     }
@@ -123,6 +123,7 @@ public fun LabButton(
     val shape = RoundedCornerShape(metrics.radius.dp)
     val descriptionColor = when {
         disabled -> label
+        intent == LabIntent.Neutral && kind == LabButtonKind.Fill -> colors["button-description-on-neutral"]
         intent == LabIntent.Neutral && kind != LabButtonKind.Fill -> colors["label-secondary"]
         intent == LabIntent.Accent && (kind == LabButtonKind.Border || kind == LabButtonKind.Ghost) ->
             label.copy(alpha = label.alpha * metrics.descriptionAccentPlainOpacity)

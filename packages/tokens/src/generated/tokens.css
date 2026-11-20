@@ -17,6 +17,10 @@
   --lab-text-headline-line-height: 1.25rem;
   --lab-text-headline-font-weight: 500;
   --lab-text-headline-letter-spacing: -0.020625rem;
+  --lab-text-headline-emphasized-font-size: 1.25rem;
+  --lab-text-headline-emphasized-line-height: 1.25rem;
+  --lab-text-headline-emphasized-font-weight: 600;
+  --lab-text-headline-emphasized-letter-spacing: -0.020625rem;
   --lab-text-caption-xs-font-size: 0.75rem;
   --lab-text-caption-xs-line-height: 0.75rem;
   --lab-text-caption-xs-font-weight: 500;

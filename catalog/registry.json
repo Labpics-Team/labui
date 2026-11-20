@@ -397,7 +397,11 @@
       "web": {
         "subpath": "alert-dialog",
         "reactExport": "AlertDialog"
-      }
+      },
+      "native": {
+        "symbol": "LabAlertDialogHost"
+      },
+      "profile": "dialog"
     },
     {
       "slug": "snackbar",
@@ -586,6 +590,9 @@
       "web": {
         "subpath": "dialog",
         "reactExport": "Dialog"
+      },
+      "native": {
+        "symbol": "LabDialogHost"
       }
     },
     {
@@ -597,6 +604,9 @@
       "web": {
         "subpath": "popover",
         "reactExport": "Popover"
+      },
+      "native": {
+        "symbol": "LabPopoverHost"
       }
     },
     {
@@ -669,7 +679,10 @@
           "family": "alert-dialog",
           "role": "root",
           "web": {
-            "scope": "Публичный API семейства; все авторские варианты ещё не сверены."
+            "scope": "Авторская поверхность 480×260, safe Cancel, подтверждение с pending; Lit и React, общий runtime Dialog/Popover."
+          },
+          "native": {
+            "scope": "LabAlertDialogHost: общий профиль поверхности, safe Cancel, pending и возврат фокуса."
           }
         }
       ]
