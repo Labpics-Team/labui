@@ -1,6 +1,7 @@
-import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
+import { type PropertyValues, type TemplateResult, css, html, nothing, unsafeCSS } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { LabElement } from '../../lit/lab-element.js';
+import { slotSizeCss } from '../../slot-projection.js';
 import '../checkbox/index.js';
 import '../radio-group/index.js';
 import type { LabCheckbox } from '../checkbox/lab-checkbox.js';
@@ -86,7 +87,7 @@ export class LabChoicebox extends LabElement {
     .group { display: flex; flex-wrap: wrap; gap: 1rem; min-inline-size: 0; }
     .label { flex: 1 0 100%; color: var(--lab-label-primary); font: inherit; overflow-wrap: anywhere; }
     lab-checkbox { flex: 1 1 17.71875rem; min-inline-size: 0; }
-    ::slotted([slot^='icon-']) { inline-size: 100%; block-size: 100%; }
+    ${unsafeCSS(slotSizeCss("::slotted([slot^='icon-'])", '100%', '100%'))}
   `;
   protected override willUpdate(changed: PropertyValues): void {
     if (!this.resetValue) {

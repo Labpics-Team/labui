@@ -208,7 +208,7 @@ export class LabSelect extends LabElement {
     :host { display: inline-flex; min-inline-size: 0; max-inline-size: 100%; vertical-align: middle; }
     :host([multiple]) { display: flex; }
     :host(:not(:has([slot='leading']))) .lab-select-leading { display: none; }
-    ::slotted([slot='leading']) { display: inline-flex; inline-size: 100%; block-size: 100%; }
+    ::slotted([slot='leading']) { display: inline-flex; }
   `,
   ];
 

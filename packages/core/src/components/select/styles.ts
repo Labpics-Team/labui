@@ -1,4 +1,5 @@
 import { selectProfile as p } from '@labpics/ui-tokens';
+import { slotSizeCss } from '../../slot-projection.js';
 import { chipCss } from '../chip/styles.js';
 
 const rem = (px: number) => `${px / 16}rem`;
@@ -52,7 +53,7 @@ ${sizes}
 [data-lab-select] .lab-select-value-text { min-inline-size: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 [data-lab-select] .lab-select-leading { display: inline-flex; flex: none; inline-size: var(--_select-leading); block-size: var(--_select-leading); }
 [data-lab-select] .lab-select-leading[hidden], [data-lab-select] .lab-select-leading:empty { display: none; }
-[data-lab-select] .lab-select-leading > * { inline-size: 100%; block-size: 100%; }
+${slotSizeCss('[data-lab-select] .lab-select-leading > *, [data-lab-select] .lab-select-leading ::slotted(*)', '100%', '100%')}
 [data-lab-select] .lab-select-indicator { display: block; flex: none; inline-size: ${rem(g.viewBox)}; block-size: ${rem(g.viewBox)}; background: currentColor; mask: ${chevron} center / contain no-repeat; }
 [data-lab-select] .lab-select-indicator[data-state="open"] { transform: rotate(180deg); }
 [data-lab-select][data-disabled] { color: var(--lab-${p.roles.disabled}); }

@@ -1,5 +1,6 @@
 import { shadowProfile } from '@labpics/ui-shadow';
 import { segmentedProfile as p } from '@labpics/ui-tokens';
+import { slotSizeCss } from '../../slot-projection.js';
 
 const rem = (px: number) => `${px / 16}rem`;
 const role = (name: string) => `var(--lab-${name})`;
@@ -58,7 +59,7 @@ ${Object.entries(p.shapes)
 }
 [data-lab-segmented] > .lab-segment:has(input:checked) + .lab-segment::before { display: none; }
 .lab-segment-icon { display: inline-flex; flex: none; inline-size: ${rem(p.iconSize)}; block-size: ${rem(p.iconSize)}; }
-.lab-segment-icon > * { inline-size: 100%; block-size: 100%; }
+${slotSizeCss('.lab-segment-icon > *, .lab-segment-icon ::slotted(*)', '100%', '100%')}
 .lab-segment[data-icon-only] > .lab-segment-icon { inline-size: ${rem(p.iconOnlySize)}; block-size: ${rem(p.iconOnlySize)}; }
 .lab-segment[data-icon-only] > .lab-segment-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
 [data-lab-segmented] > .lab-segment:has(input:focus-visible) { outline: ${rem(p.focus.width)} solid ${role(p.roles.focus)}; outline-offset: ${rem(-p.focus.inset)}; }

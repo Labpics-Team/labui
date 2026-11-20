@@ -1,4 +1,5 @@
 import { selectionProfile as p, textStyle } from '@labpics/ui-tokens';
+import { slotSizeCss } from '../../slot-projection.js';
 
 const rem = (px: number): string => `${px / 16}rem`;
 const role = (name: string): string => `var(--lab-${name})`;
@@ -153,7 +154,7 @@ ${Object.entries(p.sizes)
 [data-lab-selection]:is([data-variant="card"], [data-variant="row"]) .lab-selection-label { grid-area: label; }
 [data-lab-selection]:is([data-variant="card"], [data-variant="row"]) .lab-selection-icon { display: flex; grid-area: icon; inline-size: ${rem(p.choicebox.iconSize)}; block-size: ${rem(p.choicebox.iconSize)}; color: ${role(p.choicebox.iconRole)}; }
 [data-lab-selection] .lab-selection-icon:empty { visibility: hidden; }
-[data-lab-selection] .lab-selection-icon > :is(svg, img, lab-icon) { inline-size: 100%; block-size: 100%; }
+${slotSizeCss('[data-lab-selection] .lab-selection-icon > *, [data-lab-selection] .lab-selection-icon ::slotted(*)', '100%', '100%')}
 [data-lab-selection]:is([data-variant="card"], [data-variant="row"])[data-disabled],
 [data-lab-selection]:is([data-variant="card"], [data-variant="row"]):has(input:disabled) { box-shadow: inset 0 0 0 ${rem(p.choicebox.strokeWidth)} ${role(p.choicebox.strokeRole)}; }
 [data-lab-selection][data-disabled] :is(.lab-selection-description, .lab-selection-icon), [data-lab-selection]:has(input:disabled) :is(.lab-selection-description, .lab-selection-icon) { color: ${role(p.roles.disabledLabel)}; }

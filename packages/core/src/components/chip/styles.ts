@@ -1,4 +1,5 @@
 import { chipProfile as p } from '@labpics/ui-tokens';
+import { slotSizeCss } from '../../slot-projection.js';
 
 const rem = (px: number) => `${px / 16}rem`;
 const role = (name: string) => `var(--lab-${name})`;
@@ -100,7 +101,7 @@ ${sizes}
 .lab-chip-close { flex: none; inline-size: var(--_chip-close); block-size: var(--_chip-close); background: var(--_chip-close-color); mask: var(--_chip-glyph) center / contain no-repeat; }
 .lab-chip-leading { display: none; flex: none; inline-size: var(--_chip-leading); block-size: var(--_chip-leading); }
 [data-lab-chip][data-leading] .lab-chip-leading { display: inline-flex; }
-.lab-chip-leading > * { inline-size: 100%; block-size: 100%; }
+${slotSizeCss('.lab-chip-leading > *, .lab-chip-leading ::slotted(*)', '100%', '100%')}
 [data-lab-chip]:disabled { --_chip-label: ${role(p.roles.disabledLabel)}; --_chip-close-color: ${role(p.roles.disabledLabel)}; cursor: not-allowed; }
 [data-lab-chip]:disabled[data-selected] { --_chip-fill: ${role(p.roles.disabledSelected)}; }
 [data-lab-chip]:disabled .lab-chip-leading { opacity: ${p.disabledLeadingOpacity}; }

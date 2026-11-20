@@ -149,7 +149,6 @@ export class LabTabs extends LabElement {
     unsafeCSS(tabsCss),
     css`
     :host { display: block; min-width: 0; }
-    .lab-tabs-icon ::slotted(*) { width: 100%; height: 100%; }
   `,
   ];
 
