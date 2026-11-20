@@ -298,22 +298,29 @@ try {
           });
           await settle(page);
           const restored = await sample(page, geometry.groups);
-          const compositeFrames = [];
-          for (const alpha of ['0', '1']) {
-            await page.locator('lab-alert').evaluate((host, alpha) => {
-              for (const layer of host.shadowRoot.querySelectorAll('[part="stack"]')) layer.style.setProperty('--_probe-alpha', alpha);
-            }, alpha);
-            await settle(page);
-            compositeFrames.push(await sample(page, geometry.groups));
-          }
           const groupAlpha = await page.locator('lab-alert').evaluate((host) => {
             return [...host.shadowRoot.querySelectorAll('[part="stack"]')].map(layer => {
-              layer.style.removeProperty('--_probe-alpha');
               return Number(getComputedStyle(layer).getPropertyValue('--_alert-layer-opacity'));
             });
           });
-          await settle(page);
-          const compositeError = groupAlpha.map((alpha, i) => Math.max(...[0,1,2].map(c => Math.abs(original[0][i+1].rgb[c] - (compositeFrames[0][i+1].rgb[c] * (1-alpha) + compositeFrames[1][i+1].rgb[c] * alpha)))));
+          const compositeFrames = [];
+          const compositeError = [];
+          // Other layers stay at their authored alpha: their paint is part of
+          // this capture's backdrop, so changing all alphas is not a linear test.
+          for (const [index, weight] of groupAlpha.entries()) {
+            const endpoints = [];
+            for (const alpha of ['0', '1']) {
+              await page.locator('lab-alert').evaluate((host, {index, alpha}) => {
+                host.shadowRoot.querySelectorAll('[part="stack"]')[index].style.setProperty('--_probe-alpha', alpha);
+              }, {index, alpha});
+              await settle(page);
+              endpoints.push((await sample(page, geometry.groups))[index+1].rgb);
+            }
+            compositeFrames.push(endpoints);
+            compositeError.push(Math.max(...[0,1,2].map(c => Math.abs(original[0][index+1].rgb[c] - (endpoints[0][c] * (1-weight) + endpoints[1][c] * weight)))));
+            await page.locator('lab-alert').evaluate((host, index) => host.shadowRoot.querySelectorAll('[part="stack"]')[index].style.removeProperty('--_probe-alpha'), index);
+            await settle(page);
+          }
           const restoreError = original[0]
             .slice(0, 3)
             .map((frame, i) => distance(frame.rgb, restored[i].rgb));
@@ -336,6 +343,7 @@ try {
             controlResponse,
             restoreError,
             compositeError,
+            compositeFrames,
             original,
             control,
             restored,
