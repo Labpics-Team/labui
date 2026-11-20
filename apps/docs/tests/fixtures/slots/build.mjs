@@ -30,7 +30,7 @@ for (const name of ['vue', 'svelte']) {
   await writeFile(`${name}-hydrate.mjs`, client);
   await writeFile(
     `${name}-client.mjs`,
-    `${styles}import '@lit-labs/ssr-client/lit-element-hydrate-support.js';customElements.define('demo-symbol',class extends HTMLElement{connectedCallback(){if(!this.shadowRoot)this.attachShadow({mode:'open'}).innerHTML='<style>:host{display:block}svg{display:block;width:100%;height:100%}</style><svg width=24 height=24 viewBox=\"0 0 24 24\"><circle cx=12 cy=12 r=8/></svg>'}});window.hydrate=async(ssr)=>{const {run}=await import('./${name}-hydrate.mjs');await run(ssr);window.ready=true};`,
+    `${styles}import '@lit-labs/ssr-client/lit-element-hydrate-support.js';customElements.define('demo-symbol',class extends HTMLElement{connectedCallback(){if(!this.shadowRoot)this.attachShadow({mode:'open'}).innerHTML='<style>:host{display:block}svg{display:block;width:100%;height:100%}</style><svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>'}});window.hydrate=async(ssr)=>{const {run}=await import('./${name}-hydrate.mjs');await run(ssr);window.ready=true};`,
   );
   await build({
     entryPoints: [`${name}-server.mjs`],

@@ -39,6 +39,19 @@ leading входит в padding, а `min-block-size:1lh` сохраняет по
   текст. Enter/Space, controlled/uncontrolled close, возврат фокуса, явное false,
   отсутствие глобального Escape и повторного объявления при смене глубины.
   После стабилизации — **0 idle RAF**. `packed.json` содержит архивы и измерения.
+- `slots-packed.mjs`: настоящие Vue/Svelte mount и SSR/hydration из установленных
+  архивов, четыре строковых SSR bindings. Chromium/WebKit: SVG и собственный
+  shadow-root custom element имеют 24/30/48px при font-size 16/20/32; SSR при 200%
+  работает с отключённым JavaScript. Fragments, несколько корней, обычный текст,
+  escaping, реактивное обновление и повторное создание проходят без ошибок.
+  Отложенная hydration сохраняет исходный input и введённый пользователем текст.
+  `slots/packed.json` хранит SHA256 архивов и измерения, `slots/*.png` — рендер.
+- `slot-consumers.mjs`: 72 сравнения непосредственных и проецируемых корней в
+  12 компонентах при font-size 16/32 в Chromium/WebKit. Вложенная передача
+  Choicebox, несколько корней, Card с естественным aspect ratio 600×300 и
+  пользовательским размером 600×80 — PASS; `slot-consumers.json` хранит размеры.
+- После исправления общей проекции: core 97, Vue 10, Svelte 14 и codegen 32
+  проверки — PASS; core/Vue/Svelte typecheck и четыре adapter builds — PASS.
 - `AlertRenderTest`: 4 offscreen Compose-теста. Те же варианты, темы, три font
   scales и материала; измерение в свободном родителе, точная высота 80/88/96,
   семантика live region, настоящее keyboard interaction, скрытые элементы,
@@ -98,6 +111,8 @@ WebKit даёт равномерный `[212,212,212]` во всех трёх с
 $env:PLAYWRIGHT_BROWSERS_PATH = 'D:/AgentWork/.playwright-browsers'
 $env:LAB_ICONS_TARBALL = 'D:/AgentWork/.scratch/icons040-ci-npm-20261120/package.tgz'
 node apps/docs/tests/alert-packed.mjs
+node apps/docs/tests/slots-packed.mjs
+node apps/docs/tests/slot-consumers.mjs
 # Vite на 5377 либо LABUI_DOCS_URL:
 node apps/docs/tests/alert-material.mjs
 node apps/docs/tests/alert-catalog.mjs
