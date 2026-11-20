@@ -1,8 +1,12 @@
 {
   "archives": [
     {
+      "name": "@labpics/icons",
+      "sha256": "d4962b817d19431393131f0aebb5d70f745e103e4062a6003a52926a8362c3bb"
+    },
+    {
       "name": "@labpics/ui-tokens",
-      "sha256": "bda7b8b08f8baa462b8c73bc72974ba13f81ea5374a63e1cc0f9f2036892dba8"
+      "sha256": "b30f72fd13c2481a76d7e07085eaf3a58910a685cc851ca7173a42a526c1a049"
     },
     {
       "name": "@labpics/ui-shadow",
@@ -10,7 +14,7 @@
     },
     {
       "name": "@labui/colors",
-      "sha256": "56ba4da1572ea321215974308bf0eb76333e8b583650b69e67d69bffacee7351"
+      "sha256": "c741313734b87f27e07b6941f6bd717d231a0427d4aaf282fcdee6361ba93f7b"
     },
     {
       "name": "@labpics/ui-materials",
@@ -18,26 +22,26 @@
     },
     {
       "name": "@labpics/ui-core",
-      "sha256": "4d841977e083f6c52658f11747689c03ad23ed06ee6904fd2085e92660225439"
+      "sha256": "8f65215278f3a27bd97bee72b06321c3f07c3ebc39c4dae17d7e145082d0f679"
     },
     {
       "name": "@labpics/ui-vue",
-      "sha256": "bb844c6cf49e39bae63cf6bd11cbd62d1f0d315be3cbc4b075a80fbb923cd406"
+      "sha256": "d8bea6f4a7afa5b2d8244ae34eac8c5009752b9166921902eab8f7ae5a810091"
     },
     {
       "name": "@labpics/ui-solid",
-      "sha256": "2be505c21d88373a57fb4195e6ece2daa45a4f55895430bb37db0b5d0800ee03"
+      "sha256": "bfa7d7a2a96bd06a90092d41d72b67bd4234192bacc4b6b01e42309d3a70d942"
     },
     {
       "name": "@labpics/ui-svelte",
-      "sha256": "3a608e6b6fd641fcbcd5675969ffbc4971b0f5d9688fabf94f1fad2556cd24af"
+      "sha256": "734d0236c8f3c686529ed5242c36df0204faabcf47b261ebf100692f1cb28e3f"
     }
   ],
   "qualification": {
     "records": [
       {
         "name": "vue",
-        "browserModules": 226,
+        "browserModules": 229,
         "browserProviders": [
           "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
         ],
@@ -45,7 +49,7 @@
       },
       {
         "name": "solid",
-        "browserModules": 222,
+        "browserModules": 225,
         "browserProviders": [
           "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
         ],
@@ -53,15 +57,22 @@
       },
       {
         "name": "svelte",
-        "browserModules": 499,
+        "browserModules": 512,
         "browserProviders": [
           "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
         ],
         "serverEngineInBrowser": false
       }
     ],
-    "nodeEsm": ["vue", "solid", "svelte"],
-    "nodeCjs": ["vue", "solid"],
+    "nodeEsm": [
+      "vue",
+      "solid",
+      "svelte"
+    ],
+    "nodeCjs": [
+      "vue",
+      "solid"
+    ],
     "viteSsr": true,
     "types": {
       "nodeNextEsm": true,
@@ -78,29 +89,52 @@
           "id": "uncontrolled",
           "label": "Uncontrolled",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
           "value": null
         },
         {
           "id": "controlled",
           "label": "Controlled",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
-          "value": ["a"]
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
+          "value": [
+            "a"
+          ]
         },
         {
           "id": "released",
           "label": "Explicit null",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
           "value": null
         }
       ],
       "uncontrolled": {
-        "selected": ["b", "c"],
+        "selected": [
+          "b",
+          "c"
+        ],
         "text": "B, Renamed C"
       },
       "controlled": {
@@ -117,29 +151,52 @@
           "id": "uncontrolled",
           "label": "Uncontrolled",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
           "value": null
         },
         {
           "id": "controlled",
           "label": "Controlled",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
-          "value": ["a"]
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
+          "value": [
+            "a"
+          ]
         },
         {
           "id": "released",
           "label": "Explicit null",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
           "value": null
         }
       ],
       "uncontrolled": {
-        "selected": ["b", "c"],
+        "selected": [
+          "b",
+          "c"
+        ],
         "text": "B, Renamed C"
       },
       "controlled": {
@@ -156,29 +213,52 @@
           "id": "uncontrolled",
           "label": "Uncontrolled",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
           "value": null
         },
         {
           "id": "controlled",
           "label": "Controlled",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
-          "value": ["a"]
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
+          "value": [
+            "a"
+          ]
         },
         {
           "id": "released",
           "label": "Explicit null",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
           "value": null
         }
       ],
       "uncontrolled": {
-        "selected": ["b", "c"],
+        "selected": [
+          "b",
+          "c"
+        ],
         "text": "B, Renamed C"
       },
       "controlled": {
@@ -195,29 +275,52 @@
           "id": "uncontrolled",
           "label": "Uncontrolled",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
           "value": null
         },
         {
           "id": "controlled",
           "label": "Controlled",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
-          "value": ["a"]
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
+          "value": [
+            "a"
+          ]
         },
         {
           "id": "released",
           "label": "Explicit null",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
           "value": null
         }
       ],
       "uncontrolled": {
-        "selected": ["b", "c"],
+        "selected": [
+          "b",
+          "c"
+        ],
         "text": "B, Renamed C"
       },
       "controlled": {
@@ -234,29 +337,52 @@
           "id": "uncontrolled",
           "label": "Uncontrolled",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
           "value": null
         },
         {
           "id": "controlled",
           "label": "Controlled",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
-          "value": ["a"]
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
+          "value": [
+            "a"
+          ]
         },
         {
           "id": "released",
           "label": "Explicit null",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
           "value": null
         }
       ],
       "uncontrolled": {
-        "selected": ["b", "c"],
+        "selected": [
+          "b",
+          "c"
+        ],
         "text": "B, Renamed C"
       },
       "controlled": {
@@ -273,29 +399,52 @@
           "id": "uncontrolled",
           "label": "Uncontrolled",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
           "value": null
         },
         {
           "id": "controlled",
           "label": "Controlled",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
-          "value": ["a"]
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
+          "value": [
+            "a"
+          ]
         },
         {
           "id": "released",
           "label": "Explicit null",
           "multiple": true,
-          "items": ["a", "b", "c"],
-          "defaultValue": ["b"],
+          "items": [
+            "a",
+            "b",
+            "c"
+          ],
+          "defaultValue": [
+            "b"
+          ],
           "value": null
         }
       ],
       "uncontrolled": {
-        "selected": ["b", "c"],
+        "selected": [
+          "b",
+          "c"
+        ],
         "text": "B, Renamed C"
       },
       "controlled": {
@@ -312,8 +461,19 @@
       "before": {
         "defined": false,
         "hosts": 1,
-        "hostCount": 6,
-        "labels": ["Draft", "History"],
+        "hostCount": 9,
+        "componentIds": [
+          "accordion",
+          "default-tooltip",
+          "field",
+          "null-tabs",
+          "tabs",
+          "tooltip"
+        ],
+        "labels": [
+          "Draft",
+          "History"
+        ],
         "height": 56,
         "background": "rgba(120, 120, 128, 0.08)",
         "styles": 1,
@@ -331,9 +491,15 @@
         "panel": true,
         "field": true,
         "text": "Typed before hydration & retained",
-        "selection": [6, 12],
+        "selection": [
+          6,
+          12
+        ],
         "fieldText": "My uncommitted draft",
-        "fieldSelection": [3, 10],
+        "fieldSelection": [
+          3,
+          10
+        ],
         "tabs": 2,
         "collapsible": false,
         "nullValue": null,
@@ -356,7 +522,18 @@
         "defined": false,
         "hosts": 1,
         "hostCount": 6,
-        "labels": ["Draft", "History"],
+        "componentIds": [
+          "accordion",
+          "default-tooltip",
+          "field",
+          "null-tabs",
+          "tabs",
+          "tooltip"
+        ],
+        "labels": [
+          "Draft",
+          "History"
+        ],
         "height": 56,
         "background": "rgba(120, 120, 128, 0.08)",
         "styles": 1,
@@ -374,9 +551,15 @@
         "panel": true,
         "field": true,
         "text": "Typed before hydration & retained",
-        "selection": [6, 12],
+        "selection": [
+          6,
+          12
+        ],
         "fieldText": "My uncommitted draft",
-        "fieldSelection": [3, 10],
+        "fieldSelection": [
+          3,
+          10
+        ],
         "tabs": 2,
         "collapsible": false,
         "nullValue": null,
@@ -398,8 +581,19 @@
       "before": {
         "defined": false,
         "hosts": 1,
-        "hostCount": 6,
-        "labels": ["Draft", "History"],
+        "hostCount": 9,
+        "componentIds": [
+          "accordion",
+          "default-tooltip",
+          "field",
+          "null-tabs",
+          "tabs",
+          "tooltip"
+        ],
+        "labels": [
+          "Draft",
+          "History"
+        ],
         "height": 56,
         "background": "rgba(120, 120, 128, 0.08)",
         "styles": 1,
@@ -417,9 +611,15 @@
         "panel": true,
         "field": true,
         "text": "Typed before hydration & retained",
-        "selection": [6, 12],
+        "selection": [
+          6,
+          12
+        ],
         "fieldText": "My uncommitted draft",
-        "fieldSelection": [3, 10],
+        "fieldSelection": [
+          3,
+          10
+        ],
         "tabs": 2,
         "collapsible": false,
         "nullValue": null,
@@ -441,8 +641,19 @@
       "before": {
         "defined": false,
         "hosts": 1,
-        "hostCount": 6,
-        "labels": ["Draft", "History"],
+        "hostCount": 9,
+        "componentIds": [
+          "accordion",
+          "default-tooltip",
+          "field",
+          "null-tabs",
+          "tabs",
+          "tooltip"
+        ],
+        "labels": [
+          "Draft",
+          "History"
+        ],
         "height": 56,
         "background": "rgba(120, 120, 128, 0.08)",
         "styles": 1,
@@ -460,9 +671,15 @@
         "panel": true,
         "field": true,
         "text": "Typed before hydration & retained",
-        "selection": [6, 12],
+        "selection": [
+          6,
+          12
+        ],
         "fieldText": "My uncommitted draft",
-        "fieldSelection": [3, 10],
+        "fieldSelection": [
+          3,
+          10
+        ],
         "tabs": 2,
         "collapsible": false,
         "nullValue": null,
@@ -485,7 +702,18 @@
         "defined": false,
         "hosts": 1,
         "hostCount": 6,
-        "labels": ["Draft", "History"],
+        "componentIds": [
+          "accordion",
+          "default-tooltip",
+          "field",
+          "null-tabs",
+          "tabs",
+          "tooltip"
+        ],
+        "labels": [
+          "Draft",
+          "History"
+        ],
         "height": 56,
         "background": "rgba(120, 120, 128, 0.08)",
         "styles": 1,
@@ -503,9 +731,15 @@
         "panel": true,
         "field": true,
         "text": "Typed before hydration & retained",
-        "selection": [6, 12],
+        "selection": [
+          6,
+          12
+        ],
         "fieldText": "My uncommitted draft",
-        "fieldSelection": [3, 10],
+        "fieldSelection": [
+          3,
+          10
+        ],
         "tabs": 2,
         "collapsible": false,
         "nullValue": null,
@@ -527,8 +761,19 @@
       "before": {
         "defined": false,
         "hosts": 1,
-        "hostCount": 6,
-        "labels": ["Draft", "History"],
+        "hostCount": 9,
+        "componentIds": [
+          "accordion",
+          "default-tooltip",
+          "field",
+          "null-tabs",
+          "tabs",
+          "tooltip"
+        ],
+        "labels": [
+          "Draft",
+          "History"
+        ],
         "height": 56,
         "background": "rgba(120, 120, 128, 0.08)",
         "styles": 1,
@@ -546,9 +791,15 @@
         "panel": true,
         "field": true,
         "text": "Typed before hydration & retained",
-        "selection": [6, 12],
+        "selection": [
+          6,
+          12
+        ],
         "fieldText": "My uncommitted draft",
-        "fieldSelection": [3, 10],
+        "fieldSelection": [
+          3,
+          10
+        ],
         "tabs": 2,
         "collapsible": false,
         "nullValue": null,

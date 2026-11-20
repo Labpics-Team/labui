@@ -2,7 +2,7 @@
   "archives": [
     {
       "name": "labpics-ui-tokens-0.0.0.tgz",
-      "sha256": "c46686108c7769a07ce0560cc5898c2019d9ae40877f1962dd7230a23058d92e"
+      "sha256": "b30f72fd13c2481a76d7e07085eaf3a58910a685cc851ca7173a42a526c1a049"
     },
     {
       "name": "labpics-ui-shadow-0.0.0.tgz",
@@ -18,27 +18,27 @@
     },
     {
       "name": "labui-colors-0.0.0.tgz",
-      "sha256": "56ba4da1572ea321215974308bf0eb76333e8b583650b69e67d69bffacee7351"
+      "sha256": "c741313734b87f27e07b6941f6bd717d231a0427d4aaf282fcdee6361ba93f7b"
     },
     {
       "name": "labpics-ui-core-0.0.0.tgz",
-      "sha256": "510f3d5ea2183e675b77b31a5f7f1044409cf11edcd4ad7b8d3dcf59e04117fb"
+      "sha256": "8270338633b7b83bee879cbc90cb57fbff5ed6d7ee1454ad4952937b517dcbb3"
     },
     {
       "name": "labpics-ui-vue-0.0.0.tgz",
-      "sha256": "6fb531177ed832465c700410f3db5f903add83078b663fdb4dae80b7ec9d2052"
+      "sha256": "d8bea6f4a7afa5b2d8244ae34eac8c5009752b9166921902eab8f7ae5a810091"
     },
     {
       "name": "labpics-ui-solid-0.0.0.tgz",
-      "sha256": "dc7582fe8fde52d2680d2995dc26fd396dde6a74719589dcc8962082d66a4e21"
+      "sha256": "bfa7d7a2a96bd06a90092d41d72b67bd4234192bacc4b6b01e42309d3a70d942"
     },
     {
       "name": "labpics-ui-svelte-0.0.0.tgz",
-      "sha256": "72c35883e2022dbfb4968953eba5aa5b93321d95369d998ab5f1b03c2e7d08c0"
+      "sha256": "734d0236c8f3c686529ed5242c36df0204faabcf47b261ebf100692f1cb28e3f"
     },
     {
       "name": "labpics-ui-astro-0.0.0.tgz",
-      "sha256": "d0ab902c4e0c43dc6e9bc45adb9e081149e8dc0994acd89a4a3c66c71660d206"
+      "sha256": "96fc0de29946cdb8894ceb845f1600f0ddf9cbe83804cecc3e0474dcae886f9d"
     },
     {
       "name": "icons.tgz",
