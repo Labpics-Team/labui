@@ -168,16 +168,6 @@ try {
         host.shadowRoot.append(style);
       });
       for (const probe of ['nested-filter', 'nested-mask', 'nested-transform']) {
-      await page.locator('lab-alert').evaluate((host, probe) => {
-        host.dataset.opacityProbe = probe;
-        if (probe.startsWith('nested')) {
-          for (const material of host.shadowRoot.querySelectorAll('.lab-alert-layer > .lab-material')) {
-            const paint = material.querySelector('.lab-material__paint');
-            const capture = paint.querySelector('.lab-material__capture');
-            for (const layer of [...paint.children]) if (layer !== capture) capture.append(layer);
-          }
-        }
-      }, probe);
       for (const theme of ['light', 'dark'])
         for (const material of ['acrylic', 'glass']) {
           await page.evaluate(
@@ -187,6 +177,18 @@ try {
             },
             { theme, material },
           );
+          await page.waitForFunction(() => {
+            const materials = document.querySelector('lab-alert').shadowRoot.querySelectorAll('.lab-alert-layer > .lab-material');
+            return materials.length === 2 && [...materials].every(el => el.querySelector('.lab-material__paint > .lab-material__capture'));
+          });
+          await page.locator('lab-alert').evaluate((host, probe) => {
+            host.dataset.opacityProbe = probe;
+            for (const material of host.shadowRoot.querySelectorAll('.lab-alert-layer > .lab-material')) {
+              const paint = material.querySelector('.lab-material__paint');
+              const capture = paint.querySelector('.lab-material__capture');
+              for (const layer of [...paint.children]) if (layer !== capture) capture.append(layer);
+            }
+          }, probe);
           await settle(page);
           const geometry = await page.locator('lab-alert').evaluate((host) => {
             const surfaces = [
