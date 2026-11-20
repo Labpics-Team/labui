@@ -152,10 +152,15 @@ try {
           :host([data-opacity-probe="capture-alpha-no-clip"]) .lab-alert-layer { overflow: visible; }
           :host([data-opacity-probe="host-bare"]) .lab-alert-layer > .lab-material { opacity: var(--_probe-alpha) !important; background: transparent; backdrop-filter: blur(var(--_blur)); -webkit-backdrop-filter: blur(var(--_blur)); }
           :host([data-opacity-probe="host-bare"]) .lab-alert-layer .lab-material__paint { display: none; }
+          :host([data-opacity-probe^="group-"]) .lab-alert-layer .lab-material__paint { opacity: var(--_probe-alpha); }
+          :host([data-opacity-probe="group-identity"]) .lab-alert-layer .lab-material__paint { backdrop-filter: opacity(1); -webkit-backdrop-filter: opacity(1); }
+          :host([data-opacity-probe="group-zero-blur"]) .lab-alert-layer .lab-material__paint { backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
+          :host([data-opacity-probe="group-tiny-blur"]) .lab-alert-layer .lab-material__paint { backdrop-filter: blur(0.001px); -webkit-backdrop-filter: blur(0.001px); }
+          :host([data-opacity-probe="group-host-identity"]) .lab-alert-layer > .lab-material { backdrop-filter: opacity(1); -webkit-backdrop-filter: opacity(1); }
         `;
         host.shadowRoot.append(style);
       });
-      for (const probe of ['original-opaque', 'nested-opaque', 'nested-opacity', 'nested-bare', 'nested-no-blend', 'capture-alpha', 'capture-alpha-no-clip', 'host-bare']) {
+      for (const probe of ['group-identity', 'group-zero-blur', 'group-tiny-blur', 'group-host-identity']) {
       for (const theme of ['light', 'dark'])
         for (const material of ['acrylic', 'glass']) {
           await page.evaluate(
@@ -266,6 +271,22 @@ try {
           });
           await settle(page);
           const restored = await sample(page, geometry.groups);
+          const compositeFrames = [];
+          for (const alpha of ['0', '1']) {
+            await page.locator('lab-alert').evaluate((host, alpha) => {
+              for (const layer of host.shadowRoot.querySelectorAll('[part="stack"]')) layer.style.setProperty('--_probe-alpha', alpha);
+            }, alpha);
+            await settle(page);
+            compositeFrames.push(await sample(page, geometry.groups));
+          }
+          const groupAlpha = await page.locator('lab-alert').evaluate((host) => {
+            return [...host.shadowRoot.querySelectorAll('[part="stack"]')].map(layer => {
+              layer.style.removeProperty('--_probe-alpha');
+              return Number(getComputedStyle(layer).getPropertyValue('--_alert-layer-opacity'));
+            });
+          });
+          await settle(page);
+          const compositeError = groupAlpha.map((alpha, i) => Math.max(...[0,1,2].map(c => Math.abs(original[0][i+1].rgb[c] - (compositeFrames[0][i+1].rgb[c] * (1-alpha) + compositeFrames[1][i+1].rgb[c] * alpha)))));
           const restoreError = original[0]
             .slice(0, 3)
             .map((frame, i) => distance(frame.rgb, restored[i].rgb));
@@ -287,6 +308,7 @@ try {
             returned,
             controlResponse,
             restoreError,
+            compositeError,
             original,
             control,
             restored,
