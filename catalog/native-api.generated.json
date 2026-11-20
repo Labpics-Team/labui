@@ -1,6 +1,6 @@
 {
-  "revision": "13ce9d2ee63eb06b7111317ff6a432969a595daa",
-  "sourceDigest": "sha256:9c30cbe1d625632293a67f50c3c814c1d62d826f9f47f129c74b0318d47d015d",
+  "revision": "e5643a46a0063fe1676646984d398f5ad3df7e93",
+  "sourceDigest": "sha256:02e6194c604357fb58aecbc9ca615e9c4951ae89cdba714be4ae672d250c7145",
   "symbols": [
     {
       "name": "LabAccordion",
@@ -45,6 +45,14 @@
     {
       "name": "LabChoicebox",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChoicebox.kt"
+    },
+    {
+      "name": "LabDialogHost",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabDialog.kt"
+    },
+    {
+      "name": "LabAlertDialogHost",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabDialog.kt"
     },
     {
       "name": "LabDragButton",
@@ -101,6 +109,10 @@
     {
       "name": "LabPinInput",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabPinInput.kt"
+    },
+    {
+      "name": "LabPopoverHost",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabPopover.kt"
     },
     {
       "name": "LabProgress",
