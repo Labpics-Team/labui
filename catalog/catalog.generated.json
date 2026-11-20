@@ -458,6 +458,7 @@
         "subpath": "combobox",
         "reactExport": "Combobox"
       },
+      "profile": "input",
       "documentation": "combobox.doc.ts",
       "capabilities": {
         "web": {
@@ -466,7 +467,28 @@
         },
         "native": null
       },
-      "sources": []
+      "sources": [
+        {
+          "page": "Dropdown",
+          "name": "Dropdown",
+          "type": "component-set",
+          "family": "combobox",
+          "role": "part",
+          "web": {
+            "scope": "Composition extension: reuses this source geometry; no separate authored master is claimed."
+          }
+        },
+        {
+          "page": "Input & Textarea",
+          "name": "Input",
+          "type": "component-set",
+          "family": "combobox",
+          "role": "part",
+          "web": {
+            "scope": "Composition extension: reuses this source geometry; no separate authored master is claimed."
+          }
+        }
+      ]
     },
     {
       "slug": "number-input",
@@ -478,6 +500,7 @@
         "subpath": "number-input",
         "reactExport": "NumberInput"
       },
+      "profile": "input",
       "documentation": "number-input.doc.ts",
       "capabilities": {
         "web": {
@@ -486,7 +509,18 @@
         },
         "native": null
       },
-      "sources": []
+      "sources": [
+        {
+          "page": "Input & Textarea",
+          "name": "Input",
+          "type": "component-set",
+          "family": "number-input",
+          "role": "part",
+          "web": {
+            "scope": "Composition extension: reuses this source geometry; no separate authored master is claimed."
+          }
+        }
+      ]
     },
     {
       "slug": "tags-input",
@@ -498,6 +532,7 @@
         "subpath": "tags-input",
         "reactExport": "TagsInput"
       },
+      "profile": "input",
       "documentation": "tags-input.doc.ts",
       "capabilities": {
         "web": {
@@ -506,7 +541,28 @@
         },
         "native": null
       },
-      "sources": []
+      "sources": [
+        {
+          "page": "Chips",
+          "name": "Chip",
+          "type": "component-set",
+          "family": "tags-input",
+          "role": "part",
+          "web": {
+            "scope": "Composition extension: reuses this source geometry; no separate authored master is claimed."
+          }
+        },
+        {
+          "page": "Input & Textarea",
+          "name": "Input",
+          "type": "component-set",
+          "family": "tags-input",
+          "role": "part",
+          "web": {
+            "scope": "Composition extension: reuses this source geometry; no separate authored master is claimed."
+          }
+        }
+      ]
     },
     {
       "slug": "pin-input",

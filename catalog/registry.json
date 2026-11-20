@@ -176,7 +176,8 @@
       "web": {
         "subpath": "combobox",
         "reactExport": "Combobox"
-      }
+      },
+      "profile": "input"
     },
     {
       "slug": "number-input",
@@ -187,7 +188,8 @@
       "web": {
         "subpath": "number-input",
         "reactExport": "NumberInput"
-      }
+      },
+      "profile": "input"
     },
     {
       "slug": "tags-input",
@@ -198,7 +200,8 @@
       "web": {
         "subpath": "tags-input",
         "reactExport": "TagsInput"
-      }
+      },
+      "profile": "input"
     },
     {
       "slug": "pin-input",
@@ -1198,6 +1201,13 @@
             "symbol": "LabChip",
             "scope": "S/M, Sharp, selected и независимый active; hover/pressed/focus/disabled/loading. Loading сохраняет ширину пользовательского текста."
           }
+        },
+        {
+          "family": "tags-input",
+          "role": "part",
+          "web": {
+            "scope": "Composition extension: reuses this source geometry; no separate authored master is claimed."
+          }
         }
       ]
     },
@@ -1332,6 +1342,13 @@
             "symbol": "LabSelect",
             "scope": "Authored S32/M48/L56, leading icon, hover and expanded chevron; semantic label stays accessible."
           }
+        },
+        {
+          "family": "combobox",
+          "role": "part",
+          "web": {
+            "scope": "Composition extension: reuses this source geometry; no separate authored master is claimed."
+          }
         }
       ]
     },
@@ -1407,6 +1424,27 @@
           },
           "native": {
             "scope": "Публичный Compose API; полное визуальное соответствие ещё не подтверждено."
+          }
+        },
+        {
+          "family": "combobox",
+          "role": "part",
+          "web": {
+            "scope": "Composition extension: reuses this source geometry; no separate authored master is claimed."
+          }
+        },
+        {
+          "family": "number-input",
+          "role": "part",
+          "web": {
+            "scope": "Composition extension: reuses this source geometry; no separate authored master is claimed."
+          }
+        },
+        {
+          "family": "tags-input",
+          "role": "part",
+          "web": {
+            "scope": "Composition extension: reuses this source geometry; no separate authored master is claimed."
           }
         }
       ]

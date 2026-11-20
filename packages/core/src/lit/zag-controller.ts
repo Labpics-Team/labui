@@ -33,8 +33,8 @@ export class ZagController<T extends MachineSchema, Api> implements ReactiveCont
   private readonly getProps: () => MachineProps<T>;
   private machine?: VanillaMachine<T>;
   private unsubscribe?: () => void;
-  /** Cleanups from each `spread()` call, run before the next paint to avoid leaks. */
-  private spreadCleanups: Array<() => void> = [];
+  /** One cleanup per live DOM node, released on removal or disconnect. */
+  private spreadCleanups = new Map<Element, () => void>();
   /**
    * Memoised `connect()` result for the CURRENT render. `connect()` rebuilds the
    * whole prop-getter API from the live service; it is a pure snapshot of the
@@ -92,6 +92,14 @@ export class ZagController<T extends MachineSchema, Api> implements ReactiveCont
     // The constructor getter already reads current host properties. Vanilla
     // 1.48 refreshes watchers without retaining another live getter for each render.
     this.machine?.updateProps({});
+    queueMicrotask(() => {
+      for (const [node, cleanup] of this.spreadCleanups) {
+        if (!this.host.renderRoot.contains(node)) {
+          cleanup();
+          this.spreadCleanups.delete(node);
+        }
+      }
+    });
   }
 
   hostDisconnected(): void {
@@ -122,18 +130,19 @@ export class ZagController<T extends MachineSchema, Api> implements ReactiveCont
 
   /**
    * Apply a `connect` prop-getter result onto a real shadow-DOM node (attrs,
-   * ARIA, listeners) the vanilla way. Returns nothing; cleanup is tracked and
-   * run automatically before the next paint and on disconnect.
+   * ARIA, listeners) the vanilla way. Cleanup follows the node's lifetime.
    */
   spread(node: Element, props: Attrs): void {
     const cleanup = spreadProps(node, props);
-    this.spreadCleanups.push(cleanup);
+    // spreadProps replaces the preceding handlers and keeps its diff itself.
+    // Retain only the newest cleanup; invoking an older one would erase that diff.
+    this.spreadCleanups.set(node, cleanup);
   }
 
   /** Drop all prior spreads. Call at the top of the element's `updated()`. */
   clearSpreads(): void {
-    for (const cleanup of this.spreadCleanups) cleanup();
-    this.spreadCleanups = [];
+    for (const cleanup of this.spreadCleanups.values()) cleanup();
+    this.spreadCleanups.clear();
   }
 }
 

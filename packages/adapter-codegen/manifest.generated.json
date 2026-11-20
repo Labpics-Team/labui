@@ -1344,7 +1344,7 @@
         {
           "name": "value",
           "attr": "value",
-          "kind": "string"
+          "kind": "prop"
         },
         {
           "name": "defaultValue",

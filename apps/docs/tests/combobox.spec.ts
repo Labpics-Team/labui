@@ -89,9 +89,7 @@ test('render: the input is a combobox with the listbox closed on both renderers'
   await expect(reactInput(page, 'react-combobox')).toHaveAttribute('aria-expanded', 'false');
 });
 
-test('disclosure and text reserve follow the field adornment independently of Switch', async ({
-  page,
-}) => {
+test('disclosure uses the Input adornment and never overlaps editable text', async ({ page }) => {
   for (const [testid, inputClass, triggerClass] of [
     ['lit-combobox', '.input', '.trigger'],
     ['react-combobox', '.lab-combobox-input', '.lab-combobox-trigger'],
@@ -99,18 +97,19 @@ test('disclosure and text reserve follow the field adornment independently of Sw
     const host = page.getByTestId(testid);
     const input = host.locator(inputClass);
     const trigger = host.locator(triggerClass);
-    await expect(trigger).toHaveCSS('width', '32px');
-    await expect(input).toHaveCSS('padding-right', '32px');
-    await host.evaluate((element) => {
-      element.style.setProperty('--lab-size-switch-track-s', '80px');
-    });
-    await expect(trigger).toHaveCSS('width', '32px');
-    await expect(input).toHaveCSS('padding-right', '32px');
-    await host.evaluate((element) => {
-      element.style.setProperty('--lab-size-input-adornment', '40px');
-    });
-    await expect(trigger).toHaveCSS('width', '40px');
-    await expect(input).toHaveCSS('padding-right', '40px');
+    for (const [token, width] of [
+      ['--lab-size-switch-track-s', '80px'],
+      ['--lab-size-input-adornment', '40px'],
+    ] as const) {
+      await host.evaluate((element, pair) => element.style.setProperty(pair.token, pair.width), {
+        token,
+        width,
+      });
+      await expect(trigger).toHaveCSS('width', token.includes('switch') ? '32px' : '40px');
+      const editor = await input.boundingBox();
+      const disclosure = await trigger.boundingBox();
+      expect(editor && disclosure && editor.x + editor.width <= disclosure.x + 0.5).toBe(true);
+    }
   }
 });
 
@@ -456,68 +455,23 @@ test('positioning: the open listbox is anchored at the input', async ({ page }) 
  * Lit input surface (border colour + background) MATCHES the React input, and the two
  * control boxes are the SAME size. The pre-fix double-paint fails (1), (2) and (3).
  */
-test('control-surface parity: the Lit wrapper is a bare container; the surface matches React', async ({
-  page,
-}) => {
-  const readSurface = (el: Element) => {
-    const cs = getComputedStyle(el as HTMLElement);
-    const r = (el as HTMLElement).getBoundingClientRect();
-    return {
-      borderTopWidth: cs.borderTopWidth,
-      borderColor: cs.borderTopColor,
-      background: cs.backgroundColor,
-      padding: `${cs.paddingTop}/${cs.paddingRight}/${cs.paddingBottom}/${cs.paddingLeft}`,
-      width: Math.round(r.width),
-      height: Math.round(r.height),
-    };
-  };
-
-  const lit = await litHost(page, 'lit-combobox').evaluate((host, read) => {
-    const fn = new Function(`return (${read})`)() as (el: Element) => unknown;
-    const sr = (host as HTMLElement).shadowRoot;
-    const wrapper = sr?.querySelector('.control:not(.input)');
-    const input = sr?.querySelector('.input');
-    if (!wrapper || !input) throw new Error('Lit control parts not found');
-    return { wrapper: fn(wrapper), input: fn(input) };
-  }, readSurface.toString());
-
-  const react = await reactWrap(page, 'react-combobox').evaluate((host, read) => {
-    const fn = new Function(`return (${read})`)() as (el: Element) => unknown;
-    const wrapper = (host as HTMLElement).querySelector('.lab-combobox-control');
-    const input = (host as HTMLElement).querySelector('.lab-combobox-input');
-    if (!wrapper || !input) throw new Error('React control parts not found');
-    return { wrapper: fn(wrapper), input: fn(input) };
-  }, readSurface.toString());
-
-  type Surface = ReturnType<typeof readSurface>;
-  const litW = lit.wrapper as Surface;
-  const litI = lit.input as Surface;
-  const reactW = react.wrapper as Surface;
-  const reactI = react.input as Surface;
-
-  // (1) The Lit wrapper carries NO field surface — a bare flex container, like React's.
-  expect(litW.borderTopWidth, 'Lit wrapper has no border (no double box)').toBe('0px');
-  expect(litW.background, 'Lit wrapper background is transparent').toBe('rgba(0, 0, 0, 0)');
-  expect(litW.padding, 'Lit wrapper has zero padding').toBe('0px/0px/0px/0px');
-
-  // (2) The Lit wrapper box COINCIDES with the input box — one box, not a larger outer one.
-  expect(litW.width, 'Lit wrapper width == input width (single box)').toBe(litI.width);
-  expect(litW.height, 'Lit wrapper height == input height (single box)').toBe(litI.height);
-
-  // The input is the ONE painted surface (non-zero border + an opaque fill).
-  expect(litI.borderTopWidth, 'Lit input carries the field border').not.toBe('0px');
-  expect(litI.background, 'Lit input has an opaque field background').not.toBe('rgba(0, 0, 0, 0)');
-
-  // (3) Parity with React: the wrapper is bare on both, and the input surface + control box
-  // are identical across renderers.
-  expect(litW.borderTopWidth, 'wrapper border parity').toBe(reactW.borderTopWidth);
-  expect(litW.background, 'wrapper background parity').toBe(reactW.background);
-  expect(litW.padding, 'wrapper padding parity').toBe(reactW.padding);
-  expect(litI.borderColor, 'input border colour parity').toBe(reactI.borderColor);
-  expect(litI.background, 'input background parity').toBe(reactI.background);
-  expect(litI.padding, 'input padding parity').toBe(reactI.padding);
-  expect(litW.width, 'control box width parity').toBe(reactW.width);
-  expect(litW.height, 'control box height parity').toBe(reactW.height);
+test('transparent Input outline and control geometry match in both renderers', async ({ page }) => {
+  const measures = [];
+  for (const testid of ['lit-combobox', 'react-combobox']) {
+    const host = page.getByTestId(testid);
+    const outline = host.locator('.lab-input-outline');
+    await expect(outline).toHaveCSS('border-top-width', '1px');
+    await expect(outline).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    const frame = host.locator('.lab-input-frame');
+    await expect(frame).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    measures.push(
+      await frame.evaluate((el) => ({
+        height: el.getBoundingClientRect().height,
+        radius: getComputedStyle(el).borderRadius,
+      })),
+    );
+  }
+  expect(measures[0]).toEqual(measures[1]);
 });
 
 test('visual parity: Lit and React resolve the same listbox colour when open', async ({ page }) => {

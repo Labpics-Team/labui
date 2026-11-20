@@ -1,4 +1,3 @@
-import { alertCss } from '../src/components/alert/styles.js';
 /**
  * Copy the non-JS artifacts (CSS) from `src/` into `dist/` after tsup has built
  * the JS/types, so the package's `./theme.css` export resolves for consumers.
@@ -17,6 +16,7 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { accordionCss } from '../src/components/accordion/styles.js';
+import { alertCss } from '../src/components/alert/styles.js';
 import { avatarCss } from '../src/components/avatar/styles.js';
 import { badgeCss } from '../src/components/badge/styles.js';
 import { breadcrumbCss } from '../src/components/breadcrumb/styles.js';
@@ -24,6 +24,7 @@ import { buttonFillCss } from '../src/components/button/fill.js';
 import { cardCss } from '../src/components/card/styles.js';
 import { chipCss } from '../src/components/chip/styles.js';
 import { dragButtonCss } from '../src/components/drag-button/styles.js';
+import { extensionFieldCss } from '../src/components/field/extension-styles.js';
 import { inputCss } from '../src/components/input/styles.js';
 import { kbdCss } from '../src/components/kbd/styles.js';
 import { menuCss } from '../src/components/menu/styles.js';
@@ -75,6 +76,7 @@ function main(): void {
   );
   writeFileSync(join(dist, 'sheet.css'), sheetCss);
   writeFileSync(join(dist, 'input.css'), inputCss);
+  writeFileSync(join(dist, 'input-extensions.css'), extensionFieldCss);
   writeFileSync(join(dist, 'select.css'), selectCss);
   writeFileSync(join(dist, 'snackbar.css'), snackbarCss);
   writeFileSync(join(dist, 'card.css'), cardCss);
