@@ -19,3 +19,5 @@ Popover рассчитывает доступное место по viewport: po
 Проверены Chromium/WebKit (18 Playwright scenarios, source/matrix, IME после двух RAF, installed React/Vue/Solid/Svelte/Astro), Core/React typecheck, Figma neutral Button paints и 5 native SOFTWARE tests. Снимки native сохранены рядом с web. Временный Icons override убран из package.json/lock.
 
 Доставка: commit исходников → catalog:generate (native source должен быть committed) → adapter-codegen tests/catalog:check → commit каталога → push и передача root. Root интегрирует Menu, материалы, общие scanners и выполняет PR/merge/release. Отдельный известный дефект материалов: Acrylic при native 200% оставляет синий участок за верхним левым скруглением; см. native/alert-Light-Acrylic-2.0.png. Материалы здесь не изменялись.
+
+Ветка `feat/dialog-family-authored-20261120` отправлена: исходники `1ab719c1`, каталог `30863990`. Независимое ревью приняло freeze `308639909b52416808d316e302d6ad9ee0817042`; подробности и ограничения в README. Работа этого участка готова к общей интеграции root; выпуск продукта ещё выполняется в основной задаче.
