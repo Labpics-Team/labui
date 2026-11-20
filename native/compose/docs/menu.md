@@ -42,6 +42,9 @@ modifier области содержимого; secondary click и long press о
 У пунктов есть `disabled`, `tone` (Neutral/Accent/Danger), `icon`, `iconEnd`,
 `shortcut`. Иконки — `SymbolData` из самостоятельного пакета Lab Icons. `shortcut`
 рисует `LabKbd`; приложение отдельно назначает горячие клавиши.
+`iconVariant` и `iconEndVariant` выбирают `IconVariant.Outline` или `Filled`.
+Без явного варианта используется Outline. Выбранный Check/Radio заменяет leading icon
+своей отметкой; снятый показывает переданную иконку.
 Выбранный Check показывает checkmark, выбранный Radio — точку. Значение выбора
 находится в `checkedValues`, не в самом пункте. Радиогруппа охватывает всё дерево.
 Повторный выбор radio не снимает его; disabled не меняет состояние. Неподходящие
