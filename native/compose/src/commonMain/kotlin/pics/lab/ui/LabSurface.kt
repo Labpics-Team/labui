@@ -163,16 +163,18 @@ internal fun LabSurface(
         }
     val shadowed =
         modifier.labShadow(shape, shadows).labOutsideStroke(shape, strokeWidth, strokeColor)
+    // Solid and Glass paint their own shape. Blur paints a rectangle, so its clip
+    // must wrap the effect. Outside decoration stays outside every material clip.
     val painted =
         when {
-            reduced || material == LabMaterial.Solid -> shadowed.background(solid, shape)
-            material == LabMaterial.Glass -> shadowed.hazeGlass(input, glass)
-            else -> shadowed.hazeBlur(input, acrylic)
+            reduced || material == LabMaterial.Solid -> shadowed.background(solid, shape).clip(shape)
+            material == LabMaterial.Glass -> shadowed.hazeGlass(input, glass).clip(shape)
+            else -> shadowed.clip(shape).hazeBlur(input, acrylic)
         }
     val paints =
-        if (reduced || material == LabMaterial.Solid) painted.clip(shape)
+        if (reduced || material == LabMaterial.Solid) painted
         else
-            painted.clip(shape).drawWithContent {
+            painted.drawWithContent {
                 drawRect(tint)
                 drawRect(blend, blendMode = blendMode)
                 drawContent()
