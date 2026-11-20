@@ -269,9 +269,11 @@ export async function verifyScrollPaint(page, origin, browser, display) {
     });
     await settle();
     await measure('negative-end');
-    await page
-      .locator('#scroll-host')
-      .evaluate((host) => host.style.setProperty('--_tint', 'rgb(0 0 0)'));
+    // A first locator call installs Playwright's own observer after our resource
+    // instrumentation. Direct evaluation keeps that observer out of SDK counts.
+    await page.evaluate(() =>
+      document.getElementById('scroll-host').style.setProperty('--_tint', 'rgb(0 0 0)'),
+    );
     await settle();
     await measure('opaque-black', 0);
     await page.evaluate(() => window.stopScrollPaint());
