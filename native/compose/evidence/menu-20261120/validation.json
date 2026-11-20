@@ -1,0 +1,20 @@
+{
+    "version":  "0.1.0-menu-family-20261120-r4",
+    "jarSha256":  "21437c0b98b45bdf57cc591eaff97be141bf256cb6afd76a4efb555a68d7c68b",
+    "runtime":  "Java 21 / Skiko SOFTWARE / java.awt.headless=true",
+    "nativeTests":  14,
+    "nativeFailures":  0,
+    "installedConsumerTests":  1,
+    "installedConsumerScenarios":  4,
+    "sourceRenderCount":  6,
+    "interactionRenderCount":  12,
+    "sourceDropdownDp":  [
+                             256,
+                             386
+                         ],
+    "sourceFiles":  {
+                        "LabMenu.kt":  "8abe673fe30aee6e436f93c675074bdbe2ac507419ea19d1ea19349a525fbd27",
+                        "LabMenuModel.kt":  "18017409ff8aeb905054e866f5f4831213538d537f0e93616cf27240caecf7fa",
+                        "LabComponents.kt":  "497cc76a01e982ecd9819cef0be52115f0214d5d7d6b2c0c6a3fd37e3f7a1daa"
+                    }
+}
