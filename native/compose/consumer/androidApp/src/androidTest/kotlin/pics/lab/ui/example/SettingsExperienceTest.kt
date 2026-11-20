@@ -1,6 +1,20 @@
 package pics.lab.ui.example
 
 import android.view.KeyEvent
+import android.content.ClipData
+import android.content.ClipboardManager
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.content.contentReceiver
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -20,6 +34,12 @@ import org.junit.rules.RuleChain
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 import org.junit.runner.RunWith
+import pics.lab.ui.LabPreferences
+import pics.lab.ui.LabTagsInput
+import pics.lab.ui.LabTheme
+import pics.lab.ui.LabThemeState
+import pics.lab.ui.initialLabColors
+import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
 class SettingsExperienceTest {
@@ -134,5 +154,66 @@ class SettingsExperienceTest {
         device.findObject(By.text("Редактировать")).button().click()
         val name = checkNotNull(device.wait(Until.findObject(By.desc("Название")), 10_000)).editor()
         assertEquals("Нативная лаборатория 東京z", name.text)
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun tagsPasteWithAncestorReceiverInsertsExactlyOnce() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val device = UiDevice.getInstance(instrumentation)
+        val state = TextFieldState()
+        var value by mutableStateOf(emptyList<String>())
+        var addOnPaste by mutableStateOf(false)
+        val callbacks = AtomicInteger()
+        val ancestorReceipts = AtomicInteger()
+        var previousClip: ClipData? = null
+        activity.scenario.onActivity { host ->
+            val clipboard = host.getSystemService(ClipboardManager::class.java)
+            previousClip = clipboard.primaryClip
+            clipboard.setPrimaryClip(ClipData.newPlainText("tags test", "one,two"))
+            val preferences = LabPreferences(reducedMotion = true)
+            val theme = LabThemeState(initialLabColors(preferences), preferences)
+            host.setContent {
+                LabTheme(theme) {
+                    Box(Modifier.fillMaxSize().padding(32.dp).contentReceiver { content ->
+                        ancestorReceipts.incrementAndGet()
+                        content
+                    }) {
+                        LabTagsInput(value, { callbacks.incrementAndGet(); value = it }, "Tags paste",
+                            state = state, addOnPaste = addOnPaste)
+                    }
+                }
+            }
+        }
+        try {
+            fun field() = checkNotNull(device.wait(Until.findObject(By.desc("Tags paste")), 10_000)).editor()
+            field().click()
+            device.pressKeyCode(KeyEvent.KEYCODE_V, KeyEvent.META_CTRL_ON)
+            assertTrue(device.wait(Until.hasObject(By.text("one,two")), 10_000))
+            activity.scenario.onActivity {
+                assertEquals("one,two", state.text.toString())
+                assertEquals(0, callbacks.get())
+                assertEquals(0, ancestorReceipts.get())
+                state.edit { replace(0, length, "") }
+                addOnPaste = true
+                it.getSystemService(ClipboardManager::class.java)
+                    .setPrimaryClip(ClipData.newPlainText("tags test", "three,four"))
+            }
+            device.waitForIdle()
+            field().click()
+            device.pressKeyCode(KeyEvent.KEYCODE_V, KeyEvent.META_CTRL_ON)
+            assertTrue(device.wait(Until.hasObject(By.desc("Удалить three")), 10_000))
+            activity.scenario.onActivity {
+                assertEquals(listOf("three", "four"), value)
+                assertEquals("", state.text.toString())
+                assertEquals(1, callbacks.get())
+                assertEquals(0, ancestorReceipts.get())
+            }
+        } finally {
+            activity.scenario.onActivity {
+                val clipboard = it.getSystemService(ClipboardManager::class.java)
+                previousClip?.let(clipboard::setPrimaryClip) ?: clipboard.clearPrimaryClip()
+            }
+        }
     }
 }

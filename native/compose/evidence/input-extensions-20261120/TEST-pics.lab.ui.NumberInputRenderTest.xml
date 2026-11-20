@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="NumberInputRenderTest[desktop]" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-20T15:20:08.375Z" hostname="DESKTOP-NFO26JA" time="9.001">
+  <properties/>
+  <testcase name="externalStateReplacementAndEditsRemainAuthoritative[desktop]" classname="pics.lab.ui.NumberInputRenderTest" time="1.325"/>
+  <testcase name="softwareKeyboardDoneCommitsThroughTheRealPlatformRequest[desktop]" classname="pics.lab.ui.NumberInputRenderTest" time="0.435"/>
+  <testcase name="readOnlyDisabledAndUnrepresentableStepsNeverMutateTheValue[desktop]" classname="pics.lab.ui.NumberInputRenderTest" time="1.502"/>
+  <testcase name="authoredGeometryAndFormStatesRenderAtBothThemesAndTextScales[desktop]" classname="pics.lab.ui.NumberInputRenderTest" time="0.844"/>
+  <testcase name="invalidDraftsAndFormErrorsRemainVisibleUntilTheApplicationClearsThem[desktop]" classname="pics.lab.ui.NumberInputRenderTest" time="1.328"/>
+  <testcase name="compositionAndItsEnterKeepTheDraftAndSelectionAcrossRecomposition[desktop]" classname="pics.lab.ui.NumberInputRenderTest" time="1.003"/>
+  <testcase name="keyboardAndButtonsStepExactlyAndCommitOnlyOnEnterOrBlur[desktop]" classname="pics.lab.ui.NumberInputRenderTest" time="1.992"/>
+  <testcase name="blurCommitsAfterCompositionHasFinishedWithoutDiscardingItsDraft[desktop]" classname="pics.lab.ui.NumberInputRenderTest" time="0.571"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

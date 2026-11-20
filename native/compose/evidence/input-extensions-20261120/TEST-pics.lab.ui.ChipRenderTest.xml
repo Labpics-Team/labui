@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ChipRenderTest[desktop]" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-20T15:19:03.910Z" hostname="DESKTOP-NFO26JA" time="3.528">
+  <properties/>
+  <testcase name="longTextWrapsAt200PercentInBothDirectionsAndPendingKeepsItsBox[desktop]" classname="pics.lab.ui.ChipRenderTest" time="0.991"/>
+  <testcase name="oneTargetHandlesKeyboardControlledRefusalAndPendingWithoutLosingFocus[desktop]" classname="pics.lab.ui.ChipRenderTest" time="0.496"/>
+  <testcase name="actionAndRemovalExposeOneExplicitlyNamedActionEach[desktop]" classname="pics.lab.ui.ChipRenderTest" time="0.063"/>
+  <testcase name="all56AuthorVariantsKeepGeometryAndLabelsAcrossThemeAndScale[desktop]" classname="pics.lab.ui.ChipRenderTest" time="1.974"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
