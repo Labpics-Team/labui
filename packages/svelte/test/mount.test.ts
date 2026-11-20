@@ -139,15 +139,15 @@ describe('Svelte mount (проброс на <lab-*>)', () => {
     await defaultEl?.updateComplete;
     expect(el?.arrow).toBe(false);
     expect(defaultEl?.arrow).toBe(true);
-    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).toBeNull();
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]:not([hidden])')).toBeNull();
     component.setArrow(true);
     flushSync();
     await el?.updateComplete;
-    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).not.toBeNull();
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]:not([hidden])')).not.toBeNull();
     component.setArrow(false);
     flushSync();
     await el?.updateComplete;
-    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).toBeNull();
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]:not([hidden])')).toBeNull();
   });
 
   it('input: label/value доходят как атрибуты', () => {

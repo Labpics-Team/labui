@@ -48,15 +48,15 @@ describe('Vue mount (проброс на <lab-*>)', () => {
     const el = host.querySelector('lab-tooltip');
     await el?.updateComplete;
     expect(el?.arrow).toBe(false);
-    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).toBeNull();
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]:not([hidden])')).toBeNull();
     arrow.value = true;
     await nextTick();
     await el?.updateComplete;
-    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).not.toBeNull();
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]:not([hidden])')).not.toBeNull();
     arrow.value = false;
     await nextTick();
     await el?.updateComplete;
-    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).toBeNull();
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]:not([hidden])')).toBeNull();
     const omitted = mount(h(Tooltip, { content: 'Default' }, () => 'Trigger'));
     const defaultEl = omitted.host.querySelector('lab-tooltip');
     await defaultEl?.updateComplete;
