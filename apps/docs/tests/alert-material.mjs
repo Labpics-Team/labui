@@ -131,6 +131,21 @@ try {
         await document.querySelector('lab-alert').updateComplete;
         await document.fonts.ready;
       });
+      // Diagnostic branch: move authored group opacity to the actual capture.
+      // Keep the production recipes and geometry to isolate the tree boundary.
+      await page.locator('lab-alert').evaluate((host) => {
+        const style = document.createElement('style');
+        style.textContent = `
+          .lab-alert-layer > .lab-material[data-lab-material-paint-renderer] { opacity: 1 !important; }
+          .lab-alert-layer > .lab-material > .lab-material__paint { opacity: var(--_alert-layer-opacity); }
+          .lab-alert-layer[data-opacity-control] > .lab-material > .lab-material__paint { opacity: 1; }
+          .lab-alert-layer > .lab-material[data-lab-material-paint-renderer="capture-blend"] > .lab-material__paint { backdrop-filter: blur(var(--_blur)); -webkit-backdrop-filter: blur(var(--_blur)); }
+          .lab-alert-layer > .lab-material[data-lab-material-paint-renderer="capture-blend"] > .lab-material__paint > .lab-material__capture { backdrop-filter: none; -webkit-backdrop-filter: none; }
+          .lab-alert-layer > .lab-material[data-lab-material-paint-renderer]::before,
+          .lab-alert-layer > .lab-material[data-lab-material-paint-renderer]::after { opacity: var(--_alert-layer-opacity); }
+        `;
+        host.shadowRoot.append(style);
+      });
       for (const theme of ['light', 'dark'])
         for (const material of ['acrylic', 'glass']) {
           await page.evaluate(
@@ -203,7 +218,8 @@ try {
           await page.locator('lab-alert').evaluate((host) => {
             for (const layer of host.shadowRoot.querySelectorAll('[part="stack"]')) {
               const material = layer.querySelector('.lab-material');
-              layer.style.opacity = getComputedStyle(material).opacity;
+              layer.style.opacity = getComputedStyle(layer).getPropertyValue('--_alert-layer-opacity');
+              layer.setAttribute('data-opacity-control', '');
               material.style.opacity = '1';
             }
           });
@@ -214,6 +230,7 @@ try {
           await page.locator('lab-alert').evaluate((host) => {
             for (const layer of host.shadowRoot.querySelectorAll('[part="stack"]')) {
               layer.style.removeProperty('opacity');
+              layer.removeAttribute('data-opacity-control');
               layer.querySelector('.lab-material').style.removeProperty('opacity');
             }
           });
