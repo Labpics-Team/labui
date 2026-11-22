@@ -1,6 +1,6 @@
 {
-  "revision": "ffed6ca15cbf1ddb0064c8db213ecebfc9740f07",
-  "sourceDigest": "sha256:c8f083909c4c5fc882d6811cf4298fc9c5ed322830955c3ab785bc524765079b",
+  "revision": "c2527b5b003c0abcfccba72c5ff2dab06c092303",
+  "sourceDigest": "sha256:b5cfebf8802441f84641fc09e2ab1ef5cdaf9b7b3e8cce061c1b023674c6a797",
   "symbols": [
     {
       "name": "LabAccordion",
@@ -45,6 +45,10 @@
     {
       "name": "LabChoicebox",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChoicebox.kt"
+    },
+    {
+      "name": "LabCombobox",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabCombobox.kt"
     },
     {
       "name": "LabDialogHost",
@@ -101,6 +105,10 @@
     {
       "name": "LabMenubar",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabMenu.kt"
+    },
+    {
+      "name": "LabNumberInput",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabNumberInput.kt"
     },
     {
       "name": "LabPagination",
@@ -165,6 +173,10 @@
     {
       "name": "LabTabs",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabTabs.kt"
+    },
+    {
+      "name": "LabTagsInput",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabTagsInput.kt"
     },
     {
       "name": "LabText",

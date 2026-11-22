@@ -177,6 +177,9 @@
         "subpath": "combobox",
         "reactExport": "Combobox"
       },
+      "native": {
+        "symbol": "LabCombobox"
+      },
       "profile": "input"
     },
     {
@@ -189,6 +192,9 @@
         "subpath": "number-input",
         "reactExport": "NumberInput"
       },
+      "native": {
+        "symbol": "LabNumberInput"
+      },
       "profile": "input"
     },
     {
@@ -200,6 +206,9 @@
       "web": {
         "subpath": "tags-input",
         "reactExport": "TagsInput"
+      },
+      "native": {
+        "symbol": "LabTagsInput"
       },
       "profile": "input"
     },
