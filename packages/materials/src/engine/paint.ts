@@ -27,7 +27,8 @@ interface PaintResource {
   readonly resources: Map<string, PaintResource>;
   readonly grain: 'none' | 'spatial' | 'uniform-bounded' | 'unsupported';
   readonly grainError?: number;
-  readonly nativeFill?: boolean;
+  readonly nativeAffine?: boolean;
+  readonly cssFilter?: string;
   refs: number;
 }
 const trees = new WeakMap<Document | ShadowRoot, Map<string, PaintResource>>();
@@ -85,13 +86,27 @@ function acquire(
   const screen = noiseUrl ? (Math.max(noise.r, noise.g, noise.b) * noise.a) / (2 * 255) : 0;
   const nativeFill = !noiseUrl || authoredNoise ? neutralMaterialFill(paints, screen) : null;
   if (nativeFill) {
-    // F(blur(backdrop)) = m * blur(backdrop) + b is ordinary source-over.
-    // Painting it on the capturing element keeps its border, grain and fill
-    // inside one opacity group without a backdrop-root ancestor or RGB filter.
+    // Both representations implement F(x)=m*x+b on the capturing element, so
+    // stroke and paint stay in the same opacity group. Chromium needs the
+    // transfer after its dispersed lens: native fill compositing otherwise
+    // violates group opacity on the Linux compositor. Contrast then brightness
+    // is k*(c*x+(1-c)/2), k=m+2b, c=m/k, with no intermediate clipping.
+    const slope = 1 - nativeFill.a;
+    const brightness = slope + (2 * nativeFill.r * nativeFill.a) / 255;
+    const cssFilter =
+      renderer === 'backdrop-svg' && slope > 1e-10
+        ? `contrast(${slope / brightness}) brightness(${brightness})`
+        : undefined;
+    const colour = `rgb(${nativeFill.r} ${nativeFill.g} ${nativeFill.b} / ${nativeFill.a})`;
     const resource: PaintResource = {
       filter: null,
-      fill: `rgb(${nativeFill.r} ${nativeFill.g} ${nativeFill.b} / ${nativeFill.a})`,
-      nativeFill: true,
+      // WebKit paints a scroller's background-color twice on its compositor.
+      // A uniform image retains exact source-over and works even on engines
+      // whose backdrop colour filters are unavailable. Opaque paints also use
+      // it to retain coverage when the backdrop itself is transparent.
+      fill: cssFilter ? 'transparent' : `linear-gradient(${colour}, ${colour})`,
+      ...(cssFilter ? { cssFilter } : {}),
+      nativeAffine: true,
       key,
       resources,
       refs: 1,
@@ -264,7 +279,7 @@ export function attach(el: HTMLElement): EngineHandle {
     signature = next;
     el.style.setProperty(
       '--_material-paint-filter',
-      resource.filter ? `url(#${resource.filter.id})` : 'opacity(1)',
+      resource.filter ? `url(#${resource.filter.id})` : (resource.cssFilter ?? 'opacity(1)'),
     );
     el.style.setProperty('--_surface-paint', resource.fill);
     if (resource.filter) el.style.setProperty('--_noise', 'none');
@@ -272,7 +287,7 @@ export function attach(el: HTMLElement): EngineHandle {
     if (resource.grainError !== undefined)
       el.setAttribute('data-lab-material-grain-error', String(resource.grainError));
     else el.removeAttribute('data-lab-material-grain-error');
-    const resolvedRenderer = resource.nativeFill ? 'native-affine' : renderer;
+    const resolvedRenderer = resource.nativeAffine ? 'native-affine' : renderer;
     if (capture && captureRenderer !== resolvedRenderer) {
       placement?.destroy();
       placement = undefined;
