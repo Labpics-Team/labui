@@ -115,9 +115,13 @@ public fun LabTagsInput(
         focus.requestFocus()
         return true
     }
-    LaunchedEffect(value, request, state.composition) {
+    LaunchedEffect(value, request) {
         val pending = request
-        if (pending != null && pending.proposed == value && pending.draft == state.text.toString() && state.composition == null) {
+        // commit() admits only a completed edit. An IME may start composing the
+        // same pasted text again while its controlled value is acknowledged.
+        // That text already belongs to the accepted chips; only a changed draft
+        // represents new input that must survive this acknowledgement.
+        if (pending != null && pending.proposed == value && pending.draft == state.text.toString()) {
             setDraft("")
             request = null
             editing = null
