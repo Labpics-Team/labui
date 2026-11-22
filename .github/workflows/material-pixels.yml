@@ -2,6 +2,11 @@ name: Material pixels with public Icons distribution
 
 on:
   workflow_dispatch:
+    inputs:
+      diagnostic:
+        type: boolean
+        default: false
+        description: Collect focused Glass and scroll comparisons
   pull_request:
     paths:
       - '.github/workflows/material-pixels.yml'
@@ -98,13 +103,16 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=4096
         run: pnpm --filter @labpics/ui-core... build
       - name: Measure production paint rendering
+        if: inputs.diagnostic != true
         run: node docs/evidence/materials-20261117/render-material-paints.mjs
       - name: Measure backdrop rendering and neutral paint composition
+        if: inputs.diagnostic != true
         run: node docs/evidence/materials-20261117/probe-backdrop-support.mjs
       - name: Measure actual Alert backdrop and regression control
+        if: inputs.diagnostic != true
         run: node apps/docs/tests/alert-material.mjs
       - name: Measure real Linux compositor
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && inputs.diagnostic != true
         env:
           MATERIAL_CAPTURE: display
         run: |
@@ -113,13 +121,25 @@ jobs:
           XWD_FILE="$RUNNER_TEMP/labui-display/Xvfb_screen0" xvfb-run -a -s "-screen 0 1280x720x24 -fbdir $RUNNER_TEMP/labui-display" node docs/evidence/materials-20261117/render-material-paints.mjs
           XWD_FILE="$RUNNER_TEMP/labui-display/Xvfb_screen0" xvfb-run -a -s "-screen 0 1280x720x24 -fbdir $RUNNER_TEMP/labui-display" node apps/docs/tests/alert-material.mjs
       - name: Measure real macOS compositor
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && inputs.diagnostic != true
         env:
           MATERIAL_CAPTURE: display
         run: |
           node docs/evidence/materials-20261117/probe-backdrop-support.mjs
           node docs/evidence/materials-20261117/render-material-paints.mjs
           node apps/docs/tests/alert-material.mjs
+      - name: Compare platform compositor mechanisms
+        if: inputs.diagnostic == true
+        env:
+          MATERIAL_BROWSERS: chromium,webkit
+          MATERIAL_CAPTURE: display
+        run: |
+          if [ "$RUNNER_OS" = Linux ]; then
+            mkdir -p "$RUNNER_TEMP/labui-display"
+            XWD_FILE="$RUNNER_TEMP/labui-display/Xvfb_screen0" xvfb-run -a -s "-screen 0 1280x720x24 -fbdir $RUNNER_TEMP/labui-display" node docs/evidence/material-opacity-20261120/diagnose-platform.mjs
+          else
+            node docs/evidence/material-opacity-20261120/diagnose-platform.mjs
+          fi
       - name: Preserve Alert compositor measurements
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
