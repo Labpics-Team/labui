@@ -1,5 +1,28 @@
 # Icon
 
+## Compose
+
+LabUI предоставляет существующий `pics.lab.icons.Icon` через публичную зависимость
+`api(nativeIcons.compose)`. Импортируйте его и нужный символ непосредственно из
+Lab Icons; отдельного `LabIcon` нет.
+
+```kotlin
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import pics.lab.icons.Icon
+import pics.lab.icons.symbols.alertCircle
+
+Icon(alertCircle, tint = Color(0xFF375AD2), size = 24.dp)
+```
+
+Точные версия и Maven repository commit заданы в
+[`native/compose/icons-release.json`](../../native/compose/icons-release.json).
+Gradle и каталог читают этот файл; запись Icon показывает координаты и ссылку
+на опубликованный выпуск. Это API внешней зависимости, поэтому он не входит
+в наблюдение локальных Kotlin-функций LabUI.
+
+## Web
+
 `Icon` принимает импортированный символ из `@labpics/icons/symbols/<name>`.
 Он сохраняет авторские Outline/Filled, оптические размеры и смысловые состояния.
 Полный каталог, компилятор и движок анимации не входят в статический импорт.
@@ -39,7 +62,7 @@ CSS `em` без сигнала масштаба не определяет авт
 Если знак сам сообщает информацию, передайте `label`; он получит роль img.
 Цвет всегда наследуется через currentColor.
 
-## Движение
+### Движение
 
 Смена state/variant плавно продолжает текущую позу. Статический Icon не создаёт
 таймеров, подписок или кадров. Движок загружается при первом движении.
@@ -64,7 +87,7 @@ await playback?.finished;
 Lit предоставляет тот же `element.playEffect()`. Ошибка декларативного движения
 всплывает DOM-событием `icon-error`; Promise явного вызова отклоняется.
 
-## Привязки и SSR
+### Привязки и SSR
 
 Lit: `import '@labpics/ui-core/icon'`, затем
 `html\`<lab-icon .symbol=\${notifications} state="selected"></lab-icon>\``.

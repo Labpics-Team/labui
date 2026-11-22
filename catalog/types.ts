@@ -25,7 +25,11 @@ export interface CatalogFamily {
   readonly kind: 'control' | 'composition' | 'material' | 'extension' | 'internal';
   readonly web?: { readonly subpath: string; readonly reactExport: string };
   readonly webModule?: { readonly path: string; readonly export: string };
-  readonly native?: { readonly symbol: string };
+  readonly native?: {
+    readonly symbol: string;
+    /** API supplied by a public dependency rather than the local Kotlin tree. */
+    readonly dependency?: { readonly module: string; readonly release: string };
+  };
   readonly profile?: string;
   readonly guide?: { readonly href: string; readonly label: string };
 }
@@ -64,11 +68,18 @@ export interface CatalogEntry extends CatalogFamily {
       readonly reactExport: string | null;
       readonly module?: string;
     } | null;
-    readonly native: {
-      readonly symbol: string;
-      readonly file: string;
-      readonly revision: string;
-    } | null;
+    readonly native:
+      | { readonly symbol: string; readonly file: string; readonly revision: string }
+      | {
+          readonly symbol: string;
+          readonly dependency: {
+            readonly module: string;
+            readonly version: string;
+            readonly githubRepository: string;
+            readonly mavenRepositoryCommit: string;
+          };
+        }
+      | null;
   };
   readonly sources: readonly (Omit<CatalogSource, 'uses'> & CatalogSource['uses'][number])[];
 }

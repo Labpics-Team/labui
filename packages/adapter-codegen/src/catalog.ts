@@ -4,6 +4,8 @@ import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import ts from 'typescript';
 import type {
+  CatalogEntry,
+  CatalogFamily,
   CatalogProjection,
   CatalogRegistry,
   NativeApi,
@@ -182,10 +184,58 @@ function nativeSourceRevision(nativeRoot: string): string {
   }).trim();
 }
 
+function nativeCapability(
+  binding: CatalogFamily['native'],
+  native: NativeApi,
+  release: (path: string) => unknown,
+): CatalogEntry['capabilities']['native'] {
+  if (!binding) return null;
+  if (!binding.dependency) {
+    const symbol = native.symbols.find((symbol) => symbol.name === binding.symbol);
+    ensure(symbol, `Unknown Compose symbol: ${binding.symbol}`);
+    return { symbol: symbol.name, file: symbol.file, revision: native.revision };
+  }
+  const { module, release: path } = binding.dependency;
+  ensure(/^[\w.-]+:[\w.-]+$/.test(module), `Invalid Compose dependency module: ${module}`);
+  ensure(
+    /^(?:[\w-]+\/)*[\w.-]+\.json$/.test(path),
+    `Invalid Compose dependency release path: ${path}`,
+  );
+  ensure(
+    /^(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*$/.test(binding.symbol),
+    `External Compose symbol must be qualified: ${binding.symbol}`,
+  );
+  const data = release(path);
+  ensure(
+    data &&
+      typeof data === 'object' &&
+      'version' in data &&
+      typeof data.version === 'string' &&
+      /^[\w][\w.+-]*$/.test(data.version) &&
+      'githubRepository' in data &&
+      typeof data.githubRepository === 'string' &&
+      /^[\w-]+\/[\w.-]+$/.test(data.githubRepository) &&
+      'mavenRepositoryCommit' in data &&
+      typeof data.mavenRepositoryCommit === 'string' &&
+      /^[a-f0-9]{40}$/.test(data.mavenRepositoryCommit),
+    `Invalid Compose dependency release: ${path}`,
+  );
+  return {
+    symbol: binding.symbol,
+    dependency: {
+      module,
+      version: data.version,
+      githubRepository: data.githubRepository,
+      mavenRepositoryCommit: data.mavenRepositoryCommit,
+    },
+  };
+}
+
 export function buildCatalog(
   registry: CatalogRegistry,
   native: NativeApi,
   profile = componentProfiles(),
+  release: (path: string) => unknown = (path) => json(join(repoRoot, path)),
 ): CatalogProjection {
   ensure(registry.schemaVersion === 1, 'Unknown catalog schema');
   validatePublicMetadata(registry);
@@ -261,10 +311,7 @@ export function buildCatalog(
           moduleExports(join(repoRoot, family.webModule.path)).has(family.webModule.export),
           `Unknown module export: ${family.webModule.export}`,
         );
-      const nativeSymbol = family.native
-        ? native.symbols.find((symbol) => symbol.name === family.native?.symbol)
-        : undefined;
-      if (family.native) ensure(nativeSymbol, `Unknown Compose symbol: ${family.native.symbol}`);
+      const nativeApi = nativeCapability(family.native, native, release);
       if (family.profile)
         ensure(Object.hasOwn(profile, family.profile), `Unknown profile: ${family.profile}`);
       if (family.guide)
@@ -282,9 +329,7 @@ export function buildCatalog(
               : family.webModule
                 ? { tag: null, reactExport: null, module: family.webModule.export }
                 : null,
-          native: nativeSymbol
-            ? { symbol: nativeSymbol.name, file: nativeSymbol.file, revision: native.revision }
-            : null,
+          native: nativeApi,
         },
         sources: registry.sources.flatMap(({ uses, ...source }) =>
           uses.filter((use) => use.family === family.slug).map((use) => ({ ...source, ...use })),

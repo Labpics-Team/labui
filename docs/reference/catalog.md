@@ -14,6 +14,7 @@ Figma без набора вариантов входят в тот же рее�
 | Web props, события, слоты и имя элемента | [AST-анализатор](../../packages/adapter-codegen/src/analyze.ts) |
 | Экспорты React | [Публичный модуль React](../../packages/react/src/index.ts) |
 | Публичные Compose функции и объекты | исходники `native/compose`, наблюдение в `catalog/native-api.generated.json` |
+| Compose API публичной зависимости | `native.dependency` в реестре и указанный ею release manifest, общий с Gradle |
 | Текст, анатомия, состояния и живые примеры | [Модули документации](../../apps/docs/src/components/) |
 | Каталог для документации | `catalog/catalog.generated.json`, результат соединения источников |
 
@@ -29,6 +30,20 @@ Figma без набора вариантов входят в тот же рее�
 профиль. Для измерения вложенного слоя `variant` задаёт точные свойства
 варианта Figma, а `path` — последовательность имён дочерних слоёв. При сверке
 REST cache такой selector должен однозначно выбрать реальный вариант.
+
+Внешний Compose API задаётся полным именем символа и `native.dependency`:
+`module` содержит Maven group и artifact, `release` — путь от корня LabUI к
+release manifest. Версия, GitHub repository и неизменяемый Maven repository
+commit берутся из этого файла. Например, Icon использует `pics.lab.icons.Icon`
+из `api(nativeIcons.compose)` и `native/compose/icons-release.json`. Каталог
+показывает ссылку на опубликованные артефакты; commit репозитория Maven не
+выдаётся за commit исходного кода. Внешний символ не добавляется в локальное
+наблюдение `native-api.generated.json`. Параметр `--native-root` влияет только
+на локальные Kotlin-входы; release manifest всегда читается из LabUI.
+
+Генератор проверяет формат внешнего release descriptor и согласованность
+проекции. Доступность экспорта потребителю проверяет сборка native consumer
+с публичными зависимостями; само чтение manifest не доказывает наличие символа.
 
 ## Что означает доступность
 
