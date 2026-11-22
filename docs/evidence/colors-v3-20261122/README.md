@@ -91,7 +91,14 @@ node apps/docs/tests/alert-colors-v3.mjs
 
 `LabThemeState.update` экспортирует исключения в Swift через
 `@Throws(Exception::class)`, как и вызываемый host: отказ возвращается приложению,
-а не завершает процесс. Проверка этого пути на Apple выполняется отдельно.
+а не завершает процесс. [Реальный Swift consumer](https://github.com/Labpics-Team/labui/actions/runs/45077495154)
+прошёл отдельный XCTest на iPhone 16 Pro / iOS 18.5 simulator: Swift host
+возвращает `NSError`, прямой `try await state.update` сохраняет предыдущие
+colors/preferences/context, затем принимает следующий context и восстанавливается.
+Выполнен один тест, без ошибок; это проверка границы Swift/Kotlin, не скорости
+устройства и не готовности V3. Собран настоящий статический consumer framework.
+Исходный запуск остановился до теста на неверном типе XcodeGen target;
+исправлен `bundle.unit-test`, UI-test target сохранён.
 
 Граф: [alert-composition-v3.mjs](../../../packages/colors/test/alert-composition-v3.mjs).
 Потребитель: [fixture](../../../apps/docs/src/_fixtures/alert-colors-v3.mjs).
