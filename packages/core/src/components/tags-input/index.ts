@@ -7,3 +7,4 @@
  * input, so the chip a11y is one rule across both renderers).
  */
 export * from './lab-tags-input.js';
+export { tagsInputBehavior, tagsInputIds, type TagsInputSchema } from './behavior.js';

@@ -9,8 +9,8 @@ import {
   fieldPartIds,
 } from '@labpics/ui-core';
 
-import { numberInputBehavior } from '@labpics/ui-core/number-input/behavior';
-import { type ReactNode, useId } from 'react';
+import { numberInputBehavior, numberInputValidity } from '@labpics/ui-core/number-input/behavior';
+import { type ReactNode, useEffect, useId, useLayoutEffect, useRef } from 'react';
 import { useZag } from './use-zag.js';
 import '@labpics/ui-core/input-extensions.css';
 
@@ -67,11 +67,6 @@ export function NumberInput({
   const ids = fieldPartIds(baseId);
   const hasHelper = helper != null && helper !== '';
   const hasError = error != null && error !== '';
-  const showError = fieldErrorIsActive({ invalid, hasError });
-  // The machine owns the spinbutton role + value ARIA + aria-invalid; the field owns
-  // the description wiring. Compute only the description attrs here and spread them
-  // OVER the machine's input getter, the same split the Lit element uses.
-  const fieldAria = fieldControlAria({ id: baseId, invalid, required, hasHelper, hasError });
 
   const api = useZag(numberInputBehavior, {
     id: baseId,
@@ -82,7 +77,7 @@ export function NumberInput({
     step,
     disabled,
     readOnly,
-    invalid,
+    invalid: invalid || undefined,
     required,
     name,
     allowMouseWheel,
@@ -92,6 +87,35 @@ export function NumberInput({
     onValueChange: onValueChange
       ? (details) => onValueChange(details.value, details.valueAsNumber)
       : undefined,
+  });
+
+  const showError = fieldErrorIsActive({ invalid: api.invalid, hasError });
+  const fieldAria = fieldControlAria({
+    id: baseId,
+    invalid: api.invalid,
+    required,
+    hasHelper,
+    hasError,
+  });
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
+  useClientLayoutEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    const validity = numberInputValidity({
+      value: api.value,
+      valueAsNumber: api.valueAsNumber,
+      min,
+      max,
+      required,
+      invalid,
+      disabled: input.disabled,
+      readOnly,
+    });
+    input.setCustomValidity(
+      validity.flags.customError && typeof error === 'string' && error ? error : validity.message,
+    );
   });
 
   return (
@@ -107,7 +131,7 @@ export function NumberInput({
       data-readonly={readOnly || undefined}
       data-disabled={disabled || undefined}
       data-required={required || undefined}
-      data-invalid={invalid || undefined}
+      data-invalid={api.invalid || undefined}
     >
       <div className="lab-input-frame">
         {/* biome-ignore lint/a11y/noLabelWithoutControl: getLabelProps() spreads htmlFor → the spinbutton input id (the machine owns the association); Biome can't see through the spread. */}
@@ -128,6 +152,8 @@ export function NumberInput({
           <input
             {...api.getInputProps()}
             {...fieldControlAriaProps(fieldAria)}
+            aria-invalid={api.invalid || undefined}
+            ref={inputRef}
             className="lab-number-input-input lab-field-control"
             placeholder={placeholder}
           />

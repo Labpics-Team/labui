@@ -21,10 +21,12 @@ ${selectCss}
 .lab-extension-trigger[data-state="open"] .lab-extension-chevron { transform: rotate(180deg); }
 [data-lab-number-input] [data-part="scrubber"] { cursor: ew-resize; }
 .lab-number-input-triggers { display: flex; align-self: stretch; flex: none; }
-.lab-tags-input-control { flex-wrap: wrap; box-sizing: border-box; gap: var(--lab-space-input-label-x); min-block-size: var(--_input-height); padding: var(--_input-pad-y) var(--_input-pad-x); }
-.lab-tags-input-control > .lab-tags-input-input { flex: 1 1 6ch; inline-size: 6ch; min-inline-size: 0; min-block-size: 1lh; padding: 0; border-radius: 0; }
+.lab-tags-input-control, [data-multiple] .lab-combobox-values { flex-wrap: wrap; box-sizing: border-box; gap: var(--lab-space-input-label-x); min-block-size: var(--_input-height); padding: var(--_input-pad-y) var(--_input-pad-x); }
+.lab-tags-input-control > .lab-tags-input-input, [data-multiple] .lab-combobox-values > .lab-field-control { flex: 1 1 6ch; inline-size: 6ch; min-inline-size: 0; min-block-size: 1lh; padding: 0; border-radius: 0; }
+.lab-combobox-values { display: flex; flex: 1; min-inline-size: 0; align-items: center; }
+.lab-combobox-values > .lab-field-control { flex: 1; inline-size: 0; }
 .lab-tags-input-item { max-inline-size: 100%; min-inline-size: 0; }
-.lab-tags-input-item [data-part="item-preview"] { display: inline-flex; align-items: center; gap: var(--_chip-gap); min-inline-size: 0; }
+.lab-tags-input-item [data-part="item-preview"] { display: inline-flex; flex-wrap: nowrap; align-items: center; gap: var(--_chip-gap); min-inline-size: 0; }
 .lab-tags-input-item [data-part="item-text"] { min-inline-size: 0; overflow-wrap: anywhere; white-space: normal; }
 .lab-tags-input-delete { appearance: none; display: inline-flex; align-items: center; justify-content: center; align-self: stretch; flex: none; min-inline-size: var(--_chip-close); padding: 0; margin: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
 .lab-tags-input-delete:disabled { cursor: default; }

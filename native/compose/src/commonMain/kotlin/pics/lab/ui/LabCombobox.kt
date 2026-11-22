@@ -82,7 +82,7 @@ public fun LabCombobox(
         if (state.text.toString() != text) state.setTextAndPlaceCursorAtEnd(text)
         querying = false
     }
-    LaunchedEffect(value, selectedLabel, focused, state.composition, request) {
+    LaunchedEffect(state, multiple, value, selectedLabel, focused, state.composition, request) {
         if (state.composition != null) return@LaunchedEffect
         val accepted = request?.let { it.proposed == value && it.draft == state.text.toString() } == true
         if (!focused || accepted) {
