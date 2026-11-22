@@ -3,7 +3,6 @@
 import {
   type MachineModule,
   type PropTypes,
-  type SchemaOf,
   fieldControlAria,
   fieldControlAriaProps,
   fieldErrorIsActive,
@@ -29,9 +28,12 @@ import {
 import { useArrayFieldForm } from './use-array-field-form.js';
 import { useZag } from './use-zag.js';
 import '@labpics/ui-core/input-extensions.css';
-import { comboboxBehavior, mountComboboxKeyboard } from '@labpics/ui-core/combobox/runtime';
+import {
+  type ComboboxSchema,
+  comboboxBehavior,
+  mountComboboxKeyboard,
+} from '@labpics/ui-core/combobox/runtime';
 
-type ComboboxSchema = SchemaOf<comboboxMachine.Service<LabComboboxItem>>;
 type ComboboxApi = comboboxMachine.Api<PropTypes, LabComboboxItem>;
 
 const comboboxModule: MachineModule<ComboboxSchema, ComboboxApi> = comboboxBehavior;
@@ -88,6 +90,17 @@ export function Combobox({
   const [query, setQuery] = useState('');
   const visibleItems = useMemo(() => filterComboboxItems(items, query), [items, query]);
 
+  const sourceCollection = useMemo(
+    () =>
+      comboboxMachine.collection<LabComboboxItem>({
+        items: [...items],
+        itemToValue: (item) => item.value,
+        itemToString: (item) => item.label,
+        isItemDisabled: (item) => item.disabled ?? false,
+      }),
+    [items],
+  );
+
   const collection = useMemo(
     () =>
       comboboxMachine.collection<LabComboboxItem>({
@@ -103,6 +116,7 @@ export function Combobox({
     id: baseId,
     ids: { input: ids.control, label: ids.label },
     collection,
+    sourceCollection,
     multiple,
     disabled,
     readOnly,
@@ -114,13 +128,12 @@ export function Combobox({
     defaultValue,
     openOnClick: true,
     positioning: { placement, strategy: 'fixed', gutter: 4, overflowPadding: 16, sameWidth: true },
+    onQueryChange: setQuery,
     onInputValueChange: (details) => {
-      setQuery(details.reason === 'input-change' ? details.inputValue : '');
       onInputValueChange?.(details.inputValue);
     },
     onValueChange: onValueChange ? (details) => onValueChange(details.value) : undefined,
     onOpenChange: (details) => {
-      if (details.open && details.reason !== 'input-change') setQuery('');
       onOpenChange?.(details.open);
     },
   });
@@ -199,11 +212,12 @@ export function Combobox({
   const formRoot = useArrayFieldForm({
     value: api.value,
     defaultValue,
-    controlled: value !== undefined,
+    // Reset the editable query even when the selection is externally controlled.
+    controlled: false,
     required,
     invalid,
     error: typeof error === 'string' ? error : undefined,
-    reset: api.setValue,
+    reset: (initial) => api.setValue(value ?? initial),
   });
 
   return (
@@ -212,6 +226,7 @@ export function Combobox({
       ref={formRoot}
       className="lab-field"
       data-lab-combobox=""
+      data-multiple={multiple || undefined}
       data-lab-input=""
       data-trailing=""
       data-type={type}
@@ -242,14 +257,48 @@ export function Combobox({
           ) : null}
         </label>
         <div {...api.getControlProps()} className="lab-extension-control">
-          <input
-            {...api.getInputProps()}
-            ref={inputRef}
-            name={undefined}
-            required={false}
-            {...fieldControlAriaProps(a11y)}
-            className="lab-combobox-input lab-field-control"
-          />
+          <div className="lab-combobox-values">
+            {multiple &&
+              api.value.map((selected) => {
+                const label = items.find((item) => item.value === selected)?.label ?? selected;
+                return (
+                  <span
+                    key={selected}
+                    className="lab-tags-input-item"
+                    data-lab-chip=""
+                    data-size="s"
+                    data-selected=""
+                    data-sharp=""
+                  >
+                    <span className="lab-chip-content" data-part="item-preview">
+                      <span className="lab-chip-label" data-part="item-text">
+                        {label}
+                      </span>
+                      <button
+                        type="button"
+                        className="lab-tags-input-delete"
+                        aria-label={`Удалить ${label}`}
+                        disabled={disabled || readOnly}
+                        onClick={() => {
+                          api.clearValue(selected);
+                          inputRef.current?.focus({ preventScroll: true });
+                        }}
+                      >
+                        <span className="lab-chip-close" aria-hidden="true" />
+                      </button>
+                    </span>
+                  </span>
+                );
+              })}
+            <input
+              {...api.getInputProps()}
+              ref={inputRef}
+              name={undefined}
+              required={false}
+              {...fieldControlAriaProps(a11y)}
+              className="lab-combobox-input lab-field-control"
+            />
+          </div>
           <button {...api.getTriggerProps()} className="lab-combobox-trigger lab-extension-trigger">
             <span className="lab-extension-chevron" aria-hidden="true" />
           </button>

@@ -127,6 +127,22 @@ class InputExtensionsRenderTest {
         } finally { f.scene.close() }
     }
 
+    @Test fun comboboxSynchronizesReplacementStateAndSelectionMode() {
+        var state by mutableStateOf(TextFieldState())
+        var multiple by mutableStateOf(false)
+        val f = fixture { LabCombobox(listOf("alpha"), {}, items, "Choice", state = state, multiple = multiple) }
+        try {
+            f.settle(); assertEquals("Alpha", state.text.toString())
+            state = TextFieldState()
+            f.settle(); assertEquals("Alpha", state.text.toString())
+            multiple = true
+            f.settle(); assertEquals("", state.text.toString())
+            assertTrue(isShown(f.scene, "Удалить Alpha"))
+            multiple = false
+            f.settle(); assertEquals("Alpha", state.text.toString())
+        } finally { f.scene.close() }
+    }
+
     @Test fun tagsUseOnlyAcceptedValuesAndKeepRejectedOrInvalidDraftsEditable() {
         var value by mutableStateOf(listOf("alpha", "beta"))
         var accept by mutableStateOf(true)

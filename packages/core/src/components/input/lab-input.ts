@@ -16,25 +16,12 @@ import {
   fieldErrorIsActive,
   fieldPartIds,
 } from '../field/field-a11y.js';
+import { submitFromShadowInput } from '../field/implicit-submit.js';
 import { inputCss } from './styles.js';
 
 export type { LabFieldSize as LabInputSize, LabFieldType as LabInputType };
 
 let inputSeq = 0;
-const implicitSubmissionTypes = new Set([
-  'text',
-  'search',
-  'tel',
-  'url',
-  'email',
-  'password',
-  'date',
-  'month',
-  'week',
-  'time',
-  'datetime-local',
-  'number',
-]);
 
 export class LabInput extends LabElement {
   static formAssociated = true;
@@ -236,46 +223,11 @@ export class LabInput extends LabElement {
   };
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
-    const input = event.target as HTMLInputElement;
-    const form = this.internals?.form;
-    if (
-      event.key !== 'Enter' ||
-      event.isComposing ||
-      !form ||
-      !implicitSubmissionTypes.has(input.type)
-    )
-      return;
-    // Trusted keyboard dispatch can run microtasks between bubbling listeners.
-    // A following task observes cancellation at every ancestor.
-    setTimeout(() => {
-      if (
-        event.defaultPrevented ||
-        !this.isConnected ||
-        this.internals?.form !== form ||
-        input.disabled
-      )
-        return;
-      const root = form.getRootNode() as Document | ShadowRoot;
-      const submitter = [
-        ...root.querySelectorAll<HTMLButtonElement | HTMLInputElement>('button, input'),
-      ].find(
-        (element) =>
-          element.form === form && (element.type === 'submit' || element.type === 'image'),
-      );
-      if (submitter) {
-        if (!submitter.matches(':disabled')) submitter.click();
-        return;
-      }
-      const blocking = [...form.elements].filter((element) =>
-        element instanceof HTMLInputElement
-          ? implicitSubmissionTypes.has(element.type)
-          : element instanceof LabInput &&
-            implicitSubmissionTypes.has(
-              element.renderRoot.querySelector<HTMLInputElement>('input')?.type ?? 'text',
-            ),
-      );
-      if (blocking.length <= 1) form.requestSubmit();
-    }, 0);
+    submitFromShadowInput(
+      event,
+      event.target as HTMLInputElement,
+      () => this.internals?.form ?? null,
+    );
   };
 
   override render(): TemplateResult {

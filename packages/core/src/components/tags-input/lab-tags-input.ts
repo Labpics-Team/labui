@@ -1,6 +1,5 @@
-import * as tagsInputMachine from '@zag-js/tags-input';
+import type * as tagsInputMachine from '@zag-js/tags-input';
 import { type PropertyValues, type TemplateResult, css, html, nothing, unsafeCSS } from 'lit';
-import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
 import { extensionFieldCss } from '../field/extension-styles.js';
@@ -12,13 +11,11 @@ import {
   fieldErrorIsActive,
   fieldPartIds,
 } from '../field/field-a11y.js';
+import { type TagsInputSchema, tagsInputBehavior, tagsInputIds } from './behavior.js';
 
 export type { LabFieldSize as LabTagsInputSize, LabFieldType as LabTagsInputType };
 
-type TagsInputSchema = SchemaOf<tagsInputMachine.Service>;
 type TagsInputApi = tagsInputMachine.Api;
-
-const tagsInputModule: MachineModule<TagsInputSchema, TagsInputApi> = tagsInputMachine;
 
 let tagsInputSeq = 0;
 
@@ -115,9 +112,9 @@ export class LabTagsInput extends LabElement {
     // machine owns the tag array + input + keyboard (Enter add / Backspace remove /
     // navigation) + paste-split + edit-in-place + max/overflow validity; the element only
     // paints. We READ the machine's value each render to know which chips to draw.
-    this.machineCtl = this.runMachine(tagsInputModule, () => ({
+    this.machineCtl = this.runMachine(tagsInputBehavior, () => ({
       id: this.fieldId,
-      ids: { input: fieldPartIds(this.fieldId).control, label: fieldPartIds(this.fieldId).label },
+      ids: tagsInputIds(this.fieldId),
       max: this.max,
       delimiter: this.delimiter,
       editable: this.editable,

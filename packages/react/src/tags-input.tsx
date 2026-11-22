@@ -4,25 +4,22 @@ import {
   type FieldControlAria,
   type LabFieldSize,
   type LabFieldType,
-  type MachineModule,
-  type SchemaOf,
   fieldControlAria,
   fieldErrorIsActive,
   fieldPartIds,
 } from '@labpics/ui-core';
-import { tagsInputTranslations } from '@labpics/ui-core/tags-input';
-import * as tagsInputMachine from '@zag-js/tags-input';
+import {
+  tagsInputBehavior,
+  tagsInputIds,
+  tagsInputTranslations,
+} from '@labpics/ui-core/tags-input';
+import type * as tagsInputMachine from '@zag-js/tags-input';
 import { type ReactNode, useId } from 'react';
 import { useArrayFieldForm } from './use-array-field-form.js';
 import { useZag } from './use-zag.js';
 import '@labpics/ui-core/input-extensions.css';
 
 export type { LabFieldSize as LabTagsInputSize, LabFieldType as LabTagsInputType };
-
-type TagsInputSchema = SchemaOf<tagsInputMachine.Service>;
-type TagsInputApi = tagsInputMachine.Api;
-
-const tagsInputModule: MachineModule<TagsInputSchema, TagsInputApi> = tagsInputMachine;
 
 export interface TagsInputProps {
   label: string;
@@ -91,11 +88,11 @@ export function TagsInput({
   // same split the Lit element uses.
   const fieldAria = fieldControlAria({ id: baseId, invalid, required, hasHelper, hasError });
 
-  const api = useZag(tagsInputModule, {
+  const api = useZag(tagsInputBehavior, {
     id: baseId,
     // Pin the input + label ids to the field-a11y part ids so the <label htmlFor> and the
     // aria-describedby target the SAME node the machine wires the input onto.
-    ids: { input: ids.control, label: ids.label },
+    ids: tagsInputIds(baseId),
     max,
     delimiter,
     editable,
@@ -167,14 +164,11 @@ export function TagsInput({
           {api.value.map((tagValue, index) => {
             const itemProps = { index, value: tagValue };
             return (
-              // Ключ — ИНДЕКС, не значение: при allow-duplicates одинаковые значения дали
-              // бы дубль-ключи React (глючная реконсиляция при удалении/переупорядочке),
-              // а иной стабильной идентичности у тега нет (api.value — голые строки).
-              // Индекс здесь честен: список целиком машинный, строится заново из
-              // api.value; чипы без локального состояния; пропсы машины несут
-              // {index, value} независимо от key.
-              // biome-ignore lint/suspicious/noArrayIndexKey: значение не уникально при allow-duplicates — индекс единственный корректный ключ
+              // Retain the editor through an accepted rename. The shared behavior
+              // checks its source value before applying any draft; external
+              // replacement/reordering cannot redirect an edit to a neighbour.
               <span
+                // biome-ignore lint/suspicious/noArrayIndexKey: duplicates have no unique value; the index addresses this chip in the machine
                 key={index}
                 {...api.getItemProps(itemProps)}
                 className="lab-tags-input-item"

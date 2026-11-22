@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="InputExtensionsRenderTest[desktop]" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-22T15:19:01.747Z" hostname="DESKTOP-NFO26JA" time="20.111">
+  <properties/>
+  <testcase name="pendingPasteCannotOutliveItsFocusSelectionDraftOrComponent[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="7.62"/>
+  <testcase name="comboboxFiltersOnlyQueryAndKeepsEditorFocusDuringAcceptedAndRejectedRequests[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="1.556"/>
+  <testcase name="tagEditingCannotOverwriteAnExternallyReplacedItemAndRtlNavigationIsLogical[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="1.23"/>
+  <testcase name="multipleComboboxKeepsSelectionControlledAndScrollsActiveOptionInsideViewport[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="0.965"/>
+  <testcase name="openingTheNativeContextMenuDoesNotReadOrInsertClipboardContent[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="0.611"/>
+  <testcase name="pasteConsumesOnlyCompletedEditorTransactionsAndKeepsUndo[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="1.336"/>
+  <testcase name="tagsUseOnlyAcceptedValuesAndKeepRejectedOrInvalidDraftsEditable[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="2.231"/>
+  <testcase name="compositionSurvivesRecompositionAndItsCommitDoesNotSelectOrCreateValues[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="1.552"/>
+  <testcase name="authoredFieldsAndGrowingChipsRenderAtBothThemesAndTextScales[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="0.676"/>
+  <testcase name="disabledAndReadOnlyControlsCannotChangeValuesThroughTheirActions[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="0.508"/>
+  <testcase name="overlappingPasteRequestsApplyOnlyTheLatestAndReplaceTheCapturedSelection[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="1.25"/>
+  <testcase name="comboboxSynchronizesReplacementStateAndSelectionMode[desktop]" classname="pics.lab.ui.InputExtensionsRenderTest" time="0.571"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

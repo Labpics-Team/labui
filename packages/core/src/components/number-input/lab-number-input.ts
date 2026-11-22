@@ -18,7 +18,8 @@ export type { LabFieldSize as LabNumberInputSize, LabFieldType as LabNumberInput
 type NumberInputSchema = SchemaOf<numberInputMachine.Service>;
 type NumberInputApi = numberInputMachine.Api;
 
-import { numberInputBehavior } from './behavior.js';
+import { submitFromShadowInput } from '../field/implicit-submit.js';
+import { numberInputBehavior, numberInputValidity } from './behavior.js';
 
 let numberInputSeq = 0;
 
@@ -111,7 +112,7 @@ export class LabNumberInput extends LabElement {
       step: this.step,
       disabled: this.disabled || this.disabledByForm,
       readOnly: this.readonly,
-      invalid: this.invalid,
+      invalid: this.invalid || undefined,
       required: this.required,
       name: this.name || undefined,
       allowMouseWheel: this.allowMouseWheel,
@@ -146,7 +147,7 @@ export class LabNumberInput extends LabElement {
   private a11yInput(): FieldA11yInput {
     return {
       id: this.fieldId,
-      invalid: this.invalid,
+      invalid: this.isConnected ? this.machineCtl.api.invalid : this.invalid,
       required: this.required,
       hasHelper: this.helper.length > 0,
       hasError: this.error.length > 0,
@@ -235,14 +236,19 @@ export class LabNumberInput extends LabElement {
       const data = new FormData();
       if (this.name && !disabled) for (const value of values) data.append(this.name, value);
       this.internals?.setFormValue(disabled ? null : data, api.value);
-      const missing = !disabled && !this.readonly && this.required && api.value === '';
+      const validity = numberInputValidity({
+        value: api.value,
+        valueAsNumber: api.valueAsNumber,
+        min: this.min,
+        max: this.max,
+        required: this.required,
+        invalid: this.invalid,
+        disabled,
+        readOnly: this.readonly,
+      });
       this.internals?.setValidity(
-        missing ? { valueMissing: true } : this.invalid ? { customError: true } : {},
-        missing
-          ? 'Please fill out this field.'
-          : this.invalid
-            ? this.error || 'Invalid value.'
-            : '',
+        validity.flags,
+        validity.flags.customError ? this.error || validity.message : validity.message,
         formInput,
       );
     }
@@ -258,14 +264,14 @@ export class LabNumberInput extends LabElement {
     return html`
       <div class="field" data-lab-input data-lab-number-input data-type=${this.type} data-size=${this.size} part="field"
         ?data-label-hidden=${this.labelHidden} ?data-unlabelled=${!this.label}
-        ?data-disabled=${this.disabled || this.disabledByForm} ?data-readonly=${this.readonly} ?data-invalid=${this.invalid} data-trailing>
+        ?data-disabled=${this.disabled || this.disabledByForm} ?data-readonly=${this.readonly} ?data-invalid=${this.isConnected ? this.machineCtl.api.invalid : this.invalid} data-trailing>
         <div class="lab-input-frame" part="frame">
         <label id=${ids.label} for=${ids.control} class="label lab-field-label" part="label">
           <span class="label-text">${this.label}</span
           >${this.required ? html`<span class="lab-field-required-mark" aria-hidden="true"> *</span>` : nothing}
         </label>
         <div class="control lab-extension-control" part="control">
-          <input class="input lab-field-control" part="input" id=${ids.control} role="spinbutton" value=${this.value ?? this.defaultValue} ?disabled=${this.disabled || this.disabledByForm} ?readonly=${this.readonly} inputmode="decimal" />
+          <input @keydown=${(event: KeyboardEvent) => submitFromShadowInput(event, event.target as HTMLInputElement, () => this.form)} class="input lab-field-control" part="input" id=${ids.control} role="spinbutton" value=${this.value ?? this.defaultValue} ?disabled=${this.disabled || this.disabledByForm} ?readonly=${this.readonly} inputmode="decimal" />
           <div class="triggers lab-number-input-triggers" part="triggers">
             <button class="lab-extension-trigger trigger trigger-inc" part="increment-trigger" type="button" tabindex="-1">
               +

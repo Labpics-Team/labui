@@ -8,7 +8,7 @@ import {
   nothing,
   unsafeCSS,
 } from 'lit';
-import type { MachineModule, PropTypes, SchemaOf } from '../../behaviors/types.js';
+import type { MachineModule, PropTypes } from '../../behaviors/types.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
 import { extensionFieldCss } from '../field/extension-styles.js';
@@ -20,7 +20,7 @@ import {
   fieldErrorIsActive,
   fieldPartIds,
 } from '../field/field-a11y.js';
-import { comboboxBehavior, mountComboboxKeyboard } from './runtime.js';
+import { type ComboboxSchema, comboboxBehavior, mountComboboxKeyboard } from './runtime.js';
 
 export type LabComboboxType = LabFieldType;
 export type LabComboboxSize = LabFieldSize;
@@ -34,7 +34,6 @@ export interface LabComboboxItem {
   readonly disabled?: boolean;
 }
 
-type ComboboxSchema = SchemaOf<comboboxMachine.Service<LabComboboxItem>>;
 type ComboboxApi = comboboxMachine.Api<PropTypes, LabComboboxItem>;
 
 const comboboxModule: MachineModule<ComboboxSchema, ComboboxApi> = comboboxBehavior;
@@ -106,6 +105,7 @@ export class LabCombobox extends LabElement {
   private query = '';
   private filteredItems: LabComboboxItem[] = [];
   private collection = comboboxMachine.collection<LabComboboxItem>({ items: [] });
+  private sourceCollection = comboboxMachine.collection<LabComboboxItem>({ items: [] });
 
   constructor() {
     super();
@@ -135,6 +135,7 @@ export class LabCombobox extends LabElement {
         label: fieldPartIds(this.machineId).label,
       },
       collection: this.collection,
+      sourceCollection: this.sourceCollection,
       multiple: this.multiple,
       disabled: this.disabled || this.disabledByForm,
       readOnly: this.readonly,
@@ -152,8 +153,11 @@ export class LabCombobox extends LabElement {
         overflowPadding: 16,
         sameWidth: true,
       },
+      onQueryChange: (query: string) => {
+        this.applyFilter(query);
+        this.requestUpdate();
+      },
       onInputValueChange: (details: comboboxMachine.InputValueChangeDetails) => {
-        this.applyFilter(details.reason === 'input-change' ? details.inputValue : '');
         this.requestUpdate();
         this.dispatchEvent(
           new CustomEvent<comboboxMachine.InputValueChangeDetails>('input-value-change', {
@@ -175,7 +179,6 @@ export class LabCombobox extends LabElement {
         );
       },
       onOpenChange: (details: comboboxMachine.OpenChangeDetails) => {
-        if (details.open && details.reason !== 'input-change') this.applyFilter('');
         this.dispatchEvent(
           new CustomEvent<comboboxMachine.OpenChangeDetails>('open-change', {
             detail: details,
@@ -188,6 +191,7 @@ export class LabCombobox extends LabElement {
   }
 
   override connectedCallback(): void {
+    this.updateSourceCollection();
     this.applyFilter('');
     super.connectedCallback();
   }
@@ -201,8 +205,18 @@ export class LabCombobox extends LabElement {
   override willUpdate(changed: PropertyValues): void {
     // Keep the collection in step with a replaced source list and the current query.
     if (changed.has('items')) {
+      this.updateSourceCollection();
       this.applyFilter(this.query);
     }
+  }
+
+  private updateSourceCollection(): void {
+    this.sourceCollection = comboboxMachine.collection<LabComboboxItem>({
+      items: this.items ?? [],
+      itemToValue: (item) => item.value,
+      itemToString: (item) => item.label,
+      isItemDisabled: (item) => item.disabled ?? false,
+    });
   }
 
   private applyFilter(query: string): void {
@@ -240,7 +254,7 @@ export class LabCombobox extends LabElement {
     this.disabledByForm = disabled;
   }
   formResetCallback(): void {
-    if (this.value === null) this.machineCtl.api.setValue(this.initialValue ?? []);
+    this.machineCtl.api.setValue(this.value ?? this.initialValue ?? []);
     this.requestUpdate();
   }
   formStateRestoreCallback(state: string | File | FormData): void {
@@ -338,7 +352,7 @@ export class LabCombobox extends LabElement {
     const ids = fieldPartIds(this.machineId);
     const showError = fieldErrorIsActive(this.a11yInput());
     return html`
-      <div class="field" data-lab-input data-lab-combobox data-type=${this.type} data-size=${this.size} part="field"
+      <div class="field" data-lab-input data-lab-combobox ?data-multiple=${this.multiple} data-type=${this.type} data-size=${this.size} part="field"
         ?data-label-hidden=${this.labelHidden} ?data-unlabelled=${!this.label}
         ?data-disabled=${this.disabled || this.disabledByForm} ?data-readonly=${this.readonly} ?data-invalid=${this.invalid} data-trailing>
         <div class="lab-input-frame" part="frame">
@@ -347,7 +361,29 @@ export class LabCombobox extends LabElement {
           >${this.required ? html`<span class="lab-field-required-mark" aria-hidden="true"> *</span>` : nothing}
         </label>
         <div class="control lab-extension-control" part="control">
-          <input class="input lab-field-control" part="input" id=${ids.control} role="combobox" aria-expanded="false" value=${isServer ? (this.value ?? this.defaultValue).map((value) => this.items.find((item) => item.value === value)?.label ?? value).join(', ') : nothing} ?disabled=${this.disabled || this.disabledByForm} ?readonly=${this.readonly} autocomplete="off" />
+          <div class="lab-combobox-values">
+          ${
+            this.multiple
+              ? this.selectedValues.map((selected) => {
+                  const label =
+                    this.items.find((item) => item.value === selected)?.label ?? selected;
+                  return html`<span class="lab-tags-input-item" data-lab-chip data-size="s" data-selected data-sharp>
+              <span class="lab-chip-content" data-part="item-preview">
+                <span class="lab-chip-label" data-part="item-text">${label}</span>
+                <button type="button" class="lab-tags-input-delete" aria-label=${`Удалить ${label}`}
+                  ?disabled=${this.disabled || this.disabledByForm || this.readonly} @click=${() => {
+                    this.machineCtl.api.clearValue(selected);
+                    this.renderRoot
+                      .querySelector<HTMLInputElement>('.input')
+                      ?.focus({ preventScroll: true });
+                  }}><span class="lab-chip-close" aria-hidden="true"></span></button>
+              </span>
+            </span>`;
+                })
+              : nothing
+          }
+          <input class="input lab-field-control" part="input" id=${ids.control} role="combobox" aria-expanded="false" value=${isServer && !this.multiple ? (this.value ?? this.defaultValue).map((value) => this.items.find((item) => item.value === value)?.label ?? value).join(', ') : nothing} ?disabled=${this.disabled || this.disabledByForm} ?readonly=${this.readonly} autocomplete="off" />
+          </div>
           <button class="trigger lab-extension-trigger" type="button" part="trigger"><span class="lab-extension-chevron" aria-hidden="true"></span></button>
         </div>
         <fieldset class="lab-input-outline" aria-hidden="true"><legend>${this.label}${this.required ? ' *' : ''}</legend></fieldset></div>
