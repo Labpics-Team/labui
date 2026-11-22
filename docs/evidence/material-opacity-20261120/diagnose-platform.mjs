@@ -32,10 +32,11 @@ for(const name of (process.env.MATERIAL_BROWSERS ?? 'chromium,webkit').split(','
   const browser=await engines[name].launch({headless:!display,...(name==='chromium'?{channel:'chromium'}:{})});
   try {
     const page=await browser.newPage({viewport:{width:800,height:300}});
+    if(name==='chromium') {const cdp=await page.context().newCDPSession(page);await cdp.send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-transparency',value:'no-preference'},{name:'prefers-contrast',value:'no-preference'}]});}
     if(display)await page.bringToFront();
     // Six simultaneous backdrops make a repeated transfer distinguishable from
     // a missing transfer or an opaque fallback. No diagnostic variant is a verdict.
-    for(const variant of ['native','no-transform','no-isolation','local-background','separate-face','capture-blend']) {
+    for(const variant of ['native','affine-filter','separate-face','capture-blend']) {
       await page.goto(`http://127.0.0.1:${server.address().port}`);
       const styles=await page.evaluate(async variant=>{
         document.head.insertAdjacentHTML('beforeend',`<style>body{margin:0}.zone{position:absolute;top:0;width:100px;height:100px}.surface{position:absolute;inset:0;border-radius:0;transform:translateZ(0);--_rim:none;--_backdrop-blur:1px;--_acrylic-noise:none;overflow:auto}.content{width:300px;height:300px}</style>`);
@@ -49,6 +50,11 @@ for(const name of (process.env.MATERIAL_BROWSERS ?? 'chromium,webkit').split(','
           if(variant==='no-transform')surface.style.transform='none';
           if(variant==='no-isolation')surface.style.isolation='auto';
           if(variant==='local-background')surface.style.backgroundAttachment='local';
+          if(variant==='affine-filter') {
+            const rgb=getComputedStyle(surface).backgroundColor.match(/[\d.]+/g).map(Number);
+            const alpha=rgb[3]??1, m=1-alpha, b=rgb[0]*alpha/255, brightness=m+2*b, contrast=brightness?m/brightness:0;
+            surface.style.setProperty('--_material-paint-filter',`contrast(${contrast}) brightness(${brightness})`);surface.style.background='none';
+          }
           if(variant==='separate-face') {
             const face=document.createElement('div');face.style.cssText='position:sticky;top:0;left:0;width:100px;height:100px;z-index:-1;pointer-events:none;backdrop-filter:var(--_material-filter);-webkit-backdrop-filter:var(--_material-filter);background:var(--_surface-paint)';
             const runway=document.createElement('div');runway.style.cssText='position:absolute;inset:0 auto auto 0;width:300px;height:300px;pointer-events:none;z-index:-1';runway.append(face);surface.prepend(runway);
@@ -71,7 +77,7 @@ for(const name of (process.env.MATERIAL_BROWSERS ?? 'chromium,webkit').split(','
       const after=await sample(page,points);
       const row={kind:'scroll',name,display,variant,styles,before,after};rows.push(row);console.log(JSON.stringify(row));
     }
-    for(const variant of ['native','no-lens','no-stroke','opaque-filter-alpha']) {
+    for(const variant of ['native','no-lens','no-stroke','opaque-filter-alpha','no-dispersion','affine-filter','wide-region']) {
       await page.goto(`http://127.0.0.1:${server.address().port}`);
       await page.evaluate(async variant=>{
         document.documentElement.dataset.material='glass';
@@ -80,11 +86,18 @@ for(const name of (process.env.MATERIAL_BROWSERS ?? 'chromium,webkit').split(','
         const {mountMaterialRuntime}=await import('/runtime.js');window.dispose=mountMaterialRuntime();
         if(variant==='no-lens')document.querySelector('.surface').style.setProperty('--_lg-refraction','0');
         if(variant==='no-stroke')document.head.insertAdjacentHTML('beforeend','<style>.surface::after{border:0}</style>');
+        if(variant==='no-dispersion')document.querySelector('.surface').style.setProperty('--_lg-dispersion','0');
         await new Promise(r=>setTimeout(r,200));
-        if(variant==='opaque-filter-alpha')for(const filter of document.querySelectorAll('filter[id^="lg-"]')) {
+        if(variant==='opaque-filter-alpha')for(const filter of document.querySelectorAll('filter[id^="lab-lg-"]')) {
           const transfer=document.createElementNS('http://www.w3.org/2000/svg','feComponentTransfer');
           const fn=document.createElementNS('http://www.w3.org/2000/svg','feFuncA');fn.setAttribute('type','linear');fn.setAttribute('slope','0');fn.setAttribute('intercept','1');transfer.append(fn);filter.append(transfer);
         }
+        if(variant==='affine-filter') {
+          const surface=document.querySelector('.surface'), rgb=getComputedStyle(surface).backgroundColor.match(/[\d.]+/g).map(Number);
+          const alpha=rgb[3]??1,m=1-alpha,b=rgb[0]*alpha/255,brightness=m+2*b,contrast=brightness?m/brightness:0;
+          surface.style.setProperty('--_material-paint-filter',`contrast(${contrast}) brightness(${brightness})`);surface.style.background='none';
+        }
+        if(variant==='wide-region')for(const filter of document.querySelectorAll('filter[id^="lab-lg-"]')) {filter.setAttribute('x','-100');filter.setAttribute('y','-100');filter.setAttribute('width','600');filter.setAttribute('height','216');}
       },variant);
       const points=[{x:232,y:43},...[0,1,2,3,4,5,6,7].map(d=>({x:32+d,y:47})),...[0,1,2].map(d=>({x:32,y:40+d}))];
       const frames=[];
