@@ -1,0 +1,1699 @@
+{
+  "purpose": "Diagnostic comparison; successful execution is not acceptance of either color policy.",
+  "colorsArtifact": "development-only local lab-colors 64fb1dc; not a published coordinate",
+  "wasmSha256": "bfa970bc12a9c4c9f1275af0b10b9c153bdc1ef76d0df0d675939135f22b3105",
+  "browser": "157.0.8103.51",
+  "reports": [
+    {
+      "theme": "light",
+      "name": "nominal",
+      "result": {
+        "source": {
+          "state": "ready",
+          "background": [
+            255,
+            255,
+            255
+          ],
+          "colors": {
+            "heading": [
+              16,
+              16,
+              18,
+              1
+            ],
+            "description": [
+              60,
+              60,
+              67,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              59,
+              48,
+              1
+            ],
+            "close": [
+              60,
+              60,
+              67,
+              0.722
+            ],
+            "border": [
+              120,
+              120,
+              128,
+              0.161
+            ],
+            "focus": [
+              0,
+              122,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 3.600000023841858,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              255,
+              255,
+              255
+            ],
+            "colors": {
+              "heading": [
+                16,
+                16,
+                18,
+                1
+              ],
+              "description": [
+                60,
+                60,
+                67,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                59,
+                48,
+                1
+              ],
+              "close": [
+                60,
+                60,
+                67,
+                0.722
+              ],
+              "border": [
+                120,
+                120,
+                128,
+                0.161
+              ],
+              "focus": [
+                0,
+                122,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 3.600000023841858
+          }
+        },
+        "visible": {
+          "state": "ready",
+          "background": [
+            255,
+            255,
+            255
+          ],
+          "colors": {
+            "heading": [
+              16,
+              16,
+              18,
+              1
+            ],
+            "description": [
+              0,
+              0,
+              3,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              59,
+              48,
+              1
+            ],
+            "close": [
+              0,
+              0,
+              3,
+              0.722
+            ],
+            "border": [
+              0,
+              0,
+              4,
+              0.161
+            ],
+            "focus": [
+              0,
+              122,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 6.900000095367432,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              255,
+              255,
+              255
+            ],
+            "colors": {
+              "heading": [
+                16,
+                16,
+                18,
+                1
+              ],
+              "description": [
+                0,
+                0,
+                3,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                59,
+                48,
+                1
+              ],
+              "close": [
+                0,
+                0,
+                3,
+                0.722
+              ],
+              "border": [
+                0,
+                0,
+                4,
+                0.161
+              ],
+              "focus": [
+                0,
+                122,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 6.900000095367432
+          }
+        }
+      },
+      "rendered": {
+        "source": {
+          "heading": "rgb(16, 16, 18)",
+          "description": "rgba(60, 60, 67, 0.72)",
+          "border": "rgba(120, 120, 128, 0.16) 0px 0px 0px 1px inset",
+          "background": "rgb(255 255 255)",
+          "focus": {
+            "color": "rgb(0, 122, 255)",
+            "width": "2px"
+          }
+        },
+        "visible": {
+          "heading": "rgb(16, 16, 18)",
+          "description": "rgba(0, 0, 3, 0.72)",
+          "border": "rgba(0, 0, 4, 0.16) 0px 0px 0px 1px inset",
+          "background": "rgb(255 255 255)",
+          "focus": {
+            "color": "rgb(0, 122, 255)",
+            "width": "2px"
+          }
+        }
+      }
+    },
+    {
+      "theme": "light",
+      "name": "black",
+      "result": {
+        "source": {
+          "state": "ready",
+          "background": [
+            0,
+            0,
+            0
+          ],
+          "colors": {
+            "heading": [
+              116,
+              116,
+              118,
+              1
+            ],
+            "description": [
+              166,
+              167,
+              175,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              59,
+              48,
+              1
+            ],
+            "close": [
+              127,
+              127,
+              129,
+              0.722
+            ],
+            "border": [
+              120,
+              120,
+              128,
+              0.161
+            ],
+            "focus": [
+              0,
+              122,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 158.60000002384186,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              0,
+              0,
+              0
+            ],
+            "colors": {
+              "heading": [
+                116,
+                116,
+                118,
+                1
+              ],
+              "description": [
+                166,
+                167,
+                175,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                59,
+                48,
+                1
+              ],
+              "close": [
+                127,
+                127,
+                129,
+                0.722
+              ],
+              "border": [
+                120,
+                120,
+                128,
+                0.161
+              ],
+              "focus": [
+                0,
+                122,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 158.60000002384186
+          }
+        },
+        "visible": {
+          "state": "ready",
+          "background": [
+            0,
+            0,
+            0
+          ],
+          "colors": {
+            "heading": [
+              116,
+              116,
+              118,
+              1
+            ],
+            "description": [
+              165,
+              165,
+              176,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              59,
+              48,
+              1
+            ],
+            "close": [
+              126,
+              127,
+              133,
+              0.722
+            ],
+            "border": [
+              246,
+              246,
+              252,
+              0.161
+            ],
+            "focus": [
+              0,
+              122,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 160.89999997615814,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              0,
+              0,
+              0
+            ],
+            "colors": {
+              "heading": [
+                116,
+                116,
+                118,
+                1
+              ],
+              "description": [
+                165,
+                165,
+                176,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                59,
+                48,
+                1
+              ],
+              "close": [
+                126,
+                127,
+                133,
+                0.722
+              ],
+              "border": [
+                246,
+                246,
+                252,
+                0.161
+              ],
+              "focus": [
+                0,
+                122,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 160.89999997615814
+          }
+        }
+      },
+      "rendered": {
+        "source": {
+          "heading": "rgb(116, 116, 118)",
+          "description": "rgba(166, 167, 175, 0.72)",
+          "border": "rgba(120, 120, 128, 0.16) 0px 0px 0px 1px inset",
+          "background": "rgb(0 0 0)",
+          "focus": {
+            "color": "rgb(0, 122, 255)",
+            "width": "2px"
+          }
+        },
+        "visible": {
+          "heading": "rgb(116, 116, 118)",
+          "description": "rgba(165, 165, 176, 0.72)",
+          "border": "rgba(246, 246, 252, 0.16) 0px 0px 0px 1px inset",
+          "background": "rgb(0 0 0)",
+          "focus": {
+            "color": "rgb(0, 122, 255)",
+            "width": "2px"
+          }
+        }
+      }
+    },
+    {
+      "theme": "light",
+      "name": "blue",
+      "result": {
+        "source": {
+          "state": "ready",
+          "background": [
+            40,
+            60,
+            100
+          ],
+          "colors": {
+            "heading": [
+              166,
+              166,
+              169,
+              1
+            ],
+            "description": [
+              213,
+              213,
+              221,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              59,
+              48,
+              1
+            ],
+            "close": [
+              166,
+              167,
+              175,
+              0.722
+            ],
+            "border": [
+              120,
+              120,
+              128,
+              0.161
+            ],
+            "focus": [
+              14,
+              132,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 151.69999992847443,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              40,
+              60,
+              100
+            ],
+            "colors": {
+              "heading": [
+                166,
+                166,
+                169,
+                1
+              ],
+              "description": [
+                213,
+                213,
+                221,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                59,
+                48,
+                1
+              ],
+              "close": [
+                166,
+                167,
+                175,
+                0.722
+              ],
+              "border": [
+                120,
+                120,
+                128,
+                0.161
+              ],
+              "focus": [
+                14,
+                132,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 151.69999992847443
+          }
+        },
+        "visible": {
+          "state": "incomplete",
+          "background": [
+            40,
+            60,
+            100
+          ],
+          "colors": {},
+          "elapsedMs": 190.79999995231628,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              0,
+              0,
+              0
+            ],
+            "colors": {
+              "heading": [
+                116,
+                116,
+                118,
+                1
+              ],
+              "description": [
+                165,
+                165,
+                176,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                59,
+                48,
+                1
+              ],
+              "close": [
+                126,
+                127,
+                133,
+                0.722
+              ],
+              "border": [
+                246,
+                246,
+                252,
+                0.161
+              ],
+              "focus": [
+                0,
+                122,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 160.89999997615814
+          }
+        }
+      },
+      "rendered": {
+        "source": {
+          "heading": "rgb(166, 166, 169)",
+          "description": "rgba(213, 213, 221, 0.72)",
+          "border": "rgba(120, 120, 128, 0.16) 0px 0px 0px 1px inset",
+          "background": "rgb(40 60 100)",
+          "focus": {
+            "color": "rgb(14, 132, 255)",
+            "width": "2px"
+          }
+        },
+        "visible": {
+          "heading": "rgb(116, 116, 118)",
+          "description": "rgba(165, 165, 176, 0.72)",
+          "border": "rgba(246, 246, 252, 0.16) 0px 0px 0px 1px inset",
+          "background": "rgb(0 0 0)",
+          "focus": {
+            "color": "rgb(0, 122, 255)",
+            "width": "2px"
+          }
+        }
+      }
+    },
+    {
+      "theme": "light",
+      "name": "recovered",
+      "result": {
+        "source": {
+          "state": "ready",
+          "background": [
+            255,
+            255,
+            255
+          ],
+          "colors": {
+            "heading": [
+              16,
+              16,
+              18,
+              1
+            ],
+            "description": [
+              60,
+              60,
+              67,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              59,
+              48,
+              1
+            ],
+            "close": [
+              60,
+              60,
+              67,
+              0.722
+            ],
+            "border": [
+              120,
+              120,
+              128,
+              0.161
+            ],
+            "focus": [
+              0,
+              122,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 0.10000002384185791,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              255,
+              255,
+              255
+            ],
+            "colors": {
+              "heading": [
+                16,
+                16,
+                18,
+                1
+              ],
+              "description": [
+                60,
+                60,
+                67,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                59,
+                48,
+                1
+              ],
+              "close": [
+                60,
+                60,
+                67,
+                0.722
+              ],
+              "border": [
+                120,
+                120,
+                128,
+                0.161
+              ],
+              "focus": [
+                0,
+                122,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 0.10000002384185791
+          }
+        },
+        "visible": {
+          "state": "ready",
+          "background": [
+            255,
+            255,
+            255
+          ],
+          "colors": {
+            "heading": [
+              16,
+              16,
+              18,
+              1
+            ],
+            "description": [
+              0,
+              0,
+              3,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              59,
+              48,
+              1
+            ],
+            "close": [
+              0,
+              0,
+              3,
+              0.722
+            ],
+            "border": [
+              0,
+              0,
+              4,
+              0.161
+            ],
+            "focus": [
+              0,
+              122,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 3.5,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              255,
+              255,
+              255
+            ],
+            "colors": {
+              "heading": [
+                16,
+                16,
+                18,
+                1
+              ],
+              "description": [
+                0,
+                0,
+                3,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                59,
+                48,
+                1
+              ],
+              "close": [
+                0,
+                0,
+                3,
+                0.722
+              ],
+              "border": [
+                0,
+                0,
+                4,
+                0.161
+              ],
+              "focus": [
+                0,
+                122,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 3.5
+          }
+        }
+      },
+      "rendered": {
+        "source": {
+          "heading": "rgb(16, 16, 18)",
+          "description": "rgba(60, 60, 67, 0.72)",
+          "border": "rgba(120, 120, 128, 0.16) 0px 0px 0px 1px inset",
+          "background": "rgb(255 255 255)",
+          "focus": {
+            "color": "rgb(0, 122, 255)",
+            "width": "2px"
+          }
+        },
+        "visible": {
+          "heading": "rgb(16, 16, 18)",
+          "description": "rgba(0, 0, 3, 0.72)",
+          "border": "rgba(0, 0, 4, 0.16) 0px 0px 0px 1px inset",
+          "background": "rgb(255 255 255)",
+          "focus": {
+            "color": "rgb(0, 122, 255)",
+            "width": "2px"
+          }
+        }
+      }
+    },
+    {
+      "theme": "dark",
+      "name": "nominal",
+      "result": {
+        "source": {
+          "state": "ready",
+          "background": [
+            28,
+            28,
+            30
+          ],
+          "colors": {
+            "heading": [
+              246,
+              248,
+              250,
+              1
+            ],
+            "description": [
+              176,
+              176,
+              185,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              58,
+              58,
+              1
+            ],
+            "close": [
+              176,
+              176,
+              185,
+              0.722
+            ],
+            "border": [
+              120,
+              120,
+              128,
+              0.2
+            ],
+            "focus": [
+              74,
+              143,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 0.30000007152557373,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              28,
+              28,
+              30
+            ],
+            "colors": {
+              "heading": [
+                246,
+                248,
+                250,
+                1
+              ],
+              "description": [
+                176,
+                176,
+                185,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                58,
+                58,
+                1
+              ],
+              "close": [
+                176,
+                176,
+                185,
+                0.722
+              ],
+              "border": [
+                120,
+                120,
+                128,
+                0.2
+              ],
+              "focus": [
+                74,
+                143,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 0.30000007152557373
+          }
+        },
+        "visible": {
+          "state": "ready",
+          "background": [
+            28,
+            28,
+            30
+          ],
+          "colors": {
+            "heading": [
+              246,
+              248,
+              250,
+              1
+            ],
+            "description": [
+              233,
+              233,
+              244,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              58,
+              58,
+              1
+            ],
+            "close": [
+              233,
+              233,
+              244,
+              0.722
+            ],
+            "border": [
+              251,
+              251,
+              253,
+              0.2
+            ],
+            "focus": [
+              74,
+              143,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 5,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              28,
+              28,
+              30
+            ],
+            "colors": {
+              "heading": [
+                246,
+                248,
+                250,
+                1
+              ],
+              "description": [
+                233,
+                233,
+                244,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                58,
+                58,
+                1
+              ],
+              "close": [
+                233,
+                233,
+                244,
+                0.722
+              ],
+              "border": [
+                251,
+                251,
+                253,
+                0.2
+              ],
+              "focus": [
+                74,
+                143,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 5
+          }
+        }
+      },
+      "rendered": {
+        "source": {
+          "heading": "rgb(246, 248, 250)",
+          "description": "rgba(176, 176, 185, 0.72)",
+          "border": "rgba(120, 120, 128, 0.2) 0px 0px 0px 1px inset",
+          "background": "rgb(28 28 30)",
+          "focus": {
+            "color": "rgb(74, 143, 255)",
+            "width": "2px"
+          }
+        },
+        "visible": {
+          "heading": "rgb(246, 248, 250)",
+          "description": "rgba(233, 233, 244, 0.72)",
+          "border": "rgba(251, 251, 253, 0.2) 0px 0px 0px 1px inset",
+          "background": "rgb(28 28 30)",
+          "focus": {
+            "color": "rgb(74, 143, 255)",
+            "width": "2px"
+          }
+        }
+      }
+    },
+    {
+      "theme": "dark",
+      "name": "white",
+      "result": {
+        "source": {
+          "state": "ready",
+          "background": [
+            255,
+            255,
+            255
+          ],
+          "colors": {
+            "heading": [
+              116,
+              118,
+              120,
+              1
+            ],
+            "description": [
+              44,
+              44,
+              51,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              58,
+              58,
+              1
+            ],
+            "close": [
+              103,
+              103,
+              111,
+              0.722
+            ],
+            "border": [
+              120,
+              120,
+              128,
+              0.2
+            ],
+            "focus": [
+              74,
+              143,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 178.5,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              255,
+              255,
+              255
+            ],
+            "colors": {
+              "heading": [
+                116,
+                118,
+                120,
+                1
+              ],
+              "description": [
+                44,
+                44,
+                51,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                58,
+                58,
+                1
+              ],
+              "close": [
+                103,
+                103,
+                111,
+                0.722
+              ],
+              "border": [
+                120,
+                120,
+                128,
+                0.2
+              ],
+              "focus": [
+                74,
+                143,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 178.5
+          }
+        },
+        "visible": {
+          "state": "ready",
+          "background": [
+            255,
+            255,
+            255
+          ],
+          "colors": {
+            "heading": [
+              116,
+              118,
+              120,
+              1
+            ],
+            "description": [
+              61,
+              61,
+              72,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              58,
+              58,
+              1
+            ],
+            "close": [
+              105,
+              102,
+              111,
+              0.722
+            ],
+            "border": [
+              0,
+              0,
+              3,
+              0.2
+            ],
+            "focus": [
+              74,
+              143,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 158.60000002384186,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              255,
+              255,
+              255
+            ],
+            "colors": {
+              "heading": [
+                116,
+                118,
+                120,
+                1
+              ],
+              "description": [
+                61,
+                61,
+                72,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                58,
+                58,
+                1
+              ],
+              "close": [
+                105,
+                102,
+                111,
+                0.722
+              ],
+              "border": [
+                0,
+                0,
+                3,
+                0.2
+              ],
+              "focus": [
+                74,
+                143,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 158.60000002384186
+          }
+        }
+      },
+      "rendered": {
+        "source": {
+          "heading": "rgb(116, 118, 120)",
+          "description": "rgba(44, 44, 51, 0.72)",
+          "border": "rgba(120, 120, 128, 0.2) 0px 0px 0px 1px inset",
+          "background": "rgb(255 255 255)",
+          "focus": {
+            "color": "rgb(74, 143, 255)",
+            "width": "2px"
+          }
+        },
+        "visible": {
+          "heading": "rgb(116, 118, 120)",
+          "description": "rgba(61, 61, 72, 0.72)",
+          "border": "rgba(0, 0, 3, 0.2) 0px 0px 0px 1px inset",
+          "background": "rgb(255 255 255)",
+          "focus": {
+            "color": "rgb(74, 143, 255)",
+            "width": "2px"
+          }
+        }
+      }
+    },
+    {
+      "theme": "dark",
+      "name": "blue",
+      "result": {
+        "source": {
+          "state": "ready",
+          "background": [
+            40,
+            60,
+            100
+          ],
+          "colors": {
+            "heading": [
+              246,
+              248,
+              250,
+              1
+            ],
+            "description": [
+              213,
+              213,
+              222,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              58,
+              58,
+              1
+            ],
+            "close": [
+              176,
+              176,
+              185,
+              0.722
+            ],
+            "border": [
+              120,
+              120,
+              128,
+              0.2
+            ],
+            "focus": [
+              74,
+              143,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 53.5,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              40,
+              60,
+              100
+            ],
+            "colors": {
+              "heading": [
+                246,
+                248,
+                250,
+                1
+              ],
+              "description": [
+                213,
+                213,
+                222,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                58,
+                58,
+                1
+              ],
+              "close": [
+                176,
+                176,
+                185,
+                0.722
+              ],
+              "border": [
+                120,
+                120,
+                128,
+                0.2
+              ],
+              "focus": [
+                74,
+                143,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 53.5
+          }
+        },
+        "visible": {
+          "state": "ready",
+          "background": [
+            40,
+            60,
+            100
+          ],
+          "colors": {
+            "heading": [
+              246,
+              248,
+              250,
+              1
+            ],
+            "description": [
+              228,
+              220,
+              218,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              58,
+              58,
+              1
+            ],
+            "close": [
+              228,
+              220,
+              218,
+              0.722
+            ],
+            "border": [
+              254,
+              183,
+              58,
+              0.2
+            ],
+            "focus": [
+              74,
+              143,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 41,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              40,
+              60,
+              100
+            ],
+            "colors": {
+              "heading": [
+                246,
+                248,
+                250,
+                1
+              ],
+              "description": [
+                228,
+                220,
+                218,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                58,
+                58,
+                1
+              ],
+              "close": [
+                228,
+                220,
+                218,
+                0.722
+              ],
+              "border": [
+                254,
+                183,
+                58,
+                0.2
+              ],
+              "focus": [
+                74,
+                143,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 41
+          }
+        }
+      },
+      "rendered": {
+        "source": {
+          "heading": "rgb(246, 248, 250)",
+          "description": "rgba(213, 213, 222, 0.72)",
+          "border": "rgba(120, 120, 128, 0.2) 0px 0px 0px 1px inset",
+          "background": "rgb(40 60 100)",
+          "focus": {
+            "color": "rgb(74, 143, 255)",
+            "width": "2px"
+          }
+        },
+        "visible": {
+          "heading": "rgb(246, 248, 250)",
+          "description": "rgba(228, 220, 218, 0.72)",
+          "border": "rgba(254, 183, 58, 0.2) 0px 0px 0px 1px inset",
+          "background": "rgb(40 60 100)",
+          "focus": {
+            "color": "rgb(74, 143, 255)",
+            "width": "2px"
+          }
+        }
+      }
+    },
+    {
+      "theme": "dark",
+      "name": "recovered",
+      "result": {
+        "source": {
+          "state": "ready",
+          "background": [
+            28,
+            28,
+            30
+          ],
+          "colors": {
+            "heading": [
+              246,
+              248,
+              250,
+              1
+            ],
+            "description": [
+              176,
+              176,
+              185,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              58,
+              58,
+              1
+            ],
+            "close": [
+              176,
+              176,
+              185,
+              0.722
+            ],
+            "border": [
+              120,
+              120,
+              128,
+              0.2
+            ],
+            "focus": [
+              74,
+              143,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 0.20000004768371582,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              28,
+              28,
+              30
+            ],
+            "colors": {
+              "heading": [
+                246,
+                248,
+                250,
+                1
+              ],
+              "description": [
+                176,
+                176,
+                185,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                58,
+                58,
+                1
+              ],
+              "close": [
+                176,
+                176,
+                185,
+                0.722
+              ],
+              "border": [
+                120,
+                120,
+                128,
+                0.2
+              ],
+              "focus": [
+                74,
+                143,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 0.20000004768371582
+          }
+        },
+        "visible": {
+          "state": "ready",
+          "background": [
+            28,
+            28,
+            30
+          ],
+          "colors": {
+            "heading": [
+              246,
+              248,
+              250,
+              1
+            ],
+            "description": [
+              233,
+              233,
+              244,
+              0.722
+            ],
+            "dangerIcon": [
+              255,
+              58,
+              58,
+              1
+            ],
+            "close": [
+              233,
+              233,
+              244,
+              0.722
+            ],
+            "border": [
+              251,
+              251,
+              253,
+              0.2
+            ],
+            "focus": [
+              74,
+              143,
+              255,
+              1
+            ]
+          },
+          "elapsedMs": 5.200000047683716,
+          "accepted": {
+            "state": "ready",
+            "background": [
+              28,
+              28,
+              30
+            ],
+            "colors": {
+              "heading": [
+                246,
+                248,
+                250,
+                1
+              ],
+              "description": [
+                233,
+                233,
+                244,
+                0.722
+              ],
+              "dangerIcon": [
+                255,
+                58,
+                58,
+                1
+              ],
+              "close": [
+                233,
+                233,
+                244,
+                0.722
+              ],
+              "border": [
+                251,
+                251,
+                253,
+                0.2
+              ],
+              "focus": [
+                74,
+                143,
+                255,
+                1
+              ]
+            },
+            "elapsedMs": 5.200000047683716
+          }
+        }
+      },
+      "rendered": {
+        "source": {
+          "heading": "rgb(246, 248, 250)",
+          "description": "rgba(176, 176, 185, 0.72)",
+          "border": "rgba(120, 120, 128, 0.2) 0px 0px 0px 1px inset",
+          "background": "rgb(28 28 30)",
+          "focus": {
+            "color": "rgb(74, 143, 255)",
+            "width": "2px"
+          }
+        },
+        "visible": {
+          "heading": "rgb(246, 248, 250)",
+          "description": "rgba(233, 233, 244, 0.72)",
+          "border": "rgba(251, 251, 253, 0.2) 0px 0px 0px 1px inset",
+          "background": "rgb(28 28 30)",
+          "focus": {
+            "color": "rgb(74, 143, 255)",
+            "width": "2px"
+          }
+        }
+      }
+    }
+  ]
+}

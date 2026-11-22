@@ -397,6 +397,11 @@ JVM-host хранит не более четырёх Program для appearance/c
 native handles с жизненным циклом composition. Swift-host ограничивает доступ
 последовательной очередью; callbacks возвращаются на main и не удерживают
 native очередь при закрытии. Ошибки Swift/Kotlin проходят через `@Throws`.
+Известную сплошную подложку приложение передаёт через
+`theme.update(host, preferences, LabColorContext(listOf(LabSrgb8(255, 255, 255))))`.
+Контекст копирует наблюдения; новое значение вызывает новую ревизию Program,
+а ошибка сохраняет предыдущие colors/preferences/context. `null` выбирает
+исходный фон профиля. [Полный контракт и текущие ограничения адаптации](../../docs/reference/color-profile.md#обновление-области).
 
 `LabScene` ограничивает retained capture своим окном. Источники фона, формы
 и Sheet имеют разные уровни; `HazeInput.Sources` выбирает только стоящие

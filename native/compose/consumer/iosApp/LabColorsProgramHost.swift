@@ -4,15 +4,22 @@ import LabUIExample
 
 /// The SwiftPM solver sits behind the shared Kotlin host protocol; UI components only see roles.
 final class LabColorsProgramHost: NSObject, ColorProgramHost {
-    private struct Entry {
+    private final class Entry {
         let program: ProgramRuntime
-        let colors: LabColorOutput
+        var revision: UInt64 = 0
+        var backgrounds: Data?
+        var colors: LabColorOutput?
+        init(program: ProgramRuntime) { self.program = program }
     }
     private let queue = DispatchQueue(label: "pics.lab.ui.colors", qos: .userInitiated)
     private var entries: [String: Entry] = [:]
     private var closed = false
 
     func resolve(preferences: LabPreferences, completionHandler: @escaping (LabColorOutput?, Error?) -> Void) {
+        resolve(preferences: preferences, context: nil, completionHandler: completionHandler)
+    }
+
+    func resolve(preferences: LabPreferences, context: LabColorContext?, completionHandler: @escaping (LabColorOutput?, Error?) -> Void) {
         let key = "\(preferences.appearance.name):\(preferences.increasedContrast)"
         // Start Kotlin's exported suspend loader on main. Native solving happens on the private
         // queue; callbacks leave that queue before returning to Kotlin or disposing the host.
@@ -25,10 +32,22 @@ final class LabColorsProgramHost: NSObject, ColorProgramHost {
                 self.queue.async {
                     let result: Result<LabColorOutput, Error> = Result {
                         guard !self.closed else { throw Self.failure("Colors host is closed") }
-                        if let entry = self.entries[key] { return entry.colors }
-                        let program = try compileProgramWire(bytes: Self.data(prepared.bytes), streamId: 1)
-                        let snapshot = try program.updateObserved(revision: 1, scenarioIds: [1],
-                            surfaces: Self.data(prepared.background), surfaceCount: 1)
+                        let backgrounds = Self.data(context?.encoded() ?? prepared.background)
+                        let entry: Entry
+                        if let existing = self.entries[key] {
+                            if existing.backgrounds == backgrounds, let colors = existing.colors { return colors }
+                            entry = existing
+                        } else {
+                            entry = Entry(program: try compileProgramWire(bytes: Self.data(prepared.bytes), streamId: 1))
+                        }
+                        guard entry.revision < UInt64.max else { throw Self.failure("Colors revision exhausted") }
+                        entry.revision += 1
+                        let snapshot = try entry.program.updateObserved(revision: entry.revision,
+                            scenarioIds: (1...backgrounds.count / 3).map { UInt32($0) }, surfaces: backgrounds, surfaceCount: 1)
+                        let state = snapshot.state()
+                        guard state == "ready" else {
+                            throw Self.failure("Colors output is not ready: \(state)")
+                        }
                         guard snapshot.outputCount() <= UInt64(Int32.max / 3) else {
                             throw Self.failure("Colors output exceeds the supported array size")
                         }
@@ -46,7 +65,9 @@ final class LabColorsProgramHost: NSObject, ColorProgramHost {
                             opacity.set(index: index, value: try snapshot.outputOpacity(index: UInt32(index)))
                         }
                         let colors = try prepared.output(outputSlots: slots, rgb: rgb, opacity: opacity)
-                        self.entries[key] = Entry(program: program, colors: colors)
+                        entry.backgrounds = backgrounds
+                        entry.colors = colors
+                        self.entries[key] = entry
                         return colors
                     }
                     DispatchQueue.main.async {
