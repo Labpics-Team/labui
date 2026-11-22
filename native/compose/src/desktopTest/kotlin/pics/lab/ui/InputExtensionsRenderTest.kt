@@ -16,6 +16,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.FinishComposingTextCommand
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.SetComposingTextCommand
+import androidx.compose.ui.text.input.SetComposingRegionCommand
 import androidx.compose.ui.unit.*
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.CompletableDeferred
@@ -89,8 +90,9 @@ class InputExtensionsRenderTest {
         settle()
     }
     private fun Fixture.pasteKey() {
-        scene.sendKeyEvent(KeyEvent(Key.V, KeyEventType.KeyDown, isCtrlPressed = true))
-        scene.sendKeyEvent(KeyEvent(Key.V, KeyEventType.KeyUp, isCtrlPressed = true))
+        val mac = System.getProperty("os.name").startsWith("Mac", ignoreCase = true)
+        scene.sendKeyEvent(KeyEvent(Key.V, KeyEventType.KeyDown, isCtrlPressed = !mac, isMetaPressed = mac))
+        scene.sendKeyEvent(KeyEvent(Key.V, KeyEventType.KeyUp, isCtrlPressed = !mac, isMetaPressed = mac))
         settle()
     }
     private fun Fixture.focus(label: String) {
@@ -219,6 +221,42 @@ class InputExtensionsRenderTest {
             assertEquals(1, clipboard.reads)
             assertTrue(state.text.toString().contains("pasted"))
         } finally { f.scene.close() }
+    }
+
+    @Test fun acceptedPasteClearsImeRecompositionOfItsOwnDraftButPreservesNewInput() {
+        for (newInput in listOf(false, true)) {
+            var value by mutableStateOf(emptyList<String>())
+            var requested: List<String>? = null
+            var input: PlatformTextInputMethodRequest? = null
+            val state = TextFieldState()
+            val clipboard = MemoryClipboard()
+            val f = fixture {
+                InterceptPlatformTextInput({ request, _ -> input = request; awaitCancellation() }) {
+                    CompositionLocalProvider(LocalClipboard provides clipboard) {
+                        LabTagsInput(value, { requested = it }, "Tags", state = state, addOnPaste = true)
+                    }
+                }
+            }
+            try {
+                f.settle(); f.focus("Tags"); f.pasteKey()
+                assertEquals("first,second", state.text.toString(), "A pending controlled request retains its draft")
+                val ime = checkNotNull(input)
+                // Android keyboards can mark the final pasted word composing again
+                // before the application's accepted value reaches the component.
+                ime.onEditCommand(listOf(SetComposingRegionCommand(6, 12)))
+                if (newInput) ime.onEditCommand(listOf(SetComposingTextCommand("third", 1)))
+                f.settle(); assertNotNull(state.composition)
+                value = checkNotNull(requested); f.settle()
+                assertEquals(listOf("first", "second"), value)
+                if (newInput) {
+                    assertEquals("first,third", state.text.toString())
+                    assertNotNull(state.composition, "New IME input survives acknowledgement of the earlier paste")
+                } else {
+                    assertEquals("", state.text.toString(), "Accepted pasted text must not remain beside its chips")
+                    assertNull(state.composition)
+                }
+            } finally { f.scene.close() }
+        }
     }
 
     @Test fun pendingPasteCannotOutliveItsFocusSelectionDraftOrComponent() {
