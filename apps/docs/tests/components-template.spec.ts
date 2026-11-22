@@ -141,6 +141,28 @@ test('partly mapped family distinguishes circular progress from its linear API',
   await page.screenshot({ path: test.info().outputPath('catalog-progress.png') });
 });
 
+test('Icon identifies its public Compose dependency and pinned published release', async ({
+  page,
+}) => {
+  const release = JSON.parse(
+    readFileSync(new URL('../../../native/compose/icons-release.json', import.meta.url), 'utf8'),
+  ) as { version: string; githubRepository: string; mavenRepositoryCommit: string };
+  await page.goto('/components.html?component=icon');
+  await expect(page.locator('.doc-header .catalog-capabilities')).toContainText(
+    'Compose · есть API',
+  );
+  await page.getByText('Состав семейства и соответствие Figma', { exact: true }).click();
+  const coverage = page.locator('.catalog-coverage');
+  await expect(coverage).toContainText('pics.lab.icons.Icon');
+  await expect(coverage).toContainText(`pics.lab:icons-compose:${release.version}`);
+  await expect(coverage.getByRole('link', { name: 'опубликованный выпуск' })).toHaveAttribute(
+    'href',
+    `https://github.com/${release.githubRepository}/tree/${release.mavenRepositoryCommit}/pics/lab/icons-compose/${release.version}`,
+  );
+  await expect(coverage.locator('a[href*="Labpics-Team/labui/blob/"]')).toHaveCount(0);
+  await page.screenshot({ path: test.info().outputPath('catalog-native-icon.png') });
+});
+
 test('unknown component preserves its identity and provides a route back to the catalog', async ({
   page,
 }) => {

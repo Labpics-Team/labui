@@ -78,16 +78,38 @@ export function renderSourceCoverage(entry: RegistryEntry): HTMLElement {
     );
   if (entry.capabilities.native) {
     const native = entry.capabilities.native;
-    content.push(
-      el('p', { class: 'catalog-api-note' }, [
-        'Compose: ',
-        el('code', {}, [native.symbol]),
+    const provenance: (string | HTMLElement)[] = [];
+    if ('dependency' in native) {
+      const { module, version, githubRepository, mavenRepositoryCommit } = native.dependency;
+      const [group, artifact] = module.split(':');
+      const modulePath = `${group?.replaceAll('.', '/')}/${artifact}`;
+      provenance.push(
+        '. Включён в LabUI через ',
+        el('code', {}, [`${module}:${version}`]),
+        ' · ',
+        el(
+          'a',
+          {
+            href: `https://github.com/${githubRepository}/tree/${mavenRepositoryCommit}/${modulePath}/${version}`,
+          },
+          ['опубликованный выпуск'],
+        ),
+      );
+    } else {
+      provenance.push(
         '. Наличие API проверено по ',
         el(
           'a',
           { href: `https://github.com/Labpics-Team/labui/blob/${native.revision}/${native.file}` },
           ['исходнику'],
         ),
+      );
+    }
+    content.push(
+      el('p', { class: 'catalog-api-note' }, [
+        'Compose: ',
+        el('code', {}, [native.symbol]),
+        ...provenance,
         '; это не отчёт о проверке всех платформ.',
       ]),
     );

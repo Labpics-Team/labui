@@ -114,6 +114,48 @@ describe('semantic catalog joined to real API and documentation', () => {
     ).toThrow('Unknown Compose symbol: LabButton');
   });
 
+  it('resolves external Compose API from the same release descriptor as Gradle', () => {
+    expect(native.symbols.some((symbol) => symbol.name === 'pics.lab.icons.Icon')).toBe(false);
+    for (const version of ['0.4.0', '0.5.0']) {
+      const descriptor = {
+        version,
+        githubRepository: 'Labpics-Team/lab-icons',
+        mavenRepositoryCommit: (version === '0.4.0' ? 'a' : 'b').repeat(40),
+      };
+      const paths: string[] = [];
+      const projection = buildCatalog(registry, native, profiles, (path) => {
+        paths.push(path);
+        return descriptor;
+      });
+      const icon = projection.families.find((family) => family.slug === 'icon');
+      expect(icon?.capabilities.native).toEqual({
+        symbol: 'pics.lab.icons.Icon',
+        dependency: { module: 'pics.lab:icons-compose', ...descriptor },
+      });
+      expect(paths).toEqual(['native/compose/icons-release.json']);
+    }
+  });
+
+  it('rejects incomplete or unpinned external Compose release metadata', () => {
+    const descriptor = {
+      version: '0.4.0',
+      githubRepository: 'Labpics-Team/lab-icons',
+      mavenRepositoryCommit: 'a'.repeat(40),
+    };
+    for (const invalid of [
+      null,
+      {},
+      { ...descriptor, version: '' },
+      { ...descriptor, version: '../release' },
+      { ...descriptor, githubRepository: 'https://github.com/Labpics-Team/lab-icons' },
+      { ...descriptor, mavenRepositoryCommit: 'main' },
+    ]) {
+      expect(() => buildCatalog(registry, native, profiles, () => invalid)).toThrow(
+        'Invalid Compose dependency release: native/compose/icons-release.json',
+      );
+    }
+  });
+
   it('rejects docs orphaned from the catalog and a broken guide', () => {
     expect(() =>
       buildCatalog(

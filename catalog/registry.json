@@ -45,6 +45,13 @@
       "web": {
         "subpath": "icon",
         "reactExport": "Icon"
+      },
+      "native": {
+        "symbol": "pics.lab.icons.Icon",
+        "dependency": {
+          "module": "pics.lab:icons-compose",
+          "release": "native/compose/icons-release.json"
+        }
       }
     },
     {
