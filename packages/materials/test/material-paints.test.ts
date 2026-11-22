@@ -4,17 +4,16 @@ import {
   compileMaterialPaint,
   materialPaintOver,
   materialPaintTables,
-  neutralMaterialFilter,
+  neutralMaterialFill,
   screenNoiseApproximation,
 } from '../src/material-paints';
 import { MATERIAL_TIERS, materialBlendMode, materialProfile } from '../src/profile';
 import { readContractMaterials } from './contract-values';
 
 describe('encoded sRGB author paints', () => {
-  it('executes neutral affine paints as native filters without clipping or neutralising colour inputs', () => {
+  it('executes neutral affine paints as a normal fill without neutralising colour inputs', () => {
     const { fills } = readContractMaterials();
     const accepted: string[] = [];
-    const clamp = (value: number) => Math.min(1, Math.max(0, value));
     for (const theme of ['light', 'dark'] as const)
       for (const tier of MATERIAL_TIERS) {
         const fill = fills.get(`${theme}/${tier}`);
@@ -24,8 +23,8 @@ describe('encoded sRGB author paints', () => {
           blend: fill.blend,
           blendMode: materialBlendMode(theme),
         };
-        const filter = neutralMaterialFilter(paints);
-        if (!filter) continue;
+        const native = neutralMaterialFill(paints);
+        if (!native) continue;
         accepted.push(`${theme}/${tier}`);
         // RGB channels vary independently, including values between 8-bit knots.
         for (let i = 0; i <= 1024; i++) {
@@ -37,8 +36,10 @@ describe('encoded sRGB author paints', () => {
           };
           const expected = materialPaintOver(paints, input);
           for (const key of ['r', 'g', 'b'] as const) {
-            const contrasted = clamp((input[key] / 255 - 0.5) * filter.contrast + 0.5);
-            expect(clamp(contrasted * filter.brightness) * 255).toBeCloseTo(expected[key], 8);
+            expect(native[key] * native.a + input[key] * (1 - native.a)).toBeCloseTo(
+              expected[key],
+              8,
+            );
           }
         }
       }
@@ -49,18 +50,18 @@ describe('encoded sRGB author paints', () => {
     expect(accepted).not.toContain('dark/elevated');
     expect(accepted).not.toContain('light/elevated');
     expect(
-      neutralMaterialFilter({
+      neutralMaterialFill({
         normal: { r: 20, g: 40, b: 60, a: 0.3 },
         blend: { r: 0, g: 0, b: 0, a: 0 },
         blendMode: 'overlay',
       }),
     ).toBeNull();
   });
-  it('bounds the moved spatial Screen grain while changing blur and group alpha', () => {
+  it('bounds native uniform Screen grain while changing blur and group alpha', () => {
     const { fills } = readContractMaterials();
     const maxAlpha = Math.round(materialProfile.noise.opacity * 255) / 255;
-    const bound = Math.max(...materialProfile.noise.color) * maxAlpha;
-    expect(bound).toBeLessThan(0.197);
+    const bound = (Math.max(...materialProfile.noise.color) * maxAlpha) / 2;
+    expect(bound).toBeLessThan(0.099);
     for (const theme of ['light', 'dark'] as const)
       for (const tier of MATERIAL_TIERS) {
         const fill = fills.get(`${theme}/${tier}`);
@@ -70,11 +71,19 @@ describe('encoded sRGB author paints', () => {
           blend: fill.blend,
           blendMode: materialBlendMode(theme),
         };
-        if (!neutralMaterialFilter(paints)) continue;
+        if (!neutralMaterialFill(paints)) continue;
+        const native = neutralMaterialFill(paints, bound / 255);
+        if (!native) throw new Error('Missing affine fill');
+        const approximation = screenNoiseApproximation(paints, {
+          r: materialProfile.noise.color[0] ?? 0,
+          g: materialProfile.noise.color[1] ?? 0,
+          b: materialProfile.noise.color[2] ?? 0,
+          a: maxAlpha,
+        });
         for (const blurred of [0, 0.11, 0.49, 0.73, 1])
           for (const raw of [0, 0.19, 0.81, 1])
             for (const alpha of [0, 0.2, 0.52, 0.76, 1]) {
-              for (const noise of materialProfile.noise.color) {
+              for (const noise of [0, ...materialProfile.noise.color]) {
                 const grain = (noise / 255) * maxAlpha;
                 const screened = blurred + (1 - blurred) * grain;
                 const before =
@@ -84,17 +93,12 @@ describe('encoded sRGB author paints', () => {
                     b: screened * 255,
                     a: 1,
                   }).r / 255;
-                const painted =
-                  materialPaintOver(paints, {
-                    r: blurred * 255,
-                    g: blurred * 255,
-                    b: blurred * 255,
-                    a: 1,
-                  }).r / 255;
+                const painted = (native.r / 255) * native.a + blurred * (1 - native.a);
                 const expected = alpha * before + (1 - alpha) * raw;
-                const base = alpha * painted + (1 - alpha) * raw;
-                const actual = base + (1 - base) * grain * alpha;
-                expect(Math.abs(actual - expected) * 255).toBeLessThanOrEqual(bound + 1e-10);
+                const actual = alpha * painted + (1 - alpha) * raw;
+                expect(Math.abs(actual - expected) * 255).toBeLessThanOrEqual(
+                  approximation.maxError + 1e-10,
+                );
               }
             }
       }

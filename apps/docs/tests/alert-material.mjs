@@ -24,6 +24,36 @@ const built = await build({
   configFile: false,
   root: resolve(root, 'apps/docs/src'),
   logLevel: 'error',
+  // Isolated worktrees may share dependency junctions. Resolve their own built
+  // files explicitly when requested, rather than accidentally testing a peer.
+  ...(process.env.MATERIAL_LOCAL_BUILD === '1'
+    ? {
+        resolve: {
+          alias: [
+            {
+              find: '@labpics/ui-core/alert',
+              replacement: resolve(root, 'packages/core/dist/components/alert/index.js'),
+            },
+            {
+              find: '@labpics/ui-core/icon/runtime',
+              replacement: resolve(root, 'packages/core/dist/components/icon/runtime.js'),
+            },
+            {
+              find: '@labpics/ui-materials/material.css',
+              replacement: resolve(root, 'packages/materials/dist/material.css'),
+            },
+            {
+              find: '@labpics/ui-materials/css',
+              replacement: resolve(root, 'packages/materials/dist/css.js'),
+            },
+            {
+              find: '@labpics/ui-materials',
+              replacement: resolve(root, 'packages/materials/dist/index.js'),
+            },
+          ],
+        },
+      }
+    : {}),
   build: {
     write: false,
     rollupOptions: { input: resolve(root, 'apps/docs/src/_fixtures/alert-material.html') },
@@ -131,6 +161,55 @@ try {
         await document.querySelector('lab-alert').updateComplete;
         await document.fonts.ready;
       });
+      const refresh = await page.locator('lab-alert').evaluate(async (host) => {
+        const scope = document.createElement('section');
+        scope.dataset.theme = 'light';
+        scope.dataset.material = 'acrylic';
+        scope.innerHTML =
+          '<div class="lab-material lab-material--base" style="width:40px;height:40px"></div>';
+        host.shadowRoot.querySelector('[data-lab-alert]').append(scope);
+        const surface = scope.firstElementChild;
+        const raf = window.requestAnimationFrame;
+        const style = window.getComputedStyle;
+        const frame = () => new Promise((resolve) => raf(resolve));
+        await frame();
+        await frame();
+        await frame();
+        let frames = 0;
+        let reads = 0;
+        window.requestAnimationFrame = (...args) => {
+          frames++;
+          return raf(...args);
+        };
+        window.getComputedStyle = (...args) => {
+          if (args[0] === surface) reads++;
+          return style(...args);
+        };
+        try {
+          scope.dataset.theme = 'dark';
+          await frame();
+          await frame();
+          await frame();
+          return {
+            frames,
+            reads,
+            theme: surface.dataset.labMaterialTheme,
+            renderer: surface.dataset.labMaterialPaintRenderer,
+          };
+        } finally {
+          window.requestAnimationFrame = raf;
+          window.getComputedStyle = style;
+          scope.remove();
+        }
+      });
+      assert.equal(refresh.theme, 'dark');
+      assert.equal(refresh.frames, 1, 'a source theme change schedules one material refresh');
+      assert.equal(
+        refresh.reads,
+        2,
+        'contour and paint read style once each; affine needs no capture placement',
+      );
+      await settle(page);
       for (const theme of ['light', 'dark'])
         for (const material of ['acrylic', 'glass']) {
           await page.evaluate(
@@ -167,7 +246,40 @@ try {
               { name: 'raw-fixed', points: cluster(x, 220) },
               { name: 'raw-moving', points: cluster(x + Math.floor((near + far) / 2), 220) },
             );
-            return { groups, center: x, near, far };
+            const decoration = surfaces.slice(1).map((el, i) => {
+              const r = el.getBoundingClientRect();
+              const left = Math.ceil(r.left);
+              const right = Math.floor(r.right) - 1;
+              const top = Math.ceil(r.top);
+              const bottom = Math.floor(r.bottom) - 1;
+              const row = (x, y) => [-1, 0, 1].map((dx) => ({ x: x + dx, y }));
+              return [
+                {
+                  name: `stack-${i + 1}-center`,
+                  points: cluster(x, Math.floor(r.top + r.height / 2)),
+                },
+                { name: `stack-${i + 1}-bottom`, points: row(x, bottom) },
+                {
+                  name: `stack-${i + 1}-left`,
+                  points: [0, 1, 2].map((dy) => ({ x: left, y: top + dy })),
+                },
+                {
+                  name: `stack-${i + 1}-right`,
+                  points: [0, 1, 2].map((dy) => ({ x: right, y: top + dy })),
+                },
+                {
+                  name: `stack-${i + 1}-corners`,
+                  points: Array.from({ length: 8 }, (_, dy) =>
+                    Array.from({ length: 8 }, (_, dx) => [
+                      { x: left + dx, y: bottom - dy },
+                      { x: right - dx, y: bottom - dy },
+                    ]),
+                  ).flat(2),
+                },
+                { name: `stack-${i + 1}-top`, points: row(x, top) },
+              ];
+            });
+            return { groups, decoration, center: x, near, far };
           });
           assert.equal(
             geometry.groups.length,
@@ -229,6 +341,8 @@ try {
           await settle(page);
           const restored = await sample(page, geometry.groups);
           const compositeError = [];
+          const decorativeComposite = [];
+          const strokeVisibility = [];
           // Hold the other layers fixed: they are part of this layer's actual
           // backdrop. Changing all group alphas together is not a linear test.
           for (let index = 0; index < 2; index++) {
@@ -244,6 +358,8 @@ try {
                 index,
               );
             const endpoints = [];
+            const originalDecoration = await sample(page, geometry.decoration[index]);
+            const decorativeEndpoints = [];
             for (const weight of ['0', '1']) {
               await page.locator('lab-alert').evaluate(
                 (host, { index, weight }) => {
@@ -256,6 +372,7 @@ try {
               );
               await settle(page);
               endpoints.push((await sample(page, geometry.groups))[index + 1].rgb);
+              decorativeEndpoints.push(await sample(page, geometry.decoration[index]));
             }
             compositeError.push(
               Math.max(
@@ -267,6 +384,26 @@ try {
                 ),
               ),
             );
+            decorativeComposite.push(
+              originalDecoration.map((group, at) => ({
+                name: group.name,
+                error: Math.max(
+                  ...group.raw.flatMap((pixel, p) =>
+                    pixel
+                      .slice(0, 3)
+                      .map((value, c) =>
+                        Math.abs(
+                          value -
+                            decorativeEndpoints[0][at].raw[p][c] * (1 - alpha) -
+                            decorativeEndpoints[1][at].raw[p][c] * alpha,
+                        ),
+                      ),
+                  ),
+                ),
+                rgb: group.rgb,
+                endpoints: decorativeEndpoints.map((e) => e[at].rgb),
+              })),
+            );
             await page
               .locator('lab-alert')
               .evaluate(
@@ -277,6 +414,38 @@ try {
                     .style.removeProperty('--_material-layer-opacity'),
                 index,
               );
+            await settle(page);
+            const beforeStroke = await sample(page, geometry.decoration[index]);
+            await page.locator('lab-alert').evaluate((host, index) => {
+              const surface = host.shadowRoot
+                .querySelectorAll('[part="stack"]')
+                [index].querySelector('.lab-material');
+              surface.dataset.noStroke = '';
+              const sheet = document.createElement('style');
+              sheet.id = 'stroke-control';
+              sheet.textContent =
+                '[data-no-stroke]::after { border-color:transparent !important; box-shadow:none !important; }';
+              host.shadowRoot.append(sheet);
+            }, index);
+            await settle(page);
+            const noStroke = await sample(page, geometry.decoration[index]);
+            strokeVisibility.push(
+              beforeStroke.map((group, at) => ({
+                name: group.name,
+                change: Math.max(
+                  ...group.raw.flatMap((p, i) =>
+                    p.slice(0, 3).map((v, c) => Math.abs(v - noStroke[at].raw[i][c])),
+                  ),
+                ),
+              })),
+            );
+            await page.locator('lab-alert').evaluate((host, index) => {
+              host.shadowRoot
+                .querySelectorAll('[part="stack"]')
+                [index].querySelector('.lab-material')
+                .removeAttribute('data-no-stroke');
+              host.shadowRoot.querySelector('#stroke-control').remove();
+            }, index);
             await settle(page);
           }
           const restoreError = original[0]
@@ -300,10 +469,19 @@ try {
             controlResponse,
             restoreError,
             compositeError,
+            decorativeComposite,
+            strokeVisibility,
+            refresh,
             original,
             control,
             restored,
           };
+          if (process.env.MATERIAL_IMAGES === '1' && engine === 'chromium') {
+            await mkdir(output, { recursive: true });
+            await page.screenshot({
+              path: fileURLToPath(new URL(`alert-${theme}-${material}.png`, output)),
+            });
+          }
           rows.push(row);
           try {
             if (measurable) {
@@ -336,6 +514,29 @@ try {
                   response[i + 1] > value + minimumResponse,
                   'the optical invariant rejects wrapper opacity',
                 );
+              }
+            }
+            // Endpoint compositing remains observable even when the snapshot
+            // omits live backdrop capture. Do not waive edge alpha on those engines.
+            for (const layer of decorativeComposite)
+              for (const point of layer)
+                assert.ok(
+                  point.error <= rgbTolerance,
+                  `${point.name}: complete decoration group alpha error ${point.error} <= ${rgbTolerance}`,
+                );
+            for (const layer of strokeVisibility) {
+              for (const point of layer) {
+                if (point.name.endsWith('-top') || point.name.endsWith('-center'))
+                  assert.equal(
+                    point.change,
+                    0,
+                    `${point.name}: no authored top border or center stroke`,
+                  );
+                else
+                  assert.ok(
+                    point.change > 0,
+                    `${point.name}: stroke is present and the pixel probe observes it`,
+                  );
               }
             }
             row.qualified = measurable;

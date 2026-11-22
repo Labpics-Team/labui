@@ -11,7 +11,7 @@ import {
   mountEngine,
   trailingRaf,
 } from './mount';
-import { attach as attachPaint } from './paint';
+import { attach as attachPaint, paintStyleProperties } from './paint';
 import { attach as attachVeil, supportsBackdropBlur } from './veil';
 
 const SURFACE = '.lab-material';
@@ -192,9 +192,7 @@ export function mountMaterialRuntime(
     styleProbe.removeProperty('backdrop-filter');
     styleProbe.removeProperty('-webkit-backdrop-filter');
     styleProbe.removeProperty('--_material-lens-filter');
-    styleProbe.removeProperty('--_material-paint-filter');
-    styleProbe.removeProperty('--_surface-paint');
-    styleProbe.removeProperty('--_noise');
+    for (const property of paintStyleProperties) styleProbe.removeProperty(property);
     styleProbe.removeProperty('--lab-contour-clip');
     styleProbe.removeProperty('--lab-contour-inset');
     styleProbe.removeProperty('--_material-contour-rim');

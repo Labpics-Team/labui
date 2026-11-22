@@ -59,38 +59,20 @@
  * runway; sticky positioning follows scrolling without per-frame JS work.
  */
 .lab-material[data-lab-material-paint-renderer="capture-svg"],
-.lab-material[data-lab-material-paint-renderer="capture-affine"],
 .lab-material[data-lab-material-paint-renderer="capture-blend"] {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
-.lab-material[data-lab-material-paint-renderer="capture-svg"],
-.lab-material[data-lab-material-paint-renderer="capture-affine"] {
+.lab-material[data-lab-material-paint-renderer="capture-svg"] {
   opacity: 1;
 }
 .lab-material[data-lab-material-paint-renderer="capture-svg"] > .lab-material__paint,
 .lab-material[data-lab-material-paint-renderer="capture-svg"]
   > .lab-material__paint-runway
   > .lab-material__paint,
-.lab-material[data-lab-material-paint-renderer="capture-affine"] > .lab-material__paint > div,
-.lab-material[data-lab-material-paint-renderer="capture-affine"]
-  > .lab-material__paint-runway
-  > .lab-material__paint
-  > div,
 .lab-material[data-lab-material-paint-renderer="capture-svg"]::before,
-.lab-material[data-lab-material-paint-renderer="capture-svg"]::after,
-.lab-material[data-lab-material-paint-renderer="capture-affine"]::before,
-.lab-material[data-lab-material-paint-renderer="capture-affine"]::after {
+.lab-material[data-lab-material-paint-renderer="capture-svg"]::after {
   opacity: var(--_material-layer-opacity, 1);
-}
-.lab-material[data-lab-material-paint-renderer="capture-affine"]
-  > .lab-material__paint
-  > .lab-material__capture,
-.lab-material[data-lab-material-paint-renderer="capture-affine"]
-  > .lab-material__paint-runway
-  > .lab-material__paint
-  > .lab-material__capture {
-  filter: var(--_material-affine-filter);
 }
 .lab-material__paint,
 .lab-material__paint > div {
@@ -190,23 +172,6 @@
   border-radius: 0;
   clip-path: var(--lab-contour-clip);
 }
-.lab-material[data-lab-material-contour][data-lab-material-paint-renderer="capture-affine"]
-  > .lab-material__paint,
-.lab-material[data-lab-material-contour][data-lab-material-paint-renderer="capture-affine"]
-  > .lab-material__paint-runway
-  > .lab-material__paint {
-  clip-path: none;
-}
-.lab-material[data-lab-material-contour][data-lab-material-paint-renderer="capture-affine"]
-  > .lab-material__paint
-  > div,
-.lab-material[data-lab-material-contour][data-lab-material-paint-renderer="capture-affine"]
-  > .lab-material__paint-runway
-  > .lab-material__paint
-  > div {
-  border-radius: 0;
-  clip-path: var(--lab-contour-clip);
-}
 .lab-material[data-lab-material-contour]::before {
   display: none;
 }
@@ -225,13 +190,6 @@
   -webkit-mask-composite: source-over;
 }
 .lab-material[data-lab-material-paint-renderer="capture-svg"]
-  > .lab-material__contour
-  > .lab-material__contour-face,
-.lab-material[data-lab-material-paint-renderer="capture-affine"]
-  > .lab-material__contour
-  > .lab-material__contour-face,
-.lab-material[data-lab-material-paint-renderer="capture-affine"]
-  > .lab-material__paint-runway
   > .lab-material__contour
   > .lab-material__contour-face,
 .lab-material[data-lab-material-paint-renderer="capture-blend"]

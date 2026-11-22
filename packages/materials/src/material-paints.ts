@@ -56,14 +56,11 @@ export function compileMaterialPaint(paints: MaterialPaints): CompiledMaterialPa
   };
 }
 
-/** A neutral affine paint needs no SVG table or nested blend group. CSS applies
- * contrast before brightness: k(c x + (1-c)/2) = m x + b, with k=m+2b.
- * Since 0<=c<=1 the intermediate operation never clips. The endpoint/breakpoint
- * analysis rejects coloured and nonlinear recipes instead of fitting a chord.
- */
-export function neutralMaterialFilter(
-  paints: MaterialPaints,
-): { contrast: number; brightness: number } | null {
+/** Exact normal source-over factor of a neutral affine authored paint.
+ * Endpoint/breakpoint analysis rejects coloured and nonlinear recipes rather
+ * than fitting a chord. `screen` is a common white Screen term in 0..1, applied
+ * before the paints. No transfer table or backdrop pixel read is needed. */
+export function neutralMaterialFill(paints: MaterialPaints, screen = 0): Rgba | null {
   const { fill, maximumError } = analyseMaterialPaint(paints);
   if (
     maximumError >= 1e-8 ||
@@ -71,10 +68,15 @@ export function neutralMaterialFilter(
     Math.abs(fill.g - fill.b) > 1e-10
   )
     return null;
-  const slope = 1 - fill.a;
-  const intercept = (fill.r * fill.a) / 255;
-  const brightness = slope + 2 * intercept;
-  return { contrast: brightness > 0 ? slope / brightness : 1, brightness };
+  if (!screen) return fill;
+  const added = (1 - fill.a) * screen;
+  const alpha = fill.a + added;
+  return {
+    r: (fill.r * fill.a + 255 * added) / alpha,
+    g: (fill.g * fill.a + 255 * added) / alpha,
+    b: (fill.b * fill.a + 255 * added) / alpha,
+    a: alpha,
+  };
 }
 
 function analyseMaterialPaint(paints: MaterialPaints): { fill: Rgba; maximumError: number } {
