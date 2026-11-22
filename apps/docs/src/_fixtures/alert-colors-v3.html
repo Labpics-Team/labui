@@ -1,0 +1,29 @@
+<!doctype html>
+<html data-theme="light" data-material="solid">
+<head>
+  <meta charset="utf-8">
+  <title>Alert Colors V3 consumer</title>
+  <style>
+    body { margin: 0; padding: 32px; background: #eef0f3; color: #17191c; font-family: Geist, sans-serif; }
+    main { display: grid; grid-template-columns: repeat(3, 450px); gap: 24px; }
+    h1 { font-size: 20px; margin: 0 0 24px; }
+    h2 { font-size: 16px; font-weight: 500; margin: 0 0 16px; }
+    lab-alert { display: block; width: 450px; }
+    .computed::part(heading) { color: var(--probe-heading); }
+    .computed::part(description) { color: var(--probe-description); }
+    .computed::part(icon) { color: var(--probe-dangerIcon); }
+    .computed::part(close) { color: var(--probe-close); }
+    .computed::part(close):focus-visible { outline-color: var(--probe-focus); }
+    .computed::part(surface) { box-shadow: inset 0 0 0 1px var(--probe-border); }
+  </style>
+</head>
+<body>
+  <h1>Один Alert · известная сплошная поверхность</h1>
+  <main>
+    <section><h2>Авторский исходник</h2><lab-alert id="authored" type="danger" heading="Не удалось сохранить" description="Проверьте подключение и повторите попытку." controlled></lab-alert></section>
+    <section><h2>RGB — источник краски</h2><lab-alert id="source" class="computed" type="danger" heading="Не удалось сохранить" description="Проверьте подключение и повторите попытку." controlled></lab-alert></section>
+    <section><h2>RGB — видимое применение</h2><lab-alert id="visible" class="computed" type="danger" heading="Не удалось сохранить" description="Проверьте подключение и повторите попытку." controlled></lab-alert></section>
+  </main>
+  <script type="module" src="./alert-colors-v3.mjs"></script>
+</body>
+</html>

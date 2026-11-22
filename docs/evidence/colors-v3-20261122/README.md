@@ -1,0 +1,92 @@
+# Colors V3 в настоящем Alert
+
+Этот опыт выявляет недостающий контракт адаптации. Он **не переводит production
+LabUI на V3** и не объявляет готовой адаптацию композиции или Cleanliness.
+Figma `LuaiBd4anRi4DMZayKAnY2` не изменялась.
+
+## Проверенный путь
+
+Vite собирает существующий `<lab-alert>` и настоящий Rust WASM. Профиль
+`components.alert.roles` порождает шесть независимых применений: heading,
+description, dangerIcon, close, border, focus. Одинаковый RGB не объединяет
+применения. Heading и description имеют одинаковое требование WCAG text;
+для close/focus выбран WCAG UI, для dangerIcon — graphic. Отдельных порогов,
+тональных формул и подмены secondary на primary здесь нет.
+
+Две колонки используют один граф с разным смыслом опоры:
+
+- `source`: `colorTarget(id, authoredRgb)`. Опора относится к исходной краске;
+  авторская opacity сохраняется.
+- `visible`: `colorTarget(id, authoredRgb, {appearance: occurrence})`.
+  Эта намеренно проверяемая трактовка ошибочна для исходного RGB прозрачной
+  краски: опора теперь относится к конечному видимому результату.
+
+Третья колонка показывает неизменённый авторский Alert. Его материал — Solid
+Elevated. У вычисляемых колонок фактическая solid-заливка и цвета частей
+публикуются только вместе после `ready`. Отказ оставляет прежнюю заливку и
+части. Focus каждого close проверяется настоящим DOM-focus, затем снимается
+перед снимком. Все снимки — headless Chromium, без видимых окон и звука.
+
+## Результат
+
+Восемь состояний: light nominal/black/blue/recovered и dark
+nominal/white/blue/recovered. [Отчёт](report.json) содержит raw outputs,
+computed styles существующего компонента, состояние решения, время обновления,
+проверенный WASM SHA-256 и версию браузера.
+
+- `source` сохраняет авторский nominal в обеих темах.
+- `visible` меняет прозрачные description/border уже на исходной поверхности.
+  Например, light description `[60,60,67,.722]` превращается в
+  `[0,0,3,.722]`. Это ошибка выбора смысла опоры потребителем.
+- На чёрной подложке `source` даёт heading `[116,116,118,1]` и description
+  `[166,167,175,.722]`: видимая цветовая иерархия практически исчезает.
+  Шрифтовой вес остаётся авторским. `ready` не доказывает сохранение всей
+  композиции. Общего отношения силы двух применений в данном V3 нет.
+- Для light blue `[40,60,100]` режим `visible` возвращает `incomplete`;
+  настоящий Alert сохраняет предыдущее принятое чёрное состояние. Возврат
+  к nominal восстанавливает результат в обоих режимах и темах.
+
+![Исходный light](light-nominal.png)
+![Light на чёрной поверхности](light-black.png)
+![Отказ visible на синей поверхности сохраняет чёрный Alert](light-blue.png)
+![Исходный dark](dark-nominal.png)
+
+Одна сплошная поверхность не покрывает стек Elevated/Base/Muted: у нижних
+слоёв Alert есть групповая прозрачность. Пространственный Acrylic/Glass,
+group opacity и общий контекстный механизм качества остаются обязательной
+частью дальнейшей интеграции. Их нельзя заменить этим опытом.
+
+## Происхождение и повторение
+
+Проверен локальный development-artifact из
+[`64fb1dc5b058e5af10fdb7aee57d60b757725503`](https://github.com/Labpics-Team/lab-colors/commit/64fb1dc5b058e5af10fdb7aee57d60b757725503),
+а не опубликованный V3. Его WASM SHA-256:
+`bfa970bc12a9c4c9f1275af0b10b9c153bdc1ef76d0df0d675939135f22b3105`.
+Production зависимости и lockfile этим опытом не меняются.
+
+После обычной подготовки зависимостей LabUI и сборки
+`pnpm --filter @labpics/ui-core... build`, из корня репозитория:
+
+```powershell
+$env:COLORS_PROBE_COLORS = 'D:/AgentWork/colors-product-goal-20261122/packages/colors'
+$env:COLORS_PROBE_PROVENANCE = 'development-only local lab-colors 64fb1dc; not a published coordinate'
+$env:COLORS_PROBE_BROWSER = 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+node apps/docs/tests/alert-colors-v3.mjs
+```
+
+`COLORS_PROBE_COLORS` явно направляет только сборку опыта на заданный каталог
+публичного Colors-пакета. Без него используется установленная зависимость,
+которая должна поддерживать V3. Без `COLORS_PROBE_BROWSER` запускается
+установленный headless Chromium Playwright. Новые результаты появляются в
+`packages/colors/artifacts/alert-v3`; `COLORS_PROBE_OUTPUT` меняет каталог.
+Успешное завершение команды означает выполнение опыта и восстановления,
+а не принятие цветовой политики.
+
+Граф: [alert-composition-v3.mjs](../../../packages/colors/test/alert-composition-v3.mjs).
+Потребитель: [fixture](../../../apps/docs/src/_fixtures/alert-colors-v3.mjs).
+Сборка и проверка: [alert-colors-v3.mjs](../../../apps/docs/tests/alert-colors-v3.mjs).
+
+Источники: [публичный V3 builder](https://github.com/Labpics-Team/lab-colors/blob/64fb1dc5b058e5af10fdb7aee57d60b757725503/packages/colors/program-wire/abi-v3.d.ts),
+[его lowering для role.on](https://github.com/Labpics-Team/lab-colors/blob/64fb1dc5b058e5af10fdb7aee57d60b757725503/packages/colors/authoring-graph.js),
+[W3C source-over](https://www.w3.org/TR/compositing-1/#simplealphacompositing),
+[Kotlin/Swift: передача ошибок](https://kotlinlang.org/docs/native-objc-interop.html#errors-and-exceptions).

@@ -27,6 +27,39 @@ public interface ColorProgramHost : AutoCloseable {
     /** Return the full output of one accepted update, independently of diagnostic feasibility. */
     @Throws(Exception::class)
     public suspend fun resolve(preferences: LabPreferences): LabColorOutput
+
+    /** Known solid backdrops for this scope; a host must never silently ignore them. */
+    @Throws(Exception::class)
+    public suspend fun resolve(preferences: LabPreferences, context: LabColorContext?): LabColorOutput {
+        require(context == null) { "This Colors host does not support surface contexts" }
+        return resolve(preferences)
+    }
+}
+
+/** An encoded, opaque sRGB color observed on the actual painted surface. */
+@Immutable
+public class LabSrgb8 @Throws(IllegalArgumentException::class) constructor(
+    public val red: Int, public val green: Int, public val blue: Int,
+) {
+    init { require(red in 0..255 && green in 0..255 && blue in 0..255) { "Expected sRGB8 channels" } }
+    override fun equals(other: Any?): Boolean = other is LabSrgb8 && red == other.red && green == other.green && blue == other.blue
+    override fun hashCode(): Int = (red * 31 + green) * 31 + blue
+    override fun toString(): String = "LabSrgb8($red, $green, $blue)"
+}
+
+/** Alternative observations of one surface, not separate layers or samples of an unknown field. */
+@Immutable
+public class LabColorContext @Throws(IllegalArgumentException::class) constructor(backgrounds: List<LabSrgb8>) {
+    private val observations = backgrounds.toList()
+    /** A caller-owned copy, including for Java and Swift consumers. */
+    public val backgrounds: List<LabSrgb8> get() = observations.toList()
+    init { require(observations.size in 1..64) { "Expected 1–64 known solid backgrounds" } }
+    public fun encoded(): ByteArray = ByteArray(observations.size * 3) { index ->
+        val color = observations[index / 3]
+        when (index % 3) { 0 -> color.red; 1 -> color.green; else -> color.blue }.toByte()
+    }
+    override fun equals(other: Any?): Boolean = other is LabColorContext && observations == other.observations
+    override fun hashCode(): Int = observations.hashCode()
 }
 
 @Immutable
@@ -41,19 +74,23 @@ public class LabColorOutput(colors: Map<String, Color>) {
 
 /** Failed or superseded updates retain the last complete, usable theme. */
 @Stable
-public class LabThemeState(initialColors: LabColorOutput, initialPreferences: LabPreferences = LabPreferences()) {
+public class LabThemeState(initialColors: LabColorOutput, initialPreferences: LabPreferences = LabPreferences(),
+    initialContext: LabColorContext? = null) {
     public var colors: LabColorOutput by mutableStateOf(initialColors)
         private set
     public var preferences: LabPreferences by mutableStateOf(initialPreferences)
         private set
+    public var context: LabColorContext? by mutableStateOf(initialContext)
+        private set
     private var revision = 0L
 
-    public suspend fun update(host: ColorProgramHost, next: LabPreferences) {
+    public suspend fun update(host: ColorProgramHost, next: LabPreferences, context: LabColorContext? = this.context) {
         val request = ++revision
-        val output = host.resolve(next)
+        val output = host.resolve(next, context)
         if (request == revision) {
             colors = output
             preferences = next
+            this.context = context
         }
     }
 }
