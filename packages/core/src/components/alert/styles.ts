@@ -49,7 +49,7 @@ ${authoredTextBoxCss('.lab-alert-heading, .lab-alert-description')}
   border-radius: 0 0 ${rem(p.stack.radius)} ${rem(p.stack.radius)}; corner-shape: round; pointer-events: none;
 }
 .lab-alert-layer > .lab-material { position: absolute; inset: auto 0 0; height: ${rem(p.stack.height * 2)}; border-radius: inherit; corner-shape: round; --_material-layer-opacity: var(--_alert-layer-opacity); }
-.lab-alert-layer > .lab-material::after { content: ''; position: absolute; inset: auto 0 0; height: ${rem(p.stack.height)}; border-radius: inherit; box-shadow: inset 0 0 0 ${rem(p.strokeWidth)} var(--lab-${p.roles.border}); }
+.lab-alert-layer > .lab-material::after { content: ''; position: absolute; inset: auto 0 0; height: ${rem(p.stack.height)}; border-radius: inherit; box-sizing: border-box; border: ${rem(p.strokeWidth)} solid var(--lab-${p.roles.border}); border-top: 0; }
 /* The capture owns group opacity. Applying opacity to the wrapper would create a
  * backdrop root and prevent the material from sampling the scene behind it. */
 .lab-alert-layer[data-depth='1'] { margin-inline: ${rem(p.stack.first.inset)}; --_alert-layer-opacity: ${p.stack.first.opacity}; }
@@ -59,6 +59,6 @@ ${authoredTextBoxCss('.lab-alert-heading, .lab-alert-description')}
   .lab-alert-surface { outline: ${rem(p.strokeWidth)} solid CanvasText; }
   .lab-alert-close { color: ButtonText; }
   .lab-alert-close:focus-visible { outline-color: Highlight; }
-  .lab-alert-layer > .lab-material::after { border: ${rem(p.strokeWidth)} solid CanvasText; box-sizing: border-box; }
+  .lab-alert-layer > .lab-material::after { border-color: CanvasText; }
 }
 `;

@@ -6,7 +6,7 @@ import {
   type MaterialPaints,
   compileMaterialPaint,
   materialPaintTables,
-  neutralMaterialFilter,
+  neutralMaterialFill,
   screenNoiseApproximation,
 } from '../material-paints';
 import { materialBlendMode, materialProfile } from '../profile';
@@ -25,14 +25,21 @@ interface PaintResource {
   readonly fill: string;
   readonly key: string;
   readonly resources: Map<string, PaintResource>;
-  readonly grain: 'none' | 'spatial' | 'spatial-bounded' | 'uniform-bounded' | 'unsupported';
+  readonly grain: 'none' | 'spatial' | 'uniform-bounded' | 'unsupported';
   readonly grainError?: number;
-  readonly cssFilter?: string;
+  readonly nativeFill?: boolean;
   refs: number;
 }
 const trees = new WeakMap<Document | ShadowRoot, Map<string, PaintResource>>();
 
-type PaintRenderer = 'backdrop-svg' | 'capture-svg' | 'capture-blend' | 'capture-affine' | 'normal';
+/** Runtime outputs do not invalidate their own source paints. */
+export const paintStyleProperties = [
+  '--_material-paint-filter',
+  '--_surface-paint',
+  '--_noise',
+] as const;
+
+type PaintRenderer = 'backdrop-svg' | 'capture-svg' | 'capture-blend' | 'native-affine' | 'normal';
 /** CSS.supports accepts SVG backdrop filters that Gecko/WebKit don't render.
  * These narrow adapters follow actual display pixels, not screenshot support.
  * iOS Firefox uses WebKit, so its FxiOS token must not select Gecko's adapter.
@@ -67,15 +74,34 @@ function acquire(
     existing.refs++;
     return existing;
   }
+  // A common Screen midpoint covers the full range of every authored grain
+  // channel. Normal source-over needs no blend child or separate group alpha.
+  const noise = {
+    r: materialProfile.noise.color[0] ?? 0,
+    g: materialProfile.noise.color[1] ?? 0,
+    b: materialProfile.noise.color[2] ?? 0,
+    a: Math.round(materialProfile.noise.opacity * 255) / 255,
+  };
+  const screen = noiseUrl ? (Math.max(noise.r, noise.g, noise.b) * noise.a) / (2 * 255) : 0;
+  const nativeFill = !noiseUrl || authoredNoise ? neutralMaterialFill(paints, screen) : null;
+  if (nativeFill) {
+    // F(blur(backdrop)) = m * blur(backdrop) + b is ordinary source-over.
+    // Painting it on the capturing element keeps its border, grain and fill
+    // inside one opacity group without a backdrop-root ancestor or RGB filter.
+    const resource: PaintResource = {
+      filter: null,
+      fill: `rgb(${nativeFill.r} ${nativeFill.g} ${nativeFill.b} / ${nativeFill.a})`,
+      nativeFill: true,
+      key,
+      resources,
+      refs: 1,
+      grain: noiseUrl ? 'uniform-bounded' : 'none',
+      ...(noiseUrl ? { grainError: screenNoiseApproximation(paints, noise).maxError } : {}),
+    };
+    resources.set(key, resource);
+    return resource;
+  }
   if (renderer === 'normal' || renderer === 'capture-blend') {
-    const transfer =
-      renderer === 'capture-blend' && (!noiseUrl || authoredNoise)
-        ? neutralMaterialFilter(paints)
-        : null;
-    // A constant paint must remain actual painted coverage even when a browser
-    // snapshot omits its captured backdrop. Its existing native paints already
-    // compose group alpha correctly and need no capture-dependent transfer.
-    const native = transfer && transfer.contrast > 0 && transfer.brightness > 0 ? transfer : null;
     let fill = 'transparent';
     if (renderer === 'normal') {
       const compiled = compileMaterialPaint(paints);
@@ -88,27 +114,11 @@ function acquire(
       key,
       resources,
       refs: 1,
-      ...(native
-        ? { cssFilter: `contrast(${native.contrast}) brightness(${native.brightness})` }
-        : {}),
       grain: noiseUrl
         ? renderer === 'capture-blend'
-          ? native
-            ? ('spatial-bounded' as const)
-            : ('spatial' as const)
+          ? ('spatial' as const)
           : ('unsupported' as const)
         : ('none' as const),
-      // Screen grain after the affine transfer, at the surface alpha, differs
-      // from grain before it by at most one grain channel's premultiplied value.
-      // The authored PNG is <0.197 RGB; custom textures keep native paint order.
-      ...(native && noiseUrl
-        ? {
-            grainError:
-              (Math.max(...materialProfile.noise.color) *
-                Math.round(materialProfile.noise.opacity * 255)) /
-              255,
-          }
-        : {}),
     };
     resources.set(key, resource);
     return resource;
@@ -210,10 +220,7 @@ export function attach(el: HTMLElement): EngineHandle {
     release(held);
     held = undefined;
     signature = '';
-    el.style.removeProperty('--_material-paint-filter');
-    el.style.removeProperty('--_material-affine-filter');
-    el.style.removeProperty('--_surface-paint');
-    el.style.removeProperty('--_noise');
+    for (const property of paintStyleProperties) el.style.removeProperty(property);
     placement?.destroy();
     placement = undefined;
     capture = undefined;
@@ -261,23 +268,17 @@ export function attach(el: HTMLElement): EngineHandle {
     );
     el.style.setProperty('--_surface-paint', resource.fill);
     if (resource.filter) el.style.setProperty('--_noise', 'none');
-    if (resource.cssFilter) el.style.setProperty('--_material-affine-filter', resource.cssFilter);
-    else el.style.removeProperty('--_material-affine-filter');
     el.setAttribute('data-lab-material-grain', resource.grain);
     if (resource.grainError !== undefined)
       el.setAttribute('data-lab-material-grain-error', String(resource.grainError));
     else el.removeAttribute('data-lab-material-grain-error');
-    const resolvedRenderer = resource.cssFilter ? 'capture-affine' : renderer;
+    const resolvedRenderer = resource.nativeFill ? 'native-affine' : renderer;
     if (capture && captureRenderer !== resolvedRenderer) {
       placement?.destroy();
       placement = undefined;
       capture = undefined;
     }
-    if (
-      resolvedRenderer === 'capture-svg' ||
-      resolvedRenderer === 'capture-blend' ||
-      resolvedRenderer === 'capture-affine'
-    ) {
+    if (resolvedRenderer === 'capture-svg' || resolvedRenderer === 'capture-blend') {
       if (!capture) {
         capture = el.ownerDocument.createElement('div');
         capture.className =
@@ -286,11 +287,7 @@ export function attach(el: HTMLElement): EngineHandle {
             : 'lab-material__paint';
         capture.setAttribute('aria-hidden', 'true');
         const layers =
-          resolvedRenderer === 'capture-svg'
-            ? []
-            : resolvedRenderer === 'capture-affine'
-              ? ['capture', 'grain']
-              : ['capture', 'grain', 'normal', 'blend'];
+          resolvedRenderer === 'capture-svg' ? [] : ['capture', 'grain', 'normal', 'blend'];
         for (const layer of layers) {
           const node = el.ownerDocument.createElement('div');
           node.className = `lab-material__${layer}`;
@@ -299,8 +296,8 @@ export function attach(el: HTMLElement): EngineHandle {
         placement = placePaintCapture(el, capture);
         captureRenderer = resolvedRenderer;
       }
-      el.setAttribute('data-lab-material-paint-renderer', resolvedRenderer);
     }
+    el.setAttribute('data-lab-material-paint-renderer', resolvedRenderer);
     release(previous);
   };
   refresh();
