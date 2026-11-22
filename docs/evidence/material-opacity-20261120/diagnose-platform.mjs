@@ -36,7 +36,7 @@ for(const name of (process.env.MATERIAL_BROWSERS ?? 'chromium,webkit').split(','
     if(display)await page.bringToFront();
     // Six simultaneous backdrops make a repeated transfer distinguishable from
     // a missing transfer or an opaque fallback. No diagnostic variant is a verdict.
-    for(const variant of ['native','affine-filter','separate-face','capture-blend']) {
+    for(const variant of ['native','gradient-fill','affine-filter','separate-face']) {
       await page.goto(`http://127.0.0.1:${server.address().port}`);
       const styles=await page.evaluate(async variant=>{
         document.head.insertAdjacentHTML('beforeend',`<style>body{margin:0}.zone{position:absolute;top:0;width:100px;height:100px}.surface{position:absolute;inset:0;border-radius:0;transform:translateZ(0);--_rim:none;--_backdrop-blur:1px;--_acrylic-noise:none;overflow:auto}.content{width:300px;height:300px}</style>`);
@@ -50,6 +50,7 @@ for(const name of (process.env.MATERIAL_BROWSERS ?? 'chromium,webkit').split(','
           if(variant==='no-transform')surface.style.transform='none';
           if(variant==='no-isolation')surface.style.isolation='auto';
           if(variant==='local-background')surface.style.backgroundAttachment='local';
+          if(variant==='gradient-fill') {const fill=getComputedStyle(surface).backgroundColor;surface.style.background=`linear-gradient(${fill},${fill})`;}
           if(variant==='affine-filter') {
             const rgb=getComputedStyle(surface).backgroundColor.match(/[\d.]+/g).map(Number);
             const alpha=rgb[3]??1, m=1-alpha, b=rgb[0]*alpha/255, brightness=m+2*b, contrast=brightness?m/brightness:0;
@@ -77,7 +78,7 @@ for(const name of (process.env.MATERIAL_BROWSERS ?? 'chromium,webkit').split(','
       const after=await sample(page,points);
       const row={kind:'scroll',name,display,variant,styles,before,after};rows.push(row);console.log(JSON.stringify(row));
     }
-    for(const variant of ['native','no-lens','no-stroke','opaque-filter-alpha','no-dispersion','affine-filter','wide-region']) {
+    for(const variant of ['native','gradient-fill','affine-filter']) {
       await page.goto(`http://127.0.0.1:${server.address().port}`);
       await page.evaluate(async variant=>{
         document.documentElement.dataset.material='glass';
@@ -88,6 +89,7 @@ for(const name of (process.env.MATERIAL_BROWSERS ?? 'chromium,webkit').split(','
         if(variant==='no-stroke')document.head.insertAdjacentHTML('beforeend','<style>.surface::after{border:0}</style>');
         if(variant==='no-dispersion')document.querySelector('.surface').style.setProperty('--_lg-dispersion','0');
         await new Promise(r=>setTimeout(r,200));
+        if(variant==='gradient-fill') {const surface=document.querySelector('.surface'),fill=getComputedStyle(surface).backgroundColor;surface.style.background=`linear-gradient(${fill},${fill})`;}
         if(variant==='opaque-filter-alpha')for(const filter of document.querySelectorAll('filter[id^="lab-lg-"]')) {
           const transfer=document.createElementNS('http://www.w3.org/2000/svg','feComponentTransfer');
           const fn=document.createElementNS('http://www.w3.org/2000/svg','feFuncA');fn.setAttribute('type','linear');fn.setAttribute('slope','0');fn.setAttribute('intercept','1');transfer.append(fn);filter.append(transfer);
