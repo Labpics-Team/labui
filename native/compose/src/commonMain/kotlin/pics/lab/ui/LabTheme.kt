@@ -84,6 +84,8 @@ public class LabThemeState(initialColors: LabColorOutput, initialPreferences: La
         private set
     private var revision = 0L
 
+    /** Report rejected updates to Swift as NSError while retaining the last accepted state. */
+    @Throws(Exception::class)
     public suspend fun update(host: ColorProgramHost, next: LabPreferences, context: LabColorContext? = this.context) {
         val request = ++revision
         val output = host.resolve(next, context)

@@ -33,6 +33,17 @@ targets:
           if [ "$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED" = YES ]; then exit 0; fi
           cd "$SRCROOT/.."
           bash ../gradlew embedAndSignAppleFrameworkForXcode --console=plain
+  LabUIExampleTests:
+    type: bundle.unit-testing
+    platform: iOS
+    sources: [UnitTests]
+    dependencies:
+      - target: LabUIExampleApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: pics.lab.ui.example.unit-tests
+        FRAMEWORK_SEARCH_PATHS: "$(inherited) $(SRCROOT)/../build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"
+        OTHER_LDFLAGS: "$(inherited) -framework LabUIExample"
   LabUIExampleUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -47,6 +58,7 @@ schemes:
     build:
       targets:
         LabUIExampleApp: all
+        LabUIExampleTests: [test]
         LabUIExampleUITests: [test]
     test:
-      targets: [LabUIExampleUITests]
+      targets: [LabUIExampleTests, LabUIExampleUITests]

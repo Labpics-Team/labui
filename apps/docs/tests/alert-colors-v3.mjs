@@ -149,8 +149,29 @@ try {
     const recovered = reports.find(
       (report) => report.theme === theme && report.name === 'recovered',
     );
-    for (const mode of ['source', 'visible'])
+    assert.ok(nominal, `${theme}: missing nominal render`);
+    assert.ok(recovered, `${theme}: missing recovery render`);
+    for (const mode of ['source', 'visible']) {
+      for (const report of [nominal, recovered]) {
+        const output = report.result[mode];
+        const description = `${theme}/${report.name}/${mode}`;
+        assert.equal(output.state, 'ready', `${description}: no usable output`);
+        assert.ok(output.accepted, `${description}: no accepted state`);
+        for (const role of ['heading', 'description', 'dangerIcon', 'close', 'border', 'focus']) {
+          const channels = output.colors[role];
+          assert.equal(channels?.length, 4, `${description}: missing ${role}`);
+          assert.ok(
+            channels.every(
+              (value, index) =>
+                Number.isFinite(value) && value >= 0 && value <= (index === 3 ? 1 : 255),
+            ),
+            `${description}: invalid ${role} channels`,
+          );
+        }
+        assert.deepEqual(output.colors, output.accepted.colors);
+      }
       assert.deepEqual(recovered.result[mode].colors, nominal.result[mode].colors);
+    }
   }
   await page.evaluate(() => window.alertColorsProbe.dispose());
   await writeFile(
