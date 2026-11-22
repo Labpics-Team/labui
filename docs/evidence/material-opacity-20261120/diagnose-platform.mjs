@@ -78,7 +78,7 @@ for(const name of (process.env.MATERIAL_BROWSERS ?? 'chromium,webkit').split(','
       const after=await sample(page,points);
       const row={kind:'scroll',name,display,variant,styles,before,after};rows.push(row);console.log(JSON.stringify(row));
     }
-    for(const variant of ['native','gradient-fill','affine-filter']) {
+    for(const variant of ['native','linear-dispersion']) {
       await page.goto(`http://127.0.0.1:${server.address().port}`);
       await page.evaluate(async variant=>{
         document.documentElement.dataset.material='glass';
@@ -89,6 +89,18 @@ for(const name of (process.env.MATERIAL_BROWSERS ?? 'chromium,webkit').split(','
         if(variant==='no-stroke')document.head.insertAdjacentHTML('beforeend','<style>.surface::after{border:0}</style>');
         if(variant==='no-dispersion')document.querySelector('.surface').style.setProperty('--_lg-dispersion','0');
         await new Promise(r=>setTimeout(r,200));
+        // Force the ordinary fill in both variants: current production is a
+        // transfer experiment, this probe isolates only dispersion arithmetic.
+        const surface=document.querySelector('.surface');
+        surface.style.setProperty('--_material-paint-filter','opacity(1)');
+        const cs=getComputedStyle(surface),tint=cs.getPropertyValue('--_tint').match(/[\d.]+/g).map(Number),blend=cs.getPropertyValue('--_blend').match(/[\d.]+/g).map(Number);
+        const black=tint[0]*tint[3],white=255*(1-tint[3])+black,dodge=x=>x+(Math.min(255,x/(1-blend[0]/255))-x)*(blend[3]??1),b=dodge(black),m=(dodge(white)-b)/255,a=1-m,c=b/a;
+        surface.style.background=`linear-gradient(rgb(${c} ${c} ${c} / ${a}),rgb(${c} ${c} ${c} / ${a}))`;
+        if(variant==='linear-dispersion')for(const filter of document.querySelectorAll('filter[id^="lab-lg-"]')) {
+          for(const matrix of filter.querySelectorAll('feColorMatrix')) {const values=matrix.getAttribute('values').trim().split(/\s+/);values[18]=String(1/3);matrix.setAttribute('values',values.join(' '));}
+          for(const blend of Array.from(filter.querySelectorAll('feBlend'))) {const comp=document.createElementNS('http://www.w3.org/2000/svg','feComposite');for(const attr of blend.attributes)if(attr.name!=='mode')comp.setAttribute(attr.name,attr.value);comp.setAttribute('operator','arithmetic');comp.setAttribute('k2','1');comp.setAttribute('k3','1');blend.replaceWith(comp);}
+          const matrix=document.createElementNS('http://www.w3.org/2000/svg','feColorMatrix');matrix.setAttribute('type','matrix');matrix.setAttribute('values','3 0 0 0 0  0 3 0 0 0  0 0 3 0 0  0 0 0 1 0');filter.append(matrix);
+        }
         if(variant==='gradient-fill') {const surface=document.querySelector('.surface'),fill=getComputedStyle(surface).backgroundColor;surface.style.background=`linear-gradient(${fill},${fill})`;}
         if(variant==='opaque-filter-alpha')for(const filter of document.querySelectorAll('filter[id^="lab-lg-"]')) {
           const transfer=document.createElementNS('http://www.w3.org/2000/svg','feComponentTransfer');
