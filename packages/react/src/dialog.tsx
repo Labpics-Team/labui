@@ -128,39 +128,43 @@ export function DialogSurface({
           className={placement ? 'lab-popover-positioner' : 'lab-dialog-positioner'}
           data-size={size}
         >
-          <div
-            ref={surface}
-            className="lab-dialog-content lab-material lab-material--elevated"
-            data-size={size}
-          >
-            {(hasHeading || hasDescription || closable) && (
-              <div className="lab-dialog-header">
-                <div className="lab-dialog-labels">
-                  {hasHeading && (
-                    <h2 id={`${id}-heading`} className="lab-dialog-heading">
-                      {heading}
-                    </h2>
-                  )}
-                  {hasDescription && (
-                    <p id={`${id}-description`} className="lab-dialog-description">
-                      {description}
-                    </p>
-                  )}
-                </div>
-                {closable && (
-                  <button
-                    type="button"
-                    className="lab-dialog-close"
-                    aria-label={closeLabel}
-                    onClick={closeDialog}
-                  >
-                    <Icon symbol={close} size={dialogProfile.iconSize} />
-                  </button>
+          <div className="lab-dialog-stage" data-size={size}>
+            <div
+              className="lab-dialog-material lab-material lab-material--elevated"
+              aria-hidden="true"
+            />
+            <div className="lab-dialog-reveal">
+              <div ref={surface} className="lab-dialog-content" data-size={size}>
+                {(hasHeading || hasDescription || closable) && (
+                  <div className="lab-dialog-header">
+                    <div className="lab-dialog-labels">
+                      {hasHeading && (
+                        <h2 id={`${id}-heading`} className="lab-dialog-heading">
+                          {heading}
+                        </h2>
+                      )}
+                      {hasDescription && (
+                        <p id={`${id}-description`} className="lab-dialog-description">
+                          {description}
+                        </p>
+                      )}
+                    </div>
+                    {closable && (
+                      <button
+                        type="button"
+                        className="lab-dialog-close"
+                        aria-label={closeLabel}
+                        onClick={closeDialog}
+                      >
+                        <Icon symbol={close} size={dialogProfile.iconSize} />
+                      </button>
+                    )}
+                  </div>
                 )}
+                {content != null && <div className="lab-dialog-body">{content}</div>}
+                {actionContent != null && <div className="lab-dialog-actions">{actionContent}</div>}
               </div>
-            )}
-            {content != null && <div className="lab-dialog-body">{content}</div>}
-            {actionContent != null && <div className="lab-dialog-actions">{actionContent}</div>}
+            </div>
           </div>
           {placement && arrow && <span className="lab-popover-arrow" aria-hidden="true" />}
         </div>

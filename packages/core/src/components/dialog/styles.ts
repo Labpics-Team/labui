@@ -7,27 +7,57 @@ export const dialogCss = `
 .lab-dialog-trigger { display: inline-flex; align-items: center; padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; }
 .lab-dialog-trigger:focus-visible, .lab-dialog-close:focus-visible { outline: var(--lab-focus-ring-width) solid var(--lab-border-focus); outline-offset: var(--lab-focus-ring-offset); }
 .lab-dialog-plane {
+  --_lab-dialog-reveal: 0;
   position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none;
   box-sizing: border-box; margin: 0; padding: 0; border: 0; background: transparent;
   color: inherit; font: inherit; overflow: visible; pointer-events: none;
 }
 .lab-dialog-plane::backdrop { background: transparent; }
 .lab-dialog-plane:not([open]) { display: none; }
-.lab-dialog-backdrop { position: absolute; inset: 0; background: var(--lab-${p.roles.scrim}); pointer-events: auto; }
+.lab-dialog-backdrop { position: absolute; inset: 0; background: var(--lab-${p.roles.scrim}); opacity: var(--_lab-dialog-reveal); pointer-events: auto; }
 .lab-dialog-positioner { position: absolute; inset: 0; display: grid; place-items: center; padding: ${rem(p.viewportGap)}; box-sizing: border-box; }
+.lab-dialog-stage {
+  --_lab-dialog-reveal-x: 1; --_lab-dialog-reveal-y: var(--_lab-dialog-reveal);
+  --_lab-dialog-origin-x: .5; --_lab-dialog-origin-y: 0;
+  --_lab-dialog-origin: calc(100% * var(--_lab-dialog-origin-x)) calc(100% * var(--_lab-dialog-origin-y));
+  position: relative; inline-size: min(100%, ${rem(p.intrinsicWidth)}); min-inline-size: 0;
+}
+/* The material owns its real moving bounds outside the content's clip.
+ * Ancestor overflow would trim the input to backdrop blur before filtering. */
+.lab-dialog-material {
+  position: absolute; pointer-events: none; border-radius: ${rem(p.radius)}; corner-shape: round;
+  top: calc(100% * (1 - var(--_lab-dialog-reveal-y)) * var(--_lab-dialog-origin-y));
+  left: calc(100% * (1 - var(--_lab-dialog-reveal-x)) * var(--_lab-dialog-origin-x));
+  width: calc(100% * var(--_lab-dialog-reveal-x)); height: calc(100% * var(--_lab-dialog-reveal-y));
+  box-shadow: inset 0 0 0 ${rem(p.strokeWidth)} var(--lab-${p.roles.border});
+}
+/* Counter-transform the content so revealing never shrinks or reflows text. */
+.lab-dialog-reveal {
+  overflow: clip;
+  border-radius: calc(${rem(p.radius)} / max(.0001, var(--_lab-dialog-reveal-x))) / calc(${rem(p.radius)} / max(.0001, var(--_lab-dialog-reveal-y)));
+  transform: scale(var(--_lab-dialog-reveal-x), var(--_lab-dialog-reveal-y));
+  transform-origin: var(--_lab-dialog-origin);
+}
+.lab-dialog-reveal > .lab-dialog-content {
+  inline-size: 100%; min-block-size: 0;
+  transform: scale(calc(1 / max(.0001, var(--_lab-dialog-reveal-x))), calc(1 / max(.0001, var(--_lab-dialog-reveal-y))));
+  transform-origin: var(--_lab-dialog-origin);
+}
+/* Release clipping at rest, including consumer shadows and focus outlines. */
+.lab-dialog-plane[data-motion='settled'] > :is(.lab-dialog-positioner, .lab-popover-positioner) > .lab-dialog-stage > .lab-dialog-reveal { overflow: visible; transform: none; }
+.lab-dialog-plane[data-motion='settled'] > :is(.lab-dialog-positioner, .lab-popover-positioner) > .lab-dialog-stage > .lab-dialog-reveal > .lab-dialog-content { transform: none; }
 .lab-dialog-content {
   --_lab-dialog-radius: ${rem(p.radius)};
   position: relative; display: flex; flex-direction: column; gap: ${rem(p.contentGap)};
   box-sizing: border-box; inline-size: min(100%, ${rem(p.intrinsicWidth)}); min-inline-size: 0;
-  max-block-size: 100%; overflow: auto; overscroll-behavior: contain; pointer-events: auto;
+  max-block-size: calc(100dvh - ${rem(p.viewportGap * 2)}); overflow: auto; overscroll-behavior: contain; pointer-events: auto;
   padding: ${rem(p.padding)}; border-radius: var(--_lab-dialog-radius); corner-shape: round;
-  box-shadow: inset 0 0 0 ${rem(p.strokeWidth)} var(--lab-${p.roles.border});
   color: var(--lab-${p.roles.heading}); font-family: var(--lab-font-family);
 }
 ${Object.entries(p.widths)
   .map(
     ([size, width]) =>
-      `.lab-dialog-content[data-size='${size}'] { inline-size: min(100%, ${rem(width)}); }`,
+      `.lab-dialog-stage[data-size='${size}'] { inline-size: min(100%, ${rem(width)}); }`,
   )
   .join('\n')}
 .lab-dialog-header { display: flex; flex-flow: row-reverse wrap; align-items: flex-start; gap: ${rem(p.labelGap)}; min-inline-size: 0; }
@@ -42,20 +72,25 @@ ${authoredTextBoxCss('.lab-dialog-heading, .lab-dialog-description')}
 ${slotStyleCss('.lab-dialog-actions > *, .lab-dialog-actions ::slotted(*)', { flex: `1 1 ${p.actionMinInlineEm}em`, 'min-inline-size': '0', 'max-inline-size': '100%' })}
 .lab-dialog-close { --_lab-dialog-close-radius: ${rem(p.actionGap)}; display: inline-flex; order: -1; align-self: flex-start; align-items: center; justify-content: center; flex: none; inline-size: ${rem(p.iconSize)}; block-size: ${rem(p.iconSize)}; padding: 0; border: 0; border-radius: var(--_lab-dialog-close-radius); color: var(--lab-label-secondary); background: transparent; cursor: pointer; }
 .lab-dialog-close > * { inline-size: 100%; block-size: 100%; }
-.lab-dialog-content:has(.lab-dialog-close) { gap: ${rem(p.labelGap)}; }
+.lab-dialog-content:has(> .lab-dialog-header > .lab-dialog-close) { gap: ${rem(p.labelGap)}; }
 .lab-popover-positioner { position: fixed; inset: auto; margin: 0; padding: 0; max-inline-size: calc(100vw - ${rem(p.viewportGap * 2)}); pointer-events: none; }
-.lab-popover-positioner .lab-dialog-content { inline-size: 100%; max-block-size: var(--_lab-popover-available-height, calc(100dvh - ${rem(p.viewportGap * 2)})); padding: ${rem(p.radius)}; gap: ${rem(p.labelGap)}; }
+.lab-popover-positioner > .lab-dialog-stage { inline-size: 100%; }
+.lab-popover-positioner[data-side='top'] > .lab-dialog-stage { --_lab-dialog-origin-y: 1; }
+.lab-popover-positioner[data-side='bottom'] > .lab-dialog-stage { --_lab-dialog-origin-y: 0; }
+.lab-popover-positioner[data-side='left'] > .lab-dialog-stage { --_lab-dialog-reveal-x: var(--_lab-dialog-reveal); --_lab-dialog-reveal-y: 1; --_lab-dialog-origin-x: 1; }
+.lab-popover-positioner[data-side='right'] > .lab-dialog-stage { --_lab-dialog-reveal-x: var(--_lab-dialog-reveal); --_lab-dialog-reveal-y: 1; --_lab-dialog-origin-x: 0; }
+.lab-popover-positioner > .lab-dialog-stage > .lab-dialog-reveal > .lab-dialog-content { inline-size: 100%; max-block-size: var(--_lab-popover-available-height, calc(100dvh - ${rem(p.viewportGap * 2)})); padding: ${rem(p.radius)}; gap: ${rem(p.labelGap)}; }
 ${Object.entries(p.popoverWidths)
   .map(
     ([size, width]) =>
       `.lab-popover-positioner[data-size='${size}'] { inline-size: ${rem(width)}; }`,
   )
   .join('\n')}
-.lab-popover-arrow { position: absolute; inline-size: ${rem(p.actionGap * 2)}; block-size: ${rem(p.actionGap)}; background: var(--lab-bg-secondary); clip-path: polygon(0 100%, 50% 0, 100% 100%); pointer-events: none; }
-.lab-popover-positioner[data-side='bottom'] .lab-popover-arrow { top: ${rem(-p.actionGap)}; }
-.lab-popover-positioner[data-side='top'] .lab-popover-arrow { bottom: ${rem(-p.actionGap)}; transform: rotate(180deg); }
-.lab-popover-positioner[data-side='right'] .lab-popover-arrow { left: ${rem(-p.actionGap * 1.5)}; transform: rotate(-90deg); }
-.lab-popover-positioner[data-side='left'] .lab-popover-arrow { right: ${rem(-p.actionGap * 1.5)}; transform: rotate(90deg); }
-@media (max-width: ${rem(p.intrinsicWidth)}) { .lab-dialog-content, .lab-popover-positioner .lab-dialog-content { padding: min(${rem(p.radius)}, ${p.radius}px); gap: ${rem(p.radius)}; } }
+.lab-popover-arrow { position: absolute; inline-size: ${rem(p.actionGap * 2)}; block-size: ${rem(p.actionGap)}; background: var(--lab-bg-secondary); clip-path: polygon(0 100%, 50% 0, 100% 100%); opacity: var(--_lab-dialog-reveal); pointer-events: none; }
+.lab-popover-positioner[data-side='bottom'] > .lab-popover-arrow { top: ${rem(-p.actionGap)}; }
+.lab-popover-positioner[data-side='top'] > .lab-popover-arrow { bottom: ${rem(-p.actionGap)}; transform: rotate(180deg); }
+.lab-popover-positioner[data-side='right'] > .lab-popover-arrow { left: ${rem(-p.actionGap * 1.5)}; transform: rotate(-90deg); }
+.lab-popover-positioner[data-side='left'] > .lab-popover-arrow { right: ${rem(-p.actionGap * 1.5)}; transform: rotate(90deg); }
+@media (max-width: ${rem(p.intrinsicWidth)}) { .lab-dialog-content, .lab-popover-positioner > .lab-dialog-stage > .lab-dialog-reveal > .lab-dialog-content { padding: min(${rem(p.radius)}, ${p.radius}px); gap: ${rem(p.radius)}; } }
 @media (forced-colors: active) { .lab-dialog-content { outline: ${rem(p.strokeWidth)} solid CanvasText; } .lab-dialog-close { color: ButtonText; } .lab-dialog-backdrop { background: Canvas; opacity: .5; } }
 `;

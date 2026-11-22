@@ -1,0 +1,479 @@
+{
+  "purpose": "Diagnostic runs that separated missing map publication, stale observer frames and CPU/GPU readback. Timings report published maps only and include a CDP capture workload; they are not an end-to-end benchmark.",
+  "baselineRevision": "c474e611",
+  "baseline": {
+    "variant": "baseline",
+    "frameCount": 6,
+    "samples": [
+      {
+        "time": 189.20000004768372,
+        "reveal": 0.07772053214638598,
+        "height": 17.640625,
+        "filterHeight": null,
+        "lens": ""
+      },
+      {
+        "time": 402.2000000476837,
+        "reveal": 0.8010029690040759,
+        "height": 181.8125,
+        "filterHeight": null,
+        "lens": ""
+      },
+      {
+        "time": 451.39999997615814,
+        "reveal": 1,
+        "height": 227,
+        "filterHeight": null,
+        "lens": ""
+      }
+    ],
+    "perf": [
+      {
+        "reason": "restamp",
+        "mapMs": 0,
+        "totalMs": 0.6999999284744263,
+        "mapW": 201,
+        "mapH": 201,
+        "w": 480,
+        "h": 227,
+        "at": 453
+      }
+    ],
+    "full": {
+      "x": 240,
+      "y": 186.5,
+      "width": 480,
+      "height": 227
+    },
+    "frames": [
+      {
+        "frame": 1,
+        "progress": 0.07771419851987488,
+        "max": 2,
+        "over2": 0,
+        "count": 1740,
+        "mae": 0.039655172413793106,
+        "actualWidth": 960,
+        "referenceWidth": 960
+      },
+      {
+        "frame": 2,
+        "progress": 0.07771419851987488,
+        "max": 2,
+        "over2": 0,
+        "count": 1740,
+        "mae": 0.039655172413793106,
+        "actualWidth": 960,
+        "referenceWidth": 960
+      },
+      {
+        "frame": 3,
+        "progress": 0.801007095445182,
+        "max": 10,
+        "over2": 2071,
+        "count": 6951,
+        "mae": 2.0064738886491154,
+        "actualWidth": 960,
+        "referenceWidth": 960
+      }
+    ]
+  },
+  "inlineMapsWithDeferredObserver": {
+    "variant": "sync",
+    "frameCount": 6,
+    "samples": [
+      {
+        "time": 310.5,
+        "reveal": 0.0824751963778079,
+        "height": 18.71875,
+        "filterHeight": "1",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 456.2000000476837,
+        "reveal": 0.23185623972190167,
+        "height": 52.625,
+        "filterHeight": "52.625",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 525.2000000476837,
+        "reveal": 0.9757349348589921,
+        "height": 221.484375,
+        "filterHeight": "221.484",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 527.8000000715256,
+        "reveal": 1,
+        "height": 227,
+        "filterHeight": "227",
+        "lens": "url(#lab-lg-1)"
+      }
+    ],
+    "full": {
+      "x": 240,
+      "y": 186.5,
+      "width": 480,
+      "height": 227
+    },
+    "frames": [
+      {
+        "frame": 1,
+        "progress": 0.08247501335164416,
+        "max": 9,
+        "over2": 697,
+        "count": 1884,
+        "mae": 2.3927813163481955
+      },
+      {
+        "frame": 2,
+        "progress": 0.08247501335164416,
+        "max": 9,
+        "over2": 697,
+        "count": 1884,
+        "mae": 2.3927813163481955
+      },
+      {
+        "frame": 3,
+        "progress": 0.23186083772030214,
+        "max": 0,
+        "over2": 0,
+        "count": 6432,
+        "mae": 0
+      },
+      {
+        "frame": 4,
+        "progress": 0.9757381551842527,
+        "max": 0,
+        "over2": 0,
+        "count": 6951,
+        "mae": 0
+      }
+    ]
+  },
+  "boundedStripsOnCpu": {
+    "variant": "current",
+    "frameCount": 9,
+    "samples": [
+      {
+        "time": 115.5,
+        "reveal": 0.06215654038521663,
+        "height": 14.109375,
+        "filterHeight": "1",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 118.20000004768372,
+        "reveal": 0.1863498764533463,
+        "height": 42.296875,
+        "filterHeight": "14.1094",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 155.30000007152557,
+        "reveal": 0.6330148587745683,
+        "height": 143.6875,
+        "filterHeight": "42.2969",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 250.80000007152557,
+        "reveal": 0.9605357766293716,
+        "height": 218.03125,
+        "filterHeight": "143.688",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 257,
+        "reveal": 0.968073852196959,
+        "height": 219.75,
+        "filterHeight": "218.031",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 266.8000000715256,
+        "reveal": 0.9786007622207981,
+        "height": 222.140625,
+        "filterHeight": "219.75",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 271.2000000476837,
+        "reveal": 0.9824802098438762,
+        "height": 223.015625,
+        "filterHeight": "222.141",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 274.60000002384186,
+        "reveal": 0.9854756140819967,
+        "height": 223.6875,
+        "filterHeight": "223.016",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 278.8000000715256,
+        "reveal": 0.9885045656856772,
+        "height": 224.375,
+        "filterHeight": "223.688",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 283,
+        "reveal": 0.9912101153370962,
+        "height": 225,
+        "filterHeight": "224.375",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 287.3000000715256,
+        "reveal": 0.9934294677491156,
+        "height": 225.5,
+        "filterHeight": "225",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 308.5,
+        "reveal": 0.9996751716824578,
+        "height": 226.921875,
+        "filterHeight": "225.5",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 312.3000000715256,
+        "reveal": 0.9999594682050956,
+        "height": 226.984375,
+        "filterHeight": "226.922",
+        "lens": "url(#lab-lg-1)"
+      },
+      {
+        "time": 316.5,
+        "reveal": 1,
+        "height": 227,
+        "filterHeight": "226.984",
+        "lens": "url(#lab-lg-1)"
+      }
+    ],
+    "perf": [
+      {
+        "reason": "rebuild",
+        "mapMs": 16.899999976158142,
+        "totalMs": 18.700000047683716,
+        "mapW": 3,
+        "mapH": 1,
+        "w": 480,
+        "h": 1,
+        "at": 109.90000009536743
+      },
+      {
+        "reason": "rebuild",
+        "mapMs": 0.6000000238418579,
+        "totalMs": 1,
+        "mapW": 17,
+        "mapH": 14,
+        "w": 480,
+        "h": 14.1094,
+        "at": 116.60000002384186
+      },
+      {
+        "reason": "rebuild",
+        "mapMs": 1,
+        "totalMs": 1.399999976158142,
+        "mapW": 45,
+        "mapH": 42,
+        "w": 480,
+        "h": 42.2969,
+        "at": 119.70000004768372
+      },
+      {
+        "reason": "rebuild",
+        "mapMs": 3.299999952316284,
+        "totalMs": 3.799999952316284,
+        "mapW": 145,
+        "mapH": 144,
+        "w": 480,
+        "h": 143.688,
+        "at": 159.20000004768372
+      },
+      {
+        "reason": "rebuild",
+        "mapMs": 3.1999999284744263,
+        "totalMs": 4.099999904632568,
+        "mapW": 201,
+        "mapH": 201,
+        "w": 480,
+        "h": 218.031,
+        "at": 255
+      },
+      {
+        "reason": "restamp",
+        "mapMs": 0,
+        "totalMs": 0.20000004768371582,
+        "mapW": 201,
+        "mapH": 201,
+        "w": 480,
+        "h": 219.75,
+        "at": 257.3000000715256
+      },
+      {
+        "reason": "restamp",
+        "mapMs": 0,
+        "totalMs": 0,
+        "mapW": 201,
+        "mapH": 201,
+        "w": 480,
+        "h": 222.141,
+        "at": 267
+      },
+      {
+        "reason": "restamp",
+        "mapMs": 0,
+        "totalMs": 0.10000002384185791,
+        "mapW": 201,
+        "mapH": 201,
+        "w": 480,
+        "h": 223.016,
+        "at": 271.3000000715256
+      },
+      {
+        "reason": "restamp",
+        "mapMs": 0,
+        "totalMs": 0,
+        "mapW": 201,
+        "mapH": 201,
+        "w": 480,
+        "h": 223.688,
+        "at": 274.7000000476837
+      },
+      {
+        "reason": "restamp",
+        "mapMs": 0,
+        "totalMs": 0,
+        "mapW": 201,
+        "mapH": 201,
+        "w": 480,
+        "h": 224.375,
+        "at": 279
+      },
+      {
+        "reason": "restamp",
+        "mapMs": 0,
+        "totalMs": 0,
+        "mapW": 201,
+        "mapH": 201,
+        "w": 480,
+        "h": 225,
+        "at": 283.2000000476837
+      },
+      {
+        "reason": "restamp",
+        "mapMs": 0,
+        "totalMs": 0,
+        "mapW": 201,
+        "mapH": 201,
+        "w": 480,
+        "h": 225.5,
+        "at": 287.5
+      },
+      {
+        "reason": "restamp",
+        "mapMs": 0,
+        "totalMs": 0.10000002384185791,
+        "mapW": 201,
+        "mapH": 201,
+        "w": 480,
+        "h": 226.922,
+        "at": 308.7000000476837
+      },
+      {
+        "reason": "restamp",
+        "mapMs": 0,
+        "totalMs": 0,
+        "mapW": 201,
+        "mapH": 201,
+        "w": 480,
+        "h": 226.984,
+        "at": 312.5
+      },
+      {
+        "reason": "restamp",
+        "mapMs": 0,
+        "totalMs": 0.10000002384185791,
+        "mapW": 201,
+        "mapH": 201,
+        "w": 480,
+        "h": 227,
+        "at": 316.60000002384186
+      }
+    ],
+    "full": {
+      "x": 240,
+      "y": 186.5,
+      "width": 480,
+      "height": 227
+    },
+    "frames": [
+      {
+        "frame": 1,
+        "progress": 0.06214999618524453,
+        "max": 0,
+        "over2": 0,
+        "count": 1311,
+        "mae": 0,
+        "actualWidth": 960,
+        "referenceWidth": 960
+      },
+      {
+        "frame": 2,
+        "progress": 0.1863431754024567,
+        "max": 0,
+        "over2": 0,
+        "count": 5073,
+        "mae": 0,
+        "actualWidth": 960,
+        "referenceWidth": 960
+      },
+      {
+        "frame": 3,
+        "progress": 0.9605401693751431,
+        "max": 0,
+        "over2": 0,
+        "count": 6951,
+        "mae": 0,
+        "actualWidth": 960,
+        "referenceWidth": 960
+      },
+      {
+        "frame": 4,
+        "progress": 0.9786068513008316,
+        "max": 0,
+        "over2": 0,
+        "count": 6951,
+        "mae": 0,
+        "actualWidth": 960,
+        "referenceWidth": 960
+      },
+      {
+        "frame": 5,
+        "progress": 0.9854734111543451,
+        "max": 0,
+        "over2": 0,
+        "count": 6951,
+        "mae": 0,
+        "actualWidth": 960,
+        "referenceWidth": 960
+      },
+      {
+        "frame": 6,
+        "progress": 0.9912108033875029,
+        "max": 0,
+        "over2": 0,
+        "count": 6951,
+        "mae": 0,
+        "actualWidth": 960,
+        "referenceWidth": 960
+      }
+    ]
+  }
+}

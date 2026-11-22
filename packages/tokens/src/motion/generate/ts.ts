@@ -56,7 +56,9 @@ export function generateMotionTs(motion: ResolvedMotion): string {
       ...motion.semantics.map((semantic) => {
         const duration = motion.durations.find((item) => item.name === semantic.durationName);
         if (!duration) throw new Error(`Missing duration for ${semantic.name}`);
-        return `  ${quoteKey(semantic.name)}: { durationMs: ${duration.ms} },`;
+        const easing = motion.easings.find((item) => item.name === semantic.easingName);
+        if (!easing) throw new Error(`Missing easing for ${semantic.name}`);
+        return `  ${quoteKey(semantic.name)}: { durationMs: ${duration.ms}, ease: [${easing.bezier.join(', ')}] },`;
       }),
       '} as const;',
     ].join('\n'),

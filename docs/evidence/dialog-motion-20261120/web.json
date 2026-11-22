@@ -1,0 +1,320 @@
+[
+  {
+    "engine": "chromium",
+    "theme": "light",
+    "material": "acrylic",
+    "geometry": {
+      "x": 240,
+      "y": 186.5,
+      "width": 480,
+      "height": 227
+    },
+    "optics": "qualified",
+    "liveSceneMaxError": 0
+  },
+  {
+    "engine": "chromium",
+    "theme": "light",
+    "material": "glass",
+    "geometry": {
+      "x": 240,
+      "y": 186.5,
+      "width": 480,
+      "height": 227
+    },
+    "optics": "qualified",
+    "liveSceneMaxError": 0
+  },
+  {
+    "engine": "chromium",
+    "theme": "dark",
+    "material": "acrylic",
+    "geometry": {
+      "x": 240,
+      "y": 186.5,
+      "width": 480,
+      "height": 227
+    },
+    "optics": "qualified",
+    "liveSceneMaxError": 0
+  },
+  {
+    "engine": "chromium",
+    "theme": "dark",
+    "material": "glass",
+    "geometry": {
+      "x": 240,
+      "y": 186.5,
+      "width": 480,
+      "height": 227
+    },
+    "optics": "qualified",
+    "liveSceneMaxError": 0
+  },
+  {
+    "engine": "chromium",
+    "entering": 0.4632558749149822,
+    "exiting": 0.44087685119189923,
+    "interruption": "preserved",
+    "reducedMotion": "settled"
+  },
+  {
+    "engine": "chromium",
+    "side": "top",
+    "anchored": "preserved",
+    "full": {
+      "x": 352.609375,
+      "y": 114.015625,
+      "width": 320,
+      "height": 169.984375
+    },
+    "half": {
+      "x": 352.609375,
+      "y": 199,
+      "width": 320,
+      "height": 84.984375
+    }
+  },
+  {
+    "engine": "chromium",
+    "side": "right",
+    "anchored": "preserved",
+    "full": {
+      "x": 591.234375,
+      "y": 239,
+      "width": 320,
+      "height": 169.984375
+    },
+    "half": {
+      "x": 591.234375,
+      "y": 239,
+      "width": 160,
+      "height": 169.984375
+    }
+  },
+  {
+    "engine": "chromium",
+    "side": "bottom",
+    "anchored": "preserved",
+    "full": {
+      "x": 352.609375,
+      "y": 364,
+      "width": 320,
+      "height": 169.984375
+    },
+    "half": {
+      "x": 352.609375,
+      "y": 364,
+      "width": 320,
+      "height": 84.984375
+    }
+  },
+  {
+    "engine": "chromium",
+    "side": "left",
+    "anchored": "preserved",
+    "full": {
+      "x": 114,
+      "y": 239,
+      "width": 320,
+      "height": 169.984375
+    },
+    "half": {
+      "x": 274,
+      "y": 239,
+      "width": 160,
+      "height": 169.984375
+    }
+  },
+  {
+    "engine": "chromium",
+    "nestedReact": "clipped",
+    "intermediateFrames": 59
+  },
+  {
+    "engine": "chromium",
+    "nestedPlacement": "isolated",
+    "combinations": 20
+  },
+  {
+    "engine": "chromium",
+    "dpr": 1,
+    "liveGlass": "qualified",
+    "comparedFrames": 28,
+    "maxError": 0
+  },
+  {
+    "engine": "chromium",
+    "dpr": 2,
+    "liveGlass": "qualified",
+    "comparedFrames": 27,
+    "maxError": 1
+  },
+  {
+    "engine": "webkit",
+    "theme": "light",
+    "material": "acrylic",
+    "geometry": {
+      "x": 240,
+      "y": 183.875,
+      "width": 480,
+      "height": 232.25
+    },
+    "optics": "requires-display-compositor",
+    "liveSceneMaxError": 0
+  },
+  {
+    "engine": "webkit",
+    "theme": "light",
+    "material": "glass",
+    "geometry": {
+      "x": 240,
+      "y": 183.875,
+      "width": 480,
+      "height": 232.25
+    },
+    "optics": "requires-display-compositor",
+    "liveSceneMaxError": 0
+  },
+  {
+    "engine": "webkit",
+    "theme": "dark",
+    "material": "acrylic",
+    "geometry": {
+      "x": 240,
+      "y": 183.875,
+      "width": 480,
+      "height": 232.25
+    },
+    "optics": "requires-display-compositor",
+    "liveSceneMaxError": 0
+  },
+  {
+    "engine": "webkit",
+    "theme": "dark",
+    "material": "glass",
+    "geometry": {
+      "x": 240,
+      "y": 183.875,
+      "width": 480,
+      "height": 232.25
+    },
+    "optics": "requires-display-compositor",
+    "liveSceneMaxError": 0
+  },
+  {
+    "engine": "webkit",
+    "entering": 0.4614127989080661,
+    "exiting": 0.42354568780365753,
+    "interruption": "preserved",
+    "reducedMotion": "settled"
+  },
+  {
+    "engine": "webkit",
+    "side": "top",
+    "anchored": "preserved",
+    "full": {
+      "x": 352.609375,
+      "y": 114.375,
+      "width": 320,
+      "height": 169.625
+    },
+    "half": {
+      "x": 352.609375,
+      "y": 199.1875,
+      "width": 320,
+      "height": 84.8125
+    }
+  },
+  {
+    "engine": "webkit",
+    "side": "right",
+    "anchored": "preserved",
+    "full": {
+      "x": 591.234375,
+      "y": 239.1875,
+      "width": 320,
+      "height": 169.625
+    },
+    "half": {
+      "x": 591.234375,
+      "y": 239.1875,
+      "width": 160,
+      "height": 169.625
+    }
+  },
+  {
+    "engine": "webkit",
+    "side": "bottom",
+    "anchored": "preserved",
+    "full": {
+      "x": 352.609375,
+      "y": 364,
+      "width": 320,
+      "height": 169.625
+    },
+    "half": {
+      "x": 352.609375,
+      "y": 364,
+      "width": 320,
+      "height": 84.8125
+    }
+  },
+  {
+    "engine": "webkit",
+    "side": "left",
+    "anchored": "preserved",
+    "full": {
+      "x": 114,
+      "y": 239.1875,
+      "width": 320,
+      "height": 169.625
+    },
+    "half": {
+      "x": 274,
+      "y": 239.1875,
+      "width": 160,
+      "height": 169.625
+    }
+  },
+  {
+    "engine": "webkit",
+    "nestedReact": "clipped",
+    "intermediateFrames": 9
+  },
+  {
+    "engine": "webkit",
+    "nestedPlacement": "isolated",
+    "combinations": 20
+  },
+  {
+    "engine": "chromium",
+    "material": "acrylic",
+    "performance": {
+      "frameCount": 239,
+      "p95FrameMs": 8.299999999999955,
+      "peakFilters": 1,
+      "contentExtents": [
+        [
+          408,
+          187.984375
+        ]
+      ]
+    }
+  },
+  {
+    "engine": "chromium",
+    "material": "glass",
+    "performance": {
+      "frameCount": 271,
+      "p95FrameMs": 4.300000000000011,
+      "peakFilters": 2,
+      "contentExtents": [
+        [
+          408,
+          187.984375
+        ]
+      ]
+    }
+  }
+]

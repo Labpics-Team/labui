@@ -1,0 +1,202 @@
+{
+  "dpr": 1,
+  "frames": 35,
+  "comparisons": [
+    {
+      "frame": 1,
+      "progress": 0.06759746700236514,
+      "phase": 199,
+      "max": 0,
+      "count": 1452
+    },
+    {
+      "frame": 2,
+      "progress": 0.26504921034561685,
+      "phase": 199,
+      "max": 0,
+      "count": 6882
+    },
+    {
+      "frame": 3,
+      "progress": 0.3969939726863508,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 4,
+      "progress": 0.4939497978179599,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 5,
+      "progress": 0.6649118791485465,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 6,
+      "progress": 0.711589227130541,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 7,
+      "progress": 0.75556572823682,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 8,
+      "progress": 0.808896009765774,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 9,
+      "progress": 0.8387731746395056,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 10,
+      "progress": 0.8774700541695277,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 11,
+      "progress": 0.8992141603723202,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 12,
+      "progress": 0.9184100099183642,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 13,
+      "progress": 0.9423361562523842,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 14,
+      "progress": 0.9556115053025102,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 15,
+      "progress": 0.9715571831845579,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 16,
+      "progress": 0.9804531929503318,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 17,
+      "progress": 0.9869687953002213,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 18,
+      "progress": 0.9943846799420157,
+      "phase": 199,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 24,
+      "progress": 0.9784542610818646,
+      "phase": 198,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 25,
+      "progress": 0.9315327687495232,
+      "phase": 198,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 26,
+      "progress": 0.8690318150606546,
+      "phase": 198,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 27,
+      "progress": 0.7785458152132448,
+      "phase": 198,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 28,
+      "progress": 0.6995345998321507,
+      "phase": 198,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 29,
+      "progress": 0.5790035858701458,
+      "phase": 198,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 30,
+      "progress": 0.48287174792095827,
+      "phase": 198,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 31,
+      "progress": 0.32864881361104753,
+      "phase": 198,
+      "max": 0,
+      "count": 6951
+    },
+    {
+      "frame": 32,
+      "progress": 0.2208438239108873,
+      "phase": 198,
+      "max": 0,
+      "count": 6117
+    },
+    {
+      "frame": 33,
+      "progress": 0.11184863050278478,
+      "phase": 198,
+      "max": 0,
+      "count": 2850
+    }
+  ]
+}

@@ -89,7 +89,7 @@ public fun LabPopoverHost(
         anchor = IntRect(r.left.roundToInt(), r.top.roundToInt(), r.right.roundToInt(), r.bottom.roundToInt())
     }
     val focus = remember { FocusRequester() }
-    val (present, opacity) = rememberDialogPresence(open)
+    val (present, reveal) = rememberDialogPresence(open)
     var wasOpen by remember { mutableStateOf(false) }
     LaunchedEffect(present) {
         if (present) wasOpen = true
@@ -108,7 +108,7 @@ public fun LabPopoverHost(
             if (present && modal) Modifier.clearAndSetSemantics {}.focusProperties { onEnter = { cancelFocusChange() } } else Modifier,
         )) { content(anchorModifier) }
         if (present) {
-            if (modal) Box(Modifier.fillMaxSize().background(colors[LabComponents.DialogRolesScrim])
+            if (modal) Box(Modifier.fillMaxSize().graphicsLayer { alpha = reveal.value }.background(colors[LabComponents.DialogRolesScrim])
                 .pointerInput(onDismissRequest) { detectTapGestures { onDismissRequest() } }.clearAndSetSemantics {})
             Popup(popupPositionProvider = provider, onDismissRequest = onDismissRequest,
                 properties = PopupProperties(focusable = true)) {
@@ -116,8 +116,7 @@ public fun LabPopoverHost(
                 BoxWithConstraints {
                     val tail = if (arrow) LabComponents.DialogActionGap.dp else 0.dp
                     val availableHeight = maxHeight - LabComponents.DialogViewportGap.dp * 2 - tail * 2
-                    Box(Modifier.widthIn(max = minOf(size.width(true) + tail * 2, maxWidth - LabComponents.DialogViewportGap.dp * 2))
-                        .graphicsLayer { alpha = opacity.value }) {
+                    Box(Modifier.widthIn(max = minOf(size.width(true) + tail * 2, maxWidth - LabComponents.DialogViewportGap.dp * 2))) {
                         DialogSurface(title, description, material,
                         Modifier.padding(tail).fillMaxWidth()
                             .heightIn(max = availableHeight)
@@ -125,8 +124,8 @@ public fun LabPopoverHost(
                             .focusRequester(focus).focusable().onPreviewKeyEvent {
                                 if (it.key == Key.Escape && it.type == KeyEventType.KeyUp) { onDismissRequest(); true } else false
                             },
-                        LabComponents.DialogRadius.dp, closable, closeLabel, onDismissRequest, null, popover)
-                        if (arrow) Canvas(Modifier.matchParentSize().clearAndSetSemantics {}) {
+                        LabComponents.DialogRadius.dp, closable, closeLabel, onDismissRequest, null, popover, reveal, { side })
+                        if (arrow) Canvas(Modifier.matchParentSize().graphicsLayer { alpha = reveal.value }.clearAndSetSemantics {}) {
                             val t = tail.toPx()
                             val inset = t + LabComponents.DialogRadius.dp.toPx()
                             val horizontal = side % 2 == 0

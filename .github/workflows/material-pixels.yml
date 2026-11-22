@@ -28,6 +28,9 @@ on:
       - 'apps/docs/src/foundation.css'
       - 'apps/docs/src/_fixtures/alert-material.*'
       - 'apps/docs/tests/alert-material.mjs'
+      - 'apps/docs/tests/dialog-motion*.mjs'
+      - 'apps/docs/src/_fixtures/dialog-family.*'
+      - 'packages/react/src/dialog.tsx'
       - 'packages/colors/contract.css'
       - 'packages/colors/test/fx-render/fx-render.mjs'
       - 'packages/colors/package.json'
@@ -81,12 +84,16 @@ jobs:
           # the same 4 GiB heap used by a successful local production build.
           NODE_OPTIONS: --max-old-space-size=4096
         run: pnpm --filter @labpics/ui-core... build
+      - name: Build the Dialog React adapter
+        run: pnpm --filter @labpics/ui-react build
       - name: Measure production paint rendering
         run: node docs/evidence/materials-20261117/render-material-paints.mjs
       - name: Measure backdrop rendering and neutral paint composition
         run: node docs/evidence/materials-20261117/probe-backdrop-support.mjs
       - name: Measure actual Alert backdrop and regression control
         run: node apps/docs/tests/alert-material.mjs
+      - name: Verify Dialog motion and Chromium intermediate materials
+        run: node apps/docs/tests/dialog-motion.mjs
       - name: Measure real Linux compositor
         if: runner.os == 'Linux'
         env:
@@ -96,6 +103,7 @@ jobs:
           XWD_FILE="$RUNNER_TEMP/labui-display/Xvfb_screen0" xvfb-run -a -s "-screen 0 1280x720x24 -fbdir $RUNNER_TEMP/labui-display" node docs/evidence/materials-20261117/probe-backdrop-support.mjs
           XWD_FILE="$RUNNER_TEMP/labui-display/Xvfb_screen0" xvfb-run -a -s "-screen 0 1280x720x24 -fbdir $RUNNER_TEMP/labui-display" node docs/evidence/materials-20261117/render-material-paints.mjs
           XWD_FILE="$RUNNER_TEMP/labui-display/Xvfb_screen0" xvfb-run -a -s "-screen 0 1280x720x24 -fbdir $RUNNER_TEMP/labui-display" node apps/docs/tests/alert-material.mjs
+          XWD_FILE="$RUNNER_TEMP/labui-display/Xvfb_screen0" xvfb-run -a -s "-screen 0 1280x720x24 -fbdir $RUNNER_TEMP/labui-display" node apps/docs/tests/dialog-motion.mjs
       - name: Measure real macOS compositor
         if: runner.os == 'macOS'
         env:
@@ -104,6 +112,7 @@ jobs:
           node docs/evidence/materials-20261117/probe-backdrop-support.mjs
           node docs/evidence/materials-20261117/render-material-paints.mjs
           node apps/docs/tests/alert-material.mjs
+          node apps/docs/tests/dialog-motion.mjs
       - name: Preserve Alert compositor measurements
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

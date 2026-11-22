@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import dev.chrisbanes.haze.hazeSource
 import pics.lab.icons.Icon
 import pics.lab.icons.symbols.close
+import pics.lab.motion.MotionValue
 
 public enum class LabDialogSize { Small, Medium, Large }
 internal fun LabDialogSize.width(popover: Boolean = false) = when (this) {
@@ -58,7 +59,7 @@ public fun LabDialogHost(
     val capture = LocalLabCapture.current
     val colors = LocalLabTheme.current.colors
     val fallbackFocus = remember { FocusRequester() }
-    val (present, opacity) = rememberDialogPresence(open)
+    val (present, reveal) = rememberDialogPresence(open)
     var wasOpen by remember { mutableStateOf(false) }
     LaunchedEffect(present) {
         if (present) wasOpen = true
@@ -71,10 +72,10 @@ public fun LabDialogHost(
         ), content = content)
         if (present) LabModal(onDismissRequest) {
             LaunchedEffect(Unit) { withFrameNanos {}; (initialFocus ?: fallbackFocus).requestFocus() }
-            Box(Modifier.fillMaxSize().graphicsLayer { alpha = opacity.value }.onPreviewKeyEvent {
+            Box(Modifier.fillMaxSize().onPreviewKeyEvent {
                 if (it.key == Key.Escape && it.type == KeyEventType.KeyUp) { onDismissRequest(); true } else false
             }) {
-                Box(Modifier.fillMaxSize().background(colors[LabComponents.DialogRolesScrim])
+                Box(Modifier.fillMaxSize().graphicsLayer { alpha = reveal.value }.background(colors[LabComponents.DialogRolesScrim])
                     .pointerInput(dismissOnOutside, onDismissRequest) {
                         detectTapGestures { if (dismissOnOutside) onDismissRequest() }
                     }.clearAndSetSemantics {})
@@ -87,7 +88,7 @@ public fun LabDialogHost(
                         Modifier.widthIn(max = size.width()).fillMaxWidth().heightIn(max = maxHeight)
                             .semantics { paneTitle = title; isTraversalGroup = true }
                             .focusRequester(fallbackFocus).focusable(),
-                        padding, closable, closeLabel, onDismissRequest, actions, dialog,
+                        padding, closable, closeLabel, onDismissRequest, actions, dialog, reveal,
                     )
                 }
             }
@@ -101,14 +102,17 @@ internal fun DialogSurface(
     padding: androidx.compose.ui.unit.Dp, closable: Boolean, closeLabel: String,
     dismiss: () -> Unit, actions: (@Composable () -> Unit)?,
     content: (@Composable ColumnScope.() -> Unit)?,
+    reveal: MotionValue,
+    side: () -> Int = { 2 },
 ) {
     val colors = LocalLabTheme.current.colors
-    LabSurface(LabComponents.DialogMaterial, modifier, material,
-        RoundedCornerShape(LabComponents.DialogRadius.dp),
-        strokeWidth = LabComponents.DialogStrokeWidth.dp,
-        strokeColor = colors[LabComponents.DialogRolesBorder],
-    ) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(padding),
+    Box(modifier) {
+        LabSurface(LabComponents.DialogMaterial, Modifier.matchParentSize().dialogMaterialBounds(reveal, side), material,
+            RoundedCornerShape(LabComponents.DialogRadius.dp),
+            strokeWidth = LabComponents.DialogStrokeWidth.dp,
+            strokeColor = colors[LabComponents.DialogRolesBorder],
+        ) {}
+        Column(Modifier.fillMaxWidth().dialogReveal(reveal, side).verticalScroll(rememberScrollState()).padding(padding),
             verticalArrangement = Arrangement.spacedBy(
                 if (closable) LabComponents.DialogLabelGap.dp else padding),
         ) {

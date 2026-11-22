@@ -8,7 +8,7 @@ import {
   shift,
   size,
 } from '@floating-ui/dom';
-import { type Playback, scope } from '@labpics/motion';
+import { type MotionEase, type Playback, scope } from '@labpics/motion';
 import { mountMaterialRuntime } from '@labpics/ui-materials';
 import { dialogProfile, motionSemanticRuntime } from '@labpics/ui-tokens';
 import { bindDialogTriggerControls } from './focus.js';
@@ -17,6 +17,24 @@ import { mountNativeDialog } from './native.js';
 export type LabDialogSize = 's' | 'm' | 'l';
 export type LabDialogRole = 'dialog' | 'alertdialog';
 export type LabPopoverPlacement = Placement;
+
+function motionEase(token: string, fallback: MotionEase): MotionEase {
+  const cubic = token
+    .match(/^cubic-bezier\(([^)]+)\)$/)?.[1]
+    ?.split(',')
+    .map(Number);
+  if (cubic?.length === 4 && cubic.every(Number.isFinite))
+    return cubic as [number, number, number, number];
+  if (
+    token === 'linear' ||
+    token === 'ease' ||
+    token === 'ease-in' ||
+    token === 'ease-out' ||
+    token === 'ease-in-out'
+  )
+    return token;
+  return fallback;
+}
 
 export interface DialogOptions {
   open: boolean;
@@ -53,7 +71,13 @@ export function mountDialog(
   let playback: Playback | undefined;
   let motionRevision = 0;
   let requestedOpen = false;
-  const oldOpacity = plane.style.opacity;
+  const revealProperty = '--_lab-dialog-reveal';
+  const oldReveal = plane.style.getPropertyValue(revealProperty);
+  const oldRevealPriority = plane.style.getPropertyPriority(revealProperty);
+  const oldMotion = plane.getAttribute('data-motion');
+  const reduced = plane.ownerDocument.defaultView?.matchMedia('(prefers-reduced-motion: reduce)');
+  let positioned = false;
+  let waitingForPosition = false;
   const id = plane.id || `lab-dialog-${crypto.randomUUID()}`;
   plane.id = id;
   const oldExpanded = trigger.getAttribute('aria-expanded');
@@ -77,24 +101,42 @@ export function mountDialog(
     stopPosition?.();
     stopPosition = undefined;
     updatePosition = undefined;
+    positioned = false;
+    waitingForPosition = false;
     stopMaterial?.();
     stopMaterial = undefined;
   };
   const animate = (open: boolean) => {
     const revision = ++motionRevision;
+    const style = getComputedStyle(plane);
+    const current = Number.parseFloat(style.getPropertyValue(revealProperty)) || 0;
     playback?.stop();
+    plane.style.setProperty(revealProperty, String(current));
+    plane.dataset.motion = open ? 'opening' : 'closing';
     const role = open ? 'entrance' : 'exit';
-    const token = getComputedStyle(plane).getPropertyValue(`--lab-motion-${role}-duration`).trim();
+    const token = style.getPropertyValue(`--lab-motion-${role}-duration`).trim();
     const measured = Number.parseFloat(token) * (token.endsWith('ms') ? 1 : 1000);
-    const duration =
+    const fullDuration =
       Number.isFinite(measured) && measured >= 0
         ? measured
         : motionSemanticRuntime[role].durationMs;
+    const duration = fullDuration * Math.abs((open ? 1 : 0) - current);
+    const ease = style.getPropertyValue(`--lab-motion-${role}-easing`).trim();
     const complete = () => {
-      if (alive && revision === motionRevision && !options.open) finishClose();
+      if (!alive || revision !== motionRevision) return;
+      if (options.open) plane.dataset.motion = 'settled';
+      else finishClose();
     };
     try {
-      playback = motion.animate(plane, { opacity: open ? 1 : 0 }, { duration, ease: 'linear' });
+      playback = motion.animate(
+        plane,
+        { [revealProperty]: [current, open ? 1 : 0] },
+        {
+          duration,
+          ease: motionEase(ease, motionSemanticRuntime[role].ease),
+          reducedMotion: reduced?.matches ? 'always' : 'user',
+        },
+      );
       void playback.finished.then(
         (result) => {
           if (result.status === 'finished') complete();
@@ -107,7 +149,7 @@ export function mountDialog(
         },
       );
     } catch (error) {
-      plane.style.opacity = open ? '1' : '0';
+      plane.style.setProperty(revealProperty, open ? '1' : '0');
       complete();
       plane.dispatchEvent(
         new CustomEvent('motion-error', { detail: { error }, bubbles: true, composed: true }),
@@ -137,10 +179,13 @@ export function mountDialog(
     }
     const entering = !requestedOpen;
     requestedOpen = true;
-    if (!plane.open) plane.style.opacity = '0';
+    if (!plane.open) plane.style.setProperty(revealProperty, '0');
     boundary.update(true, options.modal, true);
-    stopMaterial ??= mountMaterialRuntime(surface);
-    if (entering) animate(true);
+    stopMaterial ??= mountMaterialRuntime(positioner, { motionProperties: [revealProperty] });
+    if (entering) {
+      if (!options.placement || positioned) animate(true);
+      else waitingForPosition = true;
+    }
     if (!options.placement || stopPosition) return;
     updatePosition = async () => {
       const tail = positioner.querySelector<HTMLElement>('.lab-popover-arrow');
@@ -188,9 +233,18 @@ export function mountDialog(
         tail.style.top =
           result.middlewareData.arrow?.y === undefined ? '' : `${result.middlewareData.arrow.y}px`;
       }
+      positioned = true;
+      if (waitingForPosition) {
+        waitingForPosition = false;
+        animate(true);
+      }
     };
     stopPosition = autoUpdate(trigger, positioner, updatePosition);
   };
+  const changeMotionPreference = () => {
+    if (plane.open && (!options.open || !waitingForPosition)) animate(options.open);
+  };
+  reduced?.addEventListener('change', changeMotionPreference);
   paint();
   return {
     request,
@@ -204,7 +258,11 @@ export function mountDialog(
       placementRevision++;
       motionRevision++;
       motion.dispose();
-      plane.style.opacity = oldOpacity;
+      if (oldReveal) plane.style.setProperty(revealProperty, oldReveal, oldRevealPriority);
+      else plane.style.removeProperty(revealProperty);
+      if (oldMotion === null) plane.removeAttribute('data-motion');
+      else plane.setAttribute('data-motion', oldMotion);
+      reduced?.removeEventListener('change', changeMotionPreference);
       trigger.removeEventListener('click', activate);
       stopPosition?.();
       stopMaterial?.();

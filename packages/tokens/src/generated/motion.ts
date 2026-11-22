@@ -56,8 +56,8 @@ export const motionSpringRuntime = {
 
 /** База относительной скорости runtime; CSS override сохраняет своё действие. */
 export const motionSemanticRuntime = {
-  entrance: { durationMs: 200 },
-  exit: { durationMs: 100 },
-  transition: { durationMs: 100 },
-  emphasis: { durationMs: 300 },
+  entrance: { durationMs: 200, ease: [0, 0, 0, 1] },
+  exit: { durationMs: 100, ease: [0.3, 0, 1, 1] },
+  transition: { durationMs: 100, ease: [0.2, 0, 0, 1] },
+  emphasis: { durationMs: 300, ease: [0.38, 1.21, 0.22, 1] },
 } as const;

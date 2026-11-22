@@ -199,7 +199,10 @@ export class LabDialog extends LabElement {
       <dialog class="lab-dialog-plane" id=${prefix}>
         ${this.modal || this.dialogRole === 'alertdialog' ? html`<div class="lab-dialog-backdrop" aria-hidden="true"></div>` : nothing}
         <div class=${this.anchored ? 'lab-popover-positioner' : 'lab-dialog-positioner'} data-size=${this.size} part="positioner">
-          <div class="lab-dialog-content lab-material lab-material--elevated" data-size=${this.size} part="content">
+          <div class="lab-dialog-stage" data-size=${this.size}>
+          <div class="lab-dialog-material lab-material lab-material--elevated" aria-hidden="true"></div>
+          <div class="lab-dialog-reveal">
+          <div class="lab-dialog-content" data-size=${this.size} part="content">
             ${
               this.heading || this.description || this.closable
                 ? html`<div class="lab-dialog-header"><div class="lab-dialog-labels">
@@ -210,6 +213,8 @@ export class LabDialog extends LabElement {
             }
             <div class="lab-dialog-body" part="body"><slot name="content" @slotchange=${() => this.requestUpdate()}></slot></div>
             <div class="lab-dialog-actions" part="actions">${this.renderActions()}</div>
+          </div>
+          </div>
           </div>
           ${this.anchored && this.arrow ? html`<span class="lab-popover-arrow" part="arrow" aria-hidden="true"></span>` : nothing}
         </div>
