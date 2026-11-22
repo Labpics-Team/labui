@@ -968,15 +968,42 @@ test('native affine paint follows custom roles instead of keeping baked defaults
 }) => {
   test.skip(browserName !== 'webkit');
   const surface = page.locator('#surface');
+  await page.locator('#backdrop').evaluate((el) => {
+    el.style.background = 'rgb(80 120 160)';
+  });
+  const colourError = async (expected: number[]) => {
+    const png = await surface.screenshot();
+    return page.evaluate(
+      async ({ base64, expected }) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${base64}`;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Missing canvas');
+        ctx.drawImage(image, 0, 0);
+        const pixel = ctx.getImageData(
+          Math.floor(image.width / 2),
+          Math.floor(image.height / 2),
+          1,
+          1,
+        ).data;
+        return Math.max(...expected.map((channel, i) => Math.abs(channel - (pixel[i] ?? 0))));
+      },
+      { base64: png.toString('base64'), expected },
+    );
+  };
   await surface.evaluate((el) => {
     el.setAttribute('data-material', 'acrylic');
     el.style.setProperty('--_tint', 'rgb(0 0 0 / .5)');
     el.style.setProperty('--_blend', 'rgb(0 0 0 / 0)');
   });
-  await expect(surface).toHaveCSS('background-color', 'rgba(0, 0, 0, 0.5)');
+  await expect.poll(() => colourError([40, 60, 80])).toBeLessThanOrEqual(1);
   await expect(page.locator('body > .lab-material-paint-defs')).toHaveCount(0);
   await surface.evaluate((el) => el.style.setProperty('--_tint', 'rgb(255 255 255 / .25)'));
-  await expect(surface).toHaveCSS('background-color', 'rgba(255, 255, 255, 0.25)');
+  await expect.poll(() => colourError([123.75, 153.75, 183.75])).toBeLessThanOrEqual(1);
 });
 
 test('a veil retains authored paint between its own and nested backdrop passes', async ({

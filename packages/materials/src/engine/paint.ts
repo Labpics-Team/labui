@@ -97,36 +97,16 @@ function acquire(
   const screen = noiseUrl ? (Math.max(noise.r, noise.g, noise.b) * noise.a) / (2 * 255) : 0;
   const nativeFill = !noiseUrl || authoredNoise ? neutralMaterialFill(paints, screen) : null;
   if (nativeFill) {
-    // Both representations implement F(x)=m*x+b on the capturing element, so
-    // stroke and paint stay in the same opacity group. Chromium needs the
-    // transfer after its dispersed lens: native fill compositing otherwise
-    // violates group opacity on the Linux compositor. One immutable linear
-    // transfer keeps the capture opaque without a sampled table or extra layer.
-    const slope = 1 - nativeFill.a;
-    let filter: SVGFilterElement | null = null;
-    if (renderer === 'backdrop-svg' && slope > 1e-10) {
-      filter = createPaintFilter(el);
-      const transfer = el.ownerDocument.createElementNS(SVGNS, 'feComponentTransfer');
-      for (const channel of ['R', 'G', 'B', 'A']) {
-        const fn = el.ownerDocument.createElementNS(SVGNS, `feFunc${channel}`);
-        fn.setAttribute('type', 'linear');
-        fn.setAttribute('slope', String(channel === 'A' ? 0 : slope));
-        fn.setAttribute(
-          'intercept',
-          String(channel === 'A' ? 1 : (nativeFill.r * nativeFill.a) / 255),
-        );
-        transfer.append(fn);
-      }
-      filter.append(transfer);
-    }
+    // F(blur(backdrop))=m*blur(backdrop)+b is ordinary source-over. The
+    // capturing element retains paint and stroke in one opacity group.
     const colour = `rgb(${nativeFill.r} ${nativeFill.g} ${nativeFill.b} / ${nativeFill.a})`;
     const resource: PaintResource = {
-      filter,
+      filter: null,
       // WebKit paints a scroller's background-color twice on its compositor.
       // A uniform image retains exact source-over and works even on engines
       // whose backdrop colour filters are unavailable. Opaque paints also use
       // it to retain coverage when the backdrop itself is transparent.
-      fill: filter ? 'transparent' : `linear-gradient(${colour}, ${colour})`,
+      fill: `linear-gradient(${colour}, ${colour})`,
       nativeAffine: true,
       key,
       resources,

@@ -756,7 +756,7 @@ function dispersionSpread(dispersion: number): number {
  * Compose the <filter> body:
  *   1. feImage(map)                          → R/G displacement field
  *   2. feDisplacementMap                     → resample (bend) the backdrop
- *      · dispersion > 0 → split R/G/B at fanned scales, screen-recombine for a
+ *      · dispersion > 0 → split R/G/B at fanned scales, linearly recombine for a
  *        chromatic fringe. The map is neutral in the interior, so the fringe
  *        only appears where it displaces — the rim — with no extra mask needed.
  */
@@ -778,7 +778,13 @@ function filterMarkup(
     return `${atlas}${dm(scale)}/>`;
   }
   const k = dispersionSpread(dispersion);
-  return `${atlas}${dm(scale * (1 + k))} result="dR"/><feColorMatrix in="dR" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cR"/>${dm(scale)} result="dG"/><feColorMatrix in="dG" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cG"/>${dm(scale * (1 - k))} result="dB"/><feColorMatrix in="dB" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="cB"/><feBlend in="cR" in2="cG" mode="screen" result="cRG"/><feBlend in="cRG" in2="cB" mode="screen"/>`;
+  // Screen only joins independent channels correctly when their alpha is 1.
+  // A compositor may pass the element's opacity into this graph: Screen would
+  // then amplify it to 1-(1-a)^3, changing both the paint and the rim. Average
+  // the three premultiplied channels first (alpha never exceeds 1), then undo
+  // the RGB division. The result is homogeneous in alpha and preserves the
+  // same independent RGB samples for an opaque source.
+  return `${atlas}${dm(scale * (1 + k))} result="dR"/><feColorMatrix in="dR" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 ${1 / 3} 0" result="cR"/>${dm(scale)} result="dG"/><feColorMatrix in="dG" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 ${1 / 3} 0" result="cG"/>${dm(scale * (1 - k))} result="dB"/><feColorMatrix in="dB" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 ${1 / 3} 0" result="cB"/><feComposite in="cR" in2="cG" operator="arithmetic" k2="1" k3="1" result="cRG"/><feComposite in="cRG" in2="cB" operator="arithmetic" k2="1" k3="1"/><feColorMatrix type="matrix" values="3 0 0 0 0  0 3 0 0 0  0 0 3 0 0  0 0 0 1 0"/>`;
 }
 
 /**
