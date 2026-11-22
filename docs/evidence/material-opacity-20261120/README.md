@@ -53,6 +53,26 @@ affine не создаются. Все браузеры используют о�
 В итоговом коде исправлена эта граница, а цветовая заливка общая для всех engines.
 Эти опыты определяют выбор реализации; итоговую квалификацию см. ниже.
 
+Проверка source `878b33e4` (qualification `56215b5a`):
+[run 45059660258](https://github.com/Labpics-Team/labui/actions/runs/45059660258)
+полностью прошёл на macOS: paints, прокрутка, Alert и настоящий display compositor.
+Ubuntu прошёл paints и backdrop; Alert остановился на сравнении
+`2.000000000000014 <= 2` в Dark/Glass corner. Измеритель теперь сохраняет предел
+2 RGB с допуском одного ULP шкалы 255; это не увеличение визуального допуска.
+Оставшиеся проверки Ubuntu ещё не завершены.
+
+Независимое ревью 22 ноября обнаружило незакрытый дефект этой версии линзы:
+на прозрачном canvas displaced samples могут иметь разную alpha. Соединение
+через среднюю alpha обрезает яркий premultiplied канал. Управляемый пример:
+RGB `[255,128,64]`, alpha samples `[1,.25,.25]` теряют красный premultiplied
+канал с 255 до 127. Применимость подтверждена public Materials runtime над
+CSS-градиентом на прозрачном canvas без прозрачного предка; при авторском
+frost 20px наблюдалась потеря до 9 RGB. Проверка uniform RGB и равной alpha
+этого не выявляет. Этот source **не завершает** поддержку прозрачного фона.
+Дополнительно first-paint `compileMaterialTheme()` всё ещё возвращает
+`background-color`; scrolling SSR WebKit до mount пиксельно не проверен.
+Основание: [неpremultiplied вычисления feColorMatrix](https://www.w3.org/TR/SVG11/filters.html#feColorMatrixElement).
+
 Различающие опыты 22 ноября:
 
 - Renderer `cb928709` на Firefox 141 с тем же исправленным трёхсторонним stroke:
