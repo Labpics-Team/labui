@@ -28,10 +28,21 @@ interface PaintResource {
   readonly grain: 'none' | 'spatial' | 'uniform-bounded' | 'unsupported';
   readonly grainError?: number;
   readonly nativeAffine?: boolean;
-  readonly cssFilter?: string;
   refs: number;
 }
 const trees = new WeakMap<Document | ShadowRoot, Map<string, PaintResource>>();
+
+function createPaintFilter(el: HTMLElement): SVGFilterElement {
+  const filter = el.ownerDocument.createElementNS(SVGNS, 'filter');
+  filter.id = `lab-material-paint-${++uid}`;
+  filter.setAttribute('filterUnits', 'objectBoundingBox');
+  filter.setAttribute('primitiveUnits', 'userSpaceOnUse');
+  filter.setAttribute('color-interpolation-filters', 'sRGB');
+  for (const [name, value] of Object.entries({ x: '0', y: '0', width: '1', height: '1' }))
+    filter.setAttribute(name, value);
+  ensureHiddenDefs('lab-material-paint-defs', el).append(filter);
+  return filter;
+}
 
 /** Runtime outputs do not invalidate their own source paints. */
 export const paintStyleProperties = [
@@ -89,23 +100,33 @@ function acquire(
     // Both representations implement F(x)=m*x+b on the capturing element, so
     // stroke and paint stay in the same opacity group. Chromium needs the
     // transfer after its dispersed lens: native fill compositing otherwise
-    // violates group opacity on the Linux compositor. Contrast then brightness
-    // is k*(c*x+(1-c)/2), k=m+2b, c=m/k, with no intermediate clipping.
+    // violates group opacity on the Linux compositor. One immutable linear
+    // transfer keeps the capture opaque without a sampled table or extra layer.
     const slope = 1 - nativeFill.a;
-    const brightness = slope + (2 * nativeFill.r * nativeFill.a) / 255;
-    const cssFilter =
-      renderer === 'backdrop-svg' && slope > 1e-10
-        ? `contrast(${slope / brightness}) brightness(${brightness})`
-        : undefined;
+    let filter: SVGFilterElement | null = null;
+    if (renderer === 'backdrop-svg' && slope > 1e-10) {
+      filter = createPaintFilter(el);
+      const transfer = el.ownerDocument.createElementNS(SVGNS, 'feComponentTransfer');
+      for (const channel of ['R', 'G', 'B', 'A']) {
+        const fn = el.ownerDocument.createElementNS(SVGNS, `feFunc${channel}`);
+        fn.setAttribute('type', 'linear');
+        fn.setAttribute('slope', String(channel === 'A' ? 0 : slope));
+        fn.setAttribute(
+          'intercept',
+          String(channel === 'A' ? 1 : (nativeFill.r * nativeFill.a) / 255),
+        );
+        transfer.append(fn);
+      }
+      filter.append(transfer);
+    }
     const colour = `rgb(${nativeFill.r} ${nativeFill.g} ${nativeFill.b} / ${nativeFill.a})`;
     const resource: PaintResource = {
-      filter: null,
+      filter,
       // WebKit paints a scroller's background-color twice on its compositor.
       // A uniform image retains exact source-over and works even on engines
       // whose backdrop colour filters are unavailable. Opaque paints also use
       // it to retain coverage when the backdrop itself is transparent.
-      fill: cssFilter ? 'transparent' : `linear-gradient(${colour}, ${colour})`,
-      ...(cssFilter ? { cssFilter } : {}),
+      fill: filter ? 'transparent' : `linear-gradient(${colour}, ${colour})`,
       nativeAffine: true,
       key,
       resources,
@@ -138,15 +159,9 @@ function acquire(
     resources.set(key, resource);
     return resource;
   }
-  const filter = el.ownerDocument.createElementNS(SVGNS, 'filter');
-  filter.id = `lab-material-paint-${++uid}`;
+  const filter = createPaintFilter(el);
   // The region follows each consumer's box. Primitive dimensions (noise grain)
   // remain local CSS pixels, so differently sized surfaces share the resource.
-  filter.setAttribute('filterUnits', 'objectBoundingBox');
-  filter.setAttribute('primitiveUnits', 'userSpaceOnUse');
-  filter.setAttribute('color-interpolation-filters', 'sRGB');
-  for (const [name, value] of Object.entries({ x: '0', y: '0', width: '1', height: '1' }))
-    filter.setAttribute(name, value);
   const transfer = el.ownerDocument.createElementNS(SVGNS, 'feComponentTransfer');
   // WebRender applies component transfers to a captured backdrop, but SVG
   // image/composite primitives see only the element's own SourceGraphic. Keep
@@ -197,7 +212,6 @@ function acquire(
   alpha.setAttribute('intercept', '1');
   transfer.append(alpha);
   filter.append(transfer);
-  ensureHiddenDefs('lab-material-paint-defs', el).append(filter);
   const resource: PaintResource = {
     filter,
     fill: 'transparent',
@@ -279,7 +293,7 @@ export function attach(el: HTMLElement): EngineHandle {
     signature = next;
     el.style.setProperty(
       '--_material-paint-filter',
-      resource.filter ? `url(#${resource.filter.id})` : (resource.cssFilter ?? 'opacity(1)'),
+      resource.filter ? `url(#${resource.filter.id})` : 'opacity(1)',
     );
     el.style.setProperty('--_surface-paint', resource.fill);
     if (resource.filter) el.style.setProperty('--_noise', 'none');

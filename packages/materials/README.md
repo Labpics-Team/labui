@@ -103,7 +103,7 @@ CSS до подключения runtime опускает зерно.
 material host сбрасывает значение в 1. Base/Muted Alert используют эту общую
 композицию, включая нижнюю и боковые границы без верхней линии. Частичная group
 alpha произвольного цветного или нелинейного recipe не квалифицирована.
-Chromium применяет точный affine CSS transfer после линзы; Gecko/WebKit рисуют
+Chromium применяет точный affine SVG transfer после линзы; Gecko/WebKit рисуют
 эквивалентный uniform gradient. Это сохраняет Glass group alpha и предотвращает
 двойное рисование background-color у прокручиваемого WebKit host. Дополнительных
 слоёв DOM или работы на каждом кадре нет; непрозрачный paint сохраняет обычное покрытие.
