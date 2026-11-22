@@ -103,9 +103,7 @@ test.describe('author paints in the backdrop renderer', () => {
         ['blue', { r: 0, g: 0, b: 255, a: 1 }],
         ['white', { r: 255, g: 255, b: 255, a: 1 }],
       ] as const) {
-        await expect
-          .poll(() => readBackdropFilter(page, `surface-on-${name}`))
-          .toContain('lab-material-paint-');
+        await expect.poll(() => readBackdropFilter(page, `surface-on-${name}`)).toContain('blur(');
         const pixel = await patchColor(page, page.getByTestId(`surface-on-${name}`));
         const endpoints = [
           materialPaintOver(paints, backdrop),
@@ -129,6 +127,11 @@ test.describe('author paints in the backdrop renderer', () => {
   }
 
   test('mode flips, media changes and final disposal release paint filters', async ({ page }) => {
+    // Elevated is nonlinear in both themes and actually requires a transfer.
+    await page.locator('.lab-material').evaluateAll((panels) => {
+      for (const panel of panels)
+        panel.classList.replace('lab-material--soft', 'lab-material--elevated');
+    });
     const count = () => page.locator('.lab-material-paint-defs filter').count();
     await expect.poll(count).toBe(1);
     for (let i = 0; i < 8; i++) {
@@ -146,28 +149,23 @@ test.describe('author paints in the backdrop renderer', () => {
     await expect(page.locator('.lab-material-paint-defs')).toHaveCount(0);
   });
 
-  test('theme changes replace the shared transfer and update the actual pixels', async ({
+  test('theme changes replace affine fills without allocating transfers and update the actual pixels', async ({
     page,
   }) => {
     const panel = page.getByTestId('surface-on-black');
     const before = await patchColor(page, panel);
-    const ids = await page
-      .locator('.lab-material-paint-defs filter')
-      .evaluateAll((els) => els.map((el) => el.id));
+    const fill = await panel.evaluate((el) => el.style.getPropertyValue('--_surface-paint'));
     await page.locator('html').evaluate((el) => el.setAttribute('data-theme', 'dark'));
     await expect.poll(async () => (await patchColor(page, panel)).r).toBeLessThan(before.r - 50);
-    expect(
-      await page
-        .locator('.lab-material-paint-defs filter')
-        .evaluateAll((els) => els.map((el) => el.id)),
-    ).not.toEqual(ids);
-    await expect(page.locator('.lab-material-paint-defs filter')).toHaveCount(1);
+    expect(await panel.evaluate((el) => el.style.getPropertyValue('--_surface-paint'))).not.toBe(
+      fill,
+    );
+    await expect(page.locator('.lab-material-paint-defs filter')).toHaveCount(0);
   });
 
   test('Screen grain does not darken a white backdrop', async ({ page }) => {
     const panel = page.getByTestId('surface-on-white');
-    const paintFilter = () =>
-      panel.evaluate((el) => el.style.getPropertyValue('--_material-paint-filter'));
+    const paintFilter = () => panel.evaluate((el) => el.style.getPropertyValue('--_surface-paint'));
     const before = await paintFilter();
     await panel.evaluate((el) => {
       el.style.setProperty('--_tint', 'rgb(0 0 0 / 0)');
