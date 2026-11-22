@@ -9,6 +9,7 @@ import {
   buildGlassAtlas,
   glassAtlasMarkup,
   glassAtlasPlan,
+  glassFieldSide,
   resizeGlassAtlas,
 } from './glass-atlas';
 import { NEUTRAL_VECTOR_RGBA } from './glass-field-format';
@@ -575,9 +576,8 @@ function asymmetricField(
 }
 
 /**
- * Build ONE displacement map (PNG data-URI) at DEVICE-pixel resolution and wrap
- * it for the browser: the DOM-free field core rasterised onto a reused canvas,
- * then encoded to a PNG off the main thread.
+ * Rasterise the device-pixel field onto a reused CPU canvas. Bounded tiles are
+ * ready for the current paint; unusually large full fields encode off-thread.
  */
 function buildMap(
   w: number,
@@ -594,7 +594,9 @@ function buildMap(
   const { data, W, H, unit } = __computeDisplacementField(w, h, used, depth, dpr);
   if (!sCanvas) {
     sCanvas = document.createElement('canvas');
-    sCtx = sCanvas.getContext('2d');
+    // This canvas only uploads CPU bytes and reads them back for PNGs. A GPU
+    // canvas adds a synchronous readback stall without doing useful drawing.
+    sCtx = sCanvas.getContext('2d', { willReadFrequently: true });
   }
   if (!sCtx) throw new Error('liquid-glass: 2d canvas context unavailable');
   sCanvas.width = W;
@@ -602,27 +604,12 @@ function buildMap(
   sCtx.putImageData(new ImageData(data, W, H), 0, 0);
   if (atlasPlan) {
     const atlas = buildGlassAtlas(sCanvas, atlasPlan, dpr);
-    const ready = Promise.all(
-      atlas.tiles.map(
-        (href) =>
-          new Promise<void>((resolve) => {
-            const im = new Image();
-            im.onload = im.onerror = () => resolve();
-            im.src = href;
-          }),
-      ),
-    ).then(() => atlas.tiles[0] ?? '');
     armScratchRelease();
-    return { atlas, href: null, ready, unit, mapW: W, mapH: H };
+    return { atlas, href: atlas.tiles[0] ?? '', ready: null, unit, mapW: W, mapH: H };
   }
-  // The PNG encode was the LAST big synchronous chunk of a build (heavier than
-  // the ¼-symmetric field loop). toBlob snapshots the canvas bitmap AT CALL
-  // TIME (spec: a synchronous copy) and encodes off the main thread; the href
-  // arrives one tick later through `ready` — every consumer already survives
-  // that (the feImage decode was async anyway, and the pending-decode re-arm
-  // machinery covers the window). toDataURL remains the fallback reference
-  // path; both encoders emit lossless PNG of the same bitmap, so the decoded
-  // RGBA — and therefore the rendered lens — is byte-identical either way.
+  // A near-square shape may not contain a compressible middle. If it still
+  // fits within the optical source bounds, publish it in this paint as well.
+  // Large full fields retain off-thread encoding. Both paths are lossless.
   const out: Omit<MapEntry, 'refs' | 'evicted'> = {
     href: null,
     ready: null,
@@ -631,7 +618,12 @@ function buildMap(
     mapH: H,
   };
   const canvas = sCanvas;
-  if (typeof canvas.toBlob === 'function' && typeof URL !== 'undefined' && URL.createObjectURL) {
+  if (
+    Math.max(w, h) > glassFieldSide(corner, depth, dpr) &&
+    typeof canvas.toBlob === 'function' &&
+    typeof URL !== 'undefined' &&
+    URL.createObjectURL
+  ) {
     out.ready = new Promise((resolve) => {
       canvas.toBlob((blob) => resolve(blob ? URL.createObjectURL(blob) : ''), 'image/png');
     });
@@ -807,7 +799,7 @@ function applyLens(state: EngineState, map: MapEntry, p: RenderParams, scale: nu
       // replacement SVG nodes. All four physical edges remain present.
       filter.setAttribute('width', String(p.w));
       filter.setAttribute('height', String(p.h));
-      if (map.atlas) resizeGlassAtlas(state.mapNodes ?? [], map.atlas.padding, p.w, p.h);
+      if (map.atlas) resizeGlassAtlas(state.mapNodes ?? [], map.atlas, p.w, p.h);
       s.w = p.w;
       s.h = p.h;
     }
@@ -928,9 +920,10 @@ function render(state: EngineState): void {
   // strength, or dispersion. So a DRAG or a refraction/dispersion change never
   // rebuilds it (cheap re-stamp); only resize/corner/depth does.
   const atlasPlan = glassAtlasPlan(p.w, p.h, p.corner, p.depth, dpr);
-  const mapW = atlasPlan?.side ?? p.w;
-  const mapH = atlasPlan?.side ?? p.h;
-  const geoKey = `${atlasPlan ? 'atlas:' : ''}${mapW}x${mapH}x${shapeKey(p.corner)}x${p.depth}x${dpr.toFixed(2)}`;
+  const mapW = atlasPlan?.strip?.axis === 'y' ? atlasPlan.strip.cross : (atlasPlan?.side ?? p.w);
+  const mapH = atlasPlan?.strip?.axis === 'x' ? atlasPlan.strip.cross : (atlasPlan?.side ?? p.h);
+  const kind = atlasPlan?.strip ? `strip-${atlasPlan.strip.axis}:` : atlasPlan ? 'atlas:' : '';
+  const geoKey = `${kind}${mapW}x${mapH}x${shapeKey(p.corner)}x${p.depth}x${dpr.toFixed(2)}`;
   const t0 = state.onPerf ? performance.now() : 0;
 
   const stamp = (map: MapEntry, mapMs: number): void => {
@@ -955,8 +948,9 @@ function render(state: EngineState): void {
     }
   };
 
-  // Arm the decode→stamp chain for a map whose href may still be encoding
-  // (toBlob) — the gen-guard in stamp() drops stale arms either way.
+  // Inline bounded maps are published before paint. Waiting for an Image load
+  // callback would supersede every frame of a changing small shape. Large blob
+  // maps still wait for encoding/decode; generation protects their late stamp.
   const armStamp = (map: MapEntry, mapMs: number): void => {
     const decode = (href: string | null): void => {
       if (!href) return; // encode failed (never seen in practice) → stay frost
@@ -964,7 +958,8 @@ function render(state: EngineState): void {
       im.onload = im.onerror = () => stamp(map, mapMs);
       im.src = href;
     };
-    if (map.href) decode(map.href);
+    if (map.href?.startsWith('data:')) stamp(map, mapMs);
+    else if (map.href) decode(map.href);
     else if (map.ready) map.ready.then(decode);
   };
 
@@ -998,9 +993,7 @@ function render(state: EngineState): void {
   state.pendingMap = map; // so a same-geometry re-render mid-decode can re-arm a stamp
   if (prevHeld && prevHeld !== geoKey) releaseMap(prevHeld);
   const mapMs = state.onPerf ? Math.max(performance.now() - tMap, 0.001) : 1;
-  // Decode the map before referencing it (feImage decode is async either way);
-  // stamping after decode avoids a one-frame flash of the un-lensed backdrop.
-  // The gen-guard in stamp() drops this if a newer render superseded.
+  // Publish inline fields now, or arm the guarded decode of a large blob map.
   armStamp(map, mapMs);
 }
 
@@ -1049,11 +1042,9 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
   };
 
   const update = () => render(state);
-  // The ResizeObserver / window-resize storm fires many sub-pixel callbacks while
-  // a layout settles; a trailing-edge rAF collapses a burst into ONE build at the
-  // final size. The final geometry — and thus the rendered map — is identical to
-  // an un-debounced run; only redundant intermediate builds are skipped. Explicit
-  // update()/refresh() stay immediate.
+  // Window events can coalesce. ResizeObserver already runs after layout and
+  // before paint: defer its optical update and a moving edge displays the last
+  // frame's lens. This callback writes filter data, never the observed layout.
   let rafId = 0;
   const debouncedUpdate = () => {
     if (rafId) return;
@@ -1062,7 +1053,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
       update();
     });
   };
-  const ro = new ResizeObserver(debouncedUpdate);
+  const ro = new ResizeObserver(update);
   ro.observe(el, { box: 'border-box' });
   window.addEventListener('resize', debouncedUpdate);
   const mq =

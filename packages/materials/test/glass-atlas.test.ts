@@ -41,12 +41,61 @@ describe('retained glass rim', () => {
       }
   });
 
-  it('retains bounded optics for Flex, overlapping corners and fractional pixel grids', () => {
-    expect(glassAtlasPlan(375, 40, [32, 32, 32, 32, 0, 0, 0, 0], 100, 2)).toBeNull();
-    expect(glassAtlasPlan(375, 270, 140, 100, 2)).toBeNull();
-    expect(glassAtlasPlan(375, 422, 32, 100, 1.25)).toBeNull();
+  it('keeps the size-dependent short axis for Flex, overlapping corners and fractional grids', () => {
+    expect(glassAtlasPlan(375, 40, [32, 32, 32, 32, 0, 0, 0, 0], 100, 2)?.strip).toBeDefined();
+    expect(glassAtlasPlan(375, 270, 140, 100, 2)?.strip).toBeDefined();
+    expect(glassAtlasPlan(375, 422, 32, 100, 1.25)?.strip).toBeDefined();
     const threshold = 2 * lensReach(100);
-    expect(glassAtlasPlan(375, threshold - 0.001, 32, 100, 2)).toBeNull();
+    expect(glassAtlasPlan(375, threshold - 0.001, 32, 100, 2)?.strip).toBeDefined();
     expect(glassAtlasPlan(375, threshold, 32, 100, 2)).not.toBeNull();
+  });
+
+  it('reconstructs the full bounded field from three strips without changing a byte', () => {
+    for (const dpr of [1, 1.25, 1.5, 2])
+      for (const horizontal of [true, false])
+        for (const cross of [1, 16, 40, 47.5, 60, 99.3, 199.6])
+          for (const long of [375, 720.333]) {
+            const w = horizontal ? long : cross;
+            const h = horizontal ? cross : long;
+            const radii: RoundedShape = [24, 24, 18, 18, 12, 12, 0, 0];
+            // The browser resolves CSS radius overlap before choosing a map.
+            const corner = materialContour(w, h, radii, 0);
+            const plan = glassAtlasPlan(w, h, corner, 100, dpr);
+            expect(plan?.strip, `${w}x${h}@${dpr}`).toBeDefined();
+            if (!plan?.strip) continue;
+            const mapW = horizontal ? plan.side : cross;
+            const mapH = horizontal ? cross : plan.side;
+            const atlas = __computeDisplacementField(mapW, mapH, corner, 100, dpr);
+            const source = atlas.data.slice();
+            const field = __computeDisplacementField(w, h, corner, 100, dpr);
+            expect(atlas.unit).toBeCloseTo(field.unit, 12);
+            const padding = Math.round(plan.padding * plan.strip.scale);
+            const middle = Math.floor((horizontal ? atlas.W : atlas.H) / 2);
+            const actual = new Uint8ClampedArray(field.data.length);
+            for (let y = 0; y < field.H; y++)
+              for (let x = 0; x < field.W; x++) {
+                const sx = horizontal
+                  ? x < padding
+                    ? x
+                    : x >= field.W - padding
+                      ? atlas.W - field.W + x
+                      : middle
+                  : x;
+                const sy = horizontal
+                  ? y
+                  : y < padding
+                    ? y
+                    : y >= field.H - padding
+                      ? atlas.H - field.H + y
+                      : middle;
+                const to = (y * field.W + x) * 4;
+                const from = (sy * atlas.W + sx) * 4;
+                actual.set(source.subarray(from, from + 4), to);
+              }
+            expect(
+              Buffer.compare(Buffer.from(actual), Buffer.from(field.data)),
+              `${w}x${h}@${dpr}`,
+            ).toBe(0);
+          }
   });
 });

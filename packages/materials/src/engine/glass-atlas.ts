@@ -4,10 +4,25 @@ import type { RoundedShape } from './rounded-shape';
 export interface GlassAtlasPlan {
   padding: number;
   side: number;
+  /** A bounded field along the changing short axis; the long middle is invariant. */
+  strip?: { axis: 'x' | 'y'; cross: number; scale: number };
 }
 
 export interface GlassAtlas extends GlassAtlasPlan {
   tiles: readonly string[];
+}
+
+const cornerExtent = (corner: RoundedShape): number =>
+  typeof corner === 'number'
+    ? corner
+    : 'radii' in corner
+      ? Math.max(...corner.corners.flatMap((c) => [c.x, c.y]))
+      : Math.max(...corner);
+
+/** Largest source side needed before the optical profile and corners fit.
+ * Full fields within this bound are as small as the retained tile source. */
+export function glassFieldSide(corner: RoundedShape, depth: number, dpr: number): number {
+  return (Math.ceil(2 * Math.max(cornerExtent(corner), lensReach(depth)) * dpr) + 1) / dpr;
 }
 
 /** An unchanged rim can move with the box without stretching its optics.
@@ -21,23 +36,27 @@ export function glassAtlasPlan(
   depth: number,
   dpr: number,
 ): GlassAtlasPlan | null {
-  // With a fractional pixel scale, rounding the full bitmap changes the right
-  // and bottom sampling phase as dimensions change. Keep that exact field path.
-  if (!Number.isInteger(dpr)) return null;
-  const radius =
-    typeof corner === 'number'
-      ? corner
-      : 'radii' in corner
-        ? Math.max(...corner.corners.flatMap((c) => [c.x, c.y]))
-        : Math.max(...corner);
+  const radius = cornerExtent(corner);
   const band = lensBand(depth, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
   const padding = Math.ceil(Math.max(radius, band) * dpr) / dpr;
   const minimum = Math.max(2 * padding + 1, 2 * lensReach(depth));
-  if (Math.min(w, h) < minimum) return null;
-  return { padding, side: Math.ceil(minimum) + 1 };
+  if (Number.isInteger(dpr) && Math.min(w, h) >= minimum)
+    return { padding, side: Math.ceil(minimum) + 1 };
+  // Small shapes cannot use the invariant four-sided rim: their optical
+  // half-size still changes. Compress only the unchanged middle of the LONG
+  // axis. Keep its exact rounded bitmap phase, including fractional DPR.
+  const axis = w >= h ? 'x' : 'y';
+  const long = Math.max(w, h);
+  const cross = Math.min(w, h);
+  const scale = Math.max(1, Math.round(long * dpr)) / long;
+  const stripPadding = Math.ceil(Math.max(radius, lensBand(depth, w, h)) * scale) / scale;
+  const side =
+    (Math.ceil(Math.max(2 * stripPadding, Math.min(cross, 2 * lensReach(depth))) * scale) + 1) /
+    scale;
+  return side < long ? { padding: stripPadding, side, strip: { axis, cross, scale } } : null;
 }
 
-/** Eight lossless PNGs. Native feImage primitives retain device-pixel detail;
+/** Lossless corner/rim PNGs. Native feImage primitives retain device-pixel detail;
  * external SVG images lose it, and local SVG references fail on the backdrop
  * path even when an ordinary filter paints them correctly.
  */
@@ -48,8 +67,32 @@ export function buildGlassAtlas(
 ): GlassAtlas {
   const { padding: p, side } = plan;
   const tile = source.ownerDocument.createElement('canvas');
-  const ctx = tile.getContext('2d');
+  const ctx = tile.getContext('2d', { willReadFrequently: true });
   if (!ctx) throw new Error('liquid-glass: 2d canvas context unavailable');
+  if (plan.strip) {
+    const { axis, scale } = plan.strip;
+    const padding = Math.round(p * scale);
+    const long = axis === 'x' ? source.width : source.height;
+    const crop = (start: number, length: number): string => {
+      tile.width = axis === 'x' ? length : source.width;
+      tile.height = axis === 'y' ? length : source.height;
+      ctx.drawImage(
+        source,
+        axis === 'x' ? start : 0,
+        axis === 'y' ? start : 0,
+        tile.width,
+        tile.height,
+        0,
+        0,
+        tile.width,
+        tile.height,
+      );
+      return tile.toDataURL('image/png');
+    };
+    const tiles = [crop(0, padding), crop(Math.floor(long / 2), 1), crop(long - padding, padding)];
+    tile.width = tile.height = 0;
+    return { ...plan, tiles };
+  }
   const crop = (x: number, y: number, w: number, h: number): string => {
     tile.width = Math.round(w * dpr);
     tile.height = Math.round(h * dpr);
@@ -74,16 +117,28 @@ export function buildGlassAtlas(
 
 export function glassAtlasMarkup(atlas: GlassAtlas, w: number, h: number): string {
   const p = atlas.padding;
-  const bounds = [
-    [0, 0, p, h],
-    [w - p, 0, p, h],
-    [0, 0, w, p],
-    [0, h - p, w, p],
-    [0, 0, p, p],
-    [w - p, 0, p, p],
-    [0, h - p, p, p],
-    [w - p, h - p, p, p],
-  ];
+  const bounds = atlas.strip
+    ? atlas.strip.axis === 'x'
+      ? [
+          [0, 0, p, h],
+          [p, 0, w - 2 * p, h],
+          [w - p, 0, p, h],
+        ]
+      : [
+          [0, 0, w, p],
+          [0, p, w, h - 2 * p],
+          [0, h - p, w, p],
+        ]
+    : [
+        [0, 0, p, h],
+        [w - p, 0, p, h],
+        [0, 0, w, p],
+        [0, h - p, w, p],
+        [0, 0, p, p],
+        [w - p, 0, p, p],
+        [0, h - p, p, p],
+        [w - p, h - p, p, p],
+      ];
   const images = atlas.tiles
     .map((href, i) => {
       const [x, y, width, height] = bounds[i] ?? [];
@@ -95,13 +150,29 @@ export function glassAtlasMarkup(atlas: GlassAtlas, w: number, h: number): strin
   return `<feFlood flood-color="rgb(${zero} ${zero} ${zero})" result="neutral"/>${images}<feMerge result="map"><feMergeNode in="neutral"/>${merge}</feMerge>`;
 }
 
-/** Only dependent coordinates change. The eight bitmaps and SVG nodes survive. */
-export function resizeGlassAtlas(nodes: readonly Element[], p: number, w: number, h: number): void {
+/** Only dependent coordinates change. The bitmaps and SVG nodes survive. */
+export function resizeGlassAtlas(
+  nodes: readonly Element[],
+  atlas: GlassAtlas,
+  w: number,
+  h: number,
+): void {
+  const p = atlas.padding;
   const set = (i: number, name: string, value: number) => {
     const node = nodes[i];
     const next = String(value);
     if (node?.getAttribute(name) !== next) node?.setAttribute(name, next);
   };
+  if (atlas.strip) {
+    if (atlas.strip.axis === 'x') {
+      set(1, 'width', w - 2 * p);
+      set(2, 'x', w - p);
+    } else {
+      set(1, 'height', h - 2 * p);
+      set(2, 'y', h - p);
+    }
+    return;
+  }
   set(0, 'height', h);
   set(1, 'x', w - p);
   set(1, 'height', h);
