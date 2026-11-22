@@ -34,7 +34,7 @@ targets:
           cd "$SRCROOT/.."
           bash ../gradlew embedAndSignAppleFrameworkForXcode --console=plain
   LabUIExampleTests:
-    type: bundle.unit-testing
+    type: bundle.unit-test
     platform: iOS
     sources: [UnitTests]
     dependencies:
