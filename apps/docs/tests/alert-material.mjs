@@ -16,6 +16,9 @@ const display = process.env.MATERIAL_CAPTURE === 'display';
 if (display && !process.env.CI) throw new Error('Display capture runs only in isolated CI');
 const capture = display ? 'display' : 'snapshot';
 const rgbTolerance = 2;
+// Endpoint interpolation uses binary floating-point on byte RGB. Preserve the
+// 2 RGB contract at its boundary (e.g. 2.000000000000014) within one scale ULP.
+const rgbComparisonTolerance = rgbTolerance + Number.EPSILON * 255;
 const minimumResponse = rgbTolerance * 2;
 
 // Build the actual fixture and all its imports once. No dev server or second
@@ -487,7 +490,7 @@ try {
             if (measurable) {
               for (const error of compositeError)
                 assert.ok(
-                  error <= rgbTolerance,
+                  error <= rgbComparisonTolerance,
                   `authored group alpha is preserved within ${rgbTolerance} RGB, observed ${error}`,
                 );
               for (const [i, value] of response.entries())
@@ -497,17 +500,17 @@ try {
                 );
               for (const value of returned)
                 assert.ok(
-                  value <= rgbTolerance,
+                  value <= rgbComparisonTolerance,
                   'returning the backdrop restores every Alert layer',
                 );
               for (const value of restoreError)
                 assert.ok(
-                  value <= rgbTolerance,
+                  value <= rgbComparisonTolerance,
                   'removing the regression restores the production pixels',
                 );
               for (const [i, value] of controlResponse.entries()) {
                 assert.ok(
-                  value <= rgbTolerance,
+                  value <= rgbComparisonTolerance,
                   'wrapper opacity cannot observe the changed surrounding backdrop',
                 );
                 assert.ok(
@@ -521,7 +524,7 @@ try {
             for (const layer of decorativeComposite)
               for (const point of layer)
                 assert.ok(
-                  point.error <= rgbTolerance,
+                  point.error <= rgbComparisonTolerance,
                   `${point.name}: complete decoration group alpha error ${point.error} <= ${rgbTolerance}`,
                 );
             for (const layer of strokeVisibility) {

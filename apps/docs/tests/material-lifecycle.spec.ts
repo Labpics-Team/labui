@@ -6,7 +6,32 @@ import {
   compileMaterialTheme,
   materialRoles,
 } from '@labpics/ui-materials';
-import { expect, test } from '@playwright/test';
+import { type Locator, type Page, expect, test } from '@playwright/test';
+
+async function materialColourError(page: Page, surface: Locator, expected: number[]) {
+  const png = await surface.screenshot();
+  return page.evaluate(
+    async ({ base64, expected }) => {
+      const image = new Image();
+      image.src = `data:image/png;base64,${base64}`;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Missing canvas');
+      ctx.drawImage(image, 0, 0);
+      const pixel = ctx.getImageData(
+        Math.floor(image.width / 2),
+        Math.floor(image.height / 2),
+        1,
+        1,
+      ).data;
+      return Math.max(...expected.map((channel, i) => Math.abs(channel - (pixel[i] ?? 0))));
+    },
+    { base64: png.toString('base64'), expected },
+  );
+}
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/_fixtures/material-lifecycle.html');
@@ -971,39 +996,55 @@ test('native affine paint follows custom roles instead of keeping baked defaults
   await page.locator('#backdrop').evaluate((el) => {
     el.style.background = 'rgb(80 120 160)';
   });
-  const colourError = async (expected: number[]) => {
-    const png = await surface.screenshot();
-    return page.evaluate(
-      async ({ base64, expected }) => {
-        const image = new Image();
-        image.src = `data:image/png;base64,${base64}`;
-        await image.decode();
-        const canvas = document.createElement('canvas');
-        canvas.width = image.width;
-        canvas.height = image.height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error('Missing canvas');
-        ctx.drawImage(image, 0, 0);
-        const pixel = ctx.getImageData(
-          Math.floor(image.width / 2),
-          Math.floor(image.height / 2),
-          1,
-          1,
-        ).data;
-        return Math.max(...expected.map((channel, i) => Math.abs(channel - (pixel[i] ?? 0))));
-      },
-      { base64: png.toString('base64'), expected },
-    );
-  };
   await surface.evaluate((el) => {
     el.setAttribute('data-material', 'acrylic');
     el.style.setProperty('--_tint', 'rgb(0 0 0 / .5)');
     el.style.setProperty('--_blend', 'rgb(0 0 0 / 0)');
   });
-  await expect.poll(() => colourError([40, 60, 80])).toBeLessThanOrEqual(1);
+  await expect.poll(() => materialColourError(page, surface, [40, 60, 80])).toBeLessThanOrEqual(1);
   await expect(page.locator('body > .lab-material-paint-defs')).toHaveCount(0);
   await surface.evaluate((el) => el.style.setProperty('--_tint', 'rgb(255 255 255 / .25)'));
-  await expect.poll(() => colourError([123.75, 153.75, 183.75])).toBeLessThanOrEqual(1);
+  await expect
+    .poll(() => materialColourError(page, surface, [123.75, 153.75, 183.75]))
+    .toBeLessThanOrEqual(1);
+});
+
+test('chromatic dispersion preserves uniform RGB through group opacity', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'Refraction is available in Chromium');
+  const rgb = [71, 143, 219];
+  await page.locator('#backdrop').evaluate((el, rgb) => {
+    el.style.background = `rgb(${rgb.join(' ')})`;
+  }, rgb);
+  const surface = page.locator('#surface');
+  await surface.evaluate((el) => {
+    el.setAttribute('data-material', 'glass');
+    el.textContent = '';
+    for (const [key, value] of Object.entries({
+      '--_tint': 'rgb(0 0 0 / 0)',
+      '--_blend': 'rgb(0 0 0 / 0)',
+      '--_rim': 'none',
+      '--_lg-refraction': '1',
+      '--_lg-dispersion': '.6',
+    }))
+      el.style.setProperty(key, value);
+  });
+  await expect
+    .poll(() =>
+      surface.evaluate((el) => getComputedStyle(el).getPropertyValue('--_material-lens-filter')),
+    )
+    .toContain('url(');
+  // Bending a uniform scene cannot change its colour. A Screen join would
+  // amplify captured alpha and darken partial-opacity frames on Linux.
+  for (const alpha of [0.1, 0.5, 0.76, 1]) {
+    await surface.evaluate(
+      (el, alpha) => el.style.setProperty('--_material-layer-opacity', String(alpha)),
+      alpha,
+    );
+    await expect.poll(() => materialColourError(page, surface, rgb)).toBeLessThanOrEqual(2);
+  }
 });
 
 test('a veil retains authored paint between its own and nested backdrop passes', async ({
