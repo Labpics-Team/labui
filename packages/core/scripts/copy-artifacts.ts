@@ -15,6 +15,7 @@ import { copyFileSync, cpSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { fileUploadCss } from '../src/components/file-upload/styles.js';
 import { accordionCss } from '../src/components/accordion/styles.js';
 import { alertCss } from '../src/components/alert/styles.js';
 import { avatarCss } from '../src/components/avatar/styles.js';
@@ -54,6 +55,7 @@ const tokensPkg = require.resolve('@labpics/ui-tokens/tokens.css');
 
 function main(): void {
   mkdirSync(dist, { recursive: true });
+  writeFileSync(join(dist, 'file-upload.css'), fileUploadCss);
   writeFileSync(join(dist, 'alert.css'), alertCss);
   writeFileSync(join(dist, 'dialog.css'), dialogCss);
 

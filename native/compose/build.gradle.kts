@@ -30,6 +30,8 @@ kotlin {
             api(compose.runtime)
             api(compose.foundation)
             api(compose.ui)
+            api("io.github.vinceglb:filekit-core:0.17.1")
+            implementation("io.github.vinceglb:filekit-dialogs-compose:0.17.1")
             implementation(compose.components.resources)
             implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
             implementation("dev.chrisbanes.haze:haze:2.1.0")

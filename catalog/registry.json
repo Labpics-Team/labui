@@ -298,8 +298,16 @@
       "slug": "file-upload",
       "title": "File Upload",
       "group": "input",
-      "kind": "composition",
-      "summary": "Добавление файлов через поле или область переноса."
+      "kind": "control",
+      "summary": "Добавление файлов через поле или область переноса.",
+      "web": {
+        "subpath": "file-upload",
+        "reactExport": "FileUpload"
+      },
+      "native": {
+        "symbol": "LabFileUpload"
+      },
+      "profile": "file-upload"
     },
     {
       "slug": "calendar",
@@ -1334,7 +1342,19 @@
       "uses": [
         {
           "family": "file-upload",
-          "role": "root"
+          "role": "root",
+          "web": {
+            "props": {
+              "view": "dropzone"
+            },
+            "scope": "Authored five-state area, exact transparent artwork and pattern, 381.2 px baseline; shared Lit/React picker, drop, forms and accessible actions."
+          },
+          "native": {
+            "props": {
+              "variant": "Area"
+            },
+            "scope": "Compose authored geometry and artwork; FileKit picker on all targets, external drop on Desktop/Android, iOS picker-only."
+          }
         }
       ]
     },
@@ -1345,7 +1365,19 @@
       "uses": [
         {
           "family": "file-upload",
-          "role": "variant"
+          "role": "variant",
+          "web": {
+            "props": {
+              "view": "input"
+            },
+            "scope": "Authored S/M/L compact file field, body typography and file glyph; shared Lit/React selection and form behavior."
+          },
+          "native": {
+            "props": {
+              "variant": "Input"
+            },
+            "scope": "Compose compact S/M/L 40/48/56 dp field and exact file glyph; controlled PlatformFile selection."
+          }
         }
       ]
     },

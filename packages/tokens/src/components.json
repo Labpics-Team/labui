@@ -1758,5 +1758,97 @@
       "activeBackground": "bg-static-light",
       "activeLabel": "label-static-dark-primary"
     }
+  },
+  "file-upload": {
+    "sourceRef": {
+      "key": "component-set/Drag'n'drop/Drag'n'drop input"
+    },
+    "strokeWidth": 1,
+    "dragStrokeWidth": 2,
+    "gap": 8,
+    "fieldGap": 8,
+    "caption": {
+      "$textStyle": "caption-s"
+    },
+    "sizes": {
+      "s": {
+        "height": 40,
+        "radius": 9999,
+        "paddingX": 16,
+        "paddingY": 8,
+        "icon": 24,
+        "$textStyle": "body"
+      },
+      "m": {
+        "height": 48,
+        "radius": 16,
+        "paddingX": 16,
+        "paddingY": 12,
+        "icon": 24,
+        "$textStyle": "body"
+      },
+      "l": {
+        "height": 56,
+        "radius": 16,
+        "paddingX": 16,
+        "paddingY": 16,
+        "icon": 24,
+        "$textStyle": "body"
+      }
+    },
+    "area": {
+      "sourceRef": {
+        "key": "component-set/Drag'n'drop/Drag'n'drop"
+      },
+      "radius": 24,
+      "paddingX": 96,
+      "paddingY": 44.6,
+      "gap": 24,
+      "illustrationWidth": 256,
+      "illustrationHeight": 128,
+      "dragIllustrationWidth": 320,
+      "dragIllustrationHeight": 160,
+      "title": {
+        "fontSize": 24,
+        "lineHeight": 24,
+        "fontWeight": 500,
+        "letterSpacing": -0.5
+      },
+      "height": 381.2,
+      "artwork": {
+        "default": {
+          "width": 256,
+          "height": 146,
+          "offsetY": 0
+        },
+        "hover": {
+          "width": 256,
+          "height": 180,
+          "offsetY": -8.4176025390625
+        },
+        "selected": {
+          "width": 256,
+          "height": 144,
+          "offsetY": 0
+        },
+        "drag": {
+          "width": 320,
+          "height": 182,
+          "offsetY": 0
+        }
+      }
+    },
+    "roles": {
+      "background": "bg-primary",
+      "border": "border-base",
+      "dragBorder": "border-accent",
+      "dragBackground": "fill-brand-primary",
+      "hover": "fill-quaternary",
+      "label": "label-primary",
+      "secondary": "label-secondary",
+      "disabled": "label-quaternary",
+      "danger": "label-danger",
+      "focus": "border-focus"
+    }
   }
 }

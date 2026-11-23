@@ -20,6 +20,7 @@ export { Combobox, type ComboboxProps } from './combobox.js';
 export { ContextMenu, type ContextMenuProps } from './context-menu.js';
 export { Dialog, type DialogProps } from './dialog.js';
 export { DragButton, type DragButtonProps } from './drag-button.js';
+export { FileUpload, type FileUploadProps } from './file-upload.js';
 export { Icon, type IconProps } from './icon.js';
 export { Input, type InputProps } from './input.js';
 export { Kbd, type KbdProps } from './kbd.js';

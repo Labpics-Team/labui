@@ -20,6 +20,7 @@ export { default as Combobox } from './Combobox.svelte';
 export { default as ContextMenu } from './ContextMenu.svelte';
 export { default as Dialog } from './Dialog.svelte';
 export { default as DragButton } from './DragButton.svelte';
+export { default as FileUpload } from './FileUpload.svelte';
 export { default as Icon } from './Icon.svelte';
 export { default as Input } from './Input.svelte';
 export { default as Kbd } from './Kbd.svelte';

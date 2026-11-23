@@ -235,6 +235,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         inputExtensions: resolve(__dirname, 'src/_fixtures/input-extensions.html'),
+        fileUpload: resolve(__dirname, 'src/_fixtures/file-upload.html'),
         index: resolve(__dirname, 'src/index.html'),
         colors: resolve(__dirname, 'src/colors.html'),
         experience: resolve(__dirname, 'src/experience.html'),

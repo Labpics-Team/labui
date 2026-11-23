@@ -4,6 +4,8 @@
 и Linux. UI не содержит WebView и не использует компоненты Material 3.
 Geist поставляется с пакетом; размеры используют dp, типографика — sp.
 
+[File Upload: системный выбор, ограничения и поддержка drag/drop](docs/file-upload.md).
+
 ## Текущее состояние
 
 Реализованы Button, Badge, state-based Input, Switch, Card, Sheet, Snackbar, Loader и Progress,

@@ -424,6 +424,27 @@
         "types": "./dist/components/combobox/runtime.d.cts",
         "default": "./dist/components/combobox/runtime.cjs"
       }
+    },
+    "./file-upload.css": "./dist/file-upload.css",
+    "./file-upload/behavior": {
+      "import": {
+        "types": "./dist/components/file-upload/behavior.d.ts",
+        "default": "./dist/components/file-upload/behavior.js"
+      },
+      "require": {
+        "types": "./dist/components/file-upload/behavior.d.cts",
+        "default": "./dist/components/file-upload/behavior.cjs"
+      }
+    },
+    "./file-upload/contract": {
+      "import": {
+        "types": "./dist/components/file-upload/contract.d.ts",
+        "default": "./dist/components/file-upload/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/file-upload/contract.d.cts",
+        "default": "./dist/components/file-upload/contract.cjs"
+      }
     }
   },
   "files": ["dist"],
@@ -464,7 +485,8 @@
     "./dist/alert.css",
     "./dist/menu.css",
     "./dist/dialog.css",
-    "./dist/input-extensions.css"
+    "./dist/input-extensions.css",
+    "./dist/file-upload.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
@@ -497,7 +519,8 @@
     "@zag-js/types": "1.41.2",
     "@zag-js/vanilla": "1.48.0",
     "lit": "3.3.3",
-    "@floating-ui/dom": "1.7.6"
+    "@floating-ui/dom": "1.7.6",
+    "@zag-js/file-upload": "1.41.2"
   },
   "peerDependencies": {
     "@lit-labs/ssr": "^4.1.0"

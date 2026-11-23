@@ -15,6 +15,7 @@ internal data class LabAccordionMetrics(val padding: Float, val radius: Float, v
 internal data class LabSelectMetrics(val height: Float, val radius: Float, val paddingStart: Float, val paddingEnd: Float, val paddingY: Float, val gap: Float, val leadingSize: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float)
 internal data class LabAvatarMetrics(val diameter: Float, val fontSize: Float, val lineHeight: Float, val statusSize: Float, val statusGap: Float)
 internal data class LabPinInputMetrics(val width: Float, val height: Float, val radius: Float, val gap: Float, val dot: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float)
+internal data class LabFileUploadMetrics(val height: Float, val radius: Float, val paddingX: Float, val paddingY: Float, val icon: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float)
 
 public enum class LabBadgeColor(internal val role: String) { Neutral("neutral"), Gray("gray"), Blue("blue"), Red("red"), Orange("orange"), Green("green"), Yellow("yellow"), Teal("teal"), Mint("mint"), Indigo("indigo"), Purple("purple"), Pink("pink"), StaticDark("static-dark"), StaticLight("static-light"), Brand("brand") }
 
@@ -942,4 +943,50 @@ internal object LabComponents {
     const val MenuLineHeight = 24f
     const val MenuFontWeight = 400f
     const val MenuLetterSpacing = -0.25f
+    val FileUploadS = LabFileUploadMetrics(40f, 9999f, 16f, 8f, 24f, 16f, 24f, 400f, -0.25f)
+    val FileUploadM = LabFileUploadMetrics(48f, 16f, 16f, 12f, 24f, 16f, 24f, 400f, -0.25f)
+    val FileUploadL = LabFileUploadMetrics(56f, 16f, 16f, 16f, 24f, 16f, 24f, 400f, -0.25f)
+    const val FileUploadStrokeWidth = 1f
+    const val FileUploadDragStrokeWidth = 2f
+    const val FileUploadGap = 8f
+    const val FileUploadFieldGap = 8f
+    const val FileUploadCaptionFontSize = 14f
+    const val FileUploadCaptionLineHeight = 12f
+    const val FileUploadCaptionFontWeight = 500f
+    const val FileUploadCaptionLetterSpacing = 0f
+    const val FileUploadAreaRadius = 24f
+    const val FileUploadAreaPaddingX = 96f
+    const val FileUploadAreaPaddingY = 44.6f
+    const val FileUploadAreaGap = 24f
+    const val FileUploadAreaIllustrationWidth = 256f
+    const val FileUploadAreaIllustrationHeight = 128f
+    const val FileUploadAreaDragIllustrationWidth = 320f
+    const val FileUploadAreaDragIllustrationHeight = 160f
+    const val FileUploadAreaTitleFontSize = 24f
+    const val FileUploadAreaTitleLineHeight = 24f
+    const val FileUploadAreaTitleFontWeight = 500f
+    const val FileUploadAreaTitleLetterSpacing = -0.5f
+    const val FileUploadAreaHeight = 381.2f
+    const val FileUploadAreaArtworkDefaultWidth = 256f
+    const val FileUploadAreaArtworkDefaultHeight = 146f
+    const val FileUploadAreaArtworkDefaultOffsetY = 0f
+    const val FileUploadAreaArtworkHoverWidth = 256f
+    const val FileUploadAreaArtworkHoverHeight = 180f
+    const val FileUploadAreaArtworkHoverOffsetY = -8.4176025390625f
+    const val FileUploadAreaArtworkSelectedWidth = 256f
+    const val FileUploadAreaArtworkSelectedHeight = 144f
+    const val FileUploadAreaArtworkSelectedOffsetY = 0f
+    const val FileUploadAreaArtworkDragWidth = 320f
+    const val FileUploadAreaArtworkDragHeight = 182f
+    const val FileUploadAreaArtworkDragOffsetY = 0f
+    const val FileUploadRolesBackground = "bg-primary"
+    const val FileUploadRolesBorder = "border-base"
+    const val FileUploadRolesDragBorder = "border-accent"
+    const val FileUploadRolesDragBackground = "fill-brand-primary"
+    const val FileUploadRolesHover = "fill-quaternary"
+    const val FileUploadRolesLabel = "label-primary"
+    const val FileUploadRolesSecondary = "label-secondary"
+    const val FileUploadRolesDisabled = "label-quaternary"
+    const val FileUploadRolesDanger = "label-danger"
+    const val FileUploadRolesFocus = "border-focus"
 }
