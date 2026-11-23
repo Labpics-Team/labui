@@ -1,10 +1,11 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { chromium } from '@playwright/test';
+const baseURL = process.env.PW_BASE_URL ?? 'http://127.0.0.1:4473';
 const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage({ viewport: { width: 1500, height: 1100 } });
   page.on('pageerror', (error) => console.info('PAGEERROR', error.message));
-  await page.goto('http://127.0.0.1:4473/color-picker.html');
+  await page.goto(`${baseURL}/color-picker.html`);
   await page.locator('[data-lab-color-picker]').first().waitFor();
   await page.evaluate(() => document.fonts.ready);
   mkdirSync('../../docs/evidence/color-picker-20261123', { recursive: true });
@@ -108,7 +109,7 @@ try {
       return kind === 'webgl2' ? null : original.call(this, kind, ...args);
     };
   });
-  await cpu.goto('http://127.0.0.1:4473/color-picker.html');
+  await cpu.goto(`${baseURL}/color-picker.html`);
   await cpu.locator('#lit').getByRole('combobox').waitFor();
   await cpu.locator('#lit').evaluate((host) => {
     host.value = { space: 'lch', coords: [72.09, 84.86, 65.34], alpha: 1 };

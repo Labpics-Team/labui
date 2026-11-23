@@ -1,6 +1,6 @@
 {
-  "revision": "6d32cd6a6d52fdcd0d702223e2563aa7d02127dd",
-  "sourceDigest": "sha256:3e9ad62eb6f0f8f768cde021f6d4ca904f6daedc3b9bef7e3cf5e32a3542555e",
+  "revision": "d2069a567c84f9de18ee313a04ff440787dc4c44",
+  "sourceDigest": "sha256:e6c7763268ddd4730cb1f24bd2074d53419a13c874420a472e3f96645e056006",
   "symbols": [
     {
       "name": "LabAccordion",
@@ -53,6 +53,14 @@
     {
       "name": "LabChoicebox",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabChoicebox.kt"
+    },
+    {
+      "name": "LabColorPicker",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabColorPicker.kt"
+    },
+    {
+      "name": "LabColorPicker",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabColorPicker.kt"
     },
     {
       "name": "LabCombobox",

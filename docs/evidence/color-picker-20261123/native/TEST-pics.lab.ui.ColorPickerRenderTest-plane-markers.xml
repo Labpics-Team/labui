@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ColorPickerRenderTest[desktop]" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-23T14:03:37.017Z" hostname="DESKTOP-NFO26JA" time="23.22">
+  <properties/>
+  <testcase name="visibleHandlesKeepTheirValueUntilDraggedAndNullRemainsTheAcceptedBaseline[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="4.237"/>
+  <testcase name="narrowDarkFontScale125KeepsControlsInsideThePanel[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="0.703"/>
+  <testcase name="smallLchPlaneMarkersKeepTheirRawValueAtEveryEdge[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="11.245"/>
+  <testcase name="fifteenAuthoredViewsRenderWithActualFonts[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="3.831"/>
+  <testcase name="planeMarkersRenderAuthoredOuterDiameterAndShadow[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="2.009"/>
+  <testcase name="planePointerEscapeRestoresExactStartingValue[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="1.191"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

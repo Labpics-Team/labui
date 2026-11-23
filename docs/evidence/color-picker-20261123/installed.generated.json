@@ -2,7 +2,7 @@
   "archives": [
     {
       "name": "@labpics/ui-tokens",
-      "sha256": "7e98d659b3df1ff0b694424c9237faa2a85e9b66f232d4b909147b27c3b20758"
+      "sha256": "7ba59467edeb0ff9caa3385f615e9cc85ce824c5cce280cc5ac9552cedcae520"
     },
     {
       "name": "@labpics/ui-shadow",
@@ -10,7 +10,7 @@
     },
     {
       "name": "@labpics/ui-materials",
-      "sha256": "77838ee19348e5133360ddb1ef7599221168580d22d306d065495862fc24e1a7"
+      "sha256": "11b47d72bfecda5edd13df8ba1ba14cb35f0a923d2a6a8352cd1fd4dd04fe30b"
     },
     {
       "name": "@labpics/fonts",
@@ -22,27 +22,27 @@
     },
     {
       "name": "@labpics/ui-core",
-      "sha256": "7d853d3b4468ead97c8acf8bf5d54fc057125d03b64ac3123266e7514bcb2895"
+      "sha256": "496d97ff7e74445b93fec51bdbc52101a78ea2c59facad98eded346bb51b48ea"
     },
     {
       "name": "@labpics/ui-react",
-      "sha256": "e8665f9c2736ba5df5df75adcf3ecced6887a3e77d3c6c75a32badb2b36587ee"
+      "sha256": "4fbfe8ae07c5e678116b9ce05b696600b2392325be05624e07a706309d659c03"
     },
     {
       "name": "@labpics/ui-vue",
-      "sha256": "75f188a0cff0c324c0bcb7a4aa68d9cdabe507acf8165862c7e3690233a1833f"
+      "sha256": "0fdf28876067f2440f49e030931a0c722b93f1bb5abaab657c0320a166e2cc30"
     },
     {
       "name": "@labpics/ui-solid",
-      "sha256": "2ff57a456ead40fddda517094e38e7ad4134f2107f543e45e9490a7c0369ac78"
+      "sha256": "fbe4dfa7b6124fac789e7bf363c0b3fd4a82b68b33a8336b32c09e9762e3dcf4"
     },
     {
       "name": "@labpics/ui-svelte",
-      "sha256": "3401490801648cef57e43d80302f27c829be350209fe0062c10aef0e414dbebf"
+      "sha256": "9bca627c44f8d4946e308559553d6b447418253545a076edd7d924c1daeb31b3"
     },
     {
       "name": "@labpics/ui-astro",
-      "sha256": "04a9c46d4b19c8f92ce70d6d251a9ea0cd2f2f1e5e97554fbcf4bf421ff37ad9"
+      "sha256": "6c0835258591491ef028e0d4a19fdc0830362ecbd504b7a0fd5f3ecf183279b4"
     }
   ],
   "records": [

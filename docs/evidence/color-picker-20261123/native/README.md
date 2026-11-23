@@ -1,16 +1,21 @@
 # Native ColorPicker — 23 ноября 2026
 
 Проверка Windows, Compose `ImageComposeScene`, `SKIKO_RENDER_API=SOFTWARE`,
+`JAVA_TOOL_OPTIONS=-Djava.awt.headless=true`,
 Geist 1.400. Окон, звука и стороннего screen reader не запускалось.
 
 - [15 авторских представлений](all-views.png); отдельные PNG — в этой папке.
 - [Узкая тёмная панель, текст 125%](sliders-lch-dark-narrow-125.png).
-- [14 проверок ввода и рендера](TEST-pics.lab.ui.ColorPickerRenderTest.xml).
+- [6 финальных проверок рендера и жестов после уточнения теней](TEST-pics.lab.ui.ColorPickerRenderTest-plane-markers.xml).
+- [Предыдущий полный прогон: 16 проверок ввода и рендера](TEST-pics.lab.ui.ColorPickerRenderTest.xml).
 - [5 проверок значения и codec](TEST-pics.lab.ui.ColorPickerValueTest.xml).
 - [2304 независимых численных вектора: максимальные ошибки](codec-errors.txt).
 - [Измерения CPU-растера](raster-performance.txt).
 
-Все 19 тестов прошли. Покрыты pointer/Escape, untouched focus/blur, точный LCH
+После уточнения теней и наружного диаметра маркеров прошли все 6 затронутых
+проверок рендера и жестов. Предыдущий полный прогон содержит 16 успешных проверок;
+после него менялось только рисование плоскостей. 5 проверок codec сохранены из
+предыдущего прогона, код codec не изменялся. Покрыты pointer/Escape, untouched focus/blur, точный LCH
 Enter, controlled accept/reject, IME и её завершающий Enter, reset черновика и
 активного жеста, save/restore Double-значений, clipboard, async picker success,
 cancel, ошибка/повтор, disable и detach. Переключение Rec.2020 сохраняет raw и
@@ -21,9 +26,29 @@ cancel, ошибка/повтор, disable и detach. Переключение R
 ручного или внешнего изменения. Градиент, ручка и ввод полосы используют один отступ;
 графики сохраняют полный диапазон пикселей и смещение захвата маркера.
 
+Проверка центров ручек сравнивает пиксели внутри кольца с той же точкой
+полосы после отвода ручки. Прозрачные центры HEX/RGB/HSB/HSL, LCH Hue и opacity
+сохраняют цвет полосы; LCH Lightness и Chroma сохраняют отдельную заливку выбранным
+цветом даже вне охвата дисплея. Клики по центру и внутреннему краю кольца малого
+маркера во всех четырёх углах каждой LCH-плоскости сохраняют точные raw-координаты
+без change/end. Новая проверка геометрии подтверждает белую обводку внутри
+наружных 18/32 px, отсутствие белой обводки за границей и тень снаружи, сравнивая
+пиксели неизменного графика до и после отвода маркера. Проверены Spectrum HEX,
+Spectrum LCH и Sliders LCH. В последний прогон вошли 15 обновлённых авторских PNG
+и узкая тёмная панель при масштабе текста 125%; шесть тестов выполнились за 23.2 с.
+Предыдущий полный прогон занял 46.8 с.
+
 ```powershell
 $env:SKIKO_RENDER_API='SOFTWARE'
-.\gradlew.bat :desktopTest --tests '*ColorPicker*Test' :compileCommonMainKotlinMetadata --console=plain
+$env:JAVA_TOOL_OPTIONS='-Djava.awt.headless=true'
+.\gradlew.bat :desktopTest `
+  --tests '*ColorPickerRenderTest.planeMarkers*' `
+  --tests '*ColorPickerRenderTest.smallLchPlaneMarkers*' `
+  --tests '*ColorPickerRenderTest.visibleHandles*' `
+  --tests '*ColorPickerRenderTest.planePointerEscape*' `
+  --tests '*ColorPickerRenderTest.fifteenAuthoredViews*' `
+  --tests '*ColorPickerRenderTest.narrowDark*' `
+  :compileCommonMainKotlinMetadata --console=plain
 ```
 
 Команда выполняется из `native/compose`. Common Kotlin metadata и desktop compile
@@ -75,6 +100,28 @@ raw L остаётся нулём. Это узкий workaround для 3.7.1, а
 шестнадцатеричные байты. Первая реализация ошибочно использовала LCH-сетку везде;
 независимое ревью и повторное чтение всех пяти Grid-узлов устранили это допущение.
 PNG показывают общий Elevated-контейнер, собственные controls и реальные цвета.
+
+Независимое чтение ручек подтвердило прозрачный центр, наружный диаметр 24 px,
+внутреннюю обводку 4 px и Shadow/XS у
+[RGB Red 6390:49724](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/?node-id=6390-49724),
+HEX/HSB/HSL и opacity. Только LCH
+[Lightness 6390:48211](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/?node-id=6390-48211)
+и [Chroma 6390:48214](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/?node-id=6390-48214)
+имеют заливку; [Hue 6390:49458](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/?node-id=6390-49458)
+остаётся прозрачным. Native использует общий `labShadow` с формой кольца, поэтому
+тень не превращается в тёмную заливку центра. Это штатный
+[Compose dropShadow с Shape](https://developer.android.com/develop/ui/compose/graphics/draw/shadows),
+без отдельной математики Shadow/XS.
+
+Малый [LCH plane marker 6390:48190](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/?node-id=6390-48190)
+состоит из заливки 12 px и наружной обводки 3 px: общий диаметр 18 px. Большой
+[Spectrum-маркер 6390:51793](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/?node-id=6390-51793)
+имеет заливку 24 px и наружную обводку 4 px: общий диаметр 32 px. Повторное чтение
+effects исправило прежний вывод ревью: у обоих маркеров есть все четыре слоя
+Shadow/XS. Они используют общий `labShadow` с `CircleShape`; малый размер 18/3
+и общая тень следуют профилю. Наружный радиус рисунка и область захвата согласованы:
+9 px у малого, 16 px у большого. Обводка рисуется на радиусе `radius - stroke / 2`,
+поэтому прежние лишние 2 px у большого маркера устранены.
 
 В самом исходнике есть противоречия между числом, образцом и цветовой полосой:
 `lch(72.09 84.86 65.34)` соответствует примерно `#FF9500`, хотя часть рисунка

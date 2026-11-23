@@ -10,7 +10,7 @@ The actual graph shapes establish the authored row association: Lightness → fi
 
 Web behavior passed 22 tests per engine (44 total) in headless Chromium and WebKit: all15 view/model combinations retain raw FormData; precise alpha, reset, IME, pointer cancellation, controlled rejection, two-coordinate edits, graph cache and supported eyedropper/clipboard effects. Seven pure numeric tests independently check CSS D50 red, out-of-gamut preservation, exact serialization and fixed-coordinate edits. Native passed 19 tests plus common metadata compilation, including nullable cancellation, rejected null completion, exact partial LCH editing, pending sampler invalidation, endpoint handle clicks and both palette matrices. Its conversion oracle contains 2304 vectors.
 
-Initial WebGL2 graph preparation observed1.1–3.7ms for the first graph and0.3–0.6ms for the following graphs on this Windows host. These are CPU submission times, not a GPU timing claim. Alpha edits do not increase graph paint counts. The CPU fallback was forced without WebGL2 and passed a stale-render comparison against a fresh final-value graph; the spectrum planes render at 340 by 163 CSS pixels inside their borders. CPU fallback is cancellable and yields between6ms slices; it uses CSS-pixel resolution. Local CPU preparation ranged from about 158 to 241 ms across cooperatively scheduled planes, including concurrent qualification load; see `cpu.generated.json`. All timing is local qualification, not a universal latency bound.
+Initial WebGL2 graph preparation observed1.1–3.7ms for the first graph and0.3–0.6ms for the following graphs on this Windows host. These are CPU submission times, not a GPU timing claim. Alpha edits do not increase graph paint counts. The CPU fallback was forced without WebGL2 and passed a stale-render comparison against a fresh final-value graph; the spectrum planes render at 340 by 163 CSS pixels inside their borders. CPU fallback is cancellable and yields between6ms slices; it uses CSS-pixel resolution. The final integrated capture observed142.7 and143.5ms across the two cooperatively scheduled planes; see `cpu.generated.json`. Earlier concurrent qualification observed158–241ms. These observations are not a universal latency bound or a controlled before/after performance comparison.
 
 The eyedropper is a pixel-picking capability. Web uses official EyeDropper or a supplied `pickScreenColor` callback. Native exposes a suspend callback to a real host pixel picker and disables the button when unavailable. No generic color dialog is represented as an eyedropper. Clipboard is implemented through platform APIs. Headless tests verify effect success/cancel/rejection; they do not claim to have sampled a real OS pixel.
 
@@ -22,3 +22,33 @@ Sources: [Color.js](https://github.com/color-js/color.js), [CSS Color4 conversio
 Installed tarball qualification passed ESM/CJS export and declaration checks, plus Lit, React, Vue, Solid, Svelte and Astro SSR/hydration in both Chromium and WebKit. The checks verify raw SSR value attributes, retained DOM, exact partial edits, FormData and reset. React submits its SSR hidden input before JavaScript; FACE submission for custom elements starts after hydration. `installed.generated.json` records the tested archives.
 
 Independent review caught two assumptions in the first implementation: reusing the LCH grid for all models and displaying HEX channel bytes in decimal. A fresh read of all five Grid nodes established 120 cells/12 columns in the four standard models and 100 cells/10 columns in LCH; the four standard arrays are exactly equal. `figma-palettes.json` records the exact paint arrays and original HEX labels. Runtime selection, keyboard row navigation and both renderers now derive from the selected profile matrix.
+
+## Integrated review corrections
+
+The integrated source fix is `d2069a56`, on top of the ColorPicker/FileUpload merge
+`16cce794` and Calendar merge `d18a1693`. A second independent pass reproduced a
+focused Lit draft surviving native form reset. Reset now clears the editing
+state and restores every text field, including the focused field, without
+emitting a change. Twelve independent counterexamples covered HEX, opacity and
+RGB-coordinate fields across both renderers and browsers.
+
+Read-only Figma properties also distinguished hollow channel rings from filled
+LCH Lightness/Chroma handles. Both renderers now use that shared profile and the
+four-layer Shadow/XS. The small plane marker is 12px inside an outside 3px stroke
+(18px overall); the large marker is 24px inside an outside 4px stroke (32px
+overall). Rendering and pointer capture use the same geometry. Sources:
+[RGB ring](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/?node-id=6390-49724),
+[small marker](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/?node-id=6390-48190),
+[large marker](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/?node-id=6390-51793).
+
+The combined Calendar/ColorPicker browser run passed72 scenarios; the four new
+ring pixel checks initially used an unsupported brightness expectation. The
+corrected check compares the same strip pixel with and without its hollow ring.
+All12 affected reset, ring, plane-style and pointer-cancellation scenarios then
+passed in Chromium/WebKit. Core/React/docs typechecks,16 core value/SSR tests,
+34 generator/catalog tests and the production documentation build passed.
+Both installed-package scripts were repeated against the integrated archives:
+all six renderers in both browser engines passed. Native's final affected
+renderer checks and historical full checks are distinguished in its README.
+The PNGs in this directory were recaptured from the integrated build; the
+render script accepts `PW_BASE_URL` for an already-running local server.
