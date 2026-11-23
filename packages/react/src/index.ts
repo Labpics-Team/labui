@@ -160,3 +160,4 @@ export { Alert, type AlertProps, type LabAlertType, type LabAlertAnnouncement } 
 export { FileUpload, type FileUploadProps } from './file-upload.js';
 export { ColorPicker } from './color-picker.js';
 export type { ColorPickerProps, LabColorValue, LabColorModel, LabColorPickerVariant } from './color-picker.js';
+export { Calendar, type CalendarProps } from './calendar.js';

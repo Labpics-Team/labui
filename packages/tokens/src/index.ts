@@ -77,3 +77,4 @@ export { dialogProfile } from './dialog.js';
 
 export { fileUploadProfile } from './file-upload.js';
 export { colorPickerProfile } from './color-picker.js';
+export { calendarProfile } from './calendar.js';

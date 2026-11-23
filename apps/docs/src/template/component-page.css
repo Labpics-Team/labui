@@ -38,7 +38,7 @@ code {
 /* ── Layout: sidebar + main (mobile-first single column) ──────────────────── */
 .doc-layout {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--lab-space-6, 1.5rem);
   max-width: 80rem;
   margin-inline: auto;
@@ -330,9 +330,16 @@ code {
 .root-control,
 .live-control {
   display: inline-flex;
+  flex-wrap: wrap;
+  max-inline-size: 100%;
   align-items: center;
   gap: var(--lab-space-2, 0.5rem);
   font-size: var(--lab-font-size-sm, 0.875rem);
+}
+
+.root-control > select,
+.live-control > select {
+  max-inline-size: 100%;
 }
 
 select {
@@ -414,6 +421,7 @@ input:focus-visible {
 /* ── Anatomy ──────────────────────────────────────────────────────────────── */
 .anatomy {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--lab-space-6, 1.5rem);
 }
 
@@ -475,6 +483,7 @@ input:focus-visible {
 
 .guidance {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--lab-space-4, 1rem);
 }
 
@@ -485,6 +494,7 @@ input:focus-visible {
 }
 
 .guidance-col {
+  overflow-wrap: anywhere;
   padding: var(--lab-space-4, 1rem);
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--lab-radius-m, 0.5rem);
@@ -514,6 +524,7 @@ input:focus-visible {
 /* ── Live example ─────────────────────────────────────────────────────────── */
 .live {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--lab-space-5, 1.25rem);
 }
 
@@ -526,6 +537,19 @@ input:focus-visible {
   background: var(--lab-bg-secondary);
 }
 
+.anatomy-stage > *,
+.live-stage > * {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+@media (max-width: 39.999rem) {
+  .anatomy-stage,
+  .live-stage {
+    padding: var(--lab-space-4, 1rem);
+  }
+}
+
 .live-controls {
   display: flex;
   flex-wrap: wrap;
@@ -535,7 +559,13 @@ input:focus-visible {
 /* ── API tables ───────────────────────────────────────────────────────────── */
 .api {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--lab-space-6, 1.5rem);
+}
+
+.api-group {
+  min-inline-size: 0;
+  overflow-x: auto;
 }
 
 .api-group h3 {

@@ -1,6 +1,6 @@
 {
-  "revision": "320cd5d06f010e38da40e0e7885a19fb703fb948",
-  "sourceDigest": "sha256:1bdfeaf36ffc50214f821ccc328c405f331c8019e234374a3037fa421a674c3c",
+  "revision": "6d32cd6a6d52fdcd0d702223e2563aa7d02127dd",
+  "sourceDigest": "sha256:3e9ad62eb6f0f8f768cde021f6d4ca904f6daedc3b9bef7e3cf5e32a3542555e",
   "symbols": [
     {
       "name": "LabAccordion",
@@ -29,6 +29,14 @@
     {
       "name": "LabButton",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabButton.kt"
+    },
+    {
+      "name": "LabCalendar",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabCalendar.kt"
+    },
+    {
+      "name": "LabCalendarStatusDots",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabCalendar.kt"
     },
     {
       "name": "LabCheckbox",

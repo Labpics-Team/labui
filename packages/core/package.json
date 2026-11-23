@@ -456,6 +456,27 @@
         "types": "./dist/components/color-picker/runtime.d.cts",
         "default": "./dist/components/color-picker/runtime.cjs"
       }
+    },
+    "./calendar.css": "./dist/calendar.css",
+    "./calendar/behavior": {
+      "import": {
+        "types": "./dist/components/calendar/behavior.d.ts",
+        "default": "./dist/components/calendar/behavior.js"
+      },
+      "require": {
+        "types": "./dist/components/calendar/behavior.d.cts",
+        "default": "./dist/components/calendar/behavior.cjs"
+      }
+    },
+    "./calendar/contract": {
+      "import": {
+        "types": "./dist/components/calendar/contract.d.ts",
+        "default": "./dist/components/calendar/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/calendar/contract.d.cts",
+        "default": "./dist/components/calendar/contract.cjs"
+      }
     }
   },
   "files": [
@@ -500,7 +521,8 @@
     "./dist/dialog.css",
     "./dist/input-extensions.css",
     "./dist/file-upload.css",
-    "./dist/color-picker.css"
+    "./dist/color-picker.css",
+    "./dist/calendar.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
@@ -537,7 +559,9 @@
     "@zag-js/file-upload": "1.41.2",
     "@zag-js/file-utils": "1.41.2",
     "@colordx/gpu": "1.0.0",
-    "colorjs.io": "0.7.1"
+    "colorjs.io": "0.7.1",
+    "@internationalized/date": "3.12.4",
+    "@zag-js/date-picker": "1.41.2"
   },
   "peerDependencies": {
     "@lit-labs/ssr": "^4.1.0"

@@ -12,6 +12,7 @@ export { renderAvatar, type AvatarSsrProps, type AvatarSsrSlots } from './avatar
 export { renderBadge, type BadgeSsrProps, type BadgeSsrSlots } from './badge.ssr.js';
 export { renderBreadcrumb, type BreadcrumbSsrProps, type BreadcrumbSsrSlots } from './breadcrumb.ssr.js';
 export { renderButton, type ButtonSsrProps, type ButtonSsrSlots } from './button.ssr.js';
+export { renderCalendar, type CalendarSsrProps, type CalendarSsrSlots } from './calendar.ssr.js';
 export { renderCard, type CardSsrProps, type CardSsrSlots } from './card.ssr.js';
 export { renderCheckbox, type CheckboxSsrProps, type CheckboxSsrSlots } from './checkbox.ssr.js';
 export { renderChip, type ChipSsrProps, type ChipSsrSlots } from './chip.ssr.js';

@@ -329,7 +329,15 @@
       "title": "Calendar",
       "group": "input",
       "kind": "composition",
-      "summary": "Выбор даты в календарной сетке."
+      "summary": "Выбор даты или диапазона в компактной календарной сетке.",
+      "web": {
+        "subpath": "calendar",
+        "reactExport": "Calendar"
+      },
+      "native": {
+        "symbol": "LabCalendar"
+      },
+      "profile": "calendar"
     },
     {
       "slug": "tabs",
@@ -845,7 +853,13 @@
       "uses": [
         {
           "family": "calendar",
-          "role": "root"
+          "role": "root",
+          "web": {
+            "scope": "Small/Medium: six-week inline calendar, single/range, date-only selection, controlled month/value, keyboard and forms."
+          },
+          "native": {
+            "scope": "Compose Small/Medium calendar with LocalDate, locale formatting and controlled callbacks; Desktop SOFTWARE renders, iOS metadata only."
+          }
         }
       ]
     },
@@ -856,7 +870,13 @@
       "uses": [
         {
           "family": "calendar",
-          "role": "part"
+          "role": "part",
+          "web": {
+            "scope": "Default, disabled, hover, active, range edges/center, focus, event dots and optional marker."
+          },
+          "native": {
+            "scope": "Compose calendar cells derive availability, selection, range edges, focus and markers from accepted date inputs."
+          }
         }
       ]
     },
@@ -867,7 +887,13 @@
       "uses": [
         {
           "family": "calendar",
-          "role": "part"
+          "role": "part",
+          "web": {
+            "scope": "0–5 authored status dots; default/disabled/active colors and complete accessible event count."
+          },
+          "native": {
+            "scope": "Compose status dots use the shared authored subtraction contour."
+          }
         }
       ]
     },
