@@ -424,6 +424,17 @@
         "types": "./dist/components/combobox/runtime.d.cts",
         "default": "./dist/components/combobox/runtime.cjs"
       }
+    },
+    "./color-picker.css": "./dist/color-picker.css",
+    "./color-picker/runtime": {
+      "import": {
+        "types": "./dist/components/color-picker/runtime.d.ts",
+        "default": "./dist/components/color-picker/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/color-picker/runtime.d.cts",
+        "default": "./dist/components/color-picker/runtime.cjs"
+      }
     }
   },
   "files": ["dist"],
@@ -464,7 +475,8 @@
     "./dist/alert.css",
     "./dist/menu.css",
     "./dist/dialog.css",
-    "./dist/input-extensions.css"
+    "./dist/input-extensions.css",
+    "./dist/color-picker.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
@@ -472,6 +484,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@colordx/gpu": "1.0.0",
+    "@floating-ui/dom": "1.7.6",
     "@labpics/icons": "0.4.0",
     "@labpics/motion": "0.5.0",
     "@labpics/ui-materials": "workspace:*",
@@ -496,8 +510,8 @@
     "@zag-js/tooltip": "1.41.2",
     "@zag-js/types": "1.41.2",
     "@zag-js/vanilla": "1.48.0",
-    "lit": "3.3.3",
-    "@floating-ui/dom": "1.7.6"
+    "colorjs.io": "0.7.1",
+    "lit": "3.3.3"
   },
   "peerDependencies": {
     "@lit-labs/ssr": "^4.1.0"

@@ -288,6 +288,7 @@ export default defineConfig({
         // — asserted on BOTH renderers in the suite.
         'number-input': resolve(__dirname, 'src/number-input.html'),
         slider: resolve(__dirname, 'src/slider.html'),
+        'color-picker': resolve(__dirname, 'src/color-picker.html'),
         // Positioned-overlay parity fixtures: Lit element (shadow + strategy:fixed)
         // and native-React twin (body portal), running the SAME Zag machine, for the
         // open/close/positioning/dismiss/keyboard + parity suite.

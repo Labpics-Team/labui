@@ -71,7 +71,7 @@ class ColorPickerRenderTest {
                 assertEquals(390f,bounds.width)
                 assertTrue(bounds.height <= 960,"$variant $model height ${bounds.height}")
                 assertTrue(nodes(scene).any { it.config.getOrNull(SemanticsActions.SetText) != null })
-                if (variant == LabColorPickerVariant.Grid) assertEquals(100,nodes(scene).count { it.config.getOrNull(SemanticsProperties.Role) == Role.RadioButton } - 3)
+                if (variant == LabColorPickerVariant.Grid) assertEquals(if(model == LabColorModel.Lch) 100 else 120,nodes(scene).count { it.config.getOrNull(SemanticsProperties.Role) == Role.RadioButton } - 3)
             } finally { scene.close() }
         }
     }
@@ -143,7 +143,7 @@ class ColorPickerRenderTest {
             assertEquals(.7654321098765,value!!.alpha); assertEquals(value,ended.single())
             val accepted = value
             accept=false; settle(scene); type(scene,"LCH color","lch(20 30 40)"); press(scene,Key.Enter)
-            assertEquals(accepted,value); assertEquals(1,ended.size); assertEquals(colorFieldText(accepted!!,LabColorModel.Lch),text(scene,"LCH color"))
+            assertEquals(accepted,value); assertEquals(1,ended.size); assertEquals(colorCopyText(accepted!!,LabColorModel.Lch),text(scene,"LCH color"))
             type(scene,"LCH color","lch(10 20 30)"); press(scene,Key.Escape); focus(scene,"Hue value")
             assertEquals(2,changed.size); assertEquals(1,ended.size)
         } finally { scene.close() }
@@ -157,7 +157,7 @@ class ColorPickerRenderTest {
         try {
             settle(scene); focus(scene,"LCH color"); type(scene,"LCH color","lch(20 30 40)")
             state.reset(); settle(scene)
-            assertEquals(colorFieldText(raw,LabColorModel.Lch),text(scene,"LCH color"))
+            assertEquals(colorCopyText(raw,LabColorModel.Lch),text(scene,"LCH color"))
             press(scene,Key.Enter); focus(scene,"Hue value")
             assertEquals(raw,state.value); assertEquals(0,changed); assertEquals(0,ended)
         } finally { scene.close() }
@@ -257,9 +257,9 @@ class ColorPickerRenderTest {
         } }
         try {
             settle(scene); click(scene,"Copy color"); settle(scene); assertEquals("#FFAA00",copied?.text)
+            value=value!!.copy(alpha=.32123456789); settle(scene)
             click(scene,"Pick a color from screen"); settle(scene)
             val next = LabColorValue(LabColorSpace.Lch,50.123456789,60.123456789,35.123456789,.4)
-            value=value!!.copy(alpha=.32123456789); settle(scene)
             val accepted = next.copy(alpha = .32123456789)
             result.complete(next); settle(scene); assertEquals(accepted,value); assertEquals(1,ended)
             result = CompletableDeferred(); click(scene,"Pick a color from screen"); settle(scene); result.complete(null); settle(scene)
@@ -274,5 +274,74 @@ class ColorPickerRenderTest {
             result = CompletableDeferred(); click(scene,"Pick a color from screen"); settle(scene); show=false; settle(scene)
             assertEquals(2,cancellations)
         } finally { scene.close() }
+    }
+
+    @Test fun visibleHandlesKeepTheirValueUntilDraggedAndNullRemainsTheAcceptedBaseline() {
+        var value by mutableStateOf<LabColorValue?>(LabColorValue.Orange)
+        var accept by mutableStateOf(true)
+        var ended = 0
+        val scene = ImageComposeScene(430,1000) { Host(theme()) { LabColorPicker(value,{if(accept)value=it},onValueChangeEnd={ended++}) } }
+        try {
+            settle(scene)
+            for(alpha in listOf(0.0,.5,1.0)) {
+                value=LabColorValue.Orange.copy(alpha=alpha);settle(scene)
+                val bounds=named(scene,"Opacity").boundsInRoot
+                val position=Offset(bounds.left+colorTrackCenter(alpha,bounds.width,14f),bounds.center.y)
+                scene.sendPointerEvent(PointerEventType.Press,position);settle(scene)
+                scene.sendPointerEvent(PointerEventType.Release,position);settle(scene)
+                assertEquals(alpha,value!!.alpha);assertEquals(0,ended)
+            }
+            val bounds=named(scene,"Saturation and Brightness").boundsInRoot
+            val position=Offset(bounds.right-16f,bounds.top+16f)
+            val before=value
+            scene.sendPointerEvent(PointerEventType.Press,position);settle(scene)
+            scene.sendPointerEvent(PointerEventType.Release,position);settle(scene)
+            assertEquals(before,value);assertEquals(0,ended)
+            value=null;settle(scene)
+            val opacity=named(scene,"Opacity").boundsInRoot
+            val edit=Offset(opacity.left+opacity.width*.6f,opacity.center.y)
+            scene.sendPointerEvent(PointerEventType.Press,edit);settle(scene)
+            press(scene,Key.Escape);scene.sendPointerEvent(PointerEventType.Release,edit);settle(scene)
+            assertNull(value);assertEquals(0,ended)
+            accept=false;settle(scene)
+            named(scene,"Opacity").config[SemanticsActions.SetProgress].action!!.invoke(80f);settle(scene)
+            assertNull(value);assertEquals(0,ended)
+        } finally {scene.close()}
+    }
+
+    @Test fun partialLchAndHexChannelEditsPreserveOtherCoordinates() {
+        val raw=LabColorValue(LabColorSpace.Lch,72.09123456789,84.86123456789,65.34123456789,.5019607843137255)
+        var value by mutableStateOf<LabColorValue?>(raw)
+        var model by mutableStateOf(LabColorModel.Lch)
+        val scene=ImageComposeScene(430,1000) {Host(theme()) {LabColorPicker(value,{value=it},model=model,variant=LabColorPickerVariant.Sliders)}}
+        try {
+            settle(scene);focus(scene,"LCH color")
+            type(scene,"LCH color",text(scene,"LCH color").replace("72.09123456789","50"));press(scene,Key.Enter)
+            assertEquals(LabColorValue(LabColorSpace.Lch,50.0,raw[1],raw[2],raw.alpha),value)
+            type(scene,"LCH color",text(scene,"LCH color").replace("50.0 ","51.0 "));press(scene,Key.Enter)
+            assertEquals(51.0,value!![0]);assertEquals(raw[1],value!![1]);assertEquals(raw.alpha,value!!.alpha)
+            value=LabColorValue(LabColorSpace.Srgb,1.0,149.0/255,0.0,raw.alpha);model=LabColorModel.Hex;settle(scene)
+            assertEquals("FF",text(scene,"Red value"));assertEquals("95",text(scene,"Green value"))
+            focus(scene,"Blue value");type(scene,"Blue value","FF");press(scene,Key.Enter)
+            assertEquals(LabColorValue(LabColorSpace.Srgb,1.0,149.0/255,1.0,raw.alpha),value)
+        } finally {scene.close()}
+    }
+
+    @Test fun pendingSamplerCannotReplaceAManualDraftOrAnExternalValue() {
+        var value by mutableStateOf<LabColorValue?>(LabColorValue.Orange)
+        var result=CompletableDeferred<LabColorValue?>()
+        var ended=0
+        val scene=ImageComposeScene(430,1000) {Host(theme()) {LabColorPicker(value,{value=it},onValueChangeEnd={ended++},pickScreenColor={result.await()})}}
+        try {
+            settle(scene);click(scene,"Pick a color from screen");settle(scene)
+            focus(scene,"HEX color");type(scene,"HEX color","#00FF00");press(scene,Key.Enter)
+            val accepted=value;val count=ended
+            result.complete(LabColorValue(LabColorSpace.Srgb,0.0,0.0,1.0));settle(scene)
+            assertEquals(accepted,value);assertEquals(count,ended)
+            result=CompletableDeferred();click(scene,"Pick a color from screen");settle(scene)
+            value=LabColorValue.Orange.copy(alpha=.123456789);settle(scene);val external=value
+            result.complete(LabColorValue(LabColorSpace.Srgb,0.0,0.0,1.0));settle(scene)
+            assertEquals(external,value);assertEquals(count,ended)
+        } finally {scene.close()}
     }
 }

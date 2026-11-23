@@ -157,3 +157,5 @@ export { Icon, type IconProps, type IconHandle } from './icon.js';
 
 export { DragButton, type DragButtonProps } from './drag-button.js';
 export { Alert, type AlertProps, type LabAlertType, type LabAlertAnnouncement } from './alert.js';
+export { ColorPicker } from './color-picker.js';
+export type { ColorPickerProps, LabColorValue, LabColorModel, LabColorPickerVariant } from './color-picker.js';

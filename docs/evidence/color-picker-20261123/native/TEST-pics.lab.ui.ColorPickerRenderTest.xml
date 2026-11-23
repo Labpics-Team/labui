@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="ColorPickerRenderTest[desktop]" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-23T04:30:23.651Z" hostname="DESKTOP-NFO26JA" time="19.286">
+<testsuite name="ColorPickerRenderTest[desktop]" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-11-23T07:24:18.072Z" hostname="DESKTOP-NFO26JA" time="25.146">
   <properties/>
-  <testcase name="textBlurRetainsRawPrecisionAndEnterReadsAcceptedOrRejectedValue[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="3.626"/>
-  <testcase name="rec2020ToggleChangesThePointerAndSliderDomainWithoutRewritingRawColor[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="1.411"/>
-  <testcase name="stateResetCancelsAnActivePointerWithoutRestoringThePreviousEdit[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="0.961"/>
-  <testcase name="readonlyDisablesMutation[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="0.382"/>
-  <testcase name="narrowDarkFontScale125KeepsControlsInsideThePanel[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="0.585"/>
-  <testcase name="suppliedPickerAndClipboardUseAcceptedValuesAndCancelOnDetach[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="3.205"/>
-  <testcase name="changingViewDoesNotRewriteRawColorAndChannelEditsCommitAcceptedValues[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="2.597"/>
-  <testcase name="fifteenAuthoredViewsRenderWithActualFonts[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="3.105"/>
-  <testcase name="planePointerEscapeRestoresExactStartingValue[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="1.007"/>
-  <testcase name="stateResetDiscardsFocusedDraftWithoutAChangeEvent[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="1.193"/>
-  <testcase name="imeCompositionAndItsFinishingEnterDoNotCommitEarly[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="1.207"/>
+  <testcase name="textBlurRetainsRawPrecisionAndEnterReadsAcceptedOrRejectedValue[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="3.754"/>
+  <testcase name="rec2020ToggleChangesThePointerAndSliderDomainWithoutRewritingRawColor[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="1.153"/>
+  <testcase name="visibleHandlesKeepTheirValueUntilDraggedAndNullRemainsTheAcceptedBaseline[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="3.405"/>
+  <testcase name="stateResetCancelsAnActivePointerWithoutRestoringThePreviousEdit[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="0.852"/>
+  <testcase name="readonlyDisablesMutation[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="0.321"/>
+  <testcase name="narrowDarkFontScale125KeepsControlsInsideThePanel[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="0.511"/>
+  <testcase name="suppliedPickerAndClipboardUseAcceptedValuesAndCancelOnDetach[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="2.864"/>
+  <testcase name="changingViewDoesNotRewriteRawColorAndChannelEditsCommitAcceptedValues[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="2.671"/>
+  <testcase name="partialLchAndHexChannelEditsPreserveOtherCoordinates[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="1.699"/>
+  <testcase name="fifteenAuthoredViewsRenderWithActualFonts[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="2.975"/>
+  <testcase name="planePointerEscapeRestoresExactStartingValue[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="0.963"/>
+  <testcase name="pendingSamplerCannotReplaceAManualDraftOrAnExternalValue[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="1.675"/>
+  <testcase name="stateResetDiscardsFocusedDraftWithoutAChangeEvent[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="1.174"/>
+  <testcase name="imeCompositionAndItsFinishingEnterDoNotCommitEarly[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="1.124"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

@@ -208,3 +208,5 @@ export type { LabChipMode, LabChipSize } from './components/chip/contract.js';
 
 export type { LabDragButtonStatus, LabDragButtonSource } from './components/drag-button/runtime.js';
 export type { LabAlertType, LabAlertAnnouncement } from './components/alert/contract.js';
+export { LabColorPicker } from './components/color-picker/lab-color-picker.js';
+export type { LabColorValue, LabColorModel, LabColorPickerVariant } from './components/color-picker/contract.js';

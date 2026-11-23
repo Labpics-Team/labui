@@ -16,6 +16,7 @@ export { default as Card } from './Card.svelte';
 export { default as Checkbox } from './Checkbox.svelte';
 export { default as Chip } from './Chip.svelte';
 export { default as Choicebox } from './Choicebox.svelte';
+export { default as ColorPicker } from './ColorPicker.svelte';
 export { default as Combobox } from './Combobox.svelte';
 export { default as ContextMenu } from './ContextMenu.svelte';
 export { default as Dialog } from './Dialog.svelte';

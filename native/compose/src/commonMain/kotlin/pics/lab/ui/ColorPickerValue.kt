@@ -195,7 +195,7 @@ internal fun parseColorField(text: String, model: LabColorModel, alpha: Double):
         LabColorValue(LabColorSpace.Lch, coords, opacity) else null
 }
 
-internal data class ColorPickerChannel(val label: String, val space: LabColorSpace, val index: Int, val value: Double, val max: Double, val suffix: String = "")
+internal data class ColorPickerChannel(val label: String, val space: LabColorSpace, val index: Int, val value: Double, val max: Double, val suffix: String = "", val hexadecimal: Boolean = false)
 internal fun colorChromaMax(rec2020: Boolean): Double = (if (rec2020) LabComponents.ColorPickerLchChromaMaxRec2020 else LabComponents.ColorPickerLchChromaMax).toDouble()
 internal fun colorChannels(value: LabColorValue, model: LabColorModel, variant: LabColorPickerVariant, rec2020: Boolean = false): List<ColorPickerChannel> {
     val space = if (variant == LabColorPickerVariant.Spectrum && model != LabColorModel.Lch) LabColorSpace.Hsv else colorModelSpace(model)
@@ -204,7 +204,7 @@ internal fun colorChannels(value: LabColorValue, model: LabColorModel, variant: 
     val maxima = when (space) { LabColorSpace.Srgb -> listOf(255.0,255.0,255.0); LabColorSpace.Lch -> listOf(100.0,colorChromaMax(rec2020),360.0); else -> listOf(360.0,100.0,100.0) }
     val indices = when (variant) { LabColorPickerVariant.Grid -> emptyList(); LabColorPickerVariant.Spectrum -> listOf(if (space == LabColorSpace.Lch) 2 else 0); LabColorPickerVariant.Sliders -> listOf(0,1,2) }
     return indices.map { index -> ColorPickerChannel(labels[index], space, index, coords[index] * if (space == LabColorSpace.Srgb) 255 else 1,
-        maxima[index], if (space == LabColorSpace.Hsl || space == LabColorSpace.Hsv) if (index == 0) "°" else "%" else "") } + ColorPickerChannel("Opacity", value.space, 3, value.alpha * 100, 100.0, "%")
+        maxima[index], if (space == LabColorSpace.Hsl || space == LabColorSpace.Hsv) if (index == 0) "°" else "%" else "", hexadecimal = model == LabColorModel.Hex && space == LabColorSpace.Srgb) } + ColorPickerChannel("Opacity", value.space, 3, value.alpha * 100, 100.0, "%")
 }
 internal fun editColorChannel(value: LabColorValue, channel: ColorPickerChannel, number: Double): LabColorValue {
     val bounded = number.coerceIn(0.0, channel.max)
@@ -212,4 +212,12 @@ internal fun editColorChannel(value: LabColorValue, channel: ColorPickerChannel,
     val coords = ColorPickerCodec.coords(value, channel.space).toMutableList()
     coords[channel.index] = bounded / if (channel.space == LabColorSpace.Srgb) 255 else 1
     return LabColorValue(channel.space, coords, value.alpha)
+}
+
+internal fun colorChannelText(channel: ColorPickerChannel, exact: Boolean = false): String =
+    if (channel.hexadecimal) channel.value.coerceIn(0.0, 255.0).roundToInt().toString(16).uppercase()
+    else (if (exact) channel.value.toString() else colorNumber(channel.value)) + channel.suffix
+internal fun parseColorChannelText(text: String, channel: ColorPickerChannel): Double? {
+    val raw = text.trim().removeSuffix("%").removeSuffix("°")
+    return if (channel.hexadecimal) raw.removePrefix("0x").removePrefix("0X").toIntOrNull(16)?.toDouble() else raw.toDoubleOrNull()
 }

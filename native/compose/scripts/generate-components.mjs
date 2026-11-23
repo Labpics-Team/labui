@@ -157,6 +157,10 @@ function emitConstants(prefix, definition) {
       lines.push(`    const val ${prefix}${upper(name)} = ${kotlinString(value)}`);
     else if (typeof value === 'boolean')
       lines.push(`    const val ${prefix}${upper(name)} = ${value}`);
+    else if (Array.isArray(value) && value.every((row) => Array.isArray(row) && row.every((entry) => typeof entry === 'number')))
+      lines.push(
+        `    val ${prefix}${upper(name)} = listOf(${value.map((row) => `listOf(${row.map((entry) => `${entry}f`).join(', ')})`).join(', ')})`,
+      );
     else if (Array.isArray(value) && value.every((entry) => typeof entry === 'number'))
       lines.push(
         `    val ${prefix}${upper(name)} = listOf(${value.map((entry) => `${entry}f`).join(', ')})`,

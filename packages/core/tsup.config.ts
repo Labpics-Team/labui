@@ -31,6 +31,7 @@ const componentEntries = discoverComponents().map(({ entry }) => entry);
 export default libraryPreset({
   entry: [
     'src/index.ts',
+    'src/components/color-picker/runtime.ts',
     'src/components/combobox/runtime.ts',
     'src/components/number-input/behavior.ts',
     'src/components/alert/contract.ts',

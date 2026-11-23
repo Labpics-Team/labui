@@ -16,6 +16,7 @@ export { renderCard, type CardSsrProps, type CardSsrSlots } from './card.ssr.js'
 export { renderCheckbox, type CheckboxSsrProps, type CheckboxSsrSlots } from './checkbox.ssr.js';
 export { renderChip, type ChipSsrProps, type ChipSsrSlots } from './chip.ssr.js';
 export { renderChoicebox, type ChoiceboxSsrProps, type ChoiceboxSsrSlots } from './choicebox.ssr.js';
+export { renderColorPicker, type ColorPickerSsrProps, type ColorPickerSsrSlots } from './color-picker.ssr.js';
 export { renderCombobox, type ComboboxSsrProps, type ComboboxSsrSlots } from './combobox.ssr.js';
 export { renderContextMenu, type ContextMenuSsrProps, type ContextMenuSsrSlots } from './context-menu.ssr.js';
 export { renderDialog, type DialogSsrProps, type DialogSsrSlots } from './dialog.ssr.js';

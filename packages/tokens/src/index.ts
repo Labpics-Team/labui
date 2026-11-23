@@ -74,3 +74,4 @@ export { tooltipProfile } from './tooltip.js';
 export { alertProfile } from './alert.js';
 export { menuProfile } from './menu.js';
 export { dialogProfile } from './dialog.js';
+export { colorPickerProfile } from './color-picker.js';
