@@ -1,3 +1,4 @@
+import type { Params } from '@zag-js/core';
 import * as upload from '@zag-js/file-upload';
 import {
   getAcceptAttrString,
@@ -13,6 +14,70 @@ export type FileUploadSchema = Omit<ZagFileUploadSchema, 'props'> & {
   props: ZagFileUploadSchema['props'] & { multiple?: boolean };
 };
 export type FileUploadApi = upload.Api & { resetFiles(files: File[]): void; getFiles(): File[] };
+type Selection = upload.FileChangeDetails;
+type SelectionParams = Pick<Params<FileUploadSchema>, 'context' | 'prop'>;
+
+const sameFiles = (a: File[], b: File[] | undefined) =>
+  a.length === b?.length && a.every((file, index) => file === b[index]);
+const sameRejections = (a: upload.FileRejection[], b: upload.FileRejection[] | undefined) =>
+  a.length === b?.length &&
+  a.every(
+    (item, index) =>
+      item.file === b[index]?.file &&
+      item.errors.length === b[index]?.errors.length &&
+      item.errors.every((error, i) => error === b[index]?.errors[i]),
+  );
+
+/** A selection is one mutation, even when both lists change. Controlled props
+ * may not update until the parent's next render, so callbacks receive the
+ * computed snapshot, never a mix of newly requested and previous context. */
+function commitSelection({ context, prop }: SelectionParams, selection: Selection): void {
+  const acceptedChanged = !sameFiles(selection.acceptedFiles, context.get('acceptedFiles'));
+  const rejectedChanged = !sameRejections(selection.rejectedFiles, context.get('rejectedFiles'));
+  if (!acceptedChanged && !rejectedChanged) return;
+  context.set('acceptedFiles', selection.acceptedFiles);
+  context.set('rejectedFiles', selection.rejectedFiles);
+  if (acceptedChanged) prop('onFileAccept')?.({ files: selection.acceptedFiles });
+  if (rejectedChanged) prop('onFileReject')?.({ files: selection.rejectedFiles });
+  prop('onFileChange')?.(selection);
+}
+
+function selectFiles(params: SelectionParams, files: File[], replace = false): void {
+  const { context, prop } = params;
+  const previous = replace ? [] : context.get('acceptedFiles');
+  const accepted: File[] = [];
+  const rejected: upload.FileRejection[] = [];
+  const multiple = prop('multiple');
+  for (const file of files) {
+    const [, typeError] = isValidFileType(file, getAcceptAttrString(prop('accept')));
+    const [, sizeError] = isValidFileSize(file, prop('minFileSize'), prop('maxFileSize'));
+    const errors: upload.FileError[] = [];
+    if (typeError) errors.push(typeError);
+    if (sizeError) errors.push(sizeError);
+    errors.push(
+      ...(prop('validate')?.(file, {
+        acceptedFiles: previous,
+        rejectedFiles: replace ? [] : context.get('rejectedFiles'),
+      }) ?? []),
+    );
+    if (
+      multiple &&
+      (previous.some((other) => isFileEqual(other, file)) ||
+        accepted.some((other) => isFileEqual(other, file)))
+    )
+      errors.push('FILE_EXISTS');
+    if (errors.length) rejected.push({ file, errors });
+    else accepted.push(file);
+  }
+  if ((multiple ? previous.length : 0) + accepted.length > (multiple ? prop('maxFiles') : 1)) {
+    rejected.push(...accepted.map((file) => ({ file, errors: ['TOO_MANY_FILES'] })));
+    accepted.length = 0;
+  }
+  commitSelection(params, {
+    acceptedFiles: accepted.length ? (multiple ? [...previous, ...accepted] : accepted) : previous,
+    rejectedFiles: rejected,
+  });
+}
 const directories = new WeakSet<File>();
 const fileIdentities = new WeakMap<File, number>();
 let nextFileIdentity = 0;
@@ -121,39 +186,18 @@ export const fileUploadBehavior: MachineModule<FileUploadSchema, FileUploadApi> 
       acceptAttr: ({ prop }) => getAcceptAttrString(prop('accept')),
       multiple: ({ prop }) => prop('multiple') ?? false,
     },
-    context({ prop, bindable, getContext }) {
+    context({ prop, bindable }) {
       return {
         acceptedFiles: bindable(() => ({
           defaultValue: prop('defaultAcceptedFiles'),
           value: prop('acceptedFiles'),
           // A replacement File may have the same metadata and different contents.
-          isEqual: (a, b) => a.length === b?.length && a.every((file, index) => file === b[index]),
+          isEqual: sameFiles,
           hash: (files) => files.map(fileIdentity).join(','),
-          onChange(files) {
-            prop('onFileAccept')?.({ files });
-            prop('onFileChange')?.({
-              acceptedFiles: files,
-              rejectedFiles: getContext().get('rejectedFiles'),
-            });
-          },
         })),
         rejectedFiles: bindable<upload.FileRejection[]>(() => ({
           defaultValue: [],
-          isEqual: (a, b) =>
-            a.length === b?.length &&
-            a.every(
-              (item, index) =>
-                item.file === b[index]?.file &&
-                item.errors.length === b[index]?.errors.length &&
-                item.errors.every((error, i) => error === b[index]?.errors[i]),
-            ),
-          onChange(files) {
-            prop('onFileReject')?.({ files });
-            prop('onFileChange')?.({
-              acceptedFiles: getContext().get('acceptedFiles'),
-              rejectedFiles: files,
-            });
-          },
+          isEqual: sameRejections,
         })),
         transforming: bindable(() => ({ defaultValue: false })),
       };
@@ -169,46 +213,36 @@ export const fileUploadBehavior: MachineModule<FileUploadSchema, FileUploadApi> 
       ...upload.machine.implementations,
       actions: {
         ...upload.machine.implementations?.actions,
-        setEventFiles({ context, prop, event }) {
-          const previous = context.get('acceptedFiles');
-          const accepted: File[] = [];
-          const rejected: upload.FileRejection[] = [];
-          const multiple = prop('multiple');
-          for (const file of event.files as File[]) {
-            const [, typeError] = isValidFileType(file, getAcceptAttrString(prop('accept')));
-            const [, sizeError] = isValidFileSize(file, prop('minFileSize'), prop('maxFileSize'));
-            const errors: upload.FileError[] = [];
-            if (typeError) errors.push(typeError);
-            if (sizeError) errors.push(sizeError);
-            errors.push(
-              ...(prop('validate')?.(file, {
-                acceptedFiles: previous,
-                rejectedFiles: context.get('rejectedFiles'),
-              }) ?? []),
-            );
-            if (
-              multiple &&
-              (previous.some((other) => isFileEqual(other, file)) ||
-                accepted.some((other) => isFileEqual(other, file)))
-            )
-              errors.push('FILE_EXISTS');
-            if (errors.length) rejected.push({ file, errors });
-            else accepted.push(file);
-          }
-          if (
-            (multiple ? previous.length : 0) + accepted.length >
-            (multiple ? prop('maxFiles') : 1)
-          ) {
-            rejected.push(...accepted.map((file) => ({ file, errors: ['TOO_MANY_FILES'] })));
-            accepted.length = 0;
-          }
-          if (accepted.length)
-            context.set('acceptedFiles', multiple ? [...previous, ...accepted] : accepted);
-          context.set('rejectedFiles', rejected);
+        setEventFiles(params) {
+          selectFiles(params, params.event.files);
         },
-        resetSelection({ context, event }) {
-          context.set('acceptedFiles', event.files);
-          context.set('rejectedFiles', []);
+        setFiles(params) {
+          selectFiles(params, params.event.files, true);
+        },
+        removeFile(params) {
+          const { context, event } = params;
+          commitSelection(params, {
+            acceptedFiles:
+              event.itemType === 'rejected'
+                ? context.get('acceptedFiles')
+                : context.get('acceptedFiles').filter((file) => !isFileEqual(file, event.file)),
+            rejectedFiles:
+              event.itemType === 'rejected'
+                ? context.get('rejectedFiles').filter(({ file }) => !isFileEqual(file, event.file))
+                : context.get('rejectedFiles'),
+          });
+        },
+        clearRejectedFiles(params) {
+          commitSelection(params, {
+            acceptedFiles: params.context.get('acceptedFiles'),
+            rejectedFiles: [],
+          });
+        },
+        clearFiles(params) {
+          commitSelection(params, { acceptedFiles: [], rejectedFiles: [] });
+        },
+        resetSelection(params) {
+          commitSelection(params, { acceptedFiles: params.event.files, rejectedFiles: [] });
         },
         // A trusted click must retain transient user activation (not a rAF).
         openFilePicker({ scope, prop }) {

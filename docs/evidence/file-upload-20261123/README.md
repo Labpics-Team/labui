@@ -13,7 +13,7 @@ the source to support a complete selection workflow.
 
 ## Results
 
-- `file-upload.spec.ts`: 30 passing scenarios across Chromium and WebKit. Both
+- `file-upload.spec.ts`: 38 passing scenarios across Chromium and WebKit. Both
   renderers open the real file chooser, preserve accepted `FormData` on rejection
   and cancel, support controlled refusal, native/external forms, disabled
   fieldsets, read-only values, required validation, reset cancellation, file drop,
@@ -23,13 +23,26 @@ the source to support a complete selection workflow.
   file is accepted; these two tests skip WebKit, which has no CDP facility. The
   suite also covers multiple selection with a limit of one, same-metadata single
   replacement, and scaled layout/artwork/hover geometry at narrow 200% text size.
+- Controlled selection regression uses real React `useState` and a reactive Lit
+  parent. A mixed valid/invalid batch, replacement of rejection messages, removal,
+  reset and Lit's public clear each report one complete selection snapshot. The
+  suite checks rendered files, native FileList, submitted payloads and page errors.
+  Before the fix, both parents received two conflicting change callbacks and lost
+  the newly accepted file. Uncontrolled reset had the same split notifications.
+- `file-upload-selection.test.ts` exercises the real behavior service's public
+  `setFiles`, accepted/rejected deletion, `clearFiles`, `clearRejectedFiles`, reset
+  and no-op paths with deferred controlled updates. All use one mutation boundary.
+  React status regions now match Lit's non-resettable `role="status"` elements:
+  native reset of an `output` had replaced children and crashed React in WebKit.
 - `file-upload-ssr.test.ts` and `file-upload-ssr.test.mjs`: three passing SSR tests.
   Local File objects cannot be serialized through the Lit JSON hydration boundary.
 - `packed.json`: seven local LabUI tarballs plus the recorded Icons 0.4 artifact
   were installed into a clean temporary consumer. Lit and React ESM/CJS SSR,
   TypeScript declarations, esbuild bundle and actual picker/form/rejection/removal
   paths passed in Chromium and WebKit. This verifies the artifacts; it does not
-  attest Icons 0.4 registry publication.
+  attest Icons 0.4 registry publication. This artifact audit preceded the selection
+  notification fix; the rebuilt Core and React packages passed the expanded browser
+  suite above. No export or dependency changed in that follow-up.
 - `render.generated.json` and the PNGs were produced by
   `apps/docs/tests/file-upload-render.mjs`, using real fonts at 1200 px surface
   width. Both renderers and themes cover five area states and three compact sizes.
@@ -55,5 +68,6 @@ in `finally`.
 
 Primary sources: [Lab UI](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1),
 [Zag File Upload](https://zagjs.com/components/file-upload),
+[HTML output reset](https://html.spec.whatwg.org/multipage/form-elements.html#the-output-element),
 [FileKit](https://github.com/vinceglb/FileKit),
 [FileKit platform support](https://filekit.mintlify.app/platform-support).

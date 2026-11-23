@@ -9,6 +9,126 @@ test.beforeEach(async ({ page }) => {
 });
 for (const renderer of ['lit', 'react'] as const) {
   const form = renderer === 'lit' ? '#lit' : '#react-form';
+  test(`${renderer}: controlled parent receives one complete selection per action`, async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.evaluate((renderer) => window.fileUploadFixture.mountControlled(renderer), renderer);
+    const scope = page.locator(form);
+    const input = scope.locator('input[type=file]');
+    const changes = () => page.evaluate(() => window.fileUploadFixture.changes);
+    const submitted = () =>
+      scope.evaluate(async (element) =>
+        Promise.all(
+          new FormData(element as HTMLFormElement).getAll('files').map(async (value) => {
+            const file = value as File;
+            return [file.name, await file.text()];
+          }),
+        ),
+      );
+    await expect(scope.locator('.lab-upload-name')).toHaveText('fixed.txt');
+    await input.setInputFiles([
+      { name: 'good.txt', mimeType: 'text/plain', buffer: Buffer.from('good') },
+      { name: 'bad.png', mimeType: 'image/png', buffer: Buffer.from('bad') },
+    ]);
+    const expected = [{ accepted: ['fixed.txt', 'good.txt'], rejected: ['bad.png'] }];
+    await expect.poll(changes).toEqual(expected);
+    await expect(scope.locator('.lab-upload-name')).toHaveText(['fixed.txt', 'good.txt']);
+    await expect.poll(submitted).toEqual([
+      ['fixed.txt', 'fixed'],
+      ['good.txt', 'good'],
+    ]);
+    await expect(scope.getByRole('status').filter({ hasText: 'bad.png' })).toContainText(
+      'File type is not accepted',
+    );
+
+    // A valid selection must clear the old rejection in the same notification.
+    await input.setInputFiles({
+      name: 'next.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('next'),
+    });
+    expected.push({ accepted: ['fixed.txt', 'good.txt', 'next.txt'], rejected: [] });
+    await expect.poll(changes).toEqual(expected);
+    await expect(scope.locator('.lab-upload-name')).toHaveText([
+      'fixed.txt',
+      'good.txt',
+      'next.txt',
+    ]);
+    await expect(scope.getByRole('status').filter({ hasText: 'bad.png' })).toHaveCount(0);
+
+    await input.setInputFiles({
+      name: 'again.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from('bad'),
+    });
+    expected.push({ accepted: ['fixed.txt', 'good.txt', 'next.txt'], rejected: ['again.png'] });
+    await expect.poll(changes).toEqual(expected);
+    await scope.getByRole('button', { name: 'Remove good.txt' }).click();
+    expected.push({ accepted: ['fixed.txt', 'next.txt'], rejected: ['again.png'] });
+    await expect.poll(changes).toEqual(expected);
+    await expect.poll(submitted).toEqual([
+      ['fixed.txt', 'fixed'],
+      ['next.txt', 'next'],
+    ]);
+
+    // Controlled reset keeps the parent's files and clears its rejection message.
+    await scope.getByRole('button', { name: 'Reset', exact: true }).click();
+    expected.push({ accepted: ['fixed.txt', 'next.txt'], rejected: [] });
+    await expect.poll(changes).toEqual(expected);
+    await expect.poll(submitted).toEqual([
+      ['fixed.txt', 'fixed'],
+      ['next.txt', 'next'],
+    ]);
+    await expect
+      .poll(() =>
+        input.evaluate((element) =>
+          Array.from((element as HTMLInputElement).files ?? [], (file) => file.name),
+        ),
+      )
+      .toEqual(['fixed.txt', 'next.txt']);
+
+    if (renderer === 'lit') {
+      await input.setInputFiles({
+        name: 'clear.png',
+        mimeType: 'image/png',
+        buffer: Buffer.from('bad'),
+      });
+      expected.push({ accepted: ['fixed.txt', 'next.txt'], rejected: ['clear.png'] });
+      await expect.poll(changes).toEqual(expected);
+      await page.evaluate(() => window.fileUploadFixture.lit.clearFiles());
+      expected.push({ accepted: [], rejected: [] });
+      await expect.poll(changes).toEqual(expected);
+      await expect(scope.locator('.lab-upload-name')).toHaveCount(0);
+      await expect.poll(submitted).toEqual([]);
+    }
+    expect(errors).toEqual([]);
+  });
+  test(`${renderer}: uncontrolled reset reports accepted and rejected files together`, async ({
+    page,
+  }) => {
+    await page.evaluate((renderer) => {
+      if (renderer === 'lit') window.fileUploadFixture.lit.multiple = true;
+      else window.fileUploadFixture.updateReact({ multiple: true });
+      window.fileUploadFixture.recordChanges(renderer);
+    }, renderer);
+    const scope = page.locator(form);
+    await scope.locator('input[type=file]').setInputFiles([
+      { name: 'good.txt', mimeType: 'text/plain', buffer: Buffer.from('good') },
+      { name: 'bad.png', mimeType: 'image/png', buffer: Buffer.from('bad') },
+    ]);
+    await expect(scope.locator('.lab-upload-name')).toHaveText('good.txt');
+    await scope.getByRole('button', { name: 'Reset', exact: true }).click();
+    await expect
+      .poll(() => page.evaluate(() => window.fileUploadFixture.changes))
+      .toEqual([
+        { accepted: ['good.txt'], rejected: ['bad.png'] },
+        { accepted: [], rejected: [] },
+      ]);
+    await expect(scope.locator('.lab-upload-name')).toHaveCount(0);
+    await expect(scope.getByRole('status').filter({ hasText: 'bad.png' })).toHaveCount(0);
+  });
   test(`${renderer}: multiple limit one appends while single selection replaces same-metadata files`, async ({
     page,
   }) => {

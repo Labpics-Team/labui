@@ -37,6 +37,12 @@ attributes. Lit uses `acceptedFiles = null` to return to uncontrolled operation.
 In Lit, listen to `file-change` and `file-reject` CustomEvents; their `detail` has
 the same shape as React's `onFileChange` and `onFileReject`.
 
+Each selection, removal, clear or reset that changes either list emits one change
+with the complete resulting `acceptedFiles` and `rejectedFiles` snapshot. Mixed
+valid and invalid batches remain safe when a controlled parent applies the new
+files on its next render. No-op actions emit no change. Status messages use live
+regions that retain their renderer-managed children during native form reset.
+
 Click the field, filename or Browse files button to open the real system picker.
 The area also accepts dropped files. Remove clears a file. Cancelling the picker
 keeps the accepted selection. A single-file field replaces its existing file;

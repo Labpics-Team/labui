@@ -255,16 +255,18 @@ export function FileUpload({
           {shownError}
         </span>
       ) : null}
-      <output className="lab-upload-error" aria-live="polite">
+      {/* biome-ignore lint/a11y/useSemanticElements: output resets replace React-managed children during form.reset(). */}
+      <div className="lab-upload-error" role="status" aria-live="polite">
         {api.rejectedFiles.map((item, index) => (
           <span key={`${item.file.name}:${index}`}>
             {item.file.name}: {fileUploadMessage(item.errors)}
           </span>
         ))}
-      </output>
-      <output className="lab-upload-hidden" aria-live="polite">
+      </div>
+      {/* biome-ignore lint/a11y/useSemanticElements: this live region must survive native form.reset(). */}
+      <span className="lab-upload-hidden" role="status" aria-live="polite">
         {api.acceptedFiles.map((file) => file.name).join(', ')}
-      </output>
+      </span>
     </div>
   );
 }
