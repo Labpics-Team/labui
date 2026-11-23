@@ -16,7 +16,8 @@ const text = (style: {
 export const calendarCss = `
 [data-lab-calendar] { margin:0;padding:0;border:0;position:relative;isolation:isolate;box-sizing:border-box;inline-size:100%;max-inline-size:var(--lab-calendar-width,${rem(p.sizes.s.width)});min-inline-size:0;border-radius:${rem(p.radius)};font-family:var(--lab-font-family);color:${role(p.roles.label)}; }
 [data-lab-calendar]::after { content:'';position:absolute;inset:0;pointer-events:none;border:${rem(p.stroke)} solid ${role(p.roles.border)};border-radius:inherit; }
-[data-lab-calendar] { container:lab-calendar / inline-size; }
+[data-lab-calendar] { container:lab-calendar / inline-size;contain-intrinsic-inline-size:var(--lab-calendar-width,${rem(p.sizes.s.width)}); }
+[data-lab-calendar][data-size='m'] { contain-intrinsic-inline-size:var(--lab-calendar-width,${rem(p.sizes.m.width)}); }
 .lab-calendar-surface { position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none; }
 [data-lab-calendar] { --_cal-padding:${rem(p.sizes.s.padding)};--_cal-top:${rem(p.sizes.s.areaTop)};--_cal-nav:${rem(p.sizes.s.navSize)};--_cal-nav-radius:${rem(p.sizes.s.navRadius)};--_cal-cell-radius:${rem(p.sizes.s.cellRadius)};--_cal-dots-bottom:${rem(p.sizes.s.dotsBottom)}; }
 [data-lab-calendar][data-size='m'] { max-inline-size:var(--lab-calendar-width,${rem(p.sizes.m.width)});--_cal-padding:${rem(p.sizes.m.padding)};--_cal-top:${rem(p.sizes.m.areaTop)};--_cal-nav:${rem(p.sizes.m.navSize)};--_cal-nav-radius:${rem(p.sizes.m.navRadius)};--_cal-cell-radius:${rem(p.sizes.m.cellRadius)};--_cal-dots-bottom:${rem(p.sizes.m.dotsBottom)}; }

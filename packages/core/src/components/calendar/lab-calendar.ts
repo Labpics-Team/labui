@@ -283,7 +283,7 @@ export class LabCalendar extends LabElement {
     this.renderRoot.querySelector<HTMLElement>('.lab-calendar-day[tabindex="0"]')?.focus();
   }
   static override styles = [
-    css`:host{display:block;min-inline-size:0;}`,
+    css`:host{display:block;min-inline-size:0;max-inline-size:100%;}`,
     unsafeCSS(materialCss),
     unsafeCSS(calendarCss),
   ];

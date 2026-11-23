@@ -5,6 +5,41 @@ test.beforeEach(async ({ page }) => {
   await page.locator('#react-form .lab-calendar-day').first().waitFor();
 });
 
+test('intrinsic size survives centered flex without overflowing a narrow parent', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    for (const form of document.querySelectorAll<HTMLElement>('#lit,#react-form'))
+      Object.assign(form.style, { display: 'flex', flexDirection: 'column', alignItems: 'center' });
+  });
+  for (const [size, width] of [
+    ['s', 320],
+    ['m', 400],
+  ] as const) {
+    await page.evaluate((size) => window.calendarFixture.set({ size }), size);
+    for (const form of ['#lit', '#react-form']) {
+      const calendar = page.locator(form).locator('[data-lab-calendar]');
+      await expect(calendar).toHaveAttribute('data-size', size);
+      expect(await calendar.evaluate((el) => el.getBoundingClientRect().width)).toBeCloseTo(
+        width,
+        0,
+      );
+    }
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '32px';
+  });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  for (const form of ['#lit', '#react-form'])
+    expect(
+      await page
+        .locator(form)
+        .locator('[data-lab-calendar]')
+        .evaluate((el) => el.getBoundingClientRect().width),
+    ).toBeCloseTo(358, 0);
+});
+
 test('date selection, FormData and reset agree in both renderers', async ({ page }) => {
   for (const form of ['#lit', '#react-form']) {
     const root = page.locator(form);

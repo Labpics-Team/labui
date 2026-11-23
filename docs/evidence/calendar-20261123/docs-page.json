@@ -1,0 +1,27 @@
+{
+  "route": "/components.html?component=calendar",
+  "browser": "140.0.7339.186",
+  "rangeSelection": [
+    "2026-11-06",
+    "2026-11-09"
+  ],
+  "matrixWidths": [
+    320,
+    400,
+    320,
+    400
+  ],
+  "responsive": [
+    {
+      "scale": 100,
+      "documentWidth": 390,
+      "calendarWidth": 320
+    },
+    {
+      "scale": 200,
+      "documentWidth": 390,
+      "calendarWidth": 258
+    }
+  ],
+  "errors": []
+}

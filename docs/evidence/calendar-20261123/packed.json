@@ -22,11 +22,11 @@
     },
     {
       "package": "@labpics/ui-core",
-      "sha256": "d4ca94cb7e1e95b11f33e58b46899087cd7fe8742ab3ff04e28b2957979a7f81"
+      "sha256": "164e1f9dd5b4111db0e6a57b55efb78c4993423b39747becf902aadfa37f8d51"
     },
     {
       "package": "@labpics/ui-react",
-      "sha256": "15c1f6364e3c255c44f2c060a5da44b3dfba44d266cd92728ca8da27ef8e07ef"
+      "sha256": "971bbc9573821bfe30f5dc6fcd7923c6110e4a857b5d83a38c871b5f95e7a8b9"
     },
     {
       "package": "@labpics/ui-vue",
