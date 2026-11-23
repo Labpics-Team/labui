@@ -30,6 +30,7 @@ kotlin {
             api(compose.runtime)
             api(compose.foundation)
             api(compose.ui)
+            api("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
             api("io.github.vinceglb:filekit-core:0.17.1")
             implementation("io.github.vinceglb:filekit-dialogs-compose:0.17.1")
             implementation(compose.components.resources)
@@ -43,6 +44,8 @@ kotlin {
             api(nativeIcons.compose)
         }
         val desktopMain by getting
+        desktopMain.kotlin.srcDir("src/jvmSharedMain/kotlin")
+        androidMain.get().kotlin.srcDir("src/jvmSharedMain/kotlin")
         desktopMain.dependencies { implementation(libs.ktor.java) }
         androidMain.dependencies { implementation(libs.ktor.android) }
         iosMain.dependencies { implementation(libs.ktor.darwin) }

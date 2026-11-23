@@ -158,3 +158,4 @@ export { Icon, type IconProps, type IconHandle } from './icon.js';
 export { DragButton, type DragButtonProps } from './drag-button.js';
 export { Alert, type AlertProps, type LabAlertType, type LabAlertAnnouncement } from './alert.js';
 export { FileUpload, type FileUploadProps } from './file-upload.js';
+export { Calendar, type CalendarProps } from './calendar.js';

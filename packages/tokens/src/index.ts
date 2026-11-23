@@ -76,3 +76,4 @@ export { menuProfile } from './menu.js';
 export { dialogProfile } from './dialog.js';
 
 export { fileUploadProfile } from './file-upload.js';
+export { calendarProfile } from './calendar.js';

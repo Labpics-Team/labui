@@ -1,0 +1,97 @@
+{
+  "archives": [
+    {
+      "package": "@labpics/fonts",
+      "sha256": "d0d46708a7b04e7fca9900afc5735ca7a72fa5ae1082787ea603199b632b2fef"
+    },
+    {
+      "package": "@labpics/ui-tokens",
+      "sha256": "8ffff42d4429258d04c3d84eb18dba6c6d066249ae8ce66c7512d000bab6380f"
+    },
+    {
+      "package": "@labui/colors",
+      "sha256": "ff4932ea0345992005afb8c651a8154dbcc1170b5e7f9e6dda3cd484804d7e4b"
+    },
+    {
+      "package": "@labpics/ui-shadow",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "package": "@labpics/ui-materials",
+      "sha256": "77838ee19348e5133360ddb1ef7599221168580d22d306d065495862fc24e1a7"
+    },
+    {
+      "package": "@labpics/ui-core",
+      "sha256": "d4ca94cb7e1e95b11f33e58b46899087cd7fe8742ab3ff04e28b2957979a7f81"
+    },
+    {
+      "package": "@labpics/ui-react",
+      "sha256": "15c1f6364e3c255c44f2c060a5da44b3dfba44d266cd92728ca8da27ef8e07ef"
+    },
+    {
+      "package": "@labpics/ui-vue",
+      "sha256": "6492dc7f728ab27b656997eb76dee3ff01a03d20ee3ef458f4defb7b09f74e2e"
+    },
+    {
+      "package": "@labpics/ui-solid",
+      "sha256": "ced3f0d88aa49f386d7ca5da423cc2c0945d4b3a60154e1784102ede0dfb52be"
+    },
+    {
+      "package": "@labpics/ui-svelte",
+      "sha256": "458788470009bfb8ae8c06bf4b8cf1804eeccb9fdb5c6eda8d01bf8d32d07026"
+    },
+    {
+      "package": "@labpics/ui-astro",
+      "sha256": "8414874c7d4d00df0703be5f49bfc41bfa57224c640c90a2547c74e342f59dc2"
+    },
+    {
+      "package": "@labpics/icons",
+      "source": "qualification artifact; no registry publication claim",
+      "sha256": "d4962b817d19431393131f0aebb5d70f745e103e4062a6003a52926a8362c3bb"
+    }
+  ],
+  "ssr": [
+    "lit",
+    "react-esm",
+    "react-cjs",
+    "vue",
+    "solid",
+    "svelte",
+    "astro"
+  ],
+  "declarationConsumer": true,
+  "results": [
+    {
+      "browser": "chromium",
+      "version": "140.0.7339.186",
+      "renderers": [
+        "lit",
+        "react",
+        "vue",
+        "solid",
+        "svelte",
+        "astro"
+      ],
+      "selection": true,
+      "month": true,
+      "formData": true,
+      "squareGrid": true
+    },
+    {
+      "browser": "webkit",
+      "version": "26.0",
+      "renderers": [
+        "lit",
+        "react",
+        "vue",
+        "solid",
+        "svelte",
+        "astro"
+      ],
+      "selection": true,
+      "month": true,
+      "formData": true,
+      "squareGrid": true
+    }
+  ]
+}

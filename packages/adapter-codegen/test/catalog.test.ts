@@ -49,8 +49,9 @@ describe('semantic catalog joined to real API and documentation', () => {
       progress?.sources.find((source) => source.name === 'Linear progress')?.web,
     ).toBeDefined();
     const calendar = projection.families.find((family) => family.slug === 'calendar');
-    expect(calendar?.capabilities).toEqual({ web: null, native: null });
-    expect(calendar?.documentation).toBeNull();
+    expect(calendar?.capabilities.web?.tag).toBe('lab-calendar');
+    expect(calendar?.capabilities.native?.symbol).toBe('LabCalendar');
+    expect(calendar?.documentation).not.toBeNull();
   });
 
   it('rejects a missing or duplicate semantic family and a duplicate source', () => {
@@ -59,7 +60,7 @@ describe('semantic catalog joined to real API and documentation', () => {
         { ...registry, families: registry.families.filter((family) => family.slug !== 'calendar') },
         native,
       ),
-    ).toThrow('Unknown family: calendar');
+    ).toThrow('Documentation is outside the catalog: calendar');
     expect(() =>
       buildCatalog(
         { ...registry, families: [...registry.families, ...registry.families.slice(0, 1)] },

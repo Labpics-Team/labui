@@ -15,18 +15,19 @@ import { copyFileSync, cpSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { fileUploadCss } from '../src/components/file-upload/styles.js';
 import { accordionCss } from '../src/components/accordion/styles.js';
 import { alertCss } from '../src/components/alert/styles.js';
 import { avatarCss } from '../src/components/avatar/styles.js';
 import { badgeCss } from '../src/components/badge/styles.js';
 import { breadcrumbCss } from '../src/components/breadcrumb/styles.js';
 import { buttonFillCss } from '../src/components/button/fill.js';
+import { calendarCss } from '../src/components/calendar/styles.js';
 import { cardCss } from '../src/components/card/styles.js';
 import { chipCss } from '../src/components/chip/styles.js';
 import { dialogCss } from '../src/components/dialog/styles.js';
 import { dragButtonCss } from '../src/components/drag-button/styles.js';
 import { extensionFieldCss } from '../src/components/field/extension-styles.js';
+import { fileUploadCss } from '../src/components/file-upload/styles.js';
 import { inputCss } from '../src/components/input/styles.js';
 import { kbdCss } from '../src/components/kbd/styles.js';
 import { menuCss } from '../src/components/menu/styles.js';
@@ -56,6 +57,7 @@ const tokensPkg = require.resolve('@labpics/ui-tokens/tokens.css');
 function main(): void {
   mkdirSync(dist, { recursive: true });
   writeFileSync(join(dist, 'file-upload.css'), fileUploadCss);
+  writeFileSync(join(dist, 'calendar.css'), calendarCss);
   writeFileSync(join(dist, 'alert.css'), alertCss);
   writeFileSync(join(dist, 'dialog.css'), dialogCss);
 

@@ -12,6 +12,7 @@ export { Avatar, type AvatarProps } from './avatar.js';
 export { Badge, type BadgeProps } from './badge.js';
 export { Breadcrumb, type BreadcrumbProps } from './breadcrumb.js';
 export { Button, type ButtonProps } from './button.js';
+export { Calendar, type CalendarProps } from './calendar.js';
 export { Card, type CardProps } from './card.js';
 export { Checkbox, type CheckboxProps } from './checkbox.js';
 export { Chip, type ChipProps } from './chip.js';

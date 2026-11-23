@@ -1850,5 +1850,116 @@
       "danger": "label-danger",
       "focus": "border-focus"
     }
+  },
+  "calendar": {
+    "sourceRef": {
+      "key": "component-set/Calendar/Calendar/Mini"
+    },
+    "sizes": {
+      "s": {
+        "width": 320,
+        "maxWidth": 380,
+        "padding": 16,
+        "areaTop": 4,
+        "navSize": 24,
+        "navRadius": 8,
+        "cellRadius": 8,
+        "dotsBottom": 6
+      },
+      "m": {
+        "width": 400,
+        "maxWidth": 560,
+        "padding": 24,
+        "areaTop": 8,
+        "navSize": 40,
+        "navRadius": 12,
+        "cellRadius": 12,
+        "dotsBottom": 3
+      }
+    },
+    "radius": 24,
+    "stroke": 1,
+    "gap": 8,
+    "columns": 7,
+    "weeks": 6,
+    "cell": 35,
+    "icon": 16,
+    "material": "base",
+    "typography": {
+      "sTitle": {
+        "$textStyle": "body-emphasized"
+      },
+      "mTitle": {
+        "$textStyle": "headline-emphasized"
+      },
+      "sDay": {
+        "$textStyle": "caption-s"
+      },
+      "mDay": {
+        "$textStyle": "body-emphasized"
+      },
+      "sWeekday": {
+        "$textStyle": "caption-xs"
+      },
+      "mWeekday": {
+        "$textStyle": "caption-s"
+      }
+    },
+    "roles": {
+      "label": "label-primary",
+      "secondary": "label-secondary",
+      "disabled": "label-quaternary",
+      "header": "bg-grouped-secondary",
+      "border": "border-base",
+      "hover": "fill-quaternary",
+      "active": "bg-inverted",
+      "activeLabel": "label-inverted-primary",
+      "focus": "fx-focus-ring-neutral"
+    },
+    "range": {
+      "sourceRef": {
+        "key": "component-set/Calendar/Gridcell"
+      },
+      "edgePadding": 8,
+      "innerPadding": 2,
+      "markerHeight": 12,
+      "markerStroke": 2,
+      "markerInset": 6
+    },
+    "focus": {
+      "width": 1,
+      "offset": 1
+    },
+    "marker": {
+      "size": 16,
+      "padding": 1,
+      "bottom": -7,
+      "stroke": 1,
+      "surfaceRole": "bg-inverted",
+      "labelRole": "label-inverted-primary",
+      "activeSurfaceRole": "bg-primary",
+      "activeLabelRole": "label-primary",
+      "activeBorderRole": "border-strong"
+    },
+    "dots": {
+      "sourceRef": {
+        "key": "component-set/Calendar/Status Dots"
+      },
+      "size": 4,
+      "count": 5,
+      "width": 20,
+      "gap": 0,
+      "roles": {
+        "default": "label-secondary",
+        "disabled": "label-quaternary",
+        "active": "label-inverted-primary"
+      },
+      "glyph": {
+        "viewBox": 4,
+        "x": 0,
+        "y": 0,
+        "data": "M2 0C3.10457 0 4 0.89543 4 2C4 3.10457 3.10457 4 2 4C1.46661 4 0.983573 3.78954 0.625 3.44922C0.862809 3.01939 1 2.52601 1 2C1 1.47369 0.863066 0.979809 0.625 0.549805C0.983524 0.209758 1.46686 0 2 0Z"
+      }
+    }
   }
 }

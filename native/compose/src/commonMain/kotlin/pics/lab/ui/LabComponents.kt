@@ -16,6 +16,7 @@ internal data class LabSelectMetrics(val height: Float, val radius: Float, val p
 internal data class LabAvatarMetrics(val diameter: Float, val fontSize: Float, val lineHeight: Float, val statusSize: Float, val statusGap: Float)
 internal data class LabPinInputMetrics(val width: Float, val height: Float, val radius: Float, val gap: Float, val dot: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float)
 internal data class LabFileUploadMetrics(val height: Float, val radius: Float, val paddingX: Float, val paddingY: Float, val icon: Float, val fontSize: Float, val lineHeight: Float, val fontWeight: Float, val letterSpacing: Float)
+internal data class LabCalendarMetrics(val width: Float, val maxWidth: Float, val padding: Float, val areaTop: Float, val navSize: Float, val navRadius: Float, val cellRadius: Float, val dotsBottom: Float)
 
 public enum class LabBadgeColor(internal val role: String) { Neutral("neutral"), Gray("gray"), Blue("blue"), Red("red"), Orange("orange"), Green("green"), Yellow("yellow"), Teal("teal"), Mint("mint"), Indigo("indigo"), Purple("purple"), Pink("pink"), StaticDark("static-dark"), StaticLight("static-light"), Brand("brand") }
 
@@ -989,4 +990,84 @@ internal object LabComponents {
     const val FileUploadRolesDisabled = "label-quaternary"
     const val FileUploadRolesDanger = "label-danger"
     const val FileUploadRolesFocus = "border-focus"
+    val CalendarS = LabCalendarMetrics(320f, 380f, 16f, 4f, 24f, 8f, 8f, 6f)
+    val CalendarM = LabCalendarMetrics(400f, 560f, 24f, 8f, 40f, 12f, 12f, 3f)
+    const val CalendarRadius = 24f
+    const val CalendarStroke = 1f
+    const val CalendarGap = 8f
+    const val CalendarColumns = 7f
+    const val CalendarWeeks = 6f
+    const val CalendarCell = 35f
+    const val CalendarIcon = 16f
+    val CalendarMaterial get() = LabMaterials.base
+    const val CalendarTypographySTitleFontSize = 16f
+    const val CalendarTypographySTitleLineHeight = 24f
+    const val CalendarTypographySTitleFontWeight = 500f
+    const val CalendarTypographySTitleLetterSpacing = 0f
+    const val CalendarTypographyMTitleFontSize = 20f
+    const val CalendarTypographyMTitleLineHeight = 20f
+    const val CalendarTypographyMTitleFontWeight = 600f
+    const val CalendarTypographyMTitleLetterSpacing = -0.33f
+    const val CalendarTypographySDayFontSize = 14f
+    const val CalendarTypographySDayLineHeight = 12f
+    const val CalendarTypographySDayFontWeight = 500f
+    const val CalendarTypographySDayLetterSpacing = 0f
+    const val CalendarTypographyMDayFontSize = 16f
+    const val CalendarTypographyMDayLineHeight = 24f
+    const val CalendarTypographyMDayFontWeight = 500f
+    const val CalendarTypographyMDayLetterSpacing = 0f
+    const val CalendarTypographySWeekdayFontSize = 12f
+    const val CalendarTypographySWeekdayLineHeight = 12f
+    const val CalendarTypographySWeekdayFontWeight = 500f
+    const val CalendarTypographySWeekdayLetterSpacing = 0f
+    const val CalendarTypographyMWeekdayFontSize = 14f
+    const val CalendarTypographyMWeekdayLineHeight = 12f
+    const val CalendarTypographyMWeekdayFontWeight = 500f
+    const val CalendarTypographyMWeekdayLetterSpacing = 0f
+    const val CalendarRolesLabel = "label-primary"
+    const val CalendarRolesSecondary = "label-secondary"
+    const val CalendarRolesDisabled = "label-quaternary"
+    const val CalendarRolesHeader = "bg-grouped-secondary"
+    const val CalendarRolesBorder = "border-base"
+    const val CalendarRolesHover = "fill-quaternary"
+    const val CalendarRolesActive = "bg-inverted"
+    const val CalendarRolesActiveLabel = "label-inverted-primary"
+    const val CalendarRolesFocus = "fx-focus-ring-neutral"
+    const val CalendarRangeEdgePadding = 8f
+    const val CalendarRangeInnerPadding = 2f
+    const val CalendarRangeMarkerHeight = 12f
+    const val CalendarRangeMarkerStroke = 2f
+    const val CalendarRangeMarkerInset = 6f
+    const val CalendarFocusWidth = 1f
+    const val CalendarFocusOffset = 1f
+    const val CalendarMarkerSize = 16f
+    const val CalendarMarkerPadding = 1f
+    const val CalendarMarkerBottom = -7f
+    const val CalendarMarkerStroke = 1f
+    const val CalendarMarkerSurfaceRole = "bg-inverted"
+    const val CalendarMarkerLabelRole = "label-inverted-primary"
+    const val CalendarMarkerActiveSurfaceRole = "bg-primary"
+    const val CalendarMarkerActiveLabelRole = "label-primary"
+    const val CalendarMarkerActiveBorderRole = "border-strong"
+    const val CalendarDotsSize = 4f
+    const val CalendarDotsCount = 5f
+    const val CalendarDotsWidth = 20f
+    const val CalendarDotsGap = 0f
+    const val CalendarDotsRolesDefault = "label-secondary"
+    const val CalendarDotsRolesDisabled = "label-quaternary"
+    const val CalendarDotsRolesActive = "label-inverted-primary"
+    const val CalendarDotsGlyphViewBox = 4f
+    const val CalendarDotsGlyphX = 0f
+    const val CalendarDotsGlyphY = 0f
+    // Shared contour: transform the canvas, never mutate this path.
+    val CalendarDotsGlyphPath by lazy { androidx.compose.ui.graphics.Path().apply {
+        moveTo(2f, 0f)
+        cubicTo(3.10457f, 0f, 4f, 0.89543f, 4f, 2f)
+        cubicTo(4f, 3.10457f, 3.10457f, 4f, 2f, 4f)
+        cubicTo(1.46661f, 4f, 0.983573f, 3.78954f, 0.625f, 3.44922f)
+        cubicTo(0.862809f, 3.01939f, 1f, 2.52601f, 1f, 2f)
+        cubicTo(1f, 1.47369f, 0.863066f, 0.979809f, 0.625f, 0.549805f)
+        cubicTo(0.983524f, 0.209758f, 1.46686f, 0f, 2f, 0f)
+        close()
+    } }
 }

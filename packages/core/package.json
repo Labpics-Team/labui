@@ -445,6 +445,27 @@
         "types": "./dist/components/file-upload/contract.d.cts",
         "default": "./dist/components/file-upload/contract.cjs"
       }
+    },
+    "./calendar.css": "./dist/calendar.css",
+    "./calendar/behavior": {
+      "import": {
+        "types": "./dist/components/calendar/behavior.d.ts",
+        "default": "./dist/components/calendar/behavior.js"
+      },
+      "require": {
+        "types": "./dist/components/calendar/behavior.d.cts",
+        "default": "./dist/components/calendar/behavior.cjs"
+      }
+    },
+    "./calendar/contract": {
+      "import": {
+        "types": "./dist/components/calendar/contract.d.ts",
+        "default": "./dist/components/calendar/contract.js"
+      },
+      "require": {
+        "types": "./dist/components/calendar/contract.d.cts",
+        "default": "./dist/components/calendar/contract.cjs"
+      }
     }
   },
   "files": ["dist"],
@@ -486,7 +507,8 @@
     "./dist/menu.css",
     "./dist/dialog.css",
     "./dist/input-extensions.css",
-    "./dist/file-upload.css"
+    "./dist/file-upload.css",
+    "./dist/calendar.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
@@ -494,6 +516,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@internationalized/date": "3.12.4",
     "@labpics/icons": "0.4.0",
     "@labpics/motion": "0.5.0",
     "@labpics/ui-materials": "workspace:*",
@@ -502,6 +525,7 @@
     "@zag-js/accordion": "1.41.2",
     "@zag-js/combobox": "1.41.2",
     "@zag-js/core": "1.41.2",
+    "@zag-js/date-picker": "1.41.2",
     "@zag-js/dialog": "1.41.2",
     "@zag-js/dom-query": "1.41.2",
     "@zag-js/menu": "1.41.2",

@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-23",
+  "runtime": "Windows desktop / ImageComposeScene / Skiko SOFTWARE / Java headless",
+  "tests": 14,
+  "failures": 0,
+  "errors": 0,
+  "testSeconds": 17.181,
+  "suites": [
+    {
+      "name": "CalendarDateTest[desktop]",
+      "tests": [
+        "gridUsesRealGregorianDaysAndAlwaysHasSixWeeks[desktop]",
+        "monthAndYearMovementClampsLeapDaysWithoutTimezoneArithmetic[desktop]",
+        "reversedRangeIsInclusiveAndUnavailableInteriorRejectsWholeRequest[desktop]",
+        "localeFormattingKeepsProlepticGregorianDatesAndLocalizedNumerals[desktop]",
+        "boundsAreInclusiveAndInvalidOldAnchorsCannotBypassNewLimits[desktop]",
+        "supportedYearEdgesStayRepresentableAndNeverWrap[desktop]"
+      ]
+    },
+    {
+      "name": "CalendarRenderTest[desktop]",
+      "tests": [
+        "controlledSelectionAndMonthNeverChangeUntilTheParentAccepts[desktop]",
+        "localeUsesPlatformNamesAndWeekRulesAndDateFormattingIgnoresSystemTimezone[desktop]",
+        "adjacentDatesAreDisabledUntilNavigationReachesTheirMonth[desktop]",
+        "singleHoverFocusDisabledAndMaterialsUseTheSameAuthoredCells[desktop]",
+        "rangesRespectInteriorUnavailabilityAndReadonlyKeepsNavigation[desktop]",
+        "rangeFocusKeepsInteriorEdgesOpenAndOnlyRoundsTheExternalEndpoint[desktop]",
+        "authoredSizesThemesRangesAndLargeTextRenderWithoutEscapingTheSurface[desktop]",
+        "keyboardCrossesMonthAndLeapYearWithOneDateTabStopAndRtlDirection[desktop]"
+      ]
+    }
+  ],
+  "renders": [
+    "medium-dark-range.png",
+    "medium-light-range.png",
+    "medium-narrow-dark-200-focus-scroll.png",
+    "medium-narrow-dark-200.png",
+    "range-focus-medium-ltr-center.png",
+    "range-focus-medium-ltr-end.png",
+    "range-focus-medium-ltr-start.png",
+    "range-focus-medium-rtl-center.png",
+    "range-focus-medium-rtl-end.png",
+    "range-focus-medium-rtl-start.png",
+    "range-focus-small-ltr-center.png",
+    "range-focus-small-ltr-end.png",
+    "range-focus-small-ltr-start.png",
+    "range-focus-small-rtl-center.png",
+    "range-focus-small-rtl-end.png",
+    "range-focus-small-rtl-start.png",
+    "small-dark-range.png",
+    "small-default.png",
+    "small-disabled.png",
+    "small-focus.png",
+    "small-hover.png",
+    "small-light-range.png",
+    "small-rtl-acrylic.png",
+    "small-rtl-glass.png",
+    "small-rtl-solid.png",
+    "small-single.png"
+  ]
+}
