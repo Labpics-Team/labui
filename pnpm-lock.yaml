@@ -212,6 +212,12 @@ importers:
       '@zag-js/menu':
         specifier: 1.41.2
         version: 1.41.2
+      '@zag-js/file-upload':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/file-utils':
+        specifier: 1.41.2
+        version: 1.41.2
       '@zag-js/number-input':
         specifier: 1.41.2
         version: 1.41.2
@@ -322,6 +328,9 @@ importers:
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/menu':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/file-upload':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/number-input':
@@ -3465,6 +3474,15 @@ packages:
   '@zag-js/vanilla@1.48.0':
     resolution: {integrity: sha512-zY29/XEZrsurfCbGav460Yg24He7d3227KCaLHay3unFsl0m/mXZIynedAd3EqntoaaX2P6ZKExLrJAJ0SQlZQ==}
 
+  '@zag-js/file-upload@1.41.2':
+    resolution: {integrity: sha512-WFwIaKvHpCUjyYMvp42VoydT1WIP5DhDlpmG/nrF4i0ro7pLGb1A4dvyBrAfGcozCB88yR1y1iZKPDY1I9/uUw==}
+
+  '@zag-js/file-utils@1.41.2':
+    resolution: {integrity: sha512-Ih+8ULbId0M+CFR4IsqG5y/0VLCk2l+1rgPH+21L40dlSB6z6qKSP2tG7W69Cj2/3vryZsn67ibn26iCPG/vOw==}
+
+  '@zag-js/i18n-utils@1.41.2':
+    resolution: {integrity: sha512-f1xqaEY79awBxgUyjFso0UEpIoEHZq+zRvB0nUVFHJRW7Ds/QhaFHKSRnf2QBTlP/ObvCT225R+piNAAc17Aaw==}
+
 snapshots:
 
   '@ampproject/remapping@2.3.0':
@@ -6438,3 +6456,21 @@ snapshots:
       '@zag-js/utils': 1.48.0
 
   '@zag-js/utils@1.48.0': {}
+
+  '@zag-js/file-upload@1.41.2':
+    dependencies:
+      '@zag-js/anatomy': 1.41.2
+      '@zag-js/core': 1.41.2
+      '@zag-js/dom-query': 1.41.2
+      '@zag-js/file-utils': 1.41.2
+      '@zag-js/i18n-utils': 1.41.2
+      '@zag-js/types': 1.41.2
+      '@zag-js/utils': 1.41.2
+
+  '@zag-js/file-utils@1.41.2':
+    dependencies:
+      '@zag-js/i18n-utils': 1.41.2
+
+  '@zag-js/i18n-utils@1.41.2':
+    dependencies:
+      '@zag-js/dom-query': 1.41.2

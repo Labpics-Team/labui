@@ -979,6 +979,118 @@
       }
     },
     {
+      "tag": "lab-file-upload",
+      "subpath": "file-upload",
+      "pascal": "FileUpload",
+      "className": "LabFileUpload",
+      "props": [
+        {
+          "name": "view",
+          "attr": "view",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "labelHidden",
+          "attr": "label-hidden",
+          "kind": "boolean"
+        },
+        {
+          "name": "helper",
+          "attr": "helper",
+          "kind": "string"
+        },
+        {
+          "name": "error",
+          "attr": "error",
+          "kind": "string"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "accept",
+          "attr": "accept",
+          "kind": "string"
+        },
+        {
+          "name": "multiple",
+          "attr": "multiple",
+          "kind": "boolean"
+        },
+        {
+          "name": "maxFiles",
+          "attr": "max-files",
+          "kind": "string"
+        },
+        {
+          "name": "maxFileSize",
+          "attr": "max-file-size",
+          "kind": "string"
+        },
+        {
+          "name": "minFileSize",
+          "attr": "min-file-size",
+          "kind": "string"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "readonly",
+          "attr": "readonly",
+          "kind": "boolean"
+        },
+        {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "invalid",
+          "attr": "invalid",
+          "kind": "boolean"
+        },
+        {
+          "name": "acceptedFiles",
+          "attr": "acceptedFiles",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultAcceptedFiles",
+          "attr": "defaultAcceptedFiles",
+          "kind": "prop"
+        },
+        {
+          "name": "translations",
+          "attr": "translations",
+          "kind": "prop"
+        }
+      ],
+      "events": [
+        "file-change",
+        "file-reject"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
       "tag": "lab-icon",
       "subpath": "icon",
       "pascal": "Icon",

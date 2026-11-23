@@ -1,6 +1,7 @@
 """Run the app interaction, stop its process, then verify persisted state without reinstalling."""
 
 from pathlib import Path
+import argparse
 import json
 import re
 import subprocess
@@ -51,6 +52,10 @@ def capture_failure(error: Exception) -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--method", action="append", dest="methods",
+                        help="Run only these SettingsExperienceTest methods")
+    args = parser.parse_args()
     for apk in [build / "outputs/apk/debug/androidApp-debug.apk",
                 build / "outputs/apk/androidTest/debug/androidApp-debug-androidTest.apk"]:
         run("install", "-r", str(apk))
@@ -67,8 +72,8 @@ def main() -> None:
     with (evidence / "logcat.txt").open("w", encoding="utf-8") as log:
         logger = subprocess.Popen([*adb, "logcat", "-v", "threadtime"], stdout=log, stderr=subprocess.STDOUT)
         try:
-            for method in ["editValidateAndSaveThroughNativeAccessibility", "restoresSavedWorkspaceAfterRestart",
-                           "tagsPasteWithAncestorReceiverInsertsExactlyOnce"]:
+            for method in args.methods or ["editValidateAndSaveThroughNativeAccessibility", "restoresSavedWorkspaceAfterRestart",
+                           "tagsPasteWithAncestorReceiverInsertsExactlyOnce", "filePickerImportsReadsCancelsAndRemovesARealDocument"]:
                 run("shell", "am", "force-stop", package)
                 result = subprocess.run([*adb, "shell", "am", "instrument", "-w", "-r", "-e", "class",
                                          f"{test_class}#{method}", runner], text=True, encoding="utf-8", errors="replace",
@@ -89,7 +94,7 @@ def main() -> None:
             except subprocess.TimeoutExpired:
                 logger.kill()
                 logger.wait(timeout=5)
-    print("ANDROID_RESTART_PASS: draft cancellation, validation, persisted save, new-process restore and Tags clipboard insertion")
+    print("ANDROID_APPLICATION_PASS: all requested scenarios completed")
 
 
 if __name__ == "__main__":

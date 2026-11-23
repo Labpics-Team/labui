@@ -20,6 +20,7 @@ export { renderCombobox, type ComboboxSsrProps, type ComboboxSsrSlots } from './
 export { renderContextMenu, type ContextMenuSsrProps, type ContextMenuSsrSlots } from './context-menu.ssr.js';
 export { renderDialog, type DialogSsrProps, type DialogSsrSlots } from './dialog.ssr.js';
 export { renderDragButton, type DragButtonSsrProps, type DragButtonSsrSlots } from './drag-button.ssr.js';
+export { renderFileUpload, type FileUploadSsrProps, type FileUploadSsrSlots } from './file-upload.ssr.js';
 export { renderIcon, type IconSsrProps, type IconSsrSlots } from './icon.ssr.js';
 export { renderInput, type InputSsrProps, type InputSsrSlots } from './input.ssr.js';
 export { renderKbd, type KbdSsrProps, type KbdSsrSlots } from './kbd.ssr.js';
