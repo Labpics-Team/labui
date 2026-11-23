@@ -34,9 +34,11 @@ import io.github.vinceglb.filekit.isDirectory
 import io.github.vinceglb.filekit.mimeType
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.size
-import io.github.vinceglb.filekit.withScopedAccess
+import io.github.vinceglb.filekit.startAccessingSecurityScopedResource
+import io.github.vinceglb.filekit.stopAccessingSecurityScopedResource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
@@ -89,10 +91,15 @@ internal data class LabUploadPolicy(val multiple: Boolean, val accept: List<Stri
 
 /** Metadata only. FileKit handles Android providers and Apple security-scoped URLs. */
 internal fun labUploadMetadata(file: PlatformFile): LabUploadMetadata = try {
-    file.withScopedAccess {
+    // Use FileKit's public lease operations: its 0.17.1 inline helper targets JVM 21,
+    // while Android consumers retain JVM 17. The lease still covers all metadata.
+    val accessGranted = file.startAccessingSecurityScopedResource()
+    try {
         LabUploadMetadata(file, file.name, file.size().takeIf { it >= 0 },
             file.mimeType()?.let { "${it.primaryType}/${it.subtype}" },
             if (file.isDirectory()) LabFileUploadRejectReason.Directory else null)
+    } finally {
+        if (accessGranted) file.stopAccessingSecurityScopedResource()
     }
 } catch (failure: Exception) {
     if (failure is CancellationException) throw failure

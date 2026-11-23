@@ -11,9 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.readBytes
-import io.github.vinceglb.filekit.withScopedAccess
+import io.github.vinceglb.filekit.startAccessingSecurityScopedResource
+import io.github.vinceglb.filekit.stopAccessingSecurityScopedResource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import pics.lab.ui.*
 
@@ -29,7 +31,12 @@ fun FileUploadImportExample(theme: LabThemeState) {
         val file = files.singleOrNull() ?: return@LaunchedEffect
         try {
             content = withContext(Dispatchers.IO) {
-                file.withScopedAccess { file.readBytes().decodeToString() }
+                val accessGranted = file.startAccessingSecurityScopedResource()
+                try {
+                    file.readBytes().decodeToString()
+                } finally {
+                    if (accessGranted) file.stopAccessingSecurityScopedResource()
+                }
             }
         } catch (error: Exception) {
             if (error is CancellationException) throw error
