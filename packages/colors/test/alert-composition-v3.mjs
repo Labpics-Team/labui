@@ -2,15 +2,21 @@
 import { compileProgramWire } from '@labpics/colors';
 import { ProgramWireBuilderV3 } from '@labpics/colors/program-wire/abi-v3.js';
 import components from '@labpics/ui-tokens/components.json' with { type: 'json' };
+import materials from '../../materials/src/profile.json' with { type: 'json' };
 import { themeProfile } from '../profile.mjs';
 
 export function createAlertCompositionProbe(theme, anchorMeaning) {
-  if (!['source', 'visible'].includes(anchorMeaning)) throw new TypeError('Unknown anchor meaning');
+  if (!['source', 'visible', 'reference'].includes(anchorMeaning))
+    throw new TypeError('Unknown anchor meaning');
   const profile = themeProfile(theme);
+  const surfaceRole = materials.tiers[components.alert.material].solidRole;
+  const referenceBackground = profile.resolve(surfaceRole).slice(0, 3);
   const builder = new ProgramWireBuilderV3().surfaceInputPort(1).inputSurface(2, 1);
   const targets = [];
   const outputs = new Map();
   const authored = {};
+  const occurrences = {};
+  const targetParts = new Map();
   let id = 3;
   // Real component anatomy supplies the applications. Equal RGB/roles do not merge uses.
   for (const [part, role] of Object.entries(components.alert.roles)) {
@@ -20,12 +26,18 @@ export function createAlertCompositionProbe(theme, anchorMeaning) {
     const target = id++;
     const base = id++;
     const occurrence = id++;
+    occurrences[part] = occurrence;
+    targetParts.set(target, part);
     targets.push(target);
     builder
       .colorTarget(
         target,
         color.slice(0, 3),
-        anchorMeaning === 'visible' ? { appearance: occurrence } : {},
+        anchorMeaning === 'reference'
+          ? { referenceAppearance: occurrence }
+          : anchorMeaning === 'visible'
+            ? { appearance: occurrence }
+            : {},
       )
       .solidPaint(base, target);
     let paint = base;
@@ -45,12 +57,21 @@ export function createAlertCompositionProbe(theme, anchorMeaning) {
     builder.output(slot, paint);
     outputs.set(slot, part);
   }
-  const bytes = builder.assignment(targets).finish();
+  if (anchorMeaning === 'reference')
+    builder.preserveTonalHierarchy(id++, [occurrences.heading, occurrences.description]);
+  const bytes = builder
+    .assignment(
+      targets,
+      anchorMeaning === 'reference' ? { reference: [[1, referenceBackground]] } : {},
+    )
+    .finish();
   const program = compileProgramWire(bytes, 1);
   let revision = 0n;
   let accepted = null;
   return {
     authored,
+    referenceBackground,
+    surfaceRole,
     bytes,
     update(background) {
       const started = performance.now();
@@ -68,7 +89,34 @@ export function createAlertCompositionProbe(theme, anchorMeaning) {
             [...snapshot.outputRgb(index), snapshot.outputOpacity(index)],
           ]),
         );
-        const result = { state, background, colors, elapsedMs: performance.now() - started };
+        const solveMs = performance.now() - started;
+        const evidence = anchorMeaning === 'reference' ? snapshot.assessmentReport() : null;
+        const selections = anchorMeaning === 'reference' ? snapshot.referenceSelections() : null;
+        const result = {
+          state,
+          reason: snapshot.reason,
+          optimality: snapshot.optimality,
+          background,
+          referenceBackground,
+          authored,
+          colors,
+          solveMs,
+          elapsedMs: performance.now() - started,
+          ...(anchorMeaning === 'reference'
+            ? {
+                referenceSelections:
+                  selections?.map((selection) => ({
+                    ...selection,
+                    part: targetParts.get(selection.targetId),
+                  })) ?? null,
+                reportSelectionsMatch:
+                  JSON.stringify(selections) ===
+                  JSON.stringify(evidence?.referenceSelections ?? null),
+                tonalHierarchy: evidence?.tonalHierarchy ?? null,
+                assessments: evidence?.cells ?? null,
+              }
+            : {}),
+        };
         if (state === 'ready') accepted = result;
         return { ...result, accepted };
       } finally {
