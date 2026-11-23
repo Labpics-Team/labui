@@ -16,6 +16,7 @@ dependencyResolutionManagement {
         maven {
             name = "nativeColors"
             url = uri("https://raw.githubusercontent.com/$repository/$repositoryCommit/")
+            content { includeModuleByRegex("pics\\.lab", "colors(?:-.*)?") }
         }
     }
     versionCatalogs {
