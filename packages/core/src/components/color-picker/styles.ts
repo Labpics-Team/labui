@@ -1,5 +1,22 @@
+import { shadowProfile } from '@labpics/ui-shadow';
 import { colorPickerProfile as p } from '@labpics/ui-tokens';
 const rem = (value: number) => `${value / 16}rem`;
+function shadow(name: string) {
+  const layers = shadowProfile.levels[name];
+  if (!layers) throw new Error(`Unknown ColorPicker shadow: ${name}`);
+  return layers
+    .map(
+      (s) =>
+        `${rem(s.x)} ${rem(s.y)} ${rem(s.blur)} ${rem(s.spread)} color-mix(in srgb, var(--lab-${s.colorRole}) ${s.opacity * 100}%, transparent)`,
+    )
+    .join(', ');
+}
+const filledTracks = p.channel.filledLchAxes
+  .map(
+    (axis) =>
+      `.lab-color-channel-track:has(input[data-channel="lch-${axis}"]) .lab-color-channel-thumb`,
+  )
+  .join(', ');
 export const colorPickerCss = `
 [data-lab-color-picker] { margin:0; border:0; min-inline-size:0; position:relative; isolation:isolate; box-sizing:border-box; display:flex; flex-direction:column; gap:${rem(p.gap)}; padding:${rem(p.padding)}; inline-size:${rem(p.width)}; max-inline-size:100%; border-radius:${rem(p.radius)}; color:var(--lab-label-primary); font-family:var(--lab-font-family); font-size:1rem; line-height:1.5rem; letter-spacing:-.25px; font-synthesis:none; }
 [data-lab-color-picker] *,[data-lab-color-picker] *::before,[data-lab-color-picker] *::after { box-sizing:border-box; }
@@ -18,7 +35,7 @@ export const colorPickerCss = `
 .lab-color-plane[data-plane]:not([data-plane=spectrum]) { aspect-ratio:auto; block-size:${rem(p.channel.graphHeight)}; margin-block:0 ${rem(p.channel.graphGap)}; background:transparent; overflow:visible; }
 .lab-color-lch-spectrum .lab-color-plane[data-plane] { margin:0; flex:1; block-size:auto; }
 .lab-color-plane canvas { position:absolute; inset:0; inline-size:100%; block-size:100%; border-radius:inherit; }
-.lab-color-marker { position:absolute; left:clamp(.5rem,var(--_color-x),calc(100% - .5rem)); bottom:clamp(.5rem,var(--_color-y),calc(100% - .5rem)); inline-size:1rem; block-size:1rem; transform:translate(-50%,50%); border:2px solid white; border-radius:50%; background:var(--_color-selected); box-shadow:0 0 0 1px #0001; pointer-events:none; }
+.lab-color-marker { position:absolute; left:clamp(${rem(p.planeMarker.diameter / 2)},var(--_color-x),calc(100% - ${rem(p.planeMarker.diameter / 2)})); bottom:clamp(${rem(p.planeMarker.diameter / 2)},var(--_color-y),calc(100% - ${rem(p.planeMarker.diameter / 2)})); inline-size:${rem(p.planeMarker.diameter)}; block-size:${rem(p.planeMarker.diameter)}; transform:translate(-50%,50%); border:${rem(p.planeMarker.stroke)} solid white; border-radius:50%; background:var(--_color-selected); box-shadow:${shadow(p.planeMarker.shadow)}; pointer-events:none; }
 [data-plane=spectrum] .lab-color-marker { inline-size:2rem; block-size:2rem; border-width:4px; left:clamp(.875rem,var(--_color-x),calc(100% - .875rem)); bottom:clamp(.875rem,var(--_color-y),calc(100% - .875rem)); }
 .lab-color-plane:focus-within .lab-color-marker { outline:2px solid var(--lab-border-focus); outline-offset:2px; }
 .lab-color-hidden { position:absolute!important; inline-size:1px!important; block-size:1px!important; padding:0!important; margin:0!important; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
@@ -37,7 +54,8 @@ export const colorPickerCss = `
 .lab-color-channel-label { display:block; color:var(--lab-label-secondary); font-size:.875rem; line-height:${rem(p.channel.labelHeight)}; letter-spacing:0; margin-block-end:${rem(p.channel.labelGap)}; }
 .lab-color-channel-track { position:relative; block-size:${rem(p.channel.trackHeight)}; border-radius:999px; background:repeating-conic-gradient(#00000006 0 25%,transparent 0 50%) 0 / .5rem .5rem; }
 .lab-color-channel-paint { position:absolute; inset:0; border-radius:inherit; background:var(--_color-gradient); border:1px solid #0000000a; }
-.lab-color-channel-thumb { position:absolute; left:calc(${rem(p.channel.thumb / 2 + 2)} + (100% - ${rem(p.channel.thumb + 4)})*var(--_color-fraction)); top:50%; transform:translate(-50%,-50%); inline-size:${rem(p.channel.thumb)}; block-size:${rem(p.channel.thumb)}; border:${rem(p.channel.thumbStroke)} solid white; border-radius:50%; background:var(--_color-selected); pointer-events:none; }
+.lab-color-channel-thumb { position:absolute; left:calc(${rem(p.channel.thumb / 2 + 2)} + (100% - ${rem(p.channel.thumb + 4)})*var(--_color-fraction)); top:50%; transform:translate(-50%,-50%); inline-size:${rem(p.channel.thumb)}; block-size:${rem(p.channel.thumb)}; border:${rem(p.channel.thumbStroke)} solid white; border-radius:50%; box-shadow:${shadow(p.channel.thumbShadow)}; pointer-events:none; }
+${filledTracks} { background:var(--_color-selected); }
 .lab-color-channel-track:focus-within .lab-color-channel-thumb { outline:2px solid var(--lab-border-focus); outline-offset:2px; }
 .lab-color-range { position:absolute; inset:0; margin:0; inline-size:100%; block-size:100%; opacity:0; cursor:pointer; }
 .lab-color-number { appearance:none; inline-size:100%; min-inline-size:0; block-size:${rem(p.channel.trackHeight)}; padding:0 .5rem; border:0; border-radius:.5rem; background:var(--lab-fill-quaternary); color:inherit; font:inherit; font-weight:500; letter-spacing:0; text-align:center; font-variant-numeric:tabular-nums; }

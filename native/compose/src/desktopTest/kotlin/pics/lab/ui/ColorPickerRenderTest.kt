@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -27,7 +28,13 @@ import androidx.compose.ui.unit.*
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 import java.io.File
+import java.io.ByteArrayInputStream
+import javax.imageio.ImageIO
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.math.roundToInt
 import kotlin.test.*
 
 class ColorPickerRenderTest {
@@ -307,6 +314,106 @@ class ColorPickerRenderTest {
             named(scene,"Opacity").config[SemanticsActions.SetProgress].action!!.invoke(80f);settle(scene)
             assertNull(value);assertEquals(0,ended)
         } finally {scene.close()}
+    }
+
+    @Test fun channelThumbCentersRevealTheirTrackExceptAuthoredLchFills() {
+        var value by mutableStateOf<LabColorValue?>(LabColorValue.Orange)
+        var model by mutableStateOf(LabColorModel.Rgb)
+        val scene = ImageComposeScene(430,1000,Density(1f)) { Host(theme()) {
+            LabColorPicker(value,{value=it},variant=LabColorPickerVariant.Sliders,model=model)
+        } }
+        fun distance(a: Int, b: Int) = listOf(0,8,16).maxOf { shift -> abs((a ushr shift and 255) - (b ushr shift and 255)) }
+        try {
+            for (nextModel in LabColorModel.entries) {
+                model = nextModel
+                val base = if (model == LabColorModel.Lch) LabColorValue(LabColorSpace.Lch,50.0,180.0,65.0)
+                    else LabColorValue(LabColorSpace.Srgb,.55,.65,.2,.4)
+                for (original in colorChannels(base,model,LabColorPickerVariant.Sliders)) {
+                    val raw = if (original.index == 3) base.copy(alpha=.4) else base
+                    value = raw
+                    val before = ImageIO.read(ByteArrayInputStream(settle(scene)))
+                    val channel = colorChannels(raw,model,LabColorPickerVariant.Sliders).first { it.index == original.index }
+                    val bounds = named(scene,channel.label).boundsInRoot
+                    val fraction = channel.value / channel.max
+                    val x = (bounds.left + colorTrackCenter(fraction,bounds.width,LabComponents.ColorPickerChannelThumb / 2 + 2)).roundToInt()
+                    val y = bounds.center.y.roundToInt()
+                    value = editColorChannel(raw,channel,channel.max * if (fraction < .5) .9 else .1)
+                    val unobscured = ImageIO.read(ByteArrayInputStream(settle(scene)))
+                    if (model == LabColorModel.Lch && channel.index in 0..1) {
+                        assertTrue(distance(before.getRGB(x,y),ColorPickerCodec.paint(raw).toArgb()) <= 2,"${model.name} ${channel.label} lost the selected-color fill")
+                        assertTrue(distance(before.getRGB(x,y),unobscured.getRGB(x,y)) > 20,"${channel.label} needs a filled marker even outside the display gamut")
+                    } else {
+                        for (dx in listOf(-3,0,3)) for (dy in listOf(-2,0,2)) {
+                            assertTrue(distance(before.getRGB(x+dx,y+dy),unobscured.getRGB(x+dx,y+dy)) <= 3,
+                                "${model.name} ${channel.label} center masks the track at $dx,$dy")
+                        }
+                    }
+                }
+            }
+        } finally { scene.close() }
+    }
+
+    @Test fun smallLchPlaneMarkersKeepTheirRawValueAtEveryEdge() {
+        var value by mutableStateOf<LabColorValue?>(LabColorValue(LabColorSpace.Lch,0.0,0.0,0.0))
+        var changed = 0; var ended = 0
+        val scene = ImageComposeScene(430,1000,Density(1f)) { Host(theme()) {
+            LabColorPicker(value,{value=it;changed++},variant=LabColorPickerVariant.Sliders,model=LabColorModel.Lch,onValueChangeEnd={ended++})
+        } }
+        try {
+            val radius = LabComponents.ColorPickerPlaneMarkerDiameter / 2
+            for (plane in listOf(ColorPickerPlane.LightnessChroma,ColorPickerPlane.HueChroma,ColorPickerPlane.HueLightness)) {
+                for (x in listOf(0.0,1.0)) for (y in listOf(0.0,1.0)) {
+                    val raw = colorPlaneValue(LabColorValue(LabColorSpace.Lch,50.123456789,70.123456789,120.123456789,.5019607843137255),plane,x,y,false)
+                    value = raw; settle(scene)
+                    val axes = colorPlaneAxes(raw,plane)
+                    val bounds = named(scene,"${axes.xLabel} and ${axes.yLabel}").boundsInRoot
+                    val center = bounds.topLeft + colorPlaneMarker(x,y,bounds.width,bounds.height,radius)
+                    // Inside the authored 9px ring, outside the old 8px hit area.
+                    for (delta in listOf(Offset.Zero,Offset(if (x == 0.0) radius-.25f else -radius+.25f,0f))) {
+                        val position = center + delta
+                        scene.sendPointerEvent(PointerEventType.Press,position); settle(scene)
+                        scene.sendPointerEvent(PointerEventType.Release,position); settle(scene)
+                        assertEquals(raw,value,"$plane ($x,$y) click must not rewrite the raw color")
+                        assertEquals(0,changed); assertEquals(0,ended)
+                    }
+                }
+            }
+        } finally { scene.close() }
+    }
+
+    @Test fun planeMarkersRenderAuthoredOuterDiameterAndShadow() {
+        for ((variant,model,plane) in listOf(
+            Triple(LabColorPickerVariant.Spectrum,LabColorModel.Hex,ColorPickerPlane.SaturationBrightness),
+            Triple(LabColorPickerVariant.Spectrum,LabColorModel.Lch,ColorPickerPlane.LightnessChroma),
+            Triple(LabColorPickerVariant.Sliders,LabColorModel.Lch,ColorPickerPlane.LightnessChroma),
+        )) {
+            val raw = if (model == LabColorModel.Hex) LabColorValue(LabColorSpace.Hsv,0.0,50.0,50.0)
+                else LabColorValue(LabColorSpace.Lch,50.0,30.0,144.0)
+            var value by mutableStateOf<LabColorValue?>(raw)
+            val scene = ImageComposeScene(430,1000,Density(1f)) { Host(theme()) {
+                LabColorPicker(value,{value=it},variant=variant,model=model)
+            } }
+            try {
+                val before = ImageIO.read(ByteArrayInputStream(settle(scene)))
+                val axes = colorPlaneAxes(raw,plane)
+                val bounds = named(scene,"${axes.xLabel} and ${axes.yLabel}").boundsInRoot
+                val radius = if (variant == LabColorPickerVariant.Spectrum) 16f else 9f
+                val center = bounds.topLeft + colorPlaneMarker(axes.x / axes.xMax,axes.y / axes.yMax,bounds.width,bounds.height,radius)
+                val row = center.y.roundToInt()
+                fun white(pixel: Int) = listOf(0,8,16).all { shift -> (pixel ushr shift and 255) >= 245 }
+                assertTrue(white(before.getRGB(floor(center.x+radius-2).toInt(),row)),"$variant $model is missing its white ring")
+                assertFalse(white(before.getRGB(ceil(center.x+radius).toInt(),row)),"$variant $model extends beyond its authored outer diameter")
+                // Moving only the horizontal coordinate reveals the same unchanged graph beneath the shadow.
+                value = colorPlaneValue(raw,plane,.85,axes.y / axes.yMax,false)
+                val unobscured = ImageIO.read(ByteArrayInputStream(settle(scene)))
+                val darkness = (-2..2).maxOf { dx -> (1..4).maxOf { dy ->
+                    val x = center.x.roundToInt()+dx
+                    val y = (center.y+radius).roundToInt()+dy
+                    listOf(0,8,16).maxOf { shift -> (unobscured.getRGB(x,y) ushr shift and 255) - (before.getRGB(x,y) ushr shift and 255) }
+                } }
+                assertTrue(darkness >= 2,"$variant $model lost Shadow/XS outside the ring: $darkness")
+            } finally { scene.close() }
+        }
     }
 
     @Test fun partialLchAndHexChannelEditsPreserveOtherCoordinates() {

@@ -232,6 +232,22 @@ export function mountColorPicker(
   });
   const textSelector =
     'input[data-channel]:not([type=range]),input[data-color-text],input[data-coordinate]';
+  function reset() {
+    invalidateSampling();
+    const previousGesture = gesture;
+    gesture = undefined;
+    if (previousGesture?.target.hasPointerCapture(previousGesture.id))
+      previousGesture.target.releasePointerCapture(previousGesture.id);
+    composing = undefined;
+    state.reset(getInput());
+    editStart = value();
+    const active = (root.getRootNode() as Document | ShadowRoot).activeElement;
+    for (const field of root.querySelectorAll<HTMLInputElement>(textSelector)) {
+      dirty.delete(field);
+      reconcileText(field, field === active);
+    }
+    refresh();
+  }
   listen(root, 'focusin', (event) => {
     const field = event.target as HTMLInputElement;
     if (field.matches('input')) editStart = value();
@@ -509,12 +525,7 @@ export function mountColorPicker(
       if (field?.form !== event.target) return;
       invalidateSampling();
       setTimeout(() => {
-        if (!disposed && !event.defaultPrevented) {
-          gesture = undefined;
-          composing = undefined;
-          state.reset(getInput());
-          refresh();
-        }
+        if (!disposed && !event.defaultPrevented) reset();
       });
     },
     true,
@@ -538,13 +549,7 @@ export function mountColorPicker(
       state[key] = checked;
       refresh();
     },
-    reset() {
-      invalidateSampling();
-      gesture = undefined;
-      composing = undefined;
-      state.reset(getInput());
-      refresh();
-    },
+    reset,
     dispose() {
       invalidateSampling();
       disposed = true;

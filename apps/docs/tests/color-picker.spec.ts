@@ -75,6 +75,93 @@ for (const renderer of ['lit', 'react']) {
       ),
     ).toEqual([0, 1, 0]);
   });
+  test(`${renderer}: form reset discards focused color and channel drafts`, async ({ page }) => {
+    const field = page.locator(form);
+    const raw = () =>
+      field.evaluate((f: HTMLFormElement) => JSON.parse(new FormData(f).get('color') as string));
+    const hex = field.getByRole('textbox', { name: 'HEX color' });
+    await hex.fill('#00FF00');
+    await hex.press('Enter');
+    expect((await raw()).coords).toEqual([0, 1, 0]);
+    for (const [input, draft, resetText] of [
+      [hex, '#123456', '#FFAA00'],
+      [field.getByRole('textbox', { name: 'Opacity value', exact: true }), '23%', '100%'],
+    ] as const) {
+      await input.fill(draft);
+      await field.evaluate((f: HTMLFormElement) => f.reset());
+      await expect(input).toBeFocused();
+      await expect(input).toHaveValue(resetText);
+      expect(await raw()).toEqual(initial);
+      await input.press('Enter');
+      expect(await raw()).toEqual(initial);
+    }
+  });
+  test(`${renderer}: authored channel rings reveal their strip and LCH markers retain their roles`, async ({
+    page,
+  }) => {
+    const field = page.locator(form);
+    await field.getByRole('radio', { name: 'Sliders', exact: true }).check();
+    const rings = field.locator('.lab-color-channel-thumb');
+    for (const ring of await rings.all()) {
+      await expect(ring).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+      await expect(ring).toHaveCSS('width', '24px');
+      await expect(ring).toHaveCSS('border-top-width', '4px');
+    }
+    const greenTrack = field.getByRole('slider', { name: 'Green', exact: true }).locator('..');
+    const geometry = await greenTrack.locator('.lab-color-channel-thumb').evaluate((ring) => {
+      const rect = ring.getBoundingClientRect();
+      const parent = ring.parentElement?.getBoundingClientRect();
+      if (!parent) throw new Error('Missing color track');
+      return {
+        x: Math.round(rect.x + rect.width / 2 - parent.x),
+        y: Math.round(rect.y + rect.height / 2 - parent.y),
+      };
+    });
+    const png = (await greenTrack.screenshot({ scale: 'css' })).toString('base64');
+    const ring = greenTrack.locator('.lab-color-channel-thumb');
+    await ring.evaluate((node) => {
+      (node as HTMLElement).style.visibility = 'hidden';
+    });
+    const backgroundPng = (await greenTrack.screenshot({ scale: 'css' })).toString('base64');
+    await ring.evaluate((node) => {
+      (node as HTMLElement).style.removeProperty('visibility');
+    });
+    const pixels = await page.evaluate(
+      async ({ pngs, x, y }) =>
+        Promise.all(
+          pngs.map(async (png) => {
+            const image = new Image();
+            image.src = `data:image/png;base64,${png}`;
+            await image.decode();
+            const canvas = document.createElement('canvas');
+            canvas.width = image.width;
+            canvas.height = image.height;
+            const context = canvas.getContext('2d');
+            if (!context) throw new Error('Missing screenshot canvas');
+            context.drawImage(image, 0, 0);
+            return [...context.getImageData(x, y, 1, 1).data] as [number, number, number, number];
+          }),
+        ),
+      { pngs: [png, backgroundPng], ...geometry },
+    );
+    const [pixel, backgroundPixel] = pixels;
+    if (!pixel || !backgroundPixel) throw new Error('Missing screenshot pixels');
+    expect(pixel[0]).toBeLessThan(3);
+    expect(pixel[1]).toBeGreaterThan(20);
+    expect(pixel[2]).toBeLessThan(3);
+    for (const channel of [0, 1, 2, 3] as const)
+      expect(Math.abs(pixel[channel] - backgroundPixel[channel])).toBeLessThanOrEqual(1);
+    await field.getByRole('combobox', { name: 'Color model' }).selectOption('lch');
+    await expect(rings.nth(0)).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expect(rings.nth(1)).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expect(rings.nth(2)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expect(rings.nth(3)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    for (const marker of await field.locator('.lab-color-marker').all()) {
+      await expect(marker).toHaveCSS('width', '18px');
+      await expect(marker).toHaveCSS('border-top-width', '3px');
+      await expect(marker).not.toHaveCSS('box-shadow', 'none');
+    }
+  });
   test(`${renderer}: spectrum pointer cancel restores the accepted start`, async ({ page }) => {
     const field = page.locator(form);
     const plane = field.locator('[data-plane=spectrum]');

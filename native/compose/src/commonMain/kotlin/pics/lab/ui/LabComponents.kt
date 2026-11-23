@@ -1006,6 +1006,8 @@ internal object LabComponents {
     const val ColorPickerChannelTrackHeight = 32f
     const val ColorPickerChannelThumb = 24f
     const val ColorPickerChannelThumbStroke = 4f
+    val ColorPickerChannelThumbShadow get() = LabShadows.xs
+    val ColorPickerChannelFilledLchAxes = listOf(0f, 1f)
     const val ColorPickerChannelGap = 12f
     const val ColorPickerChannelFieldWidth = 80f
     const val ColorPickerChannelLabelHeight = 12f
@@ -1015,6 +1017,9 @@ internal object LabComponents {
     const val ColorPickerChannelSliderPaddingY = 8f
     const val ColorPickerChannelMiddleLabelGap = 12f
     const val ColorPickerChannelGraphLabelGap = 12f
+    const val ColorPickerPlaneMarkerDiameter = 18f
+    const val ColorPickerPlaneMarkerStroke = 3f
+    val ColorPickerPlaneMarkerShadow get() = LabShadows.xs
     const val ColorPickerFooterHeight = 48f
     const val ColorPickerFooterGap = 8f
     const val ColorPickerFooterModelWidth = 96f

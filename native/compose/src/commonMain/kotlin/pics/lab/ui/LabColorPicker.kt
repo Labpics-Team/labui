@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,12 +30,15 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.pointerInput
@@ -357,7 +361,18 @@ private fun ColorTrack(value: LabColorValue, channel: ColorPickerChannel, p3: Bo
         }
     }
     val density = LocalDensity.current
-    val trackInset = with(density) { LabComponents.ColorPickerChannelThumb.dp.toPx() / 2 + 2.dp.toPx() }
+    val thumbRadius = with(density) { LabComponents.ColorPickerChannelThumb.dp.toPx() / 2 }
+    val thumbStroke = with(density) { LabComponents.ColorPickerChannelThumbStroke.dp.toPx() }
+    val trackInset = thumbRadius + with(density) { 2.dp.toPx() }
+    val filledThumb = channel.space == LabColorSpace.Lch && channel.index.toFloat() in LabComponents.ColorPickerChannelFilledLchAxes
+    val thumbShape = remember(filledThumb, thumbStroke) {
+        // Empty source fills cast a ring shadow without shading the exposed track as a solid disk.
+        if (filledThumb) CircleShape else GenericShape { size, _ ->
+            fillType = PathFillType.EvenOdd
+            addOval(Rect(Offset.Zero, size))
+            addOval(Rect(thumbStroke, thumbStroke, size.width - thumbStroke, size.height - thumbStroke))
+        }
+    }
     val brush = remember(stops, width, trackInset) { Brush.horizontalGradient(stops, startX = trackInset, endX = max(trackInset + 1f, width - trackInset)) }
     val border = if (focused) colors[LabComponents.ColorPickerRolesFocus] else Color.Transparent
     val modifier = Modifier.fillMaxWidth().height(LabComponents.ColorPickerChannelTrackHeight.dp).onSizeChanged { width = it.width }
@@ -403,15 +418,20 @@ private fun ColorTrack(value: LabColorValue, channel: ColorPickerChannel, p3: Bo
                 } finally { pointerStart = null; if (currentRevision == resetRevision) { if (released) completed(before) else request(before) } }
             }
         }
-    Canvas(modifier.clip(CircleShape).border(if (focused) 2.dp else 0.dp, border, CircleShape)) {
-        val checker = 4.dp.toPx()
-        for (y in 0..ceil(size.height / checker).toInt()) for (x in 0..ceil(size.width / checker).toInt()) if ((x + y) % 2 == 0)
-            drawRect(Color.Black.copy(alpha = .025f), Offset(x * checker, y * checker), Size(checker, checker))
-        drawRoundRect(brush, cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height / 2))
-        val radius = LabComponents.ColorPickerChannelThumb.dp.toPx() / 2
-        val x = colorTrackCenter(channel.value / channel.max, size.width, radius + 2.dp.toPx())
-        drawCircle(ColorPickerCodec.paint(value), radius, Offset(x, size.height / 2))
-        drawCircle(Color.White, radius - LabComponents.ColorPickerChannelThumbStroke.dp.toPx() / 2, Offset(x, size.height / 2), style = Stroke(LabComponents.ColorPickerChannelThumbStroke.dp.toPx()))
+    Box(modifier.clip(CircleShape).border(if (focused) 2.dp else 0.dp, border, CircleShape)) {
+        Canvas(Modifier.matchParentSize()) {
+            val checker = 4.dp.toPx()
+            for (y in 0..ceil(size.height / checker).toInt()) for (x in 0..ceil(size.width / checker).toInt()) if ((x + y) % 2 == 0)
+                drawRect(Color.Black.copy(alpha = .025f), Offset(x * checker, y * checker), Size(checker, checker))
+            drawRoundRect(brush, cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height / 2))
+        }
+        Canvas(Modifier.size(LabComponents.ColorPickerChannelThumb.dp).graphicsLayer {
+            translationX = colorTrackCenter(channel.value / channel.max, width.toFloat(), trackInset) - thumbRadius
+            translationY = (LabComponents.ColorPickerChannelTrackHeight.dp.toPx() - size.height) / 2
+        }.labShadow(thumbShape, LabComponents.ColorPickerChannelThumbShadow)) {
+            if (filledThumb) drawCircle(ColorPickerCodec.paint(value))
+            drawCircle(Color.White, thumbRadius - thumbStroke / 2, style = Stroke(thumbStroke))
+        }
     }
 }
 
@@ -437,6 +457,8 @@ private fun ColorPlane(value: LabColorValue, plane: ColorPickerPlane, cache: Col
     var focused by remember { mutableStateOf(false) }
     LaunchedEffect(resetRevision) { pointerStart = null; keyboardStart = null }
     val focus = remember { FocusRequester() }
+    val markerDiameter = if (plane == ColorPickerPlane.SaturationBrightness || largeMarker) 32.dp else LabComponents.ColorPickerPlaneMarkerDiameter.dp
+    val markerStroke = if (plane == ColorPickerPlane.SaturationBrightness || largeMarker) 4.dp else LabComponents.ColorPickerPlaneMarkerStroke.dp
     val title = "${axes.xLabel} and ${axes.yLabel}"
     val interactions = Modifier.focusRequester(focus).onFocusChanged { focused = it.isFocused; if (!it.isFocused) keyboardStart?.let { completed(it.before); keyboardStart = null } }
         .onPreviewKeyEvent { event ->
@@ -461,7 +483,7 @@ private fun ColorPlane(value: LabColorValue, plane: ColorPickerPlane, cache: Col
             if (!enabled || readOnly) return@pointerInput
             awaitEachGesture {
                 val down = awaitFirstDown(); val before = currentAccepted; pointerStart = ColorPickerCompletion(before, resetRevision); focus.requestFocus(); var released = false
-                val radius = if (plane == ColorPickerPlane.SaturationBrightness || largeMarker) 16.dp.toPx() else 8.dp.toPx()
+                val radius = markerDiameter.toPx() / 2
                 val x = currentAxes.x / currentAxes.xMax; val y = currentAxes.y / currentAxes.yMax
                 val center = colorPlaneMarker(x, y, size.width.toFloat(), size.height.toFloat(), radius)
                 val grabbed = (down.position - center).getDistance() <= radius
@@ -483,16 +505,25 @@ private fun ColorPlane(value: LabColorValue, plane: ColorPickerPlane, cache: Col
         }
     val shape = RoundedCornerShape(LabComponents.ColorPickerAreaRadius.dp)
     val hue = ColorPickerCodec.coords(value, LabColorSpace.Hsv)[0]
-    Canvas(modifier.onSizeChanged { dimensions = it }.then(interactions).clip(shape).border(1.dp, colors[LabComponents.ColorPickerRolesBorder], shape).alpha(if (enabled) 1f else .45f)) {
-        if (plane == ColorPickerPlane.SaturationBrightness) {
-            drawRect(ColorPickerCodec.paint(LabColorValue(LabColorSpace.Hsv, hue, 100.0, 100.0)))
-            drawRect(Brush.horizontalGradient(listOf(Color.White, Color.Transparent)))
-            drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.Black)))
-        } else image?.let { drawImage(it, dstSize = IntSize(size.width.toInt(), size.height.toInt()), filterQuality = FilterQuality.Medium) }
-        val radius = if (plane == ColorPickerPlane.SaturationBrightness || largeMarker) 16.dp.toPx() else 8.dp.toPx()
-        val center = colorPlaneMarker(axes.x / axes.xMax, axes.y / axes.yMax, size.width, size.height, radius)
-        drawCircle(ColorPickerCodec.paint(value), radius, center)
-        drawCircle(Color.White, radius - 1.dp.toPx(), center, style = Stroke(if (plane == ColorPickerPlane.SaturationBrightness || largeMarker) 4.dp.toPx() else 2.dp.toPx()))
-        if (focused) drawCircle(colors[LabComponents.ColorPickerRolesFocus], radius, center, style = Stroke(1.dp.toPx()))
+    Box(modifier.onSizeChanged { dimensions = it }.then(interactions).clip(shape).border(1.dp, colors[LabComponents.ColorPickerRolesBorder], shape).alpha(if (enabled) 1f else .45f)) {
+        Canvas(Modifier.matchParentSize()) {
+            if (plane == ColorPickerPlane.SaturationBrightness) {
+                drawRect(ColorPickerCodec.paint(LabColorValue(LabColorSpace.Hsv, hue, 100.0, 100.0)))
+                drawRect(Brush.horizontalGradient(listOf(Color.White, Color.Transparent)))
+                drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.Black)))
+            } else image?.let { drawImage(it, dstSize = IntSize(size.width.toInt(), size.height.toInt()), filterQuality = FilterQuality.Medium) }
+        }
+        Canvas(Modifier.size(markerDiameter).graphicsLayer {
+            val radius = markerDiameter.toPx() / 2
+            val center = colorPlaneMarker(axes.x / axes.xMax, axes.y / axes.yMax, dimensions.width.toFloat(), dimensions.height.toFloat(), radius)
+            translationX = center.x - radius
+            translationY = center.y - radius
+        }.labShadow(CircleShape, LabComponents.ColorPickerPlaneMarkerShadow)) {
+            val radius = size.minDimension / 2
+            drawCircle(ColorPickerCodec.paint(value), radius)
+            val stroke = markerStroke.toPx()
+            drawCircle(Color.White, radius - stroke / 2, style = Stroke(stroke))
+            if (focused) drawCircle(colors[LabComponents.ColorPickerRolesFocus], radius, style = Stroke(1.dp.toPx()))
+        }
     }
 }

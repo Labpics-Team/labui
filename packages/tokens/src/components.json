@@ -1874,6 +1874,8 @@
       "trackHeight": 32,
       "thumb": 24,
       "thumbStroke": 4,
+      "thumbShadow": "xs",
+      "filledLchAxes": [0, 1],
       "gap": 12,
       "fieldWidth": 80,
       "labelHeight": 12,
@@ -1883,6 +1885,11 @@
       "sliderPaddingY": 8,
       "middleLabelGap": 12,
       "graphLabelGap": 12
+    },
+    "planeMarker": {
+      "diameter": 18,
+      "stroke": 3,
+      "shadow": "xs"
     },
     "footer": {
       "height": 48,
