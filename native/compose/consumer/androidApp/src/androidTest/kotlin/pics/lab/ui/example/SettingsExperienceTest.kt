@@ -192,7 +192,11 @@ class SettingsExperienceTest {
             find(By.desc("Document: No file chosen"))
             find(By.desc("Document: No file chosen")).button().click()
             find(By.desc("Show roots")).click()
+            // The drawer recreates its accessibility nodes while opening on API 33.
+            // Wait for that transition before resolving the target for the click.
+            device.waitForIdle()
             find(By.text("Downloads")).click()
+            device.waitForIdle()
             find(By.text(filename)).click()
             find(By.desc("Document: $filename"))
             find(By.text(expected)) // The application read bytes from the returned provider handle.
