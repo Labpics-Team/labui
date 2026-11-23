@@ -7,7 +7,10 @@ final class FileUploadExperienceTests: XCTestCase {
         app.launchEnvironment["LABUI_UI_TEST_FILE_UPLOAD"] = "1"
         app.launch()
         func button(_ label: String) -> XCUIElement {
-            let element = app.buttons[label]
+            // Compose's UIKit bridge appends merged visible text to contentDescription.
+            let element = app.buttons.matching(NSPredicate(
+                format: "label == %@ OR label BEGINSWITH %@", label, label + ", "
+            )).firstMatch
             XCTAssertTrue(element.waitForExistence(timeout: 15), app.debugDescription)
             return element
         }
