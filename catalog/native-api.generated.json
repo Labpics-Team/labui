@@ -1,6 +1,6 @@
 {
-  "revision": "c2527b5b003c0abcfccba72c5ff2dab06c092303",
-  "sourceDigest": "sha256:b5cfebf8802441f84641fc09e2ab1ef5cdaf9b7b3e8cce061c1b023674c6a797",
+  "revision": "efbf18eb178d93bd2d0e7ce5c4da9b46f59843f5",
+  "sourceDigest": "sha256:4ab1d4f6f9deb02b4f28c0f3f4c5714102bb9426dba510e8a1c8c538e78b46cb",
   "symbols": [
     {
       "name": "LabAccordion",
@@ -61,6 +61,10 @@
     {
       "name": "LabDragButton",
       "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabDragButton.kt"
+    },
+    {
+      "name": "LabFileUpload",
+      "file": "native/compose/src/commonMain/kotlin/pics/lab/ui/LabFileUpload.kt"
     },
     {
       "name": "LabInput",
