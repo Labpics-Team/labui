@@ -115,6 +115,7 @@ export class LabFileUpload extends LabElement {
       },
       accept: this.accept || undefined,
       maxFiles: this.multiple ? this.maxFiles : 1,
+      multiple: this.multiple,
       minFileSize: this.minFileSize,
       maxFileSize: this.maxFileSize,
       acceptedFiles: this.acceptedFiles ?? undefined,

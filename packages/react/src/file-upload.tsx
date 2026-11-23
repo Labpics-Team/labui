@@ -100,6 +100,7 @@ export function FileUpload({
     ids: { hiddenInput: ids.control, label: ids.label },
     accept,
     maxFiles: multiple ? maxFiles : 1,
+    multiple,
     minFileSize,
     maxFileSize,
     acceptedFiles,

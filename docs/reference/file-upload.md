@@ -40,8 +40,11 @@ the same shape as React's `onFileChange` and `onFileReject`.
 Click the field, filename or Browse files button to open the real system picker.
 The area also accepts dropped files. Remove clears a file. Cancelling the picker
 keeps the accepted selection. A single-file field replaces its existing file;
-multiple selection appends distinct files. Duplicate files and a batch that exceeds
-`maxFiles` are rejected without losing the accepted selection. Errors are announced
+multiple selection appends distinct files, including when `maxFiles` is one.
+In multiple mode, duplicate files and a batch that exceeds `maxFiles` are rejected
+without losing the accepted selection. Single mode accepts a replacement with the
+same name, size and type, because its contents may differ. Directory drops produce
+an explicit rejection; ordinary empty files remain valid. Errors are announced
 and displayed by the field. `accept` follows native extension/MIME syntax; it is
 client validation, and the receiving service must validate its own inputs.
 
@@ -74,6 +77,8 @@ picker. See the [Compose API and platform contracts](../../native/compose/docs/f
 `scripts/generate-file-upload-artwork.mjs` creates embedded web asset URLs and
 copies PNG resources for Compose. Exports include shadow overflow; their intrinsic
 size and measured offset are retained rather than fitted into the layout frame.
+When available width shrinks, the layout frame retains its 2:1 aspect ratio;
+bitmap overflow and the hover offset scale with that same frame.
 The illustrations change for default, hover, dragging and selected states. The
 empty disabled area omits the illustration, as authored.
 PNG exports retain transparency (`contentsOnly: true`); the original export helper

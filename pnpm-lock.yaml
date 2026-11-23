@@ -215,6 +215,9 @@ importers:
       '@zag-js/file-upload':
         specifier: 1.41.2
         version: 1.41.2
+      '@zag-js/file-utils':
+        specifier: 1.41.2
+        version: 1.41.2
       '@zag-js/number-input':
         specifier: 1.41.2
         version: 1.41.2

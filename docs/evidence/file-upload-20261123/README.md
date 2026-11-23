@@ -13,12 +13,16 @@ the source to support a complete selection workflow.
 
 ## Results
 
-- `file-upload.spec.ts`: 24 passing scenarios across Chromium and WebKit. Both
+- `file-upload.spec.ts`: 30 passing scenarios across Chromium and WebKit. Both
   renderers open the real file chooser, preserve accepted `FormData` on rejection
   and cancel, support controlled refusal, native/external forms, disabled
   fieldsets, read-only values, required validation, reset cancellation, file drop,
   duplicates, limits and keyboard focus after removal. Scoped axe checks pass for
   both views in both themes.
+  Real filesystem folder drop via Chromium CDP is rejected while a real empty
+  file is accepted; these two tests skip WebKit, which has no CDP facility. The
+  suite also covers multiple selection with a limit of one, same-metadata single
+  replacement, and scaled layout/artwork/hover geometry at narrow 200% text size.
 - `file-upload-ssr.test.ts` and `file-upload-ssr.test.mjs`: three passing SSR tests.
   Local File objects cannot be serialized through the Lit JSON hydration boundary.
 - `packed.json`: seven local LabUI tarballs plus the recorded Icons 0.4 artifact

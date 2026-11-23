@@ -1,3 +1,5 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
@@ -7,6 +9,113 @@ test.beforeEach(async ({ page }) => {
 });
 for (const renderer of ['lit', 'react'] as const) {
   const form = renderer === 'lit' ? '#lit' : '#react-form';
+  test(`${renderer}: multiple limit one appends while single selection replaces same-metadata files`, async ({
+    page,
+  }) => {
+    await page.evaluate((renderer) => {
+      const props = { multiple: true, maxFiles: 1 };
+      if (renderer === 'lit') Object.assign(window.fileUploadFixture.lit, props);
+      else window.fileUploadFixture.updateReact(props);
+    }, renderer);
+    const scope = page.locator(form);
+    const input = scope.locator('input[type=file]');
+    await input.setInputFiles({
+      name: 'first.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('first'),
+    });
+    await expect(scope.locator('.lab-upload-name')).toHaveText('first.txt');
+    await input.setInputFiles({
+      name: 'second.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('second'),
+    });
+    await expect(scope.getByRole('status').filter({ hasText: 'Too many files' })).toBeVisible();
+    await expect(scope.locator('.lab-upload-name')).toHaveText('first.txt');
+    await page.evaluate((renderer) => {
+      if (renderer === 'lit') window.fileUploadFixture.lit.multiple = false;
+      else window.fileUploadFixture.updateReact({ multiple: false });
+    }, renderer);
+    await input.setInputFiles({
+      name: 'report.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('A'),
+    });
+    await expect(scope.locator('.lab-upload-name')).toHaveText('report.txt');
+    const picker = page.waitForEvent('filechooser');
+    await scope.getByRole('button', { name: 'Choose File: report.txt' }).click();
+    await (await picker).setFiles({
+      name: 'report.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('B'),
+    });
+    await expect
+      .poll(() =>
+        scope.evaluate(async (el) => {
+          const file = new FormData(el as HTMLFormElement).get('files') as File;
+          return [file.name, file.size, await file.text()];
+        }),
+      )
+      .toEqual(['report.txt', 1, 'B']);
+  });
+  test(`${renderer}: real directory drop is rejected while an empty ordinary file is accepted`, async ({
+    page,
+    browserName,
+  }, testInfo) => {
+    test.skip(
+      browserName !== 'chromium',
+      'Real filesystem drag injection is a Chromium CDP facility.',
+    );
+    const directory = testInfo.outputPath('drop-assets');
+    await mkdir(directory, { recursive: true });
+    const emptyFile = join(directory, 'empty.txt');
+    await writeFile(emptyFile, '');
+    await page.evaluate((renderer) => {
+      const props = { accept: '', multiple: true, view: 'dropzone' as const };
+      if (renderer === 'lit') Object.assign(window.fileUploadFixture.lit, props);
+      else window.fileUploadFixture.updateReact(props);
+    }, renderer);
+    const scope = page.locator(form);
+    await scope
+      .locator('input[type=file]')
+      .setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('notes') });
+    await expect(scope.locator('.lab-upload-name')).toHaveText('notes.txt');
+    const session = await page.context().newCDPSession(page);
+    const surface = scope.locator('.lab-upload-surface');
+    await surface.scrollIntoViewIfNeeded();
+    const box = await surface.boundingBox();
+    if (!box) throw new Error('Missing drop surface');
+    const drop = async (file: string) => {
+      for (const type of ['dragEnter', 'dragOver', 'drop'] as const)
+        await session.send('Input.dispatchDragEvent', {
+          type,
+          x: box.x + box.width / 2,
+          y: box.y + box.height / 2,
+          data: { items: [], files: [file], dragOperationsMask: 1 },
+        });
+    };
+    await drop(directory);
+    await expect(
+      scope.getByRole('status').filter({ hasText: 'Folders cannot be selected' }),
+    ).toBeVisible();
+    await expect(scope.locator('.lab-upload-name')).toHaveText('notes.txt');
+    await drop(emptyFile);
+    await expect(scope.locator('.lab-upload-name')).toHaveText(['notes.txt', 'empty.txt']);
+    await expect
+      .poll(() =>
+        scope.evaluate((el) =>
+          Array.from(new FormData(el as HTMLFormElement).getAll('files'), (file) => [
+            (file as File).name,
+            (file as File).size,
+          ]),
+        ),
+      )
+      .toEqual([
+        ['notes.txt', 5],
+        ['empty.txt', 0],
+      ]);
+    await session.detach();
+  });
   test(`${renderer}: real picker, validation, removal and form reset`, async ({ page }) => {
     const scope = page.locator(form);
     const input = scope.locator('input[type=file]');
@@ -286,4 +395,31 @@ test('authored geometry, keyboard and narrow width in both renderers', async ({ 
     document.documentElement.style.fontSize = '32px';
   });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  for (const form of ['#lit', '#react-form']) {
+    const surface = page.locator(`${form} .lab-upload-surface`);
+    const artwork = surface.locator('.lab-upload-artwork');
+    const dimensions = await artwork.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return {
+        width: box.width,
+        height: box.height,
+        bitmapHeight: Number.parseFloat(getComputedStyle(element, '::before').height),
+      };
+    });
+    expect(dimensions.width / dimensions.height).toBeCloseTo(2, 2);
+    expect(dimensions.bitmapHeight / dimensions.width).toBeCloseTo(146 / 256, 2);
+    await surface.hover();
+    const hover = await artwork.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      const style = getComputedStyle(element, '::before');
+      return {
+        height: box.height,
+        width: box.width,
+        bitmapHeight: Number.parseFloat(style.height),
+        top: Number.parseFloat(style.top),
+      };
+    });
+    expect(hover.bitmapHeight / hover.width).toBeCloseTo(180 / 256, 2);
+    expect(hover.top / hover.height).toBeCloseTo(-8.4176025390625 / 128, 3);
+  }
 });
