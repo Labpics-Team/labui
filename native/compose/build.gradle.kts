@@ -31,6 +31,7 @@ kotlin {
             api(compose.foundation)
             api(compose.ui)
             implementation(compose.components.resources)
+            implementation("com.github.ajalt.colormath:colormath:3.7.1")
             implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
             implementation("dev.chrisbanes.haze:haze:2.1.0")
             implementation("dev.chrisbanes.haze:haze-blur:2.1.0")

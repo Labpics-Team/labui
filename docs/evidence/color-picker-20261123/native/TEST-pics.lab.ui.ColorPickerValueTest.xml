@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ColorPickerValueTest[desktop]" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-23T04:30:42.940Z" hostname="DESKTOP-NFO26JA" time="0.355">
+  <properties/>
+  <testcase name="rawDoubleAndAlphaSurviveEveryProjectionAndReset[desktop]" classname="pics.lab.ui.ColorPickerValueTest" time="0.001"/>
+  <testcase name="floatProjectionMatchesIndependentCssD50CodecWithinDisplayBudget[desktop]" classname="pics.lab.ui.ColorPickerValueTest" time="0.083"/>
+  <testcase name="savedFormStateRetainsCurrentAndResetCoordinatesWithoutRounding[desktop]" classname="pics.lab.ui.ColorPickerValueTest" time="0.001"/>
+  <testcase name="preciseTextCommitRetainsLchAndHexAlpha[desktop]" classname="pics.lab.ui.ColorPickerValueTest" time="0.001"/>
+  <testcase name="graphKeysTrackOnlyFixedCoordinateGeometryAndGamut[desktop]" classname="pics.lab.ui.ColorPickerValueTest" time="0.268"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

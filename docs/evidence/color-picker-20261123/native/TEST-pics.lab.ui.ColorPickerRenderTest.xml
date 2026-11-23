@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ColorPickerRenderTest[desktop]" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-23T04:30:23.651Z" hostname="DESKTOP-NFO26JA" time="19.286">
+  <properties/>
+  <testcase name="textBlurRetainsRawPrecisionAndEnterReadsAcceptedOrRejectedValue[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="3.626"/>
+  <testcase name="rec2020ToggleChangesThePointerAndSliderDomainWithoutRewritingRawColor[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="1.411"/>
+  <testcase name="stateResetCancelsAnActivePointerWithoutRestoringThePreviousEdit[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="0.961"/>
+  <testcase name="readonlyDisablesMutation[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="0.382"/>
+  <testcase name="narrowDarkFontScale125KeepsControlsInsideThePanel[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="0.585"/>
+  <testcase name="suppliedPickerAndClipboardUseAcceptedValuesAndCancelOnDetach[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="3.205"/>
+  <testcase name="changingViewDoesNotRewriteRawColorAndChannelEditsCommitAcceptedValues[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="2.597"/>
+  <testcase name="fifteenAuthoredViewsRenderWithActualFonts[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="3.105"/>
+  <testcase name="planePointerEscapeRestoresExactStartingValue[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="1.007"/>
+  <testcase name="stateResetDiscardsFocusedDraftWithoutAChangeEvent[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="1.193"/>
+  <testcase name="imeCompositionAndItsFinishingEnterDoNotCommitEarly[desktop]" classname="pics.lab.ui.ColorPickerRenderTest" time="1.207"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
