@@ -3,6 +3,8 @@ package pics.lab.ui.example
 import android.view.KeyEvent
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ContentValues
+import android.provider.MediaStore
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.content.contentReceiver
@@ -39,6 +41,7 @@ import pics.lab.ui.LabTagsInput
 import pics.lab.ui.LabTheme
 import pics.lab.ui.LabThemeState
 import pics.lab.ui.initialLabColors
+import pics.lab.ui.sample.FileUploadImportExample
 import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
@@ -154,6 +157,56 @@ class SettingsExperienceTest {
         device.findObject(By.text("Редактировать")).button().click()
         val name = checkNotNull(device.wait(Until.findObject(By.desc("Название")), 10_000)).editor()
         assertEquals("Нативная лаборатория 東京z", name.text)
+    }
+
+    @Test
+    fun filePickerImportsReadsCancelsAndRemovesARealDocument() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val device = UiDevice.getInstance(instrumentation)
+        val resolver = instrumentation.targetContext.contentResolver
+        val expected = "Document imported through the system picker."
+        val filename = "lab-upload-document.txt"
+        val metadata = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, filename)
+            put(MediaStore.Downloads.MIME_TYPE, "text/plain")
+            put(MediaStore.Downloads.IS_PENDING, 1)
+        }
+        val document = checkNotNull(resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, metadata))
+        try {
+            checkNotNull(resolver.openOutputStream(document)).use { it.write(expected.toByteArray()) }
+            resolver.update(document, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null)
+            activity.scenario.onActivity { host ->
+                val preferences = LabPreferences(reducedMotion = true)
+                val theme = LabThemeState(initialLabColors(preferences), preferences)
+                host.setContent { FileUploadImportExample(theme) }
+            }
+            fun find(selector: BySelector): UiObject2 =
+                checkNotNull(device.wait(Until.findObject(selector), 10_000)) {
+                    val hierarchy = ByteArrayOutputStream().also { device.dumpWindowHierarchy(it) }
+                    "Missing file-picker node: $selector\n$hierarchy"
+                }
+            find(By.desc("Document: No file chosen")).button().click()
+            // This package belongs to the OS, not the Compose application.
+            assertTrue(device.wait(Until.hasObject(By.pkg("com.google.android.documentsui")), 10_000))
+            device.pressBack()
+            find(By.desc("Document: No file chosen"))
+            find(By.desc("Document: No file chosen")).button().click()
+            find(By.desc("Show roots")).click()
+            find(By.text("Downloads")).click()
+            find(By.text(filename)).click()
+            find(By.desc("Document: $filename"))
+            find(By.text(expected)) // The application read bytes from the returned provider handle.
+            find(By.desc("Document: $filename")).button().click()
+            assertTrue(device.wait(Until.hasObject(By.pkg("com.google.android.documentsui")), 10_000))
+            device.pressBack()
+            find(By.desc("Document: $filename"))
+            find(By.text(expected))
+            find(By.desc("Remove $filename")).button().click()
+            find(By.desc("Document: No file chosen"))
+            assertTrue(device.wait(Until.gone(By.text(expected)), 5_000))
+        } finally {
+            resolver.delete(document, null, null)
+        }
     }
 
     @OptIn(ExperimentalFoundationApi::class)
