@@ -33,6 +33,7 @@ export default libraryPreset({
     'src/index.ts',
     'src/components/file-upload/behavior.ts',
     'src/components/file-upload/contract.ts',
+    'src/components/color-picker/runtime.ts',
     'src/components/combobox/runtime.ts',
     'src/components/number-input/behavior.ts',
     'src/components/alert/contract.ts',

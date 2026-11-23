@@ -1,0 +1,62 @@
+{
+  "archives": [
+    {
+      "name": "@labpics/ui-tokens",
+      "sha256": "7e98d659b3df1ff0b694424c9237faa2a85e9b66f232d4b909147b27c3b20758"
+    },
+    {
+      "name": "@labpics/ui-shadow",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "@labpics/ui-materials",
+      "sha256": "77838ee19348e5133360ddb1ef7599221168580d22d306d065495862fc24e1a7"
+    },
+    {
+      "name": "@labpics/fonts",
+      "sha256": "d0d46708a7b04e7fca9900afc5735ca7a72fa5ae1082787ea603199b632b2fef"
+    },
+    {
+      "name": "@labui/colors",
+      "sha256": "ff4932ea0345992005afb8c651a8154dbcc1170b5e7f9e6dda3cd484804d7e4b"
+    },
+    {
+      "name": "@labpics/ui-core",
+      "sha256": "7d853d3b4468ead97c8acf8bf5d54fc057125d03b64ac3123266e7514bcb2895"
+    },
+    {
+      "name": "@labpics/ui-react",
+      "sha256": "e8665f9c2736ba5df5df75adcf3ecced6887a3e77d3c6c75a32badb2b36587ee"
+    },
+    {
+      "name": "@labpics/ui-vue",
+      "sha256": "75f188a0cff0c324c0bcb7a4aa68d9cdabe507acf8165862c7e3690233a1833f"
+    },
+    {
+      "name": "@labpics/ui-solid",
+      "sha256": "2ff57a456ead40fddda517094e38e7ad4134f2107f543e45e9490a7c0369ac78"
+    },
+    {
+      "name": "@labpics/ui-svelte",
+      "sha256": "3401490801648cef57e43d80302f27c829be350209fe0062c10aef0e414dbebf"
+    },
+    {
+      "name": "@labpics/ui-astro",
+      "sha256": "04a9c46d4b19c8f92ce70d6d251a9ea0cd2f2f1e5e97554fbcf4bf421ff37ad9"
+    }
+  ],
+  "records": [
+    {
+      "engine": "chromium",
+      "ssrAndHydratedRenderers": 6,
+      "types": "ESM+CJS",
+      "behavior": "serialized raw SSR, retained hydration, exact focus and partial LCH edit, real FormData and reset"
+    },
+    {
+      "engine": "webkit",
+      "ssrAndHydratedRenderers": 6,
+      "types": "ESM+CJS",
+      "behavior": "serialized raw SSR, retained hydration, exact focus and partial LCH edit, real FormData and reset"
+    }
+  ]
+}

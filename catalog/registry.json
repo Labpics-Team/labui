@@ -284,7 +284,15 @@
       "title": "Color Picker",
       "group": "input",
       "kind": "control",
-      "summary": "Выбор и точная настройка цвета."
+      "summary": "Выбор и точная настройка цвета.",
+      "web": {
+        "subpath": "color-picker",
+        "reactExport": "ColorPicker"
+      },
+      "profile": "colorPicker",
+      "native": {
+        "symbol": "LabColorPicker"
+      }
     },
     {
       "slug": "segmented-control",

@@ -445,9 +445,22 @@
         "types": "./dist/components/file-upload/contract.d.cts",
         "default": "./dist/components/file-upload/contract.cjs"
       }
+    },
+    "./color-picker.css": "./dist/color-picker.css",
+    "./color-picker/runtime": {
+      "import": {
+        "types": "./dist/components/color-picker/runtime.d.ts",
+        "default": "./dist/components/color-picker/runtime.js"
+      },
+      "require": {
+        "types": "./dist/components/color-picker/runtime.d.cts",
+        "default": "./dist/components/color-picker/runtime.cjs"
+      }
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": [
     "./src/ssr/environment.ts",
     "./src/components/*/index.ts",
@@ -486,7 +499,8 @@
     "./dist/menu.css",
     "./dist/dialog.css",
     "./dist/input-extensions.css",
-    "./dist/file-upload.css"
+    "./dist/file-upload.css",
+    "./dist/color-picker.css"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
@@ -521,7 +535,9 @@
     "lit": "3.3.3",
     "@floating-ui/dom": "1.7.6",
     "@zag-js/file-upload": "1.41.2",
-    "@zag-js/file-utils": "1.41.2"
+    "@zag-js/file-utils": "1.41.2",
+    "@colordx/gpu": "1.0.0",
+    "colorjs.io": "0.7.1"
   },
   "peerDependencies": {
     "@lit-labs/ssr": "^4.1.0"

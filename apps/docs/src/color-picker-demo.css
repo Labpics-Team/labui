@@ -1,0 +1,41 @@
+html {
+  color-scheme: light;
+  background: #f5f6f8;
+  font-family: var(--lab-font-family);
+}
+body {
+  margin: 0;
+  padding: 32px;
+}
+h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 36px;
+}
+p {
+  color: var(--lab-label-secondary);
+  margin: 8px 0 24px;
+}
+.pickers {
+  display: flex;
+  gap: 32px;
+  align-items: start;
+  flex-wrap: wrap;
+}
+.pickers form {
+  width: 390px;
+  max-width: 100%;
+}
+.pickers form > button {
+  margin-top: 16px;
+}
+output {
+  display: block;
+  max-width: 390px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 450px) {
+  body {
+    padding: 16px;
+  }
+}

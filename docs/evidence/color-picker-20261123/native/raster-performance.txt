@@ -1,0 +1,2 @@
+250x80 CPU cold=7.2762 ms; cached=0.0306 ms
+342x165 all gamuts first=61.1428 ms; warm median=38.4775 ms; warm max=51.5716 ms; rasterizations=7

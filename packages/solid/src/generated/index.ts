@@ -16,6 +16,7 @@ export { Card, type CardProps } from './card.js';
 export { Checkbox, type CheckboxProps } from './checkbox.js';
 export { Chip, type ChipProps } from './chip.js';
 export { Choicebox, type ChoiceboxProps } from './choicebox.js';
+export { ColorPicker, type ColorPickerProps } from './color-picker.js';
 export { Combobox, type ComboboxProps } from './combobox.js';
 export { ContextMenu, type ContextMenuProps } from './context-menu.js';
 export { Dialog, type DialogProps } from './dialog.js';

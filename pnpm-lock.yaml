@@ -179,6 +179,12 @@ importers:
 
   packages/core:
     dependencies:
+      '@colordx/gpu':
+        specifier: 1.0.0
+        version: 1.0.0
+      colorjs.io:
+        specifier: 0.7.1
+        version: 0.7.1
       '@floating-ui/dom':
         specifier: 1.7.6
         version: 1.7.6
@@ -513,6 +519,12 @@ importers:
         version: 3.5.42(typescript@5.7.3)
 
 packages:
+
+  colorjs.io@0.7.1:
+    resolution: {integrity: sha512-LY7OHnJZxHwT5UlzNa9bbhHHDbzB6yE5+3MIPwJEQKRvSCt/T4G7epsj+9j2BExUIIfXFIJGsIXUKdfrK9Q5tA==}
+
+  '@colordx/gpu@1.0.0':
+    resolution: {integrity: sha512-up+WV806Cge1Pqsi4N9vEnzCxYOQ451G6iDPchzN0ILgNiR8HDZP23BR5AOKhG1HIyaziXy+JbFE0Lj1gI53DQ==}
 
   '@ampproject/remapping@2.3.0':
     resolution: {integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==}
@@ -3484,6 +3496,10 @@ packages:
     resolution: {integrity: sha512-f1xqaEY79awBxgUyjFso0UEpIoEHZq+zRvB0nUVFHJRW7Ds/QhaFHKSRnf2QBTlP/ObvCT225R+piNAAc17Aaw==}
 
 snapshots:
+
+  colorjs.io@0.7.1: {}
+
+  '@colordx/gpu@1.0.0': {}
 
   '@ampproject/remapping@2.3.0':
     dependencies:

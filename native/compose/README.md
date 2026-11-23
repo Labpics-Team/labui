@@ -70,6 +70,13 @@ AppData/Roaming, Application Support или XDG_CONFIG_HOME. Это хранен
 Эта запись описывает исполняемый остаток работы и не заменяет принятый
 [план r1](https://github.com/Labpics-Team/agents-config/blob/main/plans/labui/r1.md).
 
+## ColorPicker
+
+`LabColorPicker` предоставляет 15 авторских представлений, точное Double-значение,
+controlled/state API, reset, IME-ввод и настоящую работу с clipboard. Необязательный
+`pickScreenColor` подключает платформенный выбор пикселя экрана; без адаптера
+eyedropper недоступен. [Контракт и native-проверки](../../docs/reference/color-picker-native.md).
+
 ## Loader и Progress
 
 `LabLoader` и `LabProgress` получают геометрию и цветовые роли из общего
