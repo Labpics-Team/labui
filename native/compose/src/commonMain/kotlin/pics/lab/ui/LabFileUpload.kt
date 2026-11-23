@@ -40,6 +40,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
+import pics.lab.icons.Icon
+import pics.lab.icons.symbols.close
 import pics.lab.ui.resources.*
 
 public enum class LabFileUploadVariant { Input, Area }
@@ -239,7 +241,8 @@ internal fun LabFileUploadBody(
     }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(LabComponents.FileUploadFieldGap.dp)) {
         if (!labelHidden) LabText(label, style = caption)
-        val panel = Modifier.fillMaxWidth().clip(RoundedCornerShape(radius.dp)).background(fill)
+        val panel = Modifier.fillMaxWidth().semantics { isTraversalGroup = true }
+            .clip(RoundedCornerShape(radius.dp)).background(fill)
             .drawWithContent {
                 drawContent()
                 val width = (if (dragging && interactive || focused) LabComponents.FileUploadDragStrokeWidth else LabComponents.FileUploadStrokeWidth).dp.toPx()
@@ -256,46 +259,69 @@ internal fun LabFileUploadBody(
                 Column(Modifier.fillMaxWidth().padding(horizontal = paddingX, vertical = LabComponents.FileUploadAreaPaddingY.dp)
                     .align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(LabComponents.FileUploadAreaGap.dp)) {
-                    if (enabled) LabFileUploadArtwork(dragging && interactive, names.isNotEmpty(), hovered && interactive)
-                    val title = if (dragging && interactive) strings.dragging else names.firstOrNull()
-                        ?: if (dropSupported) strings.drop else strings.chooseFiles
-                    LabText(title, Modifier.fillMaxWidth().then(if (names.isNotEmpty()) Modifier.clickable(interactions, null,
-                        enabled = interactive, onClickLabel = strings.browse, role = Role.Button, onClick = onBrowse)
-                        .semantics { contentDescription = "$label: $title" } else Modifier),
-                        style = bodyStyle.withTypography(fontSize = LabComponents.FileUploadAreaTitleFontSize.sp,
-                            lineHeight = LabComponents.FileUploadAreaTitleLineHeight.sp,
-                            fontWeight = FontWeight(LabComponents.FileUploadAreaTitleFontWeight.toInt()),
-                            letterSpacing = LabComponents.FileUploadAreaTitleLetterSpacing.sp).copy(textAlign = TextAlign.Center))
+                    if (enabled || names.isNotEmpty()) LabFileUploadArtwork(dragging && interactive, names.isNotEmpty(), hovered && interactive)
+                    if (names.size <= 1 || dragging && interactive) {
+                        val title = if (dragging && interactive) strings.dragging else names.firstOrNull()
+                            ?: if (dropSupported) strings.drop else strings.chooseFiles
+                        LabText(title, Modifier.fillMaxWidth().then(if (names.isNotEmpty()) Modifier.clickable(interactions, null,
+                            enabled = interactive, onClickLabel = strings.browse, role = Role.Button, onClick = onBrowse)
+                            .semantics { contentDescription = "$label: $title" } else Modifier),
+                            style = bodyStyle.withTypography(fontSize = LabComponents.FileUploadAreaTitleFontSize.sp,
+                                lineHeight = LabComponents.FileUploadAreaTitleLineHeight.sp,
+                                fontWeight = FontWeight(LabComponents.FileUploadAreaTitleFontWeight.toInt()),
+                                letterSpacing = LabComponents.FileUploadAreaTitleLetterSpacing.sp).copy(textAlign = TextAlign.Center))
+                    }
+                    if (names.size > 1 && !dragging) {
+                        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(LabComponents.FileUploadGap.dp)) {
+                            names.forEachIndexed { index, name ->
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(LabComponents.FileUploadGap.dp)) {
+                                    LabText(name, Modifier.weight(1f), style = bodyStyle)
+                                    LabUploadRemove(name, index, strings, interactive, onRemove)
+                                }
+                            }
+                        }
+                        LabButton(strings.browse, onBrowse,
+                            Modifier.semantics { contentDescription = "$label: ${strings.browse}" },
+                            enabled = interactive, size = LabControlSize.Large)
+                    }
                     if (names.isEmpty() && !dragging) {
                         LabText(strings.or, style = caption)
                         LabButton(strings.browse, onBrowse, Modifier.semantics { contentDescription = "$label: ${strings.browse}" },
                             enabled = interactive, size = LabControlSize.Large)
                     }
                 }
-            }
-        } else {
-            Row(panel.defaultMinSize(minHeight = metrics.height.dp).clickable(interactions, null, interactive,
-                onClickLabel = strings.browse, role = Role.Button, onClick = onBrowse)
-                .semantics { contentDescription = "$label: ${names.joinToString().ifEmpty { strings.empty }}" }
-                .padding(horizontal = metrics.paddingX.dp, vertical = metrics.paddingY.dp),
-                horizontalArrangement = Arrangement.spacedBy(LabComponents.FileUploadGap.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically) {
-                if (names.isNotEmpty()) {
-                    Image(painterResource(Res.drawable.lab_file_upload_file), null, Modifier.size(metrics.icon.dp), colorFilter = ColorFilter.tint(secondary))
-                    LabText(names.first(), Modifier.weight(1f, fill = false), style = bodyStyle)
-                } else {
-                    LabText(strings.chooseFile, style = bodyStyle)
-                    LabText(strings.empty, Modifier.weight(1f, fill = false), style = bodyStyle.copy(color = secondary))
+                if (names.size == 1 && !dragging) {
+                    LabUploadRemove(names.single(), 0, strings, interactive, onRemove,
+                        Modifier.align(Alignment.TopEnd).padding(LabComponents.FileUploadGap.dp))
                 }
             }
-        }
-        names.forEachIndexed { index, name ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LabComponents.FileUploadGap.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (names.size > 1) LabText(name, Modifier.weight(1f), style = bodyStyle)
-                else Spacer(Modifier.weight(1f))
-                LabButton(strings.remove, { if (interactive) onRemove(index) },
-                    Modifier.semantics { contentDescription = "${strings.remove} $name" },
-                    intent = LabIntent.Neutral, kind = LabButtonKind.Ghost, size = LabControlSize.Small, enabled = interactive)
+        } else {
+            Column(panel) {
+                for (index in 0 until maxOf(names.size, 1)) {
+                    val name = names.getOrNull(index)
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.weight(1f).defaultMinSize(minHeight = metrics.height.dp)
+                            .clickable(interactions, null, interactive, onClickLabel = strings.browse,
+                                role = Role.Button, onClick = onBrowse)
+                            .semantics { contentDescription = "$label: ${name ?: strings.empty}" }
+                            .padding(horizontal = metrics.paddingX.dp, vertical = metrics.paddingY.dp),
+                            horizontalArrangement = Arrangement.spacedBy(LabComponents.FileUploadGap.dp,
+                                if (names.size > 1) Alignment.Start else Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically) {
+                            if (name != null) {
+                                Image(painterResource(Res.drawable.lab_file_upload_file), null,
+                                    Modifier.size(metrics.icon.dp), colorFilter = ColorFilter.tint(secondary))
+                                LabText(name, Modifier.weight(1f, fill = false), style = bodyStyle)
+                            } else {
+                                LabText(strings.chooseFile, style = bodyStyle)
+                                LabText(strings.empty, Modifier.weight(1f, fill = false), style = bodyStyle.copy(color = secondary))
+                            }
+                        }
+                        if (name != null) LabUploadRemove(name, index, strings, interactive, onRemove,
+                            Modifier.padding(end = LabComponents.FileUploadGap.dp))
+                    }
+                }
             }
         }
         val message = error ?: helper
@@ -303,6 +329,14 @@ internal fun LabFileUploadBody(
             if (error != null) { this.error(error); liveRegion = LiveRegionMode.Polite }
         }, style = caption.copy(color = colors[if (error != null) LabComponents.FileUploadRolesDanger else LabComponents.FileUploadRolesSecondary]))
     }
+}
+
+@Composable
+private fun LabUploadRemove(name: String, index: Int, strings: LabFileUploadStrings,
+    enabled: Boolean, onRemove: (Int) -> Unit, modifier: Modifier = Modifier) {
+    LabButton("${strings.remove} $name", { if (enabled) onRemove(index) }, modifier,
+        intent = LabIntent.Neutral, kind = LabButtonKind.Ghost, size = LabControlSize.Small,
+        enabled = enabled, iconOnly = true, icon = { Icon(close, tint = color, size = size) })
 }
 
 @Composable

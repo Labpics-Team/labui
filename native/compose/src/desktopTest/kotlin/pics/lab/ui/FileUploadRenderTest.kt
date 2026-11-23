@@ -93,6 +93,48 @@ class FileUploadRenderTest {
         } finally { f.scene.close() }
     }
 
+    @Test fun selectedFilesAndRemovalStayTogetherWithoutRepeatingTheFirstFilename() {
+        val output = File("build/file-upload-evidence").apply { mkdirs() }
+        for (variant in LabFileUploadVariant.entries) {
+            var names by mutableStateOf(listOf("First document.txt", "Second document.txt"))
+            var removed = -1
+            val f = fixture(width = 440, height = 620, appearance = LabAppearance.Dark) {
+                LabFileUploadBody(names, "Files", variant = variant, onBrowse = {},
+                    onRemove = { index -> removed = index; names = names.filterIndexed { i, _ -> i != index } })
+            }
+            try {
+                File(output, "${variant.name.lowercase()}-multiple-dark.png").writeBytes(f.settle())
+                val all = nodes(f.scene)
+                val texts = all.flatMap { it.config.getOrNull(SemanticsProperties.Text).orEmpty() }.map { it.text }
+                for (name in names) assertEquals(1, texts.count { it == name }, "$variant must render $name once")
+                val nameBounds = names.map { name -> all.single {
+                    it.config.getOrNull(SemanticsProperties.Text)?.any { text -> text.text == name } == true
+                }.boundsInRoot }
+                assertEquals(nameBounds[0].left, nameBounds[1].left, "$variant keeps file names on one reading edge")
+                val panel = all.filter { node ->
+                    val descriptions = walk(node).flatMap { it.config.getOrNull(SemanticsProperties.ContentDescription).orEmpty() }
+                    names.all { "Remove $it" in descriptions }
+                }.minBy { walk(it).size }
+                assertEquals(true, panel.config.getOrNull(SemanticsProperties.IsTraversalGroup),
+                    "$variant groups the selected files and their actions")
+                val groupedActions = walk(panel).mapNotNull { it.config.getOrNull(SemanticsProperties.ContentDescription) }.flatten()
+                for (name in names) {
+                    assertTrue("Remove $name" in groupedActions, "$variant removal belongs to the selected-file group")
+                    val bounds = action(f.scene, "Remove $name").boundsInRoot
+                    assertTrue(bounds.left >= panel.boundsInRoot.left && bounds.right <= panel.boundsInRoot.right)
+                    assertTrue(bounds.top >= panel.boundsInRoot.top && bounds.bottom <= panel.boundsInRoot.bottom)
+                }
+                action(f.scene, "Remove Second document.txt").config[SemanticsActions.OnClick].action!!.invoke()
+                f.settle()
+                assertEquals(1, removed)
+                assertEquals(listOf("First document.txt"), names)
+                action(f.scene, "Remove First document.txt").config[SemanticsActions.OnClick].action!!.invoke()
+                f.settle()
+                assertTrue(names.isEmpty())
+            } finally { f.scene.close() }
+        }
+    }
+
     @Test fun authoredAreaRendersAllStatesAndNarrowTextGrowsWithoutOverflow() {
         val output = File("build/file-upload-evidence").apply { mkdirs() }
         for (appearance in listOf(LabAppearance.Light, LabAppearance.Dark))
