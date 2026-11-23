@@ -1,0 +1,41 @@
+{
+    "component":  "LabFileUpload",
+    "observed":  "2026-11-23",
+    "scenario":  [
+                     "cancel initial picker",
+                     "select real txt document",
+                     "read returned handle bytes",
+                     "cancel subsequent picker and retain selection",
+                     "remove selected document"
+                 ],
+    "android35":  {
+                      "tests":  1,
+                      "run":  45103530559,
+                      "head":  "d49bac147cd81986bc8d9d2abd87987c71afe5d8",
+                      "failures":  0
+                  },
+    "ios":  {
+                "run":  45109036469,
+                "device":  "iPhone 16 Pro",
+                "provider":  "own application Documents exposed through Files",
+                "tests":  1,
+                "failures":  0,
+                "head":  "30c45f69552df8ba36bc0b393b85cc381854aaf3"
+            },
+    "android33":  {
+                      "tests":  1,
+                      "run":  45112700242,
+                      "head":  "cea7cf1604e075b6eafefcda1c7b31ad9326fda1",
+                      "failures":  0
+                  },
+    "desktop":  {
+                    "renderer":  "software Skia, headless",
+                    "tests":  11,
+                    "failures":  0
+                },
+    "scope":  [
+                  "OS picker and returned file contents, cancellation and removal",
+                  "external Android OS drop and iOS external provider permissions not exercised"
+              ],
+    "integration":  "6c783c160e023ab413efe62267d8082657403980"
+}
