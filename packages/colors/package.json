@@ -40,7 +40,7 @@
     "fx:render": "node test/fx-render/render-fx.mjs"
   },
   "dependencies": {
-    "@labpics/colors": "1.0.3"
+    "@labpics/colors": "1.4.1"
   },
   "devDependencies": {
     "@types/node": "22.10.5",
