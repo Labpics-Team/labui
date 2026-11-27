@@ -24,7 +24,17 @@ if [ "$#" -eq 0 ]; then
   pnpm build
   pnpm --filter @labpics/ui-docs exec playwright install chromium webkit firefox
   pnpm --filter @labui/colors fx:render
-  pnpm test:e2e
+  # Firefox requires a home owned by its effective user. Actions mounts /github/home
+  # with the host's UID, which can differ from the pinned container's UID.
+  browser_home="${HOME:-}"
+  if [ ! -d "$browser_home" ] || [ ! -O "$browser_home" ]; then
+    browser_home="$(getent passwd "$(id -u)" | cut -d: -f6)"
+  fi
+  if [ ! -d "$browser_home" ] || [ ! -O "$browser_home" ] || [ ! -w "$browser_home" ]; then
+    echo '::error::The browser runtime needs a writable home owned by its user.' >&2
+    exit 1
+  fi
+  HOME="$browser_home" pnpm test:e2e
 else
   icons_root="$(cd -- "$2" && pwd -P)"
   output="$(mktemp -d "$RUNNER_TEMP/labui-icons.XXXXXX")"

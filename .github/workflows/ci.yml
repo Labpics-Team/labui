@@ -121,8 +121,6 @@ jobs:
         shell: bash
         env:
           E2E_SMOKE: "1"
-          # The pinned container runs as root; Firefox rejects Actions' pwuser-owned /github/home.
-          HOME: /root
         run: bash .github/scripts/browser-check.sh
 
   ci:
