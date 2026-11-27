@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "@labui/colors": "workspace:*",
-    "@types/node": "22.10.5",
+    "@types/node": "26.6.6",
     "tsup": "8.3.6",
     "tsx": "4.19.2",
     "typescript": "5.7.3",
