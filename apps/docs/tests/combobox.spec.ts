@@ -89,6 +89,31 @@ test('render: the input is a combobox with the listbox closed on both renderers'
   await expect(reactInput(page, 'react-combobox')).toHaveAttribute('aria-expanded', 'false');
 });
 
+test('disclosure and text reserve follow the field adornment independently of Switch', async ({
+  page,
+}) => {
+  for (const [testid, inputClass, triggerClass] of [
+    ['lit-combobox', '.input', '.trigger'],
+    ['react-combobox', '.lab-combobox-input', '.lab-combobox-trigger'],
+  ] as const) {
+    const host = page.getByTestId(testid);
+    const input = host.locator(inputClass);
+    const trigger = host.locator(triggerClass);
+    await expect(trigger).toHaveCSS('width', '32px');
+    await expect(input).toHaveCSS('padding-right', '32px');
+    await host.evaluate((element) => {
+      element.style.setProperty('--lab-size-switch-track-s', '80px');
+    });
+    await expect(trigger).toHaveCSS('width', '32px');
+    await expect(input).toHaveCSS('padding-right', '32px');
+    await host.evaluate((element) => {
+      element.style.setProperty('--lab-size-input-adornment', '40px');
+    });
+    await expect(trigger).toHaveCSS('width', '40px');
+    await expect(input).toHaveCSS('padding-right', '40px');
+  }
+});
+
 /**
  * a11y — the binding the @zag-js/combobox machine REALLY emits on the input: role=combobox,
  * aria-autocomplete, aria-controls → the content id, aria-expanded. PLUS the field-a11y

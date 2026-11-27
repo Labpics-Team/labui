@@ -33,6 +33,11 @@
           "kind": "boolean"
         },
         {
+          "name": "headingLevel",
+          "attr": "heading-level",
+          "kind": "string"
+        },
+        {
           "name": "value",
           "attr": "value",
           "kind": "prop"
@@ -130,6 +135,26 @@
           "name": "name",
           "attr": "name",
           "kind": "string"
+        },
+        {
+          "name": "initials",
+          "attr": "initials",
+          "kind": "string"
+        },
+        {
+          "name": "fallback",
+          "attr": "fallback",
+          "kind": "string"
+        },
+        {
+          "name": "decorative",
+          "attr": "decorative",
+          "kind": "boolean"
+        },
+        {
+          "name": "statusLabel",
+          "attr": "status-label",
+          "kind": "string"
         }
       ],
       "events": [],
@@ -165,7 +190,9 @@
       "slots": {
         "default": true,
         "named": [
-          "dot"
+          "dot",
+          "icon",
+          "icon-end"
         ],
         "dynamic": false
       }
@@ -190,6 +217,21 @@
           "name": "items",
           "attr": "items",
           "kind": "prop"
+        },
+        {
+          "name": "maxItems",
+          "attr": "max-items",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "expandLabel",
+          "attr": "expand-label",
+          "kind": "string"
         }
       ],
       "events": [],
@@ -245,7 +287,9 @@
       "slots": {
         "default": true,
         "named": [
-          "icon"
+          "description",
+          "icon",
+          "icon-end"
         ],
         "dynamic": false
       }
@@ -270,12 +314,48 @@
           "name": "interactive",
           "attr": "interactive",
           "kind": "boolean"
+        },
+        {
+          "name": "image",
+          "attr": "image",
+          "kind": "string"
+        },
+        {
+          "name": "imageAlt",
+          "attr": "image-alt",
+          "kind": "string"
+        },
+        {
+          "name": "heading",
+          "attr": "heading",
+          "kind": "string"
+        },
+        {
+          "name": "headingHint",
+          "attr": "heading-hint",
+          "kind": "string"
+        },
+        {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        },
+        {
+          "name": "caption",
+          "attr": "caption",
+          "kind": "string"
+        },
+        {
+          "name": "lowerCaption",
+          "attr": "lower-caption",
+          "kind": "string"
         }
       ],
       "events": [],
       "slots": {
         "default": true,
         "named": [
+          "badge",
           "footer",
           "header",
           "media"
@@ -300,6 +380,11 @@
           "kind": "string"
         },
         {
+          "name": "variant",
+          "attr": "variant",
+          "kind": "string"
+        },
+        {
           "name": "checked",
           "attr": "checked",
           "kind": "boolean"
@@ -320,13 +405,28 @@
           "kind": "boolean"
         },
         {
+          "name": "controlled",
+          "attr": "controlled",
+          "kind": "boolean"
+        },
+        {
           "name": "disabled",
           "attr": "disabled",
           "kind": "boolean"
         },
         {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
           "name": "name",
           "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
           "kind": "string"
         }
       ],
@@ -335,8 +435,158 @@
       ],
       "slots": {
         "default": true,
-        "named": [],
+        "named": [
+          "description",
+          "icon",
+          "label-start"
+        ],
         "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-chip",
+      "subpath": "chip",
+      "pascal": "Chip",
+      "className": "LabChip",
+      "props": [
+        {
+          "name": "mode",
+          "attr": "mode",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "sharp",
+          "attr": "sharp",
+          "kind": "boolean"
+        },
+        {
+          "name": "active",
+          "attr": "active",
+          "kind": "boolean"
+        },
+        {
+          "name": "selected",
+          "attr": "selected",
+          "kind": "boolean"
+        },
+        {
+          "name": "defaultSelected",
+          "attr": "default-selected",
+          "kind": "boolean"
+        },
+        {
+          "name": "controlled",
+          "attr": "controlled",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "loading",
+          "attr": "loading",
+          "kind": "boolean"
+        },
+        {
+          "name": "showLeading",
+          "attr": "show-leading",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "action",
+        "remove",
+        "selected-change"
+      ],
+      "slots": {
+        "default": true,
+        "named": [
+          "leading"
+        ],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-choicebox",
+      "subpath": "choicebox",
+      "pascal": "Choicebox",
+      "className": "LabChoicebox",
+      "props": [
+        {
+          "name": "layout",
+          "attr": "layout",
+          "kind": "string"
+        },
+        {
+          "name": "multiple",
+          "attr": "multiple",
+          "kind": "boolean"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultValue",
+          "attr": "default-value",
+          "kind": "prop"
+        },
+        {
+          "name": "controlled",
+          "attr": "controlled",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "items",
+          "attr": "items",
+          "kind": "prop"
+        }
+      ],
+      "events": [
+        "value-change"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": true
       }
     },
     {
@@ -565,6 +815,21 @@
           "name": "name",
           "attr": "name",
           "kind": "string"
+        },
+        {
+          "name": "maxLength",
+          "attr": "maxlength",
+          "kind": "string"
+        },
+        {
+          "name": "minLength",
+          "attr": "minlength",
+          "kind": "string"
+        },
+        {
+          "name": "pattern",
+          "attr": "pattern",
+          "kind": "string"
         }
       ],
       "events": [
@@ -573,7 +838,10 @@
       ],
       "slots": {
         "default": false,
-        "named": [],
+        "named": [
+          "leading",
+          "trailing"
+        ],
         "dynamic": false
       }
     },
@@ -587,6 +855,11 @@
           "name": "size",
           "attr": "size",
           "kind": "string"
+        },
+        {
+          "name": "keys",
+          "attr": "keys",
+          "kind": "prop"
         }
       ],
       "events": [],
@@ -610,6 +883,21 @@
         {
           "name": "label",
           "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "prop"
+        },
+        {
+          "name": "min",
+          "attr": "min",
+          "kind": "string"
+        },
+        {
+          "name": "max",
+          "attr": "max",
           "kind": "string"
         }
       ],
@@ -781,11 +1069,6 @@
       "className": "LabPagination",
       "props": [
         {
-          "name": "size",
-          "attr": "size",
-          "kind": "string"
-        },
-        {
           "name": "count",
           "attr": "count",
           "kind": "string"
@@ -796,18 +1079,63 @@
           "kind": "string"
         },
         {
+          "name": "page",
+          "attr": "page",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultPage",
+          "attr": "default-page",
+          "kind": "string"
+        },
+        {
           "name": "siblingCount",
           "attr": "sibling-count",
           "kind": "string"
         },
         {
-          "name": "page",
-          "attr": "page",
+          "name": "variant",
+          "attr": "variant",
           "kind": "string"
         },
         {
-          "name": "defaultPage",
-          "attr": "default-page",
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "ambient",
+          "attr": "ambient",
+          "kind": "boolean"
+        },
+        {
+          "name": "progress",
+          "attr": "progress",
+          "kind": "prop"
+        },
+        {
+          "name": "href",
+          "attr": "href",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "previousLabel",
+          "attr": "previous-label",
+          "kind": "string"
+        },
+        {
+          "name": "nextLabel",
+          "attr": "next-label",
+          "kind": "string"
+        },
+        {
+          "name": "pageLabel",
+          "attr": "page-label",
           "kind": "string"
         }
       ],
@@ -993,6 +1321,11 @@
           "kind": "string"
         },
         {
+          "name": "variant",
+          "attr": "variant",
+          "kind": "string"
+        },
+        {
           "name": "value",
           "attr": "value",
           "kind": "prop"
@@ -1042,6 +1375,11 @@
           "kind": "string"
         },
         {
+          "name": "variant",
+          "attr": "variant",
+          "kind": "string"
+        },
+        {
           "name": "orientation",
           "attr": "orientation",
           "kind": "string"
@@ -1057,8 +1395,18 @@
           "kind": "string"
         },
         {
+          "name": "controlled",
+          "attr": "controlled",
+          "kind": "boolean"
+        },
+        {
           "name": "disabled",
           "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "required",
+          "attr": "required",
           "kind": "boolean"
         },
         {
@@ -1083,7 +1431,68 @@
       "slots": {
         "default": false,
         "named": [],
-        "dynamic": false
+        "dynamic": true
+      }
+    },
+    {
+      "tag": "lab-segmented-control",
+      "subpath": "segmented-control",
+      "pascal": "SegmentedControl",
+      "className": "LabSegmentedControl",
+      "props": [
+        {
+          "name": "shape",
+          "attr": "shape",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultValue",
+          "attr": "default-value",
+          "kind": "string"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "dir",
+          "attr": "dir",
+          "kind": "string"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "items",
+          "attr": "items",
+          "kind": "prop"
+        }
+      ],
+      "events": [
+        "value-change"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": true
       }
     },
     {
@@ -1118,6 +1527,21 @@
           "kind": "string"
         },
         {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "showLabel",
+          "attr": "show-label",
+          "kind": "prop"
+        },
+        {
+          "name": "removeLabel",
+          "attr": "remove-label",
+          "kind": "string"
+        },
+        {
           "name": "placeholder",
           "attr": "placeholder",
           "kind": "string"
@@ -1149,7 +1573,60 @@
       ],
       "slots": {
         "default": false,
-        "named": [],
+        "named": [
+          "leading"
+        ],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-sheet",
+      "subpath": "sheet",
+      "pascal": "Sheet",
+      "className": "LabSheet",
+      "props": [
+        {
+          "name": "open",
+          "attr": "open",
+          "kind": "boolean"
+        },
+        {
+          "name": "position",
+          "attr": "position",
+          "kind": "string"
+        },
+        {
+          "name": "modal",
+          "attr": "modal",
+          "kind": "prop"
+        },
+        {
+          "name": "closable",
+          "attr": "closable",
+          "kind": "boolean"
+        },
+        {
+          "name": "heading",
+          "attr": "heading",
+          "kind": "string"
+        },
+        {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "motion-error",
+        "open-change",
+        "position-change"
+      ],
+      "slots": {
+        "default": true,
+        "named": [
+          "content",
+          "trigger"
+        ],
         "dynamic": false
       }
     },
@@ -1256,6 +1733,49 @@
       }
     },
     {
+      "tag": "lab-snackbar",
+      "subpath": "snackbar",
+      "pascal": "Snackbar",
+      "className": "LabSnackbar",
+      "props": [
+        {
+          "name": "open",
+          "attr": "open",
+          "kind": "boolean"
+        },
+        {
+          "name": "message",
+          "attr": "message",
+          "kind": "string"
+        },
+        {
+          "name": "duration",
+          "attr": "duration",
+          "kind": "string"
+        },
+        {
+          "name": "actionLabel",
+          "attr": "action-label",
+          "kind": "string"
+        },
+        {
+          "name": "notificationKey",
+          "attr": "notification-key",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "lab-action",
+        "lab-error",
+        "lab-open-change"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
       "tag": "lab-switch",
       "subpath": "switch",
       "pascal": "Switch",
@@ -1282,13 +1802,33 @@
           "kind": "boolean"
         },
         {
+          "name": "controlled",
+          "attr": "controlled",
+          "kind": "boolean"
+        },
+        {
           "name": "disabled",
           "attr": "disabled",
           "kind": "boolean"
         },
         {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "icon",
+          "attr": "icon",
+          "kind": "boolean"
+        },
+        {
           "name": "name",
           "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
           "kind": "string"
         }
       ],
@@ -1299,7 +1839,8 @@
         "default": true,
         "named": [
           "icon-off",
-          "icon-on"
+          "icon-on",
+          "label-start"
         ],
         "dynamic": false
       }
@@ -1310,6 +1851,16 @@
       "pascal": "Tabs",
       "className": "LabTabs",
       "props": [
+        {
+          "name": "variant",
+          "attr": "variant",
+          "kind": "string"
+        },
+        {
+          "name": "edge",
+          "attr": "edge",
+          "kind": "string"
+        },
         {
           "name": "orientation",
           "attr": "orientation",
@@ -1328,11 +1879,21 @@
         {
           "name": "value",
           "attr": "value",
-          "kind": "string"
+          "kind": "prop"
         },
         {
           "name": "defaultValue",
           "attr": "default-value",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "dir",
+          "attr": "dir",
           "kind": "string"
         },
         {
@@ -1542,6 +2103,21 @@
         {
           "name": "name",
           "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "autocomplete",
+          "attr": "autocomplete",
+          "kind": "string"
+        },
+        {
+          "name": "maxLength",
+          "attr": "maxlength",
+          "kind": "string"
+        },
+        {
+          "name": "minLength",
+          "attr": "minlength",
           "kind": "string"
         }
       ],

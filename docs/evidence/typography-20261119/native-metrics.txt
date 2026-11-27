@@ -1,0 +1,2 @@
+scale=1.0 bodyWidth=652.0 sourceWidth=652.0 lines=1
+scale=2.0 bodyWidth=1303.0 sourceWidth=1303.0 lines=2

@@ -1,3 +1,4 @@
+import type { LabChip } from '@labpics/ui-core/chip';
 /**
  * Клиентский маунт-смоук (happy-dom): обёртки монтируют реальные <lab-*>, пробрасывают
  * пропы атрибутами/свойствами, слот-контент и кастом-события. Фикстура Harness.svelte
@@ -6,7 +7,9 @@
  */
 import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import ChipHarness from './fixtures/ChipHarness.svelte';
 import Harness from './fixtures/Harness.svelte';
+import SlotsHarness from './fixtures/SlotsHarness.svelte';
 
 let host: HTMLElement;
 let instance: ReturnType<typeof mount> | undefined;
@@ -18,18 +21,133 @@ afterEach(() => {
 });
 
 describe('Svelte mount (проброс на <lab-*>)', () => {
-  it('button: строковые оси → атрибуты, false-булев снят, слот в light DOM', () => {
+  it('renders fixed snippet props and explicit named content without a scalar-prop collision', () => {
+    host = document.createElement('div');
+    document.body.append(host);
+    instance = mount(SlotsHarness, { target: host });
+    flushSync();
+    expect(host.querySelector('#fixed-slot [slot="description"]')?.textContent).toBe(
+      'Fixed description',
+    );
+    expect(host.querySelectorAll('#override-slot [slot="description"]')).toHaveLength(1);
+    expect(host.querySelector('#override-slot')?.textContent).toContain('Rich named content');
+    expect(host.querySelector('#override-slot')?.textContent).not.toContain('Replaced description');
+    expect(host.querySelector('#collision-slot [slot="content"]')?.textContent).toBe(
+      'Rich named content',
+    );
+    expect(host.querySelector('[slots]')).toBeNull();
+  });
+  it.each([false, true])(
+    'withdrawing a boolean is independent of an intervening Lit update (%s)',
+    async (interveningUpdate) => {
+      host = document.createElement('div');
+      document.body.appendChild(host);
+      const component = mount(Harness, { target: host, props: {} });
+      instance = component;
+      flushSync();
+      const el = host.querySelector('lab-button');
+      await el?.updateComplete;
+      component.setDisabled(true);
+      flushSync();
+      if (interveningUpdate) await el?.updateComplete;
+      component.setDisabled(undefined);
+      flushSync();
+      await el?.updateComplete;
+      expect(el?.disabled).toBe(false);
+      expect(el?.hasAttribute('disabled')).toBe(false);
+    },
+  );
+  it('withdrawing defaulted Chip attributes restores its defaults and preserves explicit empty values', async () => {
+    host = document.createElement('div');
+    document.body.append(host);
+    const component = mount(ChipHarness, { target: host, props: {} });
+    instance = component;
+    component.variant('s', 'action', '');
+    flushSync();
+    const chip = host.querySelector('lab-chip') as LabChip;
+    await chip.updateComplete;
+    expect([chip.size, chip.mode, chip.value]).toEqual(['s', 'action', '']);
+    component.variant(undefined, undefined, '');
+    flushSync();
+    await chip.updateComplete;
+    expect([chip.size, chip.mode, chip.value, chip.selected]).toEqual(['m', 'filter', '', true]);
+    expect(chip.shadowRoot?.querySelector('button')?.getAttribute('aria-pressed')).toBe('true');
+    component.variant(undefined, undefined, undefined);
+    flushSync();
+    await chip.updateComplete;
+    expect(chip.value).toBe('on');
+  });
+  it('reactive updates retain omitted defaults and selection; withdrawn inputs are removed once', async () => {
+    host = document.createElement('div');
+    document.body.append(host);
+    const changed = vi.fn();
+    const component = mount(ChipHarness, { target: host, props: { onSelectedChange: changed } });
+    instance = component;
+    flushSync();
+    const chip = host.querySelector('lab-chip') as LabChip;
+    await chip.updateComplete;
+    expect([chip.mode, chip.size, chip.value, chip.selected]).toEqual(['filter', 'm', 'on', true]);
+    component.setPending(true);
+    flushSync();
+    await chip.updateComplete;
+    expect([chip.mode, chip.size, chip.value, chip.selected]).toEqual(['filter', 'm', 'on', true]);
+    component.setPending(false);
+    flushSync();
+    await chip.updateComplete;
+    chip.click();
+    await chip.updateComplete;
+    expect(chip.selected).toBe(false);
+    expect(changed).toHaveBeenCalledTimes(1);
+    component.withdraw();
+    flushSync();
+    await chip.updateComplete;
+    expect(chip.hasAttribute('name')).toBe(false);
+    expect(chip.active).toBe(false);
+    chip.name = 'element state';
+    chip.active = true;
+    await chip.updateComplete;
+    component.setPending(true);
+    flushSync();
+    await chip.updateComplete;
+    expect(chip.name).toBe('element state');
+    expect(chip.active).toBe(true);
+    expect(chip.selected).toBe(false);
+  });
+  it('button: строковые оси → атрибуты, false-булев снят, слот в light DOM', async () => {
     host = document.createElement('div');
     document.body.appendChild(host);
     instance = mount(Harness, { target: host, props: {} });
     flushSync();
     const el = host.querySelector('lab-button');
+    await el?.updateComplete;
     expect(el).toBeTruthy();
     expect(el?.getAttribute('type')).toBe('accent');
     expect(el?.getAttribute('size')).toBe('l');
     expect(el?.hasAttribute('disabled')).toBe(false);
     expect(el?.hasAttribute('loading')).toBe(true);
     expect(el?.textContent).toContain('Сохранить');
+  });
+
+  it('explicit false overrides a true default and subsequent boolean updates reach the render', async () => {
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    const component = mount(Harness, { target: host, props: {} });
+    instance = component;
+    flushSync();
+    const [el, defaultEl] = host.querySelectorAll('lab-tooltip');
+    await el?.updateComplete;
+    await defaultEl?.updateComplete;
+    expect(el?.arrow).toBe(false);
+    expect(defaultEl?.arrow).toBe(true);
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).toBeNull();
+    component.setArrow(true);
+    flushSync();
+    await el?.updateComplete;
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).not.toBeNull();
+    component.setArrow(false);
+    flushSync();
+    await el?.updateComplete;
+    expect(el?.shadowRoot?.querySelector('[part="arrow"]')).toBeNull();
   });
 
   it('input: label/value доходят как атрибуты', () => {

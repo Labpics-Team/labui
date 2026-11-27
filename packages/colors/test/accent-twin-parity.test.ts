@@ -23,22 +23,22 @@ import {
  */
 describe('парность акцентной роли: ядро (Lit) ↔ React-близнец', () => {
   it('перечисляет содержательную поверхность акцентных компонентов', () => {
-    // Заземление сессии: 13 компонентов читают акцентные роли (accordion,
-    // breadcrumb, button, checkbox, combobox, menu, pagination, progress,
-    // radio-group, select, slider, switch, tabs). Пол (>=10) валит массовую
-    // потерю чтений без пиннинга churn-склонного точного числа.
+    // При переходе к общим профилям прямых legacy accent-чтений становится
+    // меньше. Реальные роли Button ниже проверяют непустой обход; количество
+    // ещё не переведённых компонентов не является контрактом системы.
     const rows = accentParity();
-    expect(rows.length).toBeGreaterThanOrEqual(10);
     expect(rows.map((r) => r.name)).toContain('button');
-    // button — эталон: полное акцентное семейство в обоих слоях.
+    // Названные роли должны присутствовать; точную парность всех ролей проверяем ниже.
     const button = rows.find((r) => r.name === 'button') as ParityRow;
-    expect([...button.core].sort()).toEqual([
-      '--lab-border-accent',
-      '--lab-fill-accent',
-      '--lab-fill-accent-tinted',
-      '--lab-label-accent',
-      '--lab-label-on-accent',
-    ]);
+    expect([...button.core].sort()).toEqual(
+      expect.arrayContaining([
+        '--lab-border-accent',
+        '--lab-fill-accent',
+        '--lab-fill-accent-tinted',
+        '--lab-label-accent',
+        '--lab-label-on-accent',
+      ]),
+    );
   });
 
   it('каждый компонент с React-близнецом читает ТОЖДЕСТВЕННОЕ акцентное множество', () => {

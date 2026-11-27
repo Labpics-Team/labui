@@ -1,0 +1,20 @@
+body	scale=1.0	nativeCssWidth=334.20215	Chromium=334.20312	WebKit=334.20166	baseline=16.48	paragraphHeight=20.0
+body-cyrillic	scale=1.0	nativeCssWidth=298.418	Chromium=298.42188	WebKit=298.41782	baseline=16.48	paragraphHeight=20.0
+body-ligatures	scale=1.0	nativeCssWidth=233.78404	Chromium=233.79688	WebKit=233.78372	baseline=16.48	paragraphHeight=20.0
+emphasized	scale=1.0	nativeCssWidth=243.48793	Chromium=243.45312	WebKit=243.44295	baseline=16.48	paragraphHeight=20.0
+headline	scale=1.0	nativeCssWidth=300.68005	Chromium=300.625	WebKit=300.62363	baseline=20.6	paragraphHeight=25.0
+caption	scale=1.0	nativeCssWidth=182.616	Chromium=182.59375	WebKit=182.5822	baseline=12.36	paragraphHeight=15.0
+body-zero	scale=1.0	nativeCssWidth=236.00005	Chromium=236.0	WebKit=235.99974	baseline=16.48	paragraphHeight=20.0
+body-positive	scale=1.0	nativeCssWidth=251.78404	Chromium=251.79688	WebKit=251.78372	baseline=16.48	paragraphHeight=20.0
+emphasized-negative	scale=1.0	nativeCssWidth=241.04794	Chromium=241.01562	WebKit=241.00296	baseline=16.48	paragraphHeight=20.0
+accordion-panel	scale=1.0	baselineInParagraph=19.6	paragraphHeight=26.0	authoredLineHeight=24.0.sp
+body	scale=2.0	nativeCssWidth=334.20197	Chromium=334.20312	WebKit=334.20166	baseline=16.48	paragraphHeight=20.0
+body-cyrillic	scale=2.0	nativeCssWidth=298.41803	Chromium=298.42188	WebKit=298.41782	baseline=16.48	paragraphHeight=20.0
+body-ligatures	scale=2.0	nativeCssWidth=233.784	Chromium=233.79688	WebKit=233.78372	baseline=16.48	paragraphHeight=20.0
+emphasized	scale=2.0	nativeCssWidth=243.48798	Chromium=243.45312	WebKit=243.44295	baseline=16.48	paragraphHeight=20.0
+headline	scale=2.0	nativeCssWidth=300.68005	Chromium=300.625	WebKit=300.62363	baseline=20.6	paragraphHeight=25.0
+caption	scale=2.0	nativeCssWidth=182.616	Chromium=182.59375	WebKit=182.5822	baseline=12.36	paragraphHeight=15.0
+body-zero	scale=2.0	nativeCssWidth=235.99997	Chromium=236.0	WebKit=235.99974	baseline=16.48	paragraphHeight=20.0
+body-positive	scale=2.0	nativeCssWidth=251.784	Chromium=251.79688	WebKit=251.78372	baseline=16.48	paragraphHeight=20.0
+emphasized-negative	scale=2.0	nativeCssWidth=241.048	Chromium=241.01562	WebKit=241.00296	baseline=16.48	paragraphHeight=20.0
+accordion-panel	scale=2.0	baselineInParagraph=19.1	paragraphHeight=25.5	authoredLineHeight=24.0.sp

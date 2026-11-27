@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const SMOKE_SPECS = [
   'smoke.spec.ts',
+  'fonts.spec.ts',
   'colors.spec.ts',
   'proof.spec.ts',
   'tokens.spec.ts',
@@ -12,7 +13,11 @@ const SMOKE_SPECS = [
   'material-first-paint.spec.ts',
   'button.spec.ts',
   'input.spec.ts',
+  'experience.spec.ts',
+  'kbd.spec.ts',
   'checkbox.spec.ts',
+  'selection.spec.ts',
+  'progress-author.spec.ts',
   'pin-input.spec.ts',
 ];
 

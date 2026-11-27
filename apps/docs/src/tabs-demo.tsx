@@ -11,9 +11,12 @@
  * switcher, so the single page carries both renderers under one [data-theme].
  */
 import '@labpics/ui-core/tabs';
+import '@labpics/ui-core/textarea';
 import type { LabTabItem, LabTabs } from '@labpics/ui-core/tabs';
+import { Card } from '@labpics/ui-react/card';
 import { Tab, TabPanel, Tabs } from '@labpics/ui-react/tabs';
-import { StrictMode, useState } from 'react';
+import { Textarea } from '@labpics/ui-react/textarea';
+import { Fragment, StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { wireThemeSwitch } from './theme-switch.js';
 
@@ -32,6 +35,35 @@ const DEMO_TABS: ReadonlyArray<LabTabItem> = [
 for (const el of document.querySelectorAll<LabTabs>('lab-tabs')) {
   el.items = DEMO_TABS;
 }
+
+// A real editing flow; switching views must preserve both DOM and local state.
+const labScene = document.querySelector('[data-testid="lit-renderer"]');
+for (const variant of ['tinted', 'underlined'] as const) {
+  for (const orientation of ['horizontal', 'vertical'] as const) {
+    const el = document.createElement('lab-tabs');
+    el.dataset.testid = `lit-${variant}-${orientation}`;
+    el.items = [
+      { value: 'draft', label: 'Draft' },
+      { value: 'details', label: 'Details' },
+      { value: 'locked', label: 'Locked', disabled: true },
+      { value: 'history', label: 'History' },
+    ];
+    el.defaultValue = 'draft';
+    el.variant = variant;
+    el.orientation = orientation;
+    el.label = 'Project views';
+    el.innerHTML =
+      '<lab-textarea slot="draft" label="Draft text" value="Keep this draft"></lab-textarea><div slot="details"><input aria-label="Project name" value="LabUI"></div><div slot="locked">Locked</div><div slot="history">Saved revisions</div>';
+    labScene?.append(el);
+  }
+}
+const refusal = document.createElement('lab-tabs');
+refusal.dataset.testid = 'lit-controlled';
+refusal.items = DEMO_TABS;
+refusal.value = 'account';
+refusal.innerHTML =
+  '<div slot="account">Approved panel</div><div slot="password">Requested panel</div>';
+labScene?.append(refusal);
 
 const mount = document.querySelector<HTMLElement>('#react-root');
 if (!mount) throw new Error('Missing #react-root mount node in tabs.html');
@@ -83,6 +115,82 @@ function ReactEventSpecimen() {
   );
 }
 
+function DraftPanel() {
+  const [count, setCount] = useState(0);
+  return (
+    <>
+      <Textarea label="Draft text" defaultValue="Keep this draft" />
+      <button type="button" onClick={() => setCount(count + 1)}>
+        Saved {count}
+      </button>
+    </>
+  );
+}
+
+function FragmentEditor({ value }: { value: string }) {
+  const [draft, setDraft] = useState(`draft-${value}`);
+  return (
+    <input
+      aria-label={`Draft ${value}`}
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+    />
+  );
+}
+function ReorderedFragments() {
+  const [order, setOrder] = useState(['a', 'b']);
+  return (
+    <div data-testid="react-reorder">
+      <button type="button" onClick={() => setOrder([...order].reverse())}>
+        Reverse tabs
+      </button>
+      <Tabs defaultValue="a" label="Reordered views">
+        {order.map((value) => (
+          <Fragment key={value}>
+            <Tab value={value}>{value}</Tab>
+            <TabPanel value={value}>
+              <FragmentEditor value={value} />
+            </TabPanel>
+          </Fragment>
+        ))}
+      </Tabs>
+    </div>
+  );
+}
+
+function ProjectTabs({
+  variant,
+  orientation,
+  testId,
+}: { variant: 'tinted' | 'underlined'; orientation: 'horizontal' | 'vertical'; testId?: string }) {
+  return (
+    <Tabs
+      data-testid={testId ?? `react-${variant}-${orientation}`}
+      label="Project views"
+      variant={variant}
+      orientation={orientation}
+      defaultValue="draft"
+    >
+      <>
+        <Tab value="draft">Draft</Tab>
+        <Tab value="details">Details</Tab>
+        <Tab value="locked" disabled>
+          Locked
+        </Tab>
+        <Tab value="history">History</Tab>
+      </>
+      <TabPanel value="draft">
+        <DraftPanel />
+      </TabPanel>
+      <TabPanel value="details">
+        <input aria-label="Project name" defaultValue="LabUI" />
+      </TabPanel>
+      <TabPanel value="locked">Locked</TabPanel>
+      <TabPanel value="history">Saved revisions</TabPanel>
+    </Tabs>
+  );
+}
+
 createRoot(mount).render(
   <StrictMode>
     <span data-testid="react-tabs">
@@ -109,5 +217,24 @@ createRoot(mount).render(
       </Tabs>
     </span>
     <ReactEventSpecimen />
+    <ReorderedFragments />
+    <ProjectTabs variant="tinted" orientation="horizontal" />
+    <ProjectTabs variant="tinted" orientation="vertical" />
+    <ProjectTabs variant="underlined" orientation="horizontal" />
+    <ProjectTabs variant="underlined" orientation="vertical" />
+    <Tabs data-testid="react-controlled" value="account">
+      {demoTabChildren()}
+    </Tabs>
+    {(['solid', 'glass', 'acrylic'] as const).map((material) => (
+      <div key={material} data-material={material} data-testid={`tabs-material-${material}`}>
+        <Card heading={`Project · ${material}`}>
+          <ProjectTabs
+            variant="tinted"
+            orientation="horizontal"
+            testId={`react-material-${material}`}
+          />
+        </Card>
+      </div>
+    ))}
   </StrictMode>,
 );

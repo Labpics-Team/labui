@@ -2,8 +2,10 @@
  * Сканер no-magic-zindex — z-шкала как самоисполняемый контракт.
  *
  * docs/dimension-contract.md §7 — закон, который исполняет этот гард. Компонент
- * НИКОГДА не пишет голое число z-index: каждый глобальный слой едет на именованном
- * токене `--lab-z-*` (15 уровней SSOT @labpics/ui-tokens). Так закрывается КЛАСС
+ * использует `--lab-z-*` для глобального слоя. Целые локальные слои разрешены
+ * только у потомков явно изолированной поверхности (`isolation: isolate`).
+ * Локальность стека: https://www.w3.org/TR/compositing-1/#isolation.
+ * Так закрывается КЛАСС
  * «войн z-index»: перекрытие нельзя выиграть, вписав 9999, — только сдвинувшись по
  * шкале. Сосед no-magic-dimension ловит длины px/rem/em, но z-index безразмерный и
  * в его поле не попадает; этот гард закрывает ровно эту дыру.
@@ -25,7 +27,9 @@
  * сканер читает shadow-близнеца (TS) и React-близнеца (CSS) одинаково.
  */
 import { globSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
+import ts from 'typescript';
+import { type CssDeclaration, analyzeCssSource } from './css-source.js';
 import { repoRoot } from './no-literal-colour-fallback.js';
 import {
   canonicalTokens,
@@ -158,10 +162,77 @@ export function scanZIndexSource(
 ): ZIndexViolation[] {
   const out: ZIndexViolation[] = [];
   const isTs = relPath.endsWith('.ts') || relPath.endsWith('.tsx');
-  const text = stripComments(isTs ? normalizeLit(source) : source, isTs);
-  const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
+  const clean = stripComments(source, isTs);
+  const analyzed = analyzeCssSource(clean, isTs);
+  const text = isTs ? normalizeLit(analyzed.text, true) : analyzed.text;
+  const lineAt = (index: number): number =>
+    clean.slice(0, analyzed.sourceIndex(index)).split('\n').length;
+
+  const declarations = analyzed.declarations;
+  const isolations = declarations.filter((declaration) =>
+    ['isolation', 'all'].includes(declaration.property),
+  );
+  const isolates = (declaration: CssDeclaration): boolean =>
+    declaration.property === 'isolation' && declaration.value.toLowerCase() === 'isolate';
+  const sameSelector = (a: readonly string[], b: readonly string[]): boolean =>
+    a.length === b.length && a.every((atom, i) => atom === b[i]);
+  const priority = (a: CssDeclaration, b: CssDeclaration): number =>
+    Number(a.important) - Number(b.important) || a.start - b.start;
+  const isLocal = (index: number): boolean => {
+    const target = declarations.find(
+      (declaration) =>
+        declaration.property === 'z-index' && index >= declaration.start && index < declaration.end,
+    );
+    if (!target?.complete || target.selectors.length === 0) return false;
+    const guaranteed = (declaration: CssDeclaration): boolean =>
+      declaration.conditions.every((condition) =>
+        target.conditions.some((active) => active.key === condition.key),
+      );
+    return target.selectors.every((selector) =>
+      isolations.some(
+        (isolation) =>
+          isolation.document === target.document &&
+          isolation.selectors.some((root) => {
+            if (
+              !root.every((atom, i) => atom === selector[i]) ||
+              ![' ', '>'].includes(selector[root.length] ?? '')
+            )
+              return false;
+            const matching = isolations.filter(
+              (declaration) =>
+                declaration.document === target.document &&
+                declaration.selectors.some((other) => sameSelector(root, other)),
+            );
+            // Same-selector cascade: !important wins before source order. A reset in
+            // a condition not guaranteed here can still invalidate the proof.
+            const winner = matching.filter(guaranteed).sort(priority).at(-1);
+            if (!winner || !isolates(winner)) return false;
+            return !isolations.some((declaration) => {
+              if (isolates(declaration)) return false;
+              // Literals may be composed in any order. A potential reset anywhere
+              // in the same source invalidates a proof from another literal.
+              if (declaration.document !== target.document) return true;
+              const same = declaration.selectors.every((other) => sameSelector(root, other));
+              const layered = [...declaration.conditions, ...winner.conditions].some((condition) =>
+                condition.key.startsWith('@layer '),
+              );
+              if (!same || layered) {
+                // Without a DOM/specificity/layer model another selector may match
+                // the same ancestor. Refuse the exception instead of guessing.
+                return Number(declaration.important) >= Number(winner.important) || layered;
+              }
+              return !guaranteed(declaration) && priority(declaration, winner) > 0;
+            });
+          }),
+      ),
+    );
+  };
 
   for (const m of text.matchAll(ZINDEX_DECL)) {
+    // Only integer layers of proven descendants are local. Root placement and
+    // arithmetic over global --lab-z-* levels still obey the global scale.
+    if (/^-?\d+(?:\s*!important)?$/i.test((m[1] as string).trim()) && isLocal(m.index ?? 0))
+      continue;
     analyzeZValue((m[1] as string).trim(), relPath, lineAt(m.index ?? 0), zLevels, out);
   }
   // camelCase существует только в JS/TS-объекте стилей; в CSS такой формы нет.
@@ -218,6 +289,41 @@ export function consumedZLevels(): Map<string, number> {
   return used;
 }
 
+/** Artifact filename → authored source, read from the same producer that ships CSS. */
+export function cssArtifactSources(source: string): Map<string, string> {
+  const file = ts.createSourceFile('copy-artifacts.ts', source, ts.ScriptTarget.Latest, true);
+  const bindings = new Map<string, string>();
+  const artifacts = new Map<string, string>();
+  for (const statement of file.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier))
+      continue;
+    const names = statement.importClause?.namedBindings;
+    if (names && ts.isNamedImports(names))
+      for (const name of names.elements)
+        bindings.set(name.name.text, statement.moduleSpecifier.text);
+  }
+  const visit = (node: ts.Node): void => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'writeFileSync'
+    ) {
+      const [target, value] = node.arguments;
+      if (target && value && ts.isCallExpression(target) && ts.isIdentifier(value)) {
+        const filename = target.arguments.find(
+          (part) => ts.isStringLiteral(part) && part.text.endsWith('.css'),
+        );
+        const imported = bindings.get(value.text);
+        if (filename && ts.isStringLiteral(filename) && imported)
+          artifacts.set(filename.text, imported);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  return artifacts;
+}
+
 /** Имя компонента → множество его `--lab-z-*` слоёв, для core и react раздельно. */
 export function zLevelsByComponent(): {
   core: Map<string, Set<string>>;
@@ -225,6 +331,17 @@ export function zLevelsByComponent(): {
 } {
   const core = new Map<string, Set<string>>();
   const react = new Map<string, Set<string>>();
+  const producer = 'packages/core/scripts/copy-artifacts.ts';
+  const shared = cssArtifactSources(readFileSync(resolve(repoRoot, producer), 'utf8'));
+  const add = (bucket: Map<string, Set<string>>, name: string, source: string): void => {
+    for (const m of source.matchAll(ZINDEX_DECL)) {
+      for (const ref of (m[1] as string).matchAll(Z_REF)) {
+        const set = bucket.get(name) ?? new Set<string>();
+        set.add(ref[0]);
+        bucket.set(name, set);
+      }
+    }
+  };
 
   for (const rel of zSurfaceFiles()) {
     const coreMatch = /packages\/core\/src\/components\/([^/]+)\//.exec(rel);
@@ -234,14 +351,23 @@ export function zLevelsByComponent(): {
       : reactMatch
         ? { name: reactMatch[1] as string, bucket: react }
         : null;
-    if (!target) continue;
+    if (target) add(target.bucket, target.name, readNormalized(rel));
 
-    for (const m of readNormalized(rel).matchAll(ZINDEX_DECL)) {
-      for (const ref of (m[1] as string).matchAll(Z_REF)) {
-        const set = target.bucket.get(target.name) ?? new Set<string>();
-        set.add(ref[0]);
-        target.bucket.set(target.name, set);
-      }
+    const renderer = /packages\/react\/src\/([^/]+)\.tsx$/.exec(rel);
+    if (!renderer) continue;
+    for (const { fileName } of ts.preProcessFile(readFileSync(resolve(repoRoot, rel), 'utf8'))
+      .importedFiles) {
+      const imported = /^@labpics\/ui-core\/(.+\.css)$/.exec(fileName);
+      if (!imported) continue;
+      // Follow the actual artifact producer, including renamed export/source pairs.
+      // A new shared CSS import must resolve; it cannot silently vanish from parity.
+      const source = shared.get(imported[1] as string);
+      if (!source) throw new Error(`${rel}: no CSS producer for ${fileName}`);
+      const path = relative(
+        repoRoot,
+        resolve(repoRoot, dirname(producer), source.replace(/\.js$/, '.ts')),
+      ).replaceAll('\\', '/');
+      add(react, renderer[1] as string, readNormalized(path));
     }
   }
   return { core, react };

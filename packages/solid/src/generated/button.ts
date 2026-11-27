@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/button';
 import type { LabButton } from '@labpics/ui-core/button';
-import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-button>, взятые прямо из класса ядра (LabButton). */
 export type ButtonProps = Pick<LabButton, 'type' | 'kind' | 'size' | 'icon' | 'loading' | 'disabled' | 'htmlType'>;

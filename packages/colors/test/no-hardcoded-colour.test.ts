@@ -49,8 +49,57 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
     expect(scanSource('p.css', 'background: rgba(0, 0, 0, 0.5);')).toHaveLength(1);
   });
 
+  it('separates Switch mask coverage from visible paints', () => {
+    const path = 'packages/core/src/components/switch/styles.ts';
+    const mask = 'const svg = `<svg><rect fill="white"/><path fill="black"/></svg>`;';
+    expect(scanSource(path, mask)).toEqual([]);
+    expect(scanSource('component.ts', mask)).toHaveLength(2);
+    expect(scanSource(path, mask.replace('black', 'red'))).toMatchObject([{ token: 'red' }]);
+    expect(scanSource(path, `${mask}\nconst css = '.x { color: white }';`)).toMatchObject([
+      { token: 'white' },
+    ]);
+  });
+
+  it('permits achromatic coverage only in complete mask declarations', () => {
+    for (const property of ['mask', 'mask-image', '-webkit-mask', '-webkit-mask-image']) {
+      const rule = `.x { ${property}: linear-gradient(black, #000000, white, #FFF, transparent); }`;
+      expect(scanSource('p.css', rule)).toEqual([]);
+      expect(scanSource('p.ts', `const css = \`${rule}\`;`)).toEqual([]);
+      expect(scanSource('p.ts', `const css = \`${rule}\${unknown}\`;`)).toHaveLength(4);
+      expect(scanSource('p.css', `${rule} .y { background: white; color: #000; }`)).toHaveLength(2);
+      expect(scanSource('p.css', `.x { ${property}: linear-gradient(red, #123); }`)).toHaveLength(
+        2,
+      );
+      expect(
+        scanSource('p.css', `.x { ${property}: linear-gradient(rgb(0 0 0), transparent); }`),
+      ).toHaveLength(1);
+    }
+    expect(scanSource('p.css', '.x { --mask: linear-gradient(black, white); }')).toHaveLength(2);
+    expect(
+      scanSource('p.css', '.x { background-image: linear-gradient(black, white); }'),
+    ).toHaveLength(2);
+  });
+
   it('distinguishes numeric colour serialization and property access from hardcoded paints', () => {
     expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / ${c.a})`;')).toEqual([]);
+    expect(
+      scanSource('p.ts', 'const fill = `rgb(${n(c.r)} ${n(c.g)} ${n(c.b)} / ${n(c.a)})`;'),
+    ).toEqual([]);
+    for (const literal of ['0', '-1', '(0)', '0x00', '1 - 1']) {
+      expect(
+        scanSource(
+          'p.ts',
+          `const fill = \`rgb(\$\{${literal}\} \$\{${literal}\} \$\{${literal}\})\`;`,
+        ),
+      ).toHaveLength(1);
+      expect(
+        scanSource(
+          'p.ts',
+          `const fill = \`rgb(\$\{c.r\} \$\{c.g\} \$\{c.b\} / \$\{${literal}\})\`;`,
+        ),
+      ).toHaveLength(1);
+    }
+    expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / ${.5})`;')).toHaveLength(1);
     expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} 0 / ${c.a})`;')).toHaveLength(1);
     expect(scanSource('p.ts', 'const fill = `rgb(${c.r} ${c.g} ${c.b} / .5)`;')).toHaveLength(1);
     expect(scanSource('p.ts', 'const fill = `rgb(${0} ${0} ${0})`;')).toHaveLength(1);
@@ -80,6 +129,39 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
   it('DETECTS a named colour and a system colour (whole-word)', () => {
     expect(scanSource('p.css', 'color: rebeccapurple;')).toHaveLength(1);
     expect(scanSource('p.css', 'background: Canvas;')).toHaveLength(1);
+  });
+
+  it('permits system colours only in active forced-colors, including nested rules', () => {
+    expect(
+      scanSource(
+        'p.css',
+        '@media (forced-colors: active) { .x { content: "{"; color: CanvasText; } } .y { color: CanvasText; }',
+      ),
+    ).toHaveLength(1);
+    const source =
+      '@media (forced-colors: active) { @supports (display: grid) { .x { outline: 1px solid CanvasText; } } .y { color: red; } }\n.z { color: CanvasText; }';
+    expect(scanSource('p.css', source).map((hit) => hit.token)).toEqual(['red', 'CanvasText']);
+    expect(
+      scanSource('p.css', '@media (forced-colors: none) { .x { color: CanvasText; } }'),
+    ).toHaveLength(1);
+    expect(
+      scanSource(
+        'p.css',
+        '@media (forced-colors: active), (min-width: 1px) { .x { color: CanvasText; } }',
+      ),
+    ).toHaveLength(1);
+    expect(
+      scanSource(
+        'p.ts',
+        'const css = `@media (forced-colors: active) { .x { color: CanvasText; } }`;',
+      ),
+    ).toEqual([]);
+    expect(
+      scanSource(
+        'p.ts',
+        'const css = `@media (forced-colors: active) { ${unknown} .x { color: CanvasText; } }`;',
+      ),
+    ).toHaveLength(1);
   });
 
   it('DETECTS case-insensitively (#FFF / RGB( / BLACK)', () => {

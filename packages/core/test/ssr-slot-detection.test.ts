@@ -23,8 +23,11 @@ describe('SSR: hasDefaultSlotContent не падает под @lit-labs/ssr', ()
   });
 
   it('button без контента слота (icon-only-путь) не бросает и даёт DSD', () => {
-    const out = renderToString(html`<lab-button type="accent"></lab-button>`);
+    const out = renderToString(
+      html`<lab-button type="accent" icon aria-label="Добавить"></lab-button>`,
+    );
     expect(out).toContain('shadowrootmode');
+    expect(out).toMatch(/<button\b[^>]*aria-label="Добавить"/);
   });
 
   it('checkbox и switch (тоже зовут hasDefaultSlotContent) рендерятся в DSD', () => {

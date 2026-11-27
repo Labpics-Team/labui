@@ -5,12 +5,12 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/avatar';
 import type { LabAvatar } from '@labpics/ui-core/avatar';
-import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-avatar>, взятые прямо из класса ядра (LabAvatar). */
-export type AvatarProps = Pick<LabAvatar, 'size' | 'color' | 'status' | 'src' | 'name'>;
+export type AvatarProps = Pick<LabAvatar, 'size' | 'color' | 'status' | 'src' | 'name' | 'initials' | 'fallback' | 'decorative' | 'statusLabel'>;
 
 /**
  * <Avatar> — тонкая Vue-обёртка над <lab-avatar>.
@@ -25,6 +25,10 @@ export const Avatar: LabComponent<AvatarProps, never> = createLabComponent<
       { name: 'status', attr: 'status', kind: 'string' },
       { name: 'src', attr: 'src', kind: 'string' },
       { name: 'name', attr: 'name', kind: 'string' },
+      { name: 'initials', attr: 'initials', kind: 'string' },
+      { name: 'fallback', attr: 'fallback', kind: 'string' },
+      { name: 'decorative', attr: 'decorative', kind: 'boolean' },
+      { name: 'statusLabel', attr: 'status-label', kind: 'string' },
   ],
   events: [],
 });

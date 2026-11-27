@@ -1,3 +1,4 @@
+import { switchProfile } from '../switch.js';
 import type { TokensConfig } from './types.js';
 
 /**
@@ -12,7 +13,7 @@ import type { TokensConfig } from './types.js';
  * 4px-grid spine of the Dimention scale (4/8/12/16/20/24/28/32/40/48/64...).
  * Step 0 is the explicit zero token, closing the `pt/0 @ 133.3%` data gap.
  *
- * Typography: continuous fluid gradient. base 16px (= Figma font-size-m / px.7)
+ * Typography: configurable fluid gradient, separate from authored text roles. base 16px (= Figma font-size-m / px.7)
  * is identical at both anchors; step +7 reaches ~112px at the wide anchor
  * (= Figma font-size-6xl / px.25) and is damped to ~57px at the narrow anchor.
  */
@@ -86,15 +87,15 @@ export const defaultConfig: TokensConfig = {
       // DESIGN-CHOICE per ADR-0006 §2 (micro not snapping 4px grid w/o visible shift):
       // switch tracks, loader strokes 3px, checkbox tiny=14px. Added to reach
       // MIGRATED=27/27 + no-magic guard while keeping exact values (E1).
-      'switch-track-s': 2.25,
-      'switch-track-m': 2.75,
-      'switch-track-l': 3.25,
-      'switch-track-h-s': 1.25,
-      'switch-track-h-m': 1.5,
-      'switch-track-h-l': 1.75,
-      'switch-thumb-s': 0.875,
-      'switch-thumb-m': 1.125,
-      'switch-thumb-l': 1.375,
+      'switch-track-s': switchProfile.sizes.s.trackWidth / 16,
+      'switch-track-m': switchProfile.sizes.m.trackWidth / 16,
+      'switch-track-l': switchProfile.sizes.l.trackWidth / 16,
+      'switch-track-h-s': switchProfile.sizes.s.trackHeight / 16,
+      'switch-track-h-m': switchProfile.sizes.m.trackHeight / 16,
+      'switch-track-h-l': switchProfile.sizes.l.trackHeight / 16,
+      'switch-thumb-s': (switchProfile.sizes.s.trackHeight - 2 * switchProfile.thumb.padding) / 16,
+      'switch-thumb-m': (switchProfile.sizes.m.trackHeight - 2 * switchProfile.thumb.padding) / 16,
+      'switch-thumb-l': (switchProfile.sizes.l.trackHeight - 2 * switchProfile.thumb.padding) / 16,
       'loader-stroke-s': 0.125,
       'loader-stroke-m': 0.1875,
       'loader-stroke-l': 0.25,
@@ -218,8 +219,8 @@ export const defaultConfig: TokensConfig = {
       '6': '5xl',
       '7': '6xl', // display-xl
     },
-    // Интерлиньяж выведен из отпечатков Geist оптическим законом
-    // (lineHeightOptical), а не бэндами — поэтому здесь поля нет. См. типы.
+    // Legacy continuous leading/tracking heuristics belong to this fluid scale.
+    // Exact source roles live in text-styles.json and do not follow these ratios.
     // Font-weight roles. `semibold` (600) is the emphasis weight every component
     // used as a literal before this scale existed; values match 1:1 so the scale
     // is value-preserving. A client re-weights its whole UI via one override.

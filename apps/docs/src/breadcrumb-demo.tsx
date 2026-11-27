@@ -33,7 +33,11 @@ const DEMO_CRUMBS: ReadonlyArray<LabBreadcrumbItem> = [
 ];
 
 const litBreadcrumb = document.querySelector('lab-breadcrumb');
-if (litBreadcrumb) litBreadcrumb.items = DEMO_CRUMBS;
+if (litBreadcrumb) {
+  litBreadcrumb.items = DEMO_CRUMBS;
+  litBreadcrumb.maxItems = 0;
+  litBreadcrumb.label = 'Breadcrumb';
+}
 
 const mount = document.querySelector<HTMLElement>('#react-root');
 if (!mount) throw new Error('Missing #react-root mount node in breadcrumb.html');
@@ -41,7 +45,7 @@ if (!mount) throw new Error('Missing #react-root mount node in breadcrumb.html')
 createRoot(mount).render(
   <StrictMode>
     <span data-testid="react-breadcrumb">
-      <Breadcrumb items={DEMO_CRUMBS} />
+      <Breadcrumb items={DEMO_CRUMBS} maxItems={0} label="Breadcrumb" />
     </span>
   </StrictMode>,
 );

@@ -1,116 +1,465 @@
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import type { AvatarProps } from '@labpics/ui-react/avatar';
 import { type Page, expect, test } from '@playwright/test';
 
-/**
- * Avatar suite — a presentational primitive, verified on BOTH renderers.
- *
- *   1. Delivered HTML carries the Lit element; the React island mounts client-side.
- *   2. Honest fallback — no src ⇒ initials; no src + no name ⇒ the anonymous glyph.
- *   3. a11y — the initials disc is role="img" with the name as its accessible label.
- *   4. Visual parity — disc surface, label colour, and status-dot colour match.
- *   5. Theme — flipping [data-theme] re-skins both renderers.
- */
-
-const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
-const fg = (el: HTMLElement) => getComputedStyle(el).color;
-
-/** The painted disc for a Lit host is .avatar in its shadow root. */
-function litDisc(page: Page, testid: string) {
-  return page.getByTestId(testid).locator('.avatar');
-}
-function reactDisc(page: Page, testid: string) {
-  return page.getByTestId(testid).locator('.lab-avatar-disc');
-}
-function litStatus(page: Page, testid: string) {
-  return page.getByTestId(testid).locator('.status');
-}
-function reactStatus(page: Page, testid: string) {
-  return page.getByTestId(testid).locator('.lab-avatar-status');
-}
+const renderers = ['lit', 'react'] as const;
+const colors = [
+  'red',
+  'orange',
+  'yellow',
+  'green',
+  'teal',
+  'mint',
+  'blue',
+  'indigo',
+  'purple',
+  'pink',
+];
+const sourceTextures = (
+  JSON.parse(
+    readFileSync(
+      new URL('../../../assets/avatar/manifest.generated.json', import.meta.url),
+      'utf8',
+    ),
+  ) as { variants: { color: string; mode: string; webSha256: string }[] }
+).variants;
+const svg =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#3586da"/></svg>';
+const state = (page: Page, renderer: string) => page.getByTestId(`${renderer}-state`);
+const setAvatar = async (page: Page, props: AvatarProps) => {
+  await page.evaluate(
+    (props) => (window as unknown as { setAvatar: (p: AvatarProps) => void }).setAvatar(props),
+    props,
+  );
+};
+const paint = (el: Element) => {
+  const s = getComputedStyle(el);
+  return {
+    color: s.color,
+    background: s.backgroundImage,
+    family: s.fontFamily,
+    weight: s.fontWeight,
+    fontSize: s.fontSize,
+    lineHeight: s.lineHeight,
+    mask: s.maskImage,
+  };
+};
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/avatar.html');
+  await page.goto('/_fixtures/avatar-author.html');
+  await expect(state(page, 'react')).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
 });
 
-test('delivered HTML carries the Lit element (React island mounts on the client)', async ({
-  request,
-}) => {
-  const body = await (await request.get('/avatar.html')).text();
-  expect(body).toMatch(/<lab-avatar/i);
-  expect(body).toContain('id="react-root"');
-});
-
-test('honest fallback: a name with no image renders initials on both renderers', async ({
+test('texture URLs retain an external stylesheet base through Lit and React styles', async ({
   page,
 }) => {
-  await expect(reactDisc(page, 'react-brand-online')).toBeVisible();
-  // "Ada Lovelace" → "AL"; no <img> because no src was given.
-  await expect(litDisc(page, 'lit-brand-online')).toContainText('AL');
-  await expect(reactDisc(page, 'react-brand-online')).toContainText('AL');
-  await expect(page.getByTestId('lit-brand-online').locator('img')).toHaveCount(0);
-  await expect(page.getByTestId('react-brand-online').locator('img')).toHaveCount(0);
+  await page.route('**/nested-avatar-assets/theme.css', (route) =>
+    route.fulfill({
+      contentType: 'text/css',
+      body: '[data-avatar-asset-probe] { --lab-avatar-texture-blue:url("./blue.webp"); }',
+    }),
+  );
+  await page.route('**/nested-avatar-assets/blue.webp', (route) =>
+    route.fulfill({
+      contentType: 'image/webp',
+      body: readFileSync(
+        new URL('../../../packages/core/src/assets/avatar/blue-light-normal.webp', import.meta.url),
+      ),
+    }),
+  );
+  await setAvatar(page, { fallback: 'texture', color: 'blue' });
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        document.body.dataset.avatarAssetProbe = '';
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = '/nested-avatar-assets/theme.css';
+        link.onload = () => resolve();
+        link.onerror = () => reject(new Error('Stylesheet failed'));
+        document.head.append(link);
+      }),
+  );
+  for (const renderer of renderers) {
+    const url = await state(page, renderer)
+      .locator('.lab-avatar-texture')
+      .evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(url).toContain('/nested-avatar-assets/blue.webp');
+  }
 });
 
-test('honest fallback: no name and no image renders the anonymous glyph, not initials', async ({
+test('texture resources paint in both renderers across appearance, contrast and nested scopes', async ({
   page,
 }) => {
-  // The anonymous specimen has neither src nor name → a person glyph (an <svg>),
-  // never a broken image and never stray letters.
-  await expect(litDisc(page, 'lit-anon').locator('svg')).toHaveCount(1);
-  await expect(reactDisc(page, 'react-anon').locator('svg')).toHaveCount(1);
+  const checksums = new Map<string, string>();
+  let checked = 0;
+  for (const theme of ['light', 'dark'])
+    for (const contrast of ['normal', 'more']) {
+      await page.evaluate(
+        ({ theme, contrast }) => {
+          Object.assign(document.documentElement.dataset, { theme, contrast });
+        },
+        { theme, contrast },
+      );
+      for (const color of colors) {
+        const paints = await Promise.all(
+          renderers.map((renderer) =>
+            page
+              .getByTestId(`${renderer}-texture-l-${color}`)
+              .locator('.lab-avatar-texture')
+              .evaluate(async (el) => {
+                const background = getComputedStyle(el).backgroundImage;
+                const url = background.match(/^url\("(.+)"\)$/)?.[1];
+                if (!url) throw new Error(`Missing texture: ${background}`);
+                const image = new Image();
+                image.src = url;
+                await image.decode();
+                const canvas = document.createElement('canvas');
+                canvas.width = canvas.height = 48;
+                const context = canvas.getContext('2d');
+                if (!context) throw new Error('Missing 2D canvas');
+                context.drawImage(image, 0, 0, 48, 48);
+                const pixels = context.getImageData(12, 12, 24, 24).data;
+                const distinct = new Set<string>();
+                for (let i = 0; i < pixels.length; i += 4)
+                  distinct.add(`${pixels[i]},${pixels[i + 1]},${pixels[i + 2]}`);
+                return {
+                  url,
+                  width: image.naturalWidth,
+                  height: image.naturalHeight,
+                  distinct: distinct.size,
+                };
+              }),
+          ),
+        );
+        const [litPaint, reactPaint] = paints;
+        if (!litPaint || !reactPaint) throw new Error('Expected both Lit and React Avatar paints');
+        expect(litPaint).toEqual(reactPaint);
+        expect(litPaint.width).toBe(256);
+        expect(litPaint.height).toBe(256);
+        expect(litPaint.distinct).toBeGreaterThan(250);
+        const source = sourceTextures.find(
+          (variant) => variant.color === color && variant.mode === `${theme}-${contrast}`,
+        );
+        if (!source) throw new Error(`Missing authored texture ${color}/${theme}/${contrast}`);
+        let checksum = checksums.get(litPaint.url);
+        if (!checksum) {
+          const response = await page.request.get(litPaint.url);
+          expect(response.ok()).toBe(true);
+          checksum = createHash('sha256')
+            .update(await response.body())
+            .digest('hex');
+          checksums.set(litPaint.url, checksum);
+        }
+        // Bundlers may share a URL for byte-identical variants. Every semantic
+        // color/mode must still resolve to its own authored resource bytes.
+        expect(checksum).toBe(source.webSha256);
+        checked++;
+      }
+    }
+  expect(checked).toBe(sourceTextures.length);
+  await page.getByTestId('lit-texture-l-blue').evaluate((el) => {
+    el.setAttribute('data-theme', 'light');
+    el.setAttribute('data-contrast', 'normal');
+  });
+  expect(
+    await page
+      .getByTestId('lit-texture-l-blue')
+      .locator('.lab-avatar-texture')
+      .evaluate((el) => getComputedStyle(el).backgroundImage),
+  ).toContain('blue-light-normal');
 });
 
-test('a11y: the initials disc is role="img" with the name as its label', async ({ page }) => {
-  await expect(reactDisc(page, 'react-success-away')).toHaveAttribute('role', 'img');
-  await expect(reactDisc(page, 'react-success-away')).toHaveAttribute('aria-label', 'Grace Hopper');
-  await expect(litDisc(page, 'lit-success-away')).toHaveAttribute('role', 'img');
-  await expect(litDisc(page, 'lit-success-away')).toHaveAttribute('aria-label', 'Grace Hopper');
+test('name, letter mark, texture and presence form one accessible image', async ({ page }) => {
+  await setAvatar(page, { name: 'Анна Каренина', status: 'online' });
+  for (const renderer of renderers) {
+    await expect(state(page, renderer).locator('.lab-avatar-initials')).toHaveText('АК');
+    await expect(
+      renderer === 'lit' ? state(page, renderer).getByRole('img') : state(page, renderer),
+    ).toHaveAccessibleName('Анна Каренина, В сети');
+  }
+  await setAvatar(page, {
+    name: 'Полное имя',
+    initials: '👩🏽‍💻',
+    status: 'away',
+    statusLabel: 'Away from keyboard',
+  });
+  for (const renderer of renderers) {
+    await expect(state(page, renderer).locator('.lab-avatar-initials')).toHaveText('👩🏽‍💻');
+    await expect(
+      renderer === 'lit' ? state(page, renderer).getByRole('img') : state(page, renderer),
+    ).toHaveAccessibleName('Полное имя, Away from keyboard');
+  }
+  await setAvatar(page, {
+    name: 'Полное имя',
+    fallback: 'texture',
+    decorative: true,
+    status: 'dnd',
+  });
+  for (const renderer of renderers) {
+    await expect(state(page, renderer).locator('.lab-avatar-texture')).toHaveCount(1);
+    await expect(state(page, renderer).locator('.lab-avatar-initials')).toHaveCount(0);
+    const image =
+      renderer === 'lit'
+        ? state(page, renderer).locator('[data-lab-avatar]')
+        : state(page, renderer);
+    await expect(image).not.toHaveAttribute('role');
+    await expect(image).not.toHaveAttribute('aria-label');
+    await expect(image).toHaveAttribute('aria-hidden', 'true');
+  }
+  await setAvatar(page, { name: '', src: '  ' });
+  for (const renderer of renderers) {
+    await expect(state(page, renderer).locator('img')).toHaveCount(0);
+    await expect(state(page, renderer).locator('.lab-avatar-texture')).toHaveCount(1);
+  }
 });
 
-test('a11y: the status meaning is not colour-only (a visually-hidden label carries it)', async ({
-  page,
-}) => {
-  await expect(page.getByTestId('lit-danger-dnd')).toContainText('Do not disturb');
-  await expect(page.getByTestId('react-danger-dnd')).toContainText('Do not disturb');
+test('ten author colors share geometry, a real rounded font and theme roles', async ({ page }) => {
+  expect(await page.evaluate(() => document.fonts.check('800 14px "Sunghyun Sans"', 'Д'))).toBe(
+    true,
+  );
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate((theme) => {
+      document.documentElement.dataset.theme = theme;
+    }, theme);
+    for (const [size, diameter] of [
+      ['s', 24],
+      ['m', 32],
+      ['l', 48],
+    ] as const) {
+      for (const color of colors) {
+        const lit = page.getByTestId(`lit-${size}-${color}`);
+        const react = page.getByTestId(`react-${size}-${color}`);
+        for (const avatar of [lit, react]) {
+          const box = await avatar.boundingBox();
+          expect(box?.width).toBe(diameter);
+          expect(box?.height).toBe(diameter);
+        }
+        const actual = await react.locator('.lab-avatar-initials').evaluate(paint);
+        expect(actual).toEqual(await lit.locator('.lab-avatar-initials').evaluate(paint));
+        expect(actual.family).toContain('Sunghyun Sans');
+        expect(actual.weight).toBe('800');
+        expect(
+          await react
+            .locator('.lab-avatar-status')
+            .evaluate((el) => getComputedStyle(el).backgroundColor),
+        ).toEqual(
+          await lit
+            .locator('.lab-avatar-status')
+            .evaluate((el) => getComputedStyle(el).backgroundColor),
+        );
+      }
+    }
+  }
+  await page.evaluate(() =>
+    document.documentElement.style.setProperty('--lab-avatar-fill-blue', 'rgb(1, 2, 3)'),
+  );
+  for (const renderer of renderers)
+    expect(
+      await page
+        .getByTestId(`${renderer}-m-blue`)
+        .locator('.lab-avatar-initials')
+        .evaluate((el) => getComputedStyle(el).backgroundColor),
+    ).toBe('rgb(1, 2, 3)');
 });
 
-test('visual parity: disc surface + label colour match per colour family', async ({ page }) => {
-  await expect(reactDisc(page, 'react-brand-online')).toBeVisible();
-  for (const variant of [
-    'brand-online',
-    'success-away',
-    'danger-dnd',
-    'neutral-offline',
-  ] as const) {
-    const lit = litDisc(page, `lit-${variant}`);
-    const react = reactDisc(page, `react-${variant}`);
-    expect(await react.evaluate(bg), `${variant}: disc surface parity`).toBe(
-      await lit.evaluate(bg),
-    );
-    expect(await react.evaluate(fg), `${variant}: initials colour parity`).toBe(
-      await lit.evaluate(fg),
+test('presence cutout follows RTL and the whole avatar scales with text', async ({ page }) => {
+  await setAvatar(page, { name: 'Александра', status: 'online' });
+  for (const dir of ['ltr', 'rtl']) {
+    await page.evaluate((dir) => {
+      document.documentElement.dir = dir;
+    }, dir);
+    for (const renderer of renderers) {
+      const avatar = state(page, renderer);
+      const box = await avatar.boundingBox();
+      const dot = await avatar.locator('.lab-avatar-status').boundingBox();
+      expect(dot?.width).toBe(8);
+      expect(dot?.height).toBe(8);
+      expect((dot?.x ?? 0) - (box?.x ?? 0)).toBe(dir === 'rtl' ? 0 : 24);
+      // Browsers may preserve rem in the computed gradient instead of serializing px.
+      expect((await avatar.locator('.lab-avatar-disc').evaluate(paint)).mask).toMatch(
+        dir === 'rtl'
+          ? /circle at (?:4px|0\.25rem|calc\(0\.25rem\)) /
+          : /circle at calc\(100% - (?:4px|0\.25rem)\)/,
+      );
+    }
+  }
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '32px';
+  });
+  for (const renderer of renderers) {
+    expect((await state(page, renderer).boundingBox())?.width).toBe(64);
+    expect((await state(page, renderer).locator('.lab-avatar-status').boundingBox())?.width).toBe(
+      16,
     );
   }
 });
 
-test('visual parity: the online status dot resolves the same colour on both renderers', async ({
+test('decoded images replace fallback; failure and old requests cannot hide it', async ({
   page,
 }) => {
-  const lit = litStatus(page, 'lit-brand-online');
-  const react = reactStatus(page, 'react-brand-online');
-  await expect(react).toBeVisible();
-  expect(await react.evaluate(bg)).toBe(await lit.evaluate(bg));
+  let releaseSlow!: () => void;
+  const slow = new Promise<void>((resolve) => {
+    releaseSlow = resolve;
+  });
+  await page.route('**/avatar-slow.svg', async (route) => {
+    await slow;
+    await route.fulfill({ contentType: 'image/svg+xml', body: svg });
+  });
+  await page.route('**/avatar-ok.svg', (route) =>
+    route.fulfill({ contentType: 'image/svg+xml', body: svg }),
+  );
+  await page.route('**/avatar-error.svg', (route) =>
+    route.fulfill({ status: 404, body: 'missing' }),
+  );
+  await setAvatar(page, { name: 'Надежда', src: '/avatar-slow.svg' });
+  for (const renderer of renderers) {
+    await expect(state(page, renderer).locator('img')).toHaveCSS('opacity', '0');
+    await expect(state(page, renderer).locator('.lab-avatar-initials')).toHaveText('Н');
+  }
+  await page.evaluate(() =>
+    Object.assign(window, {
+      previousAvatarImages: [
+        document.querySelector('[data-testid="lit-state"]')?.shadowRoot?.querySelector('img'),
+        document.querySelector('[data-testid="react-state"] img'),
+      ],
+    }),
+  );
+  await setAvatar(page, { name: 'Надежда', src: '/avatar-ok.svg' });
+  for (const renderer of renderers) {
+    await expect(state(page, renderer).locator('img')).toHaveCSS('opacity', '1');
+    await expect(state(page, renderer).locator('.lab-avatar-initials')).toBeHidden();
+  }
+  await setAvatar(page, { name: 'Надежда', src: '/avatar-error.svg' });
+  for (const renderer of renderers)
+    await expect(state(page, renderer).locator('img')).toHaveCSS('opacity', '0');
+  releaseSlow();
+  await page.evaluate(() => {
+    for (const image of (window as unknown as { previousAvatarImages: HTMLImageElement[] })
+      .previousAvatarImages)
+      image.dispatchEvent(new Event('load'));
+  });
+  for (const renderer of renderers) {
+    await expect(state(page, renderer).locator('img')).toHaveCSS('opacity', '0');
+    await expect(state(page, renderer).locator('.lab-avatar-initials')).toHaveText('Н');
+  }
+  await setAvatar(page, { name: 'Надежда', src: '/avatar-ok.svg' });
+  for (const renderer of renderers)
+    await expect(state(page, renderer).locator('img')).toHaveCSS('opacity', '1');
 });
 
-test('theme: flipping [data-theme] re-skins both renderers with zero edits', async ({ page }) => {
-  const lit = litDisc(page, 'lit-brand-online');
-  const react = reactDisc(page, 'react-brand-online');
-  await expect(react).toBeVisible();
-
-  const litDark = await lit.evaluate(bg);
-  const reactDark = await react.evaluate(bg);
-
-  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
-
-  await expect.poll(() => lit.evaluate(bg)).not.toBe(litDark);
-  await expect.poll(() => react.evaluate(bg)).not.toBe(reactDark);
+test('SSR images loaded before hydration are reused and decoded on Lit and React', async ({
+  browser,
+  baseURL,
+}) => {
+  const adapter = new URL('../../../packages/vue/dist/ssr.js', import.meta.url).href;
+  const react = new URL('../../../packages/react/dist/avatar.js', import.meta.url).href;
+  const props = { name: 'Даниил', initials: 'Д', src: '/avatar-cache.svg' };
+  const output = execFileSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `
+    const {renderAvatar}=await import(${JSON.stringify(adapter)});
+    const {Avatar}=await import(${JSON.stringify(react)});
+    const {createElement}=await import('react');
+    const {renderToString}=await import('react-dom/server');
+    const props=${JSON.stringify(props)};
+    process.stdout.write(renderAvatar(props)+'<div id="react-ssr">'+renderToString(createElement(Avatar,{...props,'data-testid':'react-ssr-avatar'}))+'</div>');
+  `,
+    ],
+    { encoding: 'utf8' },
+  );
+  expect(output).toContain('shadowrootmode="open"');
+  const css = readFileSync(
+    new URL('../../../packages/core/dist/avatar.css', import.meta.url),
+    'utf8',
+  );
+  const page = await browser.newPage();
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+  let hydrate!: () => void;
+  const hold = new Promise<void>((resolve) => {
+    hydrate = resolve;
+  });
+  try {
+    await page.route('**/@vite/client', (route) =>
+      route.fulfill({ contentType: 'text/javascript', body: '' }),
+    );
+    await page.route('**/avatar-cache.svg', (route) =>
+      route.fulfill({ contentType: 'image/svg+xml', body: svg }),
+    );
+    await page.route('**/avatar-ssr.html', async (route) => {
+      const response = await route.fetch();
+      await route.fulfill({
+        response,
+        body: (await response.text()).replace(
+          '<!-- SSR-AVATAR -->',
+          `<style>${css}</style>${output}`,
+        ),
+      });
+    });
+    await page.route(/avatar-ssr.*\.(?:tsx|js)(?:\?.*)?$/, async (route) => {
+      await hold;
+      await route.continue();
+    });
+    await page.goto(`${baseURL}/_fixtures/avatar-ssr.html`, { waitUntil: 'commit' });
+    await page.waitForFunction(() => {
+      const images = [
+        document.querySelector('lab-avatar')?.shadowRoot?.querySelector('img'),
+        document.querySelector('#react-ssr img'),
+      ];
+      return images.every(
+        (image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
+      );
+    });
+    await page.evaluate(() =>
+      Object.assign(window, {
+        ssrAvatarImages: [
+          document.querySelector('lab-avatar')?.shadowRoot?.querySelector('img'),
+          document.querySelector('#react-ssr img'),
+        ],
+      }),
+    );
+    hydrate();
+    await page.waitForFunction(
+      () => (window as unknown as { avatarHydrated: boolean }).avatarHydrated,
+    );
+    for (const image of [page.locator('lab-avatar img'), page.locator('#react-ssr img')])
+      await expect(image).toHaveCSS('opacity', '1');
+    expect(
+      await page.evaluate(() => {
+        const originals = (window as unknown as { ssrAvatarImages: HTMLImageElement[] })
+          .ssrAvatarImages;
+        return (
+          originals[0] === document.querySelector('lab-avatar')?.shadowRoot?.querySelector('img') &&
+          originals[1] === document.querySelector('#react-ssr img')
+        );
+      }),
+    ).toBe(true);
+    await page.evaluate(() => {
+      const avatar = document.querySelector('lab-avatar');
+      if (avatar) {
+        avatar.src = undefined;
+        avatar.initials = 'Я';
+      }
+      (window as unknown as { updateReactAvatar: (p: AvatarProps) => void }).updateReactAvatar({
+        name: 'Яна',
+        initials: 'Я',
+      });
+    });
+    await expect(page.locator('lab-avatar .lab-avatar-initials')).toHaveText('Я');
+    await expect(page.locator('#react-ssr .lab-avatar-initials')).toHaveText('Я');
+    expect(errors).toEqual([]);
+  } finally {
+    hydrate();
+    await page.close();
+  }
 });

@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/slider';
 import type { LabSlider } from '@labpics/ui-core/slider';
-import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-slider>, взятые прямо из класса ядра (LabSlider). */
 export type SliderProps = Pick<LabSlider, 'size' | 'orientation' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'min' | 'max' | 'step' | 'marks' | 'showValue' | 'readonly' | 'disabled' | 'invalid' | 'name'>;

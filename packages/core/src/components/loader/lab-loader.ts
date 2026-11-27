@@ -1,132 +1,77 @@
-/**
- * `<lab-loader>` — an indeterminate spinner that announces a busy state.
- *
- * Axes (the Figma Loader model — 4 variants are the size ladder):
- *   - size: s | m | l   (spinner diameter; stroke scales with it)
- *
- * Loader is PRESENTATIONAL — it has no interaction state a machine would own (no
- * open/value/pressed/roving/typeahead). It is a CSS animation in a box, so per
- * core-CONTRACT §1 it legitimately opts out of the Zag seam and extends
- * `LabElement` only for the shared base conventions. (craft-arch: no onion for a
- * spinner.)
- *
- * HONESTY (owner's iron rule on stop-gaps): this loader is INDETERMINATE only.
- * It does not take a `value`/`percent` prop, because nothing here would feed it a
- * real figure — a progress number with no source is a fake. A true determinate
- * progress bar (with a value bound to actual work) is a separate component
- * (Progress, a later chapter), not a flag bolted on here.
- *
- * a11y: the host carries role="status" and aria-busy="true" so assistive tech
- * announces an in-progress operation; the visible spinner is aria-hidden (it is
- * decoration). The accessible name is the `label` attribute (default
- * "Loading…"), reflected into a visually-hidden live region. Honoring
- * `prefers-reduced-motion`, the spin is stilled to a static ring.
- *
- * Token contract (core-CONTRACT §2): the ring is drawn from `currentColor`, so
- * the consumer sets the colour with a semantic --lab-* role on (or above) the
- * element; the radius reads `--lab-radius-full`. No hex, no primitive.
- */
-import { type TemplateResult, css, html } from 'lit';
-import { litVar } from '../../css.js';
+import { loaderProfile } from '@labpics/ui-tokens';
+import { type PropertyValues, type TemplateResult, css, html, nothing, svg, unsafeCSS } from 'lit';
+import { styleMap } from 'lit/directives/style-map.js';
 import { LabElement } from '../../lit/lab-element.js';
+import { type LabLoaderSize, progressState, progressValueConverter } from '../progress/contract.js';
+import { type ProgressMotion, mountProgressMotion } from '../progress/runtime.js';
+import { progressCss } from '../progress/styles.js';
+export type { LabLoaderSize } from '../progress/contract.js';
 
-/** Spinner size. */
-export type LabLoaderSize = 's' | 'm' | 'l';
-
+/** Compact authored feedback: eight-spoke waiting, medium sector or large ring for a measured value. */
 export class LabLoader extends LabElement {
   static override properties = {
     size: { reflect: true },
-    label: {},
+    label: { reflect: true },
+    value: { reflect: true, converter: progressValueConverter },
+    min: { type: Number, reflect: true },
+    max: { type: Number, reflect: true },
   };
-
   declare size: LabLoaderSize;
   declare label: string;
-
+  declare value: number | null;
+  declare min: number;
+  declare max: number;
+  private motion?: ProgressMotion;
   constructor() {
     super();
     this.size = 'm';
-    this.label = 'Loading…';
+    this.label = 'Загрузка';
+    this.value = null;
+    this.min = 0;
+    this.max = 100;
   }
-
-  static override styles = css`
-    :host {
-      --_diameter: ${litVar('--lab-size-control-xl', '1.5rem')};
-      --_stroke: ${litVar('--lab-size-loader-stroke-m', '0.1875rem')};
-
-      display: inline-flex;
-      vertical-align: middle;
-      /* The ring inherits the host's text colour; a consumer paints it by setting
-         color via a --lab-* role on or above the loader. */
-      color: inherit;
-    }
-
-    :host([size='s']) {
-      --_diameter: ${litVar('--lab-size-control-m', '1rem')};
-      --_stroke: ${litVar('--lab-size-loader-stroke-s', '0.125rem')};
-    }
-    :host([size='l']) {
-      --_diameter: ${litVar('--lab-size-control-h-m', '2.5rem')};
-      --_stroke: ${litVar('--lab-size-loader-stroke-l', '0.25rem')};
-    }
-
-    .spinner {
-      box-sizing: border-box;
-      width: var(--_diameter);
-      height: var(--_diameter);
-      border: var(--_stroke) solid currentColor;
-      border-right-color: transparent;
-      border-radius: ${litVar('--lab-radius-full', '9999px')};
-      animation: spin 0.7s linear infinite;
-    }
-
-    /* Visually-hidden accessible name, kept in a live region the host announces. */
-    .label {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .spinner {
-        animation-duration: 0s;
-      }
-    }
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-  `;
-
-  override render(): TemplateResult {
-    return html`
-      <span class="spinner" part="spinner" aria-hidden="true"></span>
-      <span class="label">${this.label}</span>
-    `;
-  }
-
+  static override styles = [
+    unsafeCSS(progressCss),
+    css`:host{display:inline-flex;vertical-align:middle;color:var(--lab-label-primary);}.lab-loader{color:inherit;}`,
+  ];
   override connectedCallback(): void {
     super.connectedCallback();
-    // The host IS the status region: it announces a busy state to assistive tech.
-    // Set on the host (not a child) so the role survives slotting and SSR.
-    if (!this.hasAttribute('role')) this.setAttribute('role', 'status');
-    this.setAttribute('aria-busy', 'true');
+    this.requestUpdate();
+  }
+  override updated(_changed: PropertyValues): void {
+    const root = this.renderRoot.querySelector<HTMLElement>('.lab-loader');
+    if (root) {
+      this.motion ??= mountProgressMotion(root, 'loader');
+      const state = progressState(this.value, this.min, this.max);
+      this.motion.update(state.value === null ? null : state.fraction);
+    }
+  }
+  override disconnectedCallback(): void {
+    this.motion?.dispose();
+    this.motion = undefined;
+    super.disconnectedCallback();
+  }
+  override render(): TemplateResult {
+    const state = progressState(this.value, this.min, this.max);
+    const unknown = state.value === null;
+    const center = loaderProfile.viewBox / 2;
+    const medium = loaderProfile.determinate.medium;
+    const large = loaderProfile.determinate.large;
+    return html`<span class="lab-loader" data-size=${this.size} data-state=${state.status} style=${styleMap({ '--_progress-target': state.fraction })}
+      role="progressbar" aria-label=${this.getAttribute('aria-label') ?? this.label} aria-valuemin=${state.min} aria-valuemax=${state.max} aria-valuenow=${state.value ?? nothing} aria-valuetext=${unknown ? nothing : state.text}>
+      <svg viewBox=${`0 0 ${loaderProfile.viewBox} ${loaderProfile.viewBox}`} aria-hidden="true" style=${unknown ? '' : 'display:none'}><g class="lab-progress-spin">${loaderProfile.spokeOpacity.map((opacity, index) => svg`<rect x=${loaderProfile.segment.x} y=${loaderProfile.segment.y} width=${loaderProfile.segment.width} height=${loaderProfile.segment.height} rx=${loaderProfile.segment.radius} fill="currentColor" opacity=${opacity} transform=${`rotate(${(index * 360) / loaderProfile.spokeOpacity.length} ${loaderProfile.viewBox / 2} ${loaderProfile.viewBox / 2})`}></rect>`)}</g></svg>
+      <svg viewBox=${`0 0 ${loaderProfile.viewBox} ${loaderProfile.viewBox}`} aria-hidden="true" style=${unknown ? 'display:none' : ''}>
+        <circle class="lab-loader-medium" cx=${center} cy=${center} r=${medium.ringRadius} fill="none" stroke="currentColor" stroke-width=${medium.stroke}></circle>
+        <g class="lab-loader-large"><circle cx=${center} cy=${center} r=${large.ringRadius} fill="none" stroke=${`var(--lab-${large.trackRole})`} stroke-width=${large.stroke}></circle>
+          <circle class="lab-progress-arc" cx=${center} cy=${center} r=${large.ringRadius} fill="none" stroke="currentColor" stroke-width=${large.stroke} pathLength="1" transform=${`rotate(-90 ${center} ${center})`} visibility=${state.fraction === 0 ? 'hidden' : 'visible'}></circle></g>
+      </svg><span class="lab-loader-sector" aria-hidden="true" style=${unknown ? 'display:none' : ''}></span>
+    </span>`;
   }
 }
-
 declare global {
   interface HTMLElementTagNameMap {
     'lab-loader': LabLoader;
   }
 }
-
-// Idempotent registration (core-CONTRACT §7).
-if (typeof customElements !== 'undefined' && !customElements.get('lab-loader')) {
+if (typeof customElements !== 'undefined' && !customElements.get('lab-loader'))
   customElements.define('lab-loader', LabLoader);
-}

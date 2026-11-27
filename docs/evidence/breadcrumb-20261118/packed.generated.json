@@ -1,0 +1,86 @@
+{
+  "archives": [
+    {
+      "name": "@labpics/ui-tokens",
+      "sha256": "5a5ac6cf1565108c2004dab227b61b663625c2dbb9d89b19dbf1927d9bdcfb05"
+    },
+    {
+      "name": "@labpics/ui-shadow",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "@labpics/ui-materials",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "@labpics/fonts",
+      "sha256": "d88c7478b94becc1ddbf77f92c4af2fb00ec882cb456847a38c2ee3bd6b35fd9"
+    },
+    {
+      "name": "@labui/colors",
+      "sha256": "2dfc01336750f554b4a4e46155bb10caaf3c804df98ec237008961fee268decb"
+    },
+    {
+      "name": "@labpics/ui-core",
+      "sha256": "2a60099c05c3b11c031a59862bcfbc7cb6516fc96636a790bee8a593828cd3b8"
+    },
+    {
+      "name": "@labpics/ui-react",
+      "sha256": "f9dfabc2e03e69291be3ff035cc03e086a821efe5774986ee6ce53f2bee22e50"
+    },
+    {
+      "name": "@labpics/ui-vue",
+      "sha256": "dae2c3544b117b7d6fed961a6799c86eec5ce5e67473fc5e7217b33bb2c31e40"
+    },
+    {
+      "name": "@labpics/ui-solid",
+      "sha256": "780dcc076b030a41f45c5d7ffa394bf98cccf603f043d467c33b934e7f5181b1"
+    },
+    {
+      "name": "@labpics/ui-svelte",
+      "sha256": "066703499f215ae0d27dc868112eb7bb1d8620ab4067bdf4578f4e250b9c97d6"
+    },
+    {
+      "name": "@labpics/ui-astro",
+      "sha256": "3989ff0e4d7e59084ad838bb4989318327da83a50e807dc86dced90c45dba7f2"
+    }
+  ],
+  "records": [
+    {
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "renderers": [
+        "vue",
+        "solid",
+        "svelte",
+        "astro",
+        "react"
+      ],
+      "styledSSR": true,
+      "sameNodeAfterHydration": true,
+      "groupingLabelFocus": true,
+      "escapedLabels": true,
+      "realNavigation": true,
+      "currentNonLink": true,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "browser": "26.0",
+      "renderers": [
+        "vue",
+        "solid",
+        "svelte",
+        "astro",
+        "react"
+      ],
+      "styledSSR": true,
+      "sameNodeAfterHydration": true,
+      "groupingLabelFocus": true,
+      "escapedLabels": true,
+      "realNavigation": true,
+      "currentNonLink": true,
+      "errors": []
+    }
+  ]
+}

@@ -11,10 +11,27 @@
  * Mirrors the same step in @labpics/ui-tokens. tsup only bundles the TS entry;
  * the CSS surface is shipped verbatim.
  */
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, cpSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { accordionCss } from '../src/components/accordion/styles.js';
+import { avatarCss } from '../src/components/avatar/styles.js';
+import { badgeCss } from '../src/components/badge/styles.js';
+import { breadcrumbCss } from '../src/components/breadcrumb/styles.js';
+import { cardCss } from '../src/components/card/styles.js';
+import { chipCss } from '../src/components/chip/styles.js';
+import { inputCss } from '../src/components/input/styles.js';
+import { kbdCss } from '../src/components/kbd/styles.js';
+import { paginationCss } from '../src/components/pagination/styles.js';
+import { progressCss } from '../src/components/progress/styles.js';
+import { segmentedCss } from '../src/components/segmented-control/styles.js';
+import { selectCss } from '../src/components/select/styles.js';
+import { selectionCss } from '../src/components/selection/styles.js';
+import { sheetCss } from '../src/components/sheet/styles.js';
+import { snackbarCss } from '../src/components/snackbar/styles.js';
+import { switchCss } from '../src/components/switch/styles.js';
+import { tabsCss } from '../src/components/tabs/styles.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '..', 'src');
@@ -24,6 +41,7 @@ const dist = join(here, '..', 'dist');
 // is the canonical source of truth; we re-export it verbatim.
 const require = createRequire(import.meta.url);
 const shadowPkg = require.resolve('@labpics/ui-shadow/shadow.css');
+const tokensPkg = require.resolve('@labpics/ui-tokens/tokens.css');
 
 function main(): void {
   mkdirSync(dist, { recursive: true });
@@ -37,8 +55,33 @@ function main(): void {
 
   // Re-export the shadow contract so consumers need only `@labpics/ui-core/shadow.css`.
   copyFileSync(shadowPkg, join(dist, 'shadow.css'));
+  copyFileSync(tokensPkg, join(dist, 'tokens.css'));
+  writeFileSync(join(dist, 'sheet.css'), sheetCss);
+  writeFileSync(join(dist, 'input.css'), inputCss);
+  writeFileSync(join(dist, 'select.css'), selectCss);
+  writeFileSync(join(dist, 'snackbar.css'), snackbarCss);
+  writeFileSync(join(dist, 'card.css'), cardCss);
+  writeFileSync(join(dist, 'chip.css'), chipCss);
+  writeFileSync(join(dist, 'breadcrumb.css'), breadcrumbCss);
+  writeFileSync(join(dist, 'accordion.css'), accordionCss);
+  writeFileSync(join(dist, 'segmented-control.css'), segmentedCss);
+  writeFileSync(join(dist, 'switch.css'), switchCss);
+  writeFileSync(join(dist, 'tabs.css'), tabsCss);
+  writeFileSync(join(dist, 'selection-controls.css'), selectionCss);
+  writeFileSync(join(dist, 'badge.css'), badgeCss);
+  writeFileSync(join(dist, 'kbd.css'), kbdCss);
+  writeFileSync(join(dist, 'progress.css'), progressCss);
+  writeFileSync(join(dist, 'pagination.css'), paginationCss);
+  // Theme-scoped URLs inherit through Shadow DOM; JS contains no image payloads.
+  copyFileSync(join(src, 'avatar-material.css'), join(dist, 'avatar-material.css'));
+  cpSync(join(src, 'assets', 'avatar'), join(dist, 'assets', 'avatar'), { recursive: true });
+  // Keep resource URLs in theme.css's external stylesheet. React injects the
+  // component CSS into <style>; moving relative URLs there changes their base.
+  writeFileSync(join(dist, 'avatar.css'), avatarCss);
 
-  process.stdout.write(`ui-core: copied ${[...ownFiles, 'shadow.css'].join(', ')} to dist\n`);
+  process.stdout.write(
+    `ui-core: copied ${[...ownFiles, 'shadow.css', 'tokens.css'].join(', ')} to dist\n`,
+  );
 }
 
 main();

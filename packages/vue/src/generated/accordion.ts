@@ -5,12 +5,12 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/accordion';
 import type { LabAccordion } from '@labpics/ui-core/accordion';
-import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-accordion>, взятые прямо из класса ядра (LabAccordion). */
-export type AccordionProps = Pick<LabAccordion, 'orientation' | 'size' | 'multiple' | 'collapsible' | 'disabled' | 'value' | 'defaultValue' | 'items'>;
+export type AccordionProps = Pick<LabAccordion, 'orientation' | 'size' | 'multiple' | 'collapsible' | 'disabled' | 'headingLevel' | 'value' | 'defaultValue' | 'items'>;
 
 /**
  * <Accordion> — тонкая Vue-обёртка над <lab-accordion>.
@@ -26,6 +26,7 @@ export const Accordion: LabComponent<AccordionProps, 'value-change'> = createLab
       { name: 'multiple', attr: 'multiple', kind: 'boolean' },
       { name: 'collapsible', attr: 'collapsible', kind: 'boolean' },
       { name: 'disabled', attr: 'disabled', kind: 'boolean' },
+      { name: 'headingLevel', attr: 'heading-level', kind: 'string' },
       { name: 'value', attr: 'value', kind: 'prop' },
       { name: 'defaultValue', attr: 'default-value', kind: 'prop' },
       { name: 'items', attr: 'items', kind: 'prop' },

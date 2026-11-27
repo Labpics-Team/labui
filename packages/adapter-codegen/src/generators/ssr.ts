@@ -25,8 +25,8 @@ function camelSlot(name: string): string {
 
 /** Привязка одного пропа в Lit-шаблоне по его виду. */
 function bindingLine(name: string, attr: string, kind: string): string {
-  if (kind === 'prop') return `      .${name}=\${props.${name}}`;
-  if (kind === 'boolean') return `      ?${attr}=\${Boolean(props.${name})}`;
+  if (kind === 'prop' || kind === 'boolean')
+    return `      .${name}=\${props.${name} === undefined ? noChange : props.${name}}`;
   return `      ${attr}=\${ifDefined(props.${name})}`;
 }
 
@@ -35,37 +35,55 @@ function ssrFile(c: ComponentMeta): string {
   const pickKeys = propNames.map((n) => `'${n}'`).join(' | ');
   const propsType =
     propNames.length > 0 ? `Partial<Pick<${c.className}, ${pickKeys}>>` : 'Record<never, never>';
-  const bindings = c.props.map((p) => bindingLine(p.name, p.attr, p.kind)).join('\n');
+  // Client adapters forward native host attributes. Server rendering must retain
+  // the accessible name and form association before custom-element hydration.
+  const hostAttributes = ['aria-label', 'form'].filter(
+    (attribute) => !c.props.some((prop) => prop.attr === attribute),
+  );
+  const hostPropsType = hostAttributes.length
+    ? ` & { ${hostAttributes.map((attribute) => `'${attribute}'?: string`).join('; ')} }`
+    : '';
+  const bindings = [
+    ...c.props.map((p) => bindingLine(p.name, p.attr, p.kind)),
+    ...hostAttributes.map((attribute) => `      ${attribute}=\${ifDefined(props['${attribute}'])}`),
+  ].join('\n');
 
   const slotKeys = [
-    ...(c.slots.default ? ['default'] : []),
+    ...(c.slots.default || c.slots.dynamic ? ['default'] : []),
     ...c.slots.named.map((s) => camelSlot(s)),
   ];
-  const slotsType =
-    slotKeys.length > 0
-      ? `{ ${slotKeys.map((k) => `${k}?: string`).join('; ')} }`
-      : 'Record<never, never>';
+  const slotFields = [
+    ...slotKeys.map((k) => `${k}?: string`),
+    ...(c.slots.dynamic ? ['dynamic?: Readonly<Record<string, string>>'] : []),
+  ];
+  const slotsType = slotFields.length > 0 ? `{ ${slotFields.join('; ')} }` : 'Record<never, never>';
 
-  const hasSlots = slotKeys.length > 0;
+  const hasSlots = slotFields.length > 0;
   const namedSlotParts = c.slots.named
     .map(
       (s) =>
         `\${slots.${camelSlot(s)} ? html\`<span slot="${s}">\${unsafeHTML(slots.${camelSlot(s)})}</span>\` : ''}`,
     )
     .join('');
-  const defaultSlotPart = c.slots.default ? "${unsafeHTML(slots.default ?? '')}" : '';
-  const children = `${namedSlotParts}${defaultSlotPart}`;
+  const defaultSlotPart =
+    c.slots.default || c.slots.dynamic ? "${unsafeHTML(slots.default ?? '')}" : '';
+  const dynamicSlotPart = c.slots.dynamic
+    ? '${Object.entries(slots.dynamic ?? {}).map(([name, content]) => html`<span slot=${name}>${unsafeHTML(content)}</span>`)}'
+    : '';
+  const children = `${namedSlotParts}${dynamicSlotPart}${defaultSlotPart}`;
   // Параметр slots — только когда есть слоты (иначе noUnusedParameters).
   const slotsParam = hasSlots ? `\n  slots: ${c.pascal}SsrSlots = {},` : '';
 
   // Условные импорты из единой SSR-поверхности ядра (адаптер зависит только от core,
   // не от lit напрямую). Базовый tsconfig включает noUnusedLocals — берём лишь нужное.
-  const usesIfDefined = c.props.some((p) => p.kind === 'string');
-  const usesUnsafeHtml = c.slots.default || c.slots.named.length > 0;
+  const usesIfDefined = hostAttributes.length > 0 || c.props.some((p) => p.kind === 'string');
+  const usesNoChange = c.props.some((p) => p.kind === 'prop' || p.kind === 'boolean');
+  const usesUnsafeHtml = hasSlots;
   const coreImports = [
     'html',
     'renderToString',
     usesIfDefined ? 'ifDefined' : '',
+    usesNoChange ? 'noChange' : '',
     usesUnsafeHtml ? 'unsafeHTML' : '',
   ].filter(Boolean);
 
@@ -75,7 +93,7 @@ import '@labpics/ui-core/${c.subpath}';
 import type { ${c.className} } from '@labpics/ui-core/${c.subpath}';
 
 /** SSR-пропы <${c.tag}> (атрибуты/свойства), взяты из класса ядра (${c.className}). */
-export type ${c.pascal}SsrProps = ${propsType};
+export type ${c.pascal}SsrProps = ${propsType}${hostPropsType};
 /** SSR-слоты <${c.tag}> — предрендеренные строки контента. */
 export type ${c.pascal}SsrSlots = ${slotsType};
 

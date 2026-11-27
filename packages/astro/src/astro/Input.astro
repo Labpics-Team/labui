@@ -8,7 +8,10 @@
  */
 import { renderInput } from '@labpics/ui-astro/ssr';
 
-const dsd = renderInput(Astro.props, {});
+const dsd = renderInput(Astro.props, {
+  leading: Astro.slots.has('leading') ? await Astro.slots.render('leading') : undefined,
+  trailing: Astro.slots.has('trailing') ? await Astro.slots.render('trailing') : undefined,
+});
 ---
 <Fragment set:html={dsd} />
 <script>

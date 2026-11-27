@@ -5,12 +5,14 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Пин SHA-256 = upstream Geist v1.7.2 (raw vercel/geist-font). Машинный пин
+ * Пин SHA-256 = upstream vercel/geist-font. Машинный пин
  * провенанса: магии wOF2 мало — подменённый, но валидный woff2 её бы прошёл.
  * Хэш обязан совпасть и с апстримом, и с прозой PROVENANCE.md.
  */
 const EXPECTED_SHA256: Record<string, string> = {
-  'fonts/Geist-Variable.woff2': '2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1',
+  'fonts/SunghyunSans-ExtraBold.woff2':
+    '7137d6a4ff3b89fee2bf9ba43f329c4be414472f40bd089366a3f8d671fa051f',
+  'fonts/Geist-Variable.woff2': '46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d',
   'fonts/GeistMono-Variable.woff2':
     'afaacc4c5fbba89d2ebf7a02dc4070208540874592a5504d57175782fe893101',
 };
@@ -25,24 +27,26 @@ const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const css = readFileSync(join(pkgRoot, 'fonts.css'), 'utf8');
 
 const FACES = [
-  { family: 'Geist', file: 'fonts/Geist-Variable.woff2' },
-  { family: 'Geist Mono', file: 'fonts/GeistMono-Variable.woff2' },
+  { family: 'Geist', file: 'fonts/Geist-Variable.woff2', minimumBytes: 10_000 },
+  { family: 'Geist', file: 'fonts/LabUI-Symbols.woff2', minimumBytes: 100 },
+  { family: 'Geist Mono', file: 'fonts/GeistMono-Variable.woff2', minimumBytes: 10_000 },
+  { family: 'Sunghyun Sans', file: 'fonts/SunghyunSans-ExtraBold.woff2', minimumBytes: 10_000 },
 ];
 
 describe('@labpics/fonts — @font-face и бинарники', () => {
-  it('регистрирует оба семейства Geist / Geist Mono', () => {
+  it('регистрирует основной набор и отдельное семейство Avatar', () => {
     for (const f of FACES) {
       expect(css).toContain(`font-family: "${f.family}";`);
     }
-    // Ровно два @font-face-ПРАВИЛА (с `{`, не упоминания в комментарии) —
-    // ни лишних, ни недостающих начертаний.
-    expect(css.match(/@font-face\s*\{/g)).toHaveLength(2);
+    expect(css.match(/@font-face\s*\{/g)).toHaveLength(FACES.length);
   });
 
-  it('объявляет вариативную ось wght 100 900 и swap на КАЖДОМ face', () => {
-    // По одному вхождению на семейство — не «где-то в файле», а на каждом.
-    expect(css.match(/font-weight:\s*100 900;/g)).toHaveLength(2);
-    expect(css.match(/font-display:\s*swap;/g)).toHaveLength(2);
+  it('подключает исходные начертания и фиксированный символ для весов 100–900', () => {
+    expect(css.match(/font-weight:\s*100 900;/g)).toHaveLength(
+      FACES.filter((f) => f.family !== 'Sunghyun Sans').length,
+    );
+    expect(css.match(/font-weight:\s*800;/g)).toHaveLength(1);
+    expect(css.match(/font-display:\s*swap;/g)).toHaveLength(FACES.length);
   });
 
   it('регистрирует ТОЛЬКО прямые начертания — italic-фейса нет (решение ДС: без italic)', () => {
@@ -50,7 +54,7 @@ describe('@labpics/fonts — @font-face и бинарники', () => {
     // цветом; см. PROVENANCE.md). Пин на уровне регистрации: оба @font-face —
     // `font-style: normal`, и ни один не заявляет наклон. RED-proof: добавить
     // @font-face с `font-style: italic` (или src на *Italic.woff2) — падает.
-    expect(css.match(/font-style:\s*normal;/g)).toHaveLength(2);
+    expect(css.match(/font-style:\s*normal;/g)).toHaveLength(FACES.length);
     expect(css).not.toMatch(/font-style:\s*italic/);
   });
 
@@ -61,7 +65,7 @@ describe('@labpics/fonts — @font-face и бинарники', () => {
       // Магия WOFF2 = ASCII 'wOF2' (0x774F4632) — доказывает, что это шрифт,
       // а не HTML-заглушка/LFS-указатель, случайно попавший под тем же именем.
       expect(bytes.subarray(0, 4).toString('latin1')).toBe('wOF2');
-      expect(bytes.length).toBeGreaterThan(10_000);
+      expect(bytes.length).toBeGreaterThan(f.minimumBytes);
     }
   });
 
@@ -71,16 +75,35 @@ describe('@labpics/fonts — @font-face и бинарники', () => {
     expect(ofl).toContain('Copyright (c) 2023 Vercel');
   });
 
-  it('SHA-256 бинарников пинится к upstream v1.7.2 и совпадает с PROVENANCE.md', () => {
+  it('SHA-256 бинарников пинится к upstream и совпадает с PROVENANCE.md', () => {
     const provenance = readFileSync(join(pkgRoot, 'PROVENANCE.md'), 'utf8');
     for (const [file, expected] of Object.entries(EXPECTED_SHA256)) {
       const actual = createHash('sha256')
         .update(readFileSync(join(pkgRoot, file)))
         .digest('hex');
-      // Байт-в-байт апстрим Geist v1.7.2 — подмена бинарника падает здесь.
-      expect(actual, `${file}: SHA-256 != upstream v1.7.2`).toBe(expected);
+      expect(actual, `${file}: SHA-256 != upstream`).toBe(expected);
       // Проза и машинный пин не расходятся: PROVENANCE.md несёт ровно этот хэш.
       expect(provenance, `PROVENANCE.md не содержит хэш ${file}`).toContain(expected);
+    }
+  });
+
+  it('дополнение заменяет только отсутствующий Command и поставляется с лицензией', () => {
+    const symbolFace = css.match(/@font-face\s*\{[^}]*LabUI-Symbols[^}]*\}/)?.[0];
+    expect(symbolFace).toContain('font-family: "Geist"');
+    expect(symbolFace).toContain('unicode-range: U+2318;');
+    const ofl = readFileSync(join(pkgRoot, 'OFL-NotoSymbols.txt'), 'utf8');
+    expect(ofl).toContain('Copyright 2022 The Noto Project Authors');
+    expect(ofl).toContain('SIL OPEN FONT LICENSE Version 1.1');
+  });
+
+  it('web и native поставляют проверенные производные ресурсы', () => {
+    const report = JSON.parse(readFileSync(join(pkgRoot, 'symbols.json'), 'utf8'));
+    expect(report.codepoint).toBe('U+2318');
+    for (const [file, artifact] of Object.entries(report.artifacts)) {
+      const expected = artifact as { sha256: string; bytes: number };
+      const bytes = readFileSync(join(pkgRoot, '../..', file));
+      expect(bytes.length, file).toBe(expected.bytes);
+      expect(createHash('sha256').update(bytes).digest('hex'), file).toBe(expected.sha256);
     }
   });
 });

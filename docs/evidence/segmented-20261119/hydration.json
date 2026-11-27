@@ -1,0 +1,556 @@
+[
+  {
+    "engine": "chromium",
+    "before": [
+      {
+        "model": "segmented-one",
+        "checked": ["b"],
+        "selected": ["a"],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "segmented-two",
+        "checked": ["b"],
+        "selected": ["a"],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "segmented-empty",
+        "checked": [],
+        "selected": [],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgba(0, 0, 0, 0)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "radio",
+        "checked": ["b"],
+        "selected": ["a"],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": null,
+        "selectionStrokeB": "transparent"
+      },
+      {
+        "model": "choice-one",
+        "checked": ["b"],
+        "selected": ["a"],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": null,
+        "selectionStrokeB": "transparent"
+      },
+      {
+        "model": "choice-many",
+        "checked": ["a", "b", "c"],
+        "selected": ["a"],
+        "tabStops": ["a", "b", "c"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": null,
+        "selectionStrokeB": "transparent"
+      },
+      {
+        "model": "lit-named",
+        "checked": ["b"],
+        "selected": ["a"],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "lit-unnamed",
+        "checked": ["b"],
+        "selected": ["a"],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      }
+    ],
+    "after": [
+      {
+        "model": "segmented-one",
+        "checked": ["b"],
+        "selected": ["b"],
+        "tabStops": ["b"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "segmented-two",
+        "checked": ["b"],
+        "selected": ["b"],
+        "tabStops": ["b"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "segmented-empty",
+        "checked": [],
+        "selected": [],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgba(0, 0, 0, 0)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "radio",
+        "checked": ["b"],
+        "selected": ["b"],
+        "tabStops": ["b"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": null,
+        "selectionStrokeB": "transparent"
+      },
+      {
+        "model": "choice-one",
+        "checked": ["b"],
+        "selected": ["b"],
+        "tabStops": ["b"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": null,
+        "selectionStrokeB": "transparent"
+      },
+      {
+        "model": "choice-many",
+        "checked": ["a", "b", "c"],
+        "selected": ["a", "b", "c"],
+        "tabStops": ["a", "b", "c"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": null,
+        "selectionStrokeB": "transparent"
+      },
+      {
+        "model": "lit-named",
+        "checked": ["b"],
+        "selected": ["b"],
+        "tabStops": ["b"],
+        "form": [["period", "b"]],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "lit-unnamed",
+        "checked": ["b"],
+        "selected": ["b"],
+        "tabStops": ["b"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      }
+    ],
+    "completed": {
+      "updates": [true, true],
+      "settled": [
+        {
+          "value": "b",
+          "selected": ["b"],
+          "tabStops": ["b"]
+        },
+        {
+          "value": "b",
+          "selected": ["b"],
+          "tabStops": ["b"]
+        }
+      ]
+    },
+    "errors": [],
+    "formBinding": {
+      "react": [
+        {
+          "model": "segmented",
+          "valid": true,
+          "values": [["choice", "b"]],
+          "checked": ["b"]
+        },
+        {
+          "model": "radio",
+          "valid": true,
+          "values": [["choice", "b"]],
+          "checked": ["b"]
+        },
+        {
+          "model": "choice-one",
+          "valid": true,
+          "values": [["choice", "b"]],
+          "checked": ["b"]
+        },
+        {
+          "model": "choice-many",
+          "valid": true,
+          "values": [["choice", "b"]],
+          "checked": ["b"]
+        }
+      ],
+      "lit": [
+        {
+          "model": "segmented-control",
+          "standalone": true,
+          "required": true,
+          "named": [["choice", "b"]],
+          "kept": "b",
+          "standaloneValues": []
+        },
+        {
+          "model": "radio-group",
+          "standalone": true,
+          "required": true,
+          "named": [["choice", "b"]],
+          "kept": "b",
+          "standaloneValues": []
+        },
+        {
+          "model": "choicebox",
+          "standalone": true,
+          "required": true,
+          "named": [["choice", "b"]],
+          "kept": ["b"],
+          "standaloneValues": []
+        },
+        {
+          "model": "choicebox-multiple",
+          "standalone": true,
+          "required": true,
+          "named": [["choice", "b"]],
+          "kept": ["b"],
+          "standaloneValues": []
+        }
+      ]
+    }
+  },
+  {
+    "engine": "webkit",
+    "before": [
+      {
+        "model": "segmented-one",
+        "checked": ["b"],
+        "selected": ["a"],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "segmented-two",
+        "checked": ["b"],
+        "selected": ["a"],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "segmented-empty",
+        "checked": [],
+        "selected": [],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgba(0, 0, 0, 0)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "radio",
+        "checked": ["b"],
+        "selected": ["a"],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": null,
+        "selectionStrokeB": "transparent"
+      },
+      {
+        "model": "choice-one",
+        "checked": ["b"],
+        "selected": ["a"],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": null,
+        "selectionStrokeB": "transparent"
+      },
+      {
+        "model": "choice-many",
+        "checked": ["a", "b", "c"],
+        "selected": ["a"],
+        "tabStops": ["a", "b", "c"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": null,
+        "selectionStrokeB": "transparent"
+      },
+      {
+        "model": "lit-named",
+        "checked": ["b"],
+        "selected": ["a"],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "lit-unnamed",
+        "checked": ["b"],
+        "selected": ["a"],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      }
+    ],
+    "after": [
+      {
+        "model": "segmented-one",
+        "checked": ["b"],
+        "selected": ["b"],
+        "tabStops": ["b"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "segmented-two",
+        "checked": ["b"],
+        "selected": ["b"],
+        "tabStops": ["b"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "segmented-empty",
+        "checked": [],
+        "selected": [],
+        "tabStops": ["a"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgba(0, 0, 0, 0)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "radio",
+        "checked": ["b"],
+        "selected": ["b"],
+        "tabStops": ["b"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": null,
+        "selectionStrokeB": "transparent"
+      },
+      {
+        "model": "choice-one",
+        "checked": ["b"],
+        "selected": ["b"],
+        "tabStops": ["b"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": null,
+        "selectionStrokeB": "transparent"
+      },
+      {
+        "model": "choice-many",
+        "checked": ["a", "b", "c"],
+        "selected": ["a", "b", "c"],
+        "tabStops": ["a", "b", "c"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": null,
+        "selectionStrokeB": "transparent"
+      },
+      {
+        "model": "lit-named",
+        "checked": ["b"],
+        "selected": ["b"],
+        "tabStops": ["b"],
+        "form": [["period", "b"]],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      },
+      {
+        "model": "lit-unnamed",
+        "checked": ["b"],
+        "selected": ["b"],
+        "tabStops": ["b"],
+        "form": [],
+        "valid": true,
+        "associated": false,
+        "stable": true,
+        "activeB": "rgb(255, 255, 255)",
+        "selectionStrokeB": null
+      }
+    ],
+    "completed": {
+      "updates": [true, true],
+      "settled": [
+        {
+          "value": "b",
+          "selected": ["b"],
+          "tabStops": ["b"]
+        },
+        {
+          "value": "b",
+          "selected": ["b"],
+          "tabStops": ["b"]
+        }
+      ]
+    },
+    "errors": [],
+    "formBinding": {
+      "react": [
+        {
+          "model": "segmented",
+          "valid": true,
+          "values": [["choice", "b"]],
+          "checked": ["b"]
+        },
+        {
+          "model": "radio",
+          "valid": true,
+          "values": [["choice", "b"]],
+          "checked": ["b"]
+        },
+        {
+          "model": "choice-one",
+          "valid": true,
+          "values": [["choice", "b"]],
+          "checked": ["b"]
+        },
+        {
+          "model": "choice-many",
+          "valid": true,
+          "values": [["choice", "b"]],
+          "checked": ["b"]
+        }
+      ],
+      "lit": [
+        {
+          "model": "segmented-control",
+          "standalone": true,
+          "required": true,
+          "named": [["choice", "b"]],
+          "kept": "b",
+          "standaloneValues": []
+        },
+        {
+          "model": "radio-group",
+          "standalone": true,
+          "required": true,
+          "named": [["choice", "b"]],
+          "kept": "b",
+          "standaloneValues": []
+        },
+        {
+          "model": "choicebox",
+          "standalone": true,
+          "required": true,
+          "named": [["choice", "b"]],
+          "kept": ["b"],
+          "standaloneValues": []
+        },
+        {
+          "model": "choicebox-multiple",
+          "standalone": true,
+          "required": true,
+          "named": [["choice", "b"]],
+          "kept": ["b"],
+          "standaloneValues": []
+        }
+      ]
+    }
+  }
+]

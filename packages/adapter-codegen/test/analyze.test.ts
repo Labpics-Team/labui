@@ -2,8 +2,10 @@
  * Юнит-тесты анализатора ядра — проверяют, что манифест выведен из исходников верно
  * (класс А). Ловят регресс правил извлечения: пропы/события/слоты/наследование/фильтры.
  */
+import { globSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { buildManifest } from '../src/build-manifest.js';
+import { coreComponentsDir } from '../src/paths.js';
 import type { ComponentMeta } from '../src/types.js';
 
 const manifest = buildManifest();
@@ -14,8 +16,16 @@ const byTag = (tag: string): ComponentMeta => {
 };
 
 describe('анализатор ядра → манифест', () => {
-  it('находит ровно 27 элементов, все с тегом lab-*', () => {
-    expect(manifest.components).toHaveLength(27);
+  it('покрывает публичную HTMLElementTagNameMap ядра без пропусков и повторов', () => {
+    // Независимая публичная типизация, а не второй запуск правил анализатора.
+    const declared = globSync('**/*.ts', { cwd: coreComponentsDir }).flatMap((file) => {
+      const source = readFileSync(`${coreComponentsDir}/${file}`, 'utf8');
+      return [...source.matchAll(/interface HTMLElementTagNameMap\s*\{([^}]+)\}/g)].flatMap((map) =>
+        [...(map[1] ?? '').matchAll(/['"](lab-[a-z-]+)['"]\s*:/g)].map((tag) => tag[1]),
+      );
+    });
+    expect(declared.length).toBeGreaterThan(0);
+    expect(manifest.components.map((c) => c.tag).sort()).toEqual(declared.sort());
     for (const c of manifest.components) expect(c.tag.startsWith('lab-')).toBe(true);
   });
 
@@ -23,7 +33,7 @@ describe('анализатор ядра → манифест', () => {
     expect(manifest.components.find((c) => c.tag === 'lab-field')).toBeUndefined();
   });
 
-  it('button: публичные пропы, без ariaLabel; события пусты; слоты default+icon', () => {
+  it('button: публичные пропы, без ariaLabel; события пусты; слоты default+description+icon+icon-end', () => {
     const btn = byTag('lab-button');
     expect(btn.props.map((p) => p.name)).toEqual([
       'type',
@@ -40,7 +50,7 @@ describe('анализатор ядра → манифест', () => {
     expect(btn.props.find((p) => p.name === 'htmlType')?.attr).toBe('html-type');
     expect(btn.events).toEqual([]);
     expect(btn.slots.default).toBe(true);
-    expect(btn.slots.named).toEqual(['icon']);
+    expect(btn.slots.named).toEqual(['description', 'icon', 'icon-end']);
   });
 
   it('классификация видов: булев / строка / prop (массивы через converter/attribute:false)', () => {
@@ -80,8 +90,8 @@ describe('анализатор ядра → манифест', () => {
   it('слоты: динамические (tabs/accordion) помечены dynamic; статические собраны', () => {
     expect(byTag('lab-tabs').slots.dynamic).toBe(true);
     expect(byTag('lab-accordion').slots.dynamic).toBe(true);
-    expect(byTag('lab-card').slots.named).toEqual(['footer', 'header', 'media']);
-    expect(byTag('lab-switch').slots.named).toEqual(['icon-off', 'icon-on']);
+    expect(byTag('lab-card').slots.named).toEqual(['badge', 'footer', 'header', 'media']);
+    expect(byTag('lab-switch').slots.named).toEqual(['icon-off', 'icon-on', 'label-start']);
   });
 
   it('pascal/subpath выведены из тега', () => {

@@ -1,0 +1,2526 @@
+{
+  "source": "source.json",
+  "recipe": "source-over-texture-w3c-color-v1",
+  "variants": [
+    {
+      "color": "red",
+      "mode": "light-normal",
+      "appearance": "light",
+      "contrast": "normal",
+      "tint": [
+        255,
+        59,
+        48
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/red-light-normal.webp",
+      "native": "avatar_red_light_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "b9b4dd4ec7bf944a74697fa0e292b266950cad2e0d77421e99485d8f1bbcb8ff",
+      "webSha256": "d0e0c2eb067aca95e464d18ca1478d6f038121c60e38f6dedebda8be0e3ef2f8",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_red_light_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4911,
+          "decodedBytes": 9216,
+          "sha256": "7b0290238654438666d387155c51aabcd6be89f5c1099603b6dfc5b882c502b9"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_red_light_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10604,
+          "decodedBytes": 20736,
+          "sha256": "8da6962692345aaefc28affdd3f0596182a345e7f39a315b864797f2fc23ab7c"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_red_light_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19022,
+          "decodedBytes": 36864,
+          "sha256": "dcff0d440b2582b74159616ec7271cae137bb57479cec80c271d24ac971136e0"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_red_light_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 42987,
+          "decodedBytes": 82944,
+          "sha256": "cf929804a80caa181bfed31cfa446bcbdd2dbbe8738e17026abb5abf00503897"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_red_light_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 76041,
+          "decodedBytes": 147456,
+          "sha256": "0640d9867ab02db594eadf100553f895dbf7d2e339cc7869d32290d3e0f984d8"
+        }
+      ],
+      "webBytes": 97006,
+      "pngBytes": 153565,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "orange",
+      "mode": "light-normal",
+      "appearance": "light",
+      "contrast": "normal",
+      "tint": [
+        237,
+        110,
+        0
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/orange-light-normal.webp",
+      "native": "avatar_orange_light_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "bc92cfc45509543f4ef48920d6220cf740e3d6049d1660a97dea45a2cfd40fa1",
+      "webSha256": "7ec3afd1e325ab7113bb17b92a691b04f949f8c284d1aa65f1f55c7128fbef17",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_orange_light_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5010,
+          "decodedBytes": 9216,
+          "sha256": "a1adb40bf25403958937a2c3dcd4ec3cb95c895fa6840c317a7369445651170f"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_orange_light_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10953,
+          "decodedBytes": 20736,
+          "sha256": "b741e6c224dd4640e7babb5f7280c95d673163debb44b12d9b2e66d8b8e4c55c"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_orange_light_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19688,
+          "decodedBytes": 36864,
+          "sha256": "29e3911c23ea7fb1446ffd54ccbe077ff3d5433c06c4a298c399fa5dc54b5c1b"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_orange_light_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 44707,
+          "decodedBytes": 82944,
+          "sha256": "edd051a086fcc2c76538916a5421b2f8b6d62d498692c796f98044e40e06c17b"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_orange_light_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 79270,
+          "decodedBytes": 147456,
+          "sha256": "ce44b20a115d5dc8d01cac116cf503b65b34c7f2c10cea80e44c67eb556b39c7"
+        }
+      ],
+      "webBytes": 110518,
+      "pngBytes": 159628,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "yellow",
+      "mode": "light-normal",
+      "appearance": "light",
+      "contrast": "normal",
+      "tint": [
+        255,
+        208,
+        0
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/yellow-light-normal.webp",
+      "native": "avatar_yellow_light_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "ca0edd3b48be6822f823ff96b2adcc1316047288d161ab76df7ca923527c4954",
+      "webSha256": "6262634355aae49e38c36faf66bc0d6b516b0502411722ba9a48200a891e0064",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_yellow_light_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4946,
+          "decodedBytes": 9216,
+          "sha256": "5c598e97980210b5ec0c5461d9318d2395b9b2b32e10c53e612be26a3d2ba510"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_yellow_light_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10824,
+          "decodedBytes": 20736,
+          "sha256": "f3c7929c8242fd27da341e1e7383f7e18f57edd22d20ad9abb49534ff773e118"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_yellow_light_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19477,
+          "decodedBytes": 36864,
+          "sha256": "cb818ba18edf8201356dc09d08bf804a9857fb28327ef0fb3e60de1368396f61"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_yellow_light_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 43905,
+          "decodedBytes": 82944,
+          "sha256": "8a6818cd25f9729caa75cc8b1d57af7666b9736381a1da054b7e70c5c52f6ca2"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_yellow_light_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 77654,
+          "decodedBytes": 147456,
+          "sha256": "e832eccd102ac55b2654c8dfa0d6d188e63d59526ad0fa32569a91ef3394961f"
+        }
+      ],
+      "webBytes": 104002,
+      "pngBytes": 156806,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "green",
+      "mode": "light-normal",
+      "appearance": "light",
+      "contrast": "normal",
+      "tint": [
+        52,
+        199,
+        89
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/green-light-normal.webp",
+      "native": "avatar_green_light_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "60a4f345ef8a4c8fe9f9aa44fb00802130fe83dbfdb06c583ddbd924c9e66f6f",
+      "webSha256": "dafb309c49a3b535d0468c97af53b93e86ee6587edf4615135b87d7c479cc8b4",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_green_light_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5042,
+          "decodedBytes": 9216,
+          "sha256": "578f2214bf591b54b13855ccda83178a2c5f4140854b9d94cba5e3e142b55c60"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_green_light_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11059,
+          "decodedBytes": 20736,
+          "sha256": "a6298f42efb58f5fbbdf5f8d865ce54ada197b083502000feb1747078756160c"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_green_light_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19909,
+          "decodedBytes": 36864,
+          "sha256": "ec5b172930b3f8937d789b348477c0fb9572ad2bfb926ed5920fe04709563e1d"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_green_light_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 45297,
+          "decodedBytes": 82944,
+          "sha256": "7cc27fd67ba22208b278ae4f41e7e5e33b63ded39f5a4aed832763bde5262e24"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_green_light_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 80567,
+          "decodedBytes": 147456,
+          "sha256": "f21f28c6cd18827d8a0bbf8e61727840af502d9cfe54259fa683299f3afb3d70"
+        }
+      ],
+      "webBytes": 106388,
+      "pngBytes": 161874,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "teal",
+      "mode": "light-normal",
+      "appearance": "light",
+      "contrast": "normal",
+      "tint": [
+        90,
+        200,
+        250
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/teal-light-normal.webp",
+      "native": "avatar_teal_light_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "a67e523d9395cfe05a91da5fcd7169ed91787af15d68a795256017a39aa76be6",
+      "webSha256": "bfb3757e2abb9c843b2a8a2648265f9cb9d68e7b40de554f381aec80adfa0714",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_teal_light_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5032,
+          "decodedBytes": 9216,
+          "sha256": "3483dc821f050282fc3d128c55c0ba4c52a222a840e249c70c56ce0d2a192900"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_teal_light_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10979,
+          "decodedBytes": 20736,
+          "sha256": "724a2680d76ad6fd9a212ea1faf91f0e3829f4f16d640bd30bc02db3e767ac4b"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_teal_light_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19761,
+          "decodedBytes": 36864,
+          "sha256": "13a7fbb93765c8eb2e9ab52539bc37d5ada12451c84133ae7a60d9d247aa7e85"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_teal_light_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 45392,
+          "decodedBytes": 82944,
+          "sha256": "804fd3c9ebea3eeb161faa697d622b784046cf4fb51b660d145f2b2a1014b109"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_teal_light_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 80793,
+          "decodedBytes": 147456,
+          "sha256": "430b71990c6bac5c967c7fdce4d957c738584c8f6fd0e18e35d8c2ac014bfd5b"
+        }
+      ],
+      "webBytes": 98920,
+      "pngBytes": 161957,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "mint",
+      "mode": "light-normal",
+      "appearance": "light",
+      "contrast": "normal",
+      "tint": [
+        0,
+        199,
+        190
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/mint-light-normal.webp",
+      "native": "avatar_mint_light_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "15d528363bfe823cf840c4cc61212d34a9fa9f58cf9c5828493ab5633d555bee",
+      "webSha256": "2352e40fbd17bb1b45a9b95d223f24231e61a2ca18c278f8e3b51b5e9d8f974a",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_mint_light_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5009,
+          "decodedBytes": 9216,
+          "sha256": "2b2a503104d6436c34e2da80fa4535478e47cc55b7c0af4498946bafca82f0fa"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_mint_light_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10900,
+          "decodedBytes": 20736,
+          "sha256": "63727bed63acabf766138037c048f093b50b9ad2c8a3f95267b4634614d82de6"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_mint_light_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19559,
+          "decodedBytes": 36864,
+          "sha256": "e9555bb4deb7bbe6eb0b87a10a1a88406f492876af6758dc2716726018995a84"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_mint_light_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 44498,
+          "decodedBytes": 82944,
+          "sha256": "e909b92b93f4a56f1d508fe97828c174448fbd838524dc0f8c7862a0e10c35da"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_mint_light_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 78889,
+          "decodedBytes": 147456,
+          "sha256": "93d5d0e9fba0f35848e825a9b6c541e5c4a426ad0f2bffe9e9994436cfe9e240"
+        }
+      ],
+      "webBytes": 94642,
+      "pngBytes": 158855,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "blue",
+      "mode": "light-normal",
+      "appearance": "light",
+      "contrast": "normal",
+      "tint": [
+        31,
+        109,
+        237
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/blue-light-normal.webp",
+      "native": "avatar_blue_light_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "e8f66b022e6faf5dcedf83e79c9ab69d1dd64ce55327d19ca212bf339691bc9c",
+      "webSha256": "41d8af11cb9685f31bba3bd9513e3268ef73470c869129742ed414470058e08a",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_blue_light_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4894,
+          "decodedBytes": 9216,
+          "sha256": "0f73732118e7ac46e278aae64fa53aee00ef5bbfae75284f6b79d90c4f796451"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_blue_light_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10598,
+          "decodedBytes": 20736,
+          "sha256": "2a9d1df029ea56b56733656df11ef8f4503e9db611c0b417f5c92d8a91c85a45"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_blue_light_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 18966,
+          "decodedBytes": 36864,
+          "sha256": "6cd9586afcd2362c459ce64486a0ab09d48e531fbfb903d06cd4bfa53967dafc"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_blue_light_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 43322,
+          "decodedBytes": 82944,
+          "sha256": "0481ed9f7f83faf91f9a2ff035c5467990ad672145904f83e538464572bb2ad9"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_blue_light_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 76788,
+          "decodedBytes": 147456,
+          "sha256": "e62f1230740d1992ea0c4bc492cceaa6d5963085f5ece055bd4e2c71579e4a48"
+        }
+      ],
+      "webBytes": 106760,
+      "pngBytes": 154568,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "indigo",
+      "mode": "light-normal",
+      "appearance": "light",
+      "contrast": "normal",
+      "tint": [
+        88,
+        86,
+        214
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/indigo-light-normal.webp",
+      "native": "avatar_indigo_light_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "a24f800fb079c26d976733140ee70805ba223b13c0a58034bb96288ec8e3ebf1",
+      "webSha256": "1c040bfabd31cd8629165f0e9daf3bb86cc58321592d411f6f56508b1ff74005",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_indigo_light_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4741,
+          "decodedBytes": 9216,
+          "sha256": "15ef803b2dddbc6877b871300d21e2e969680b461230fc9b3a5c223071670ce1"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_indigo_light_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10329,
+          "decodedBytes": 20736,
+          "sha256": "14ba7156322517555d23cd7f6adabe0790360894c25133ad091e49ccc55657b8"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_indigo_light_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 18437,
+          "decodedBytes": 36864,
+          "sha256": "c7811aaf06e0264230a465f2518e285f9a4a72522d2af41632fc11b1e3afc58d"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_indigo_light_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 42020,
+          "decodedBytes": 82944,
+          "sha256": "b0bacf64ccaf179fef3cc03ed67b69bbd03843b930d28c94514b05a343154ddd"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_indigo_light_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 74335,
+          "decodedBytes": 147456,
+          "sha256": "92d56318a05d8059229df73d2679795a3d0c414f67c53b0f8798720df056ab16"
+        }
+      ],
+      "webBytes": 82350,
+      "pngBytes": 149862,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "purple",
+      "mode": "light-normal",
+      "appearance": "light",
+      "contrast": "normal",
+      "tint": [
+        175,
+        82,
+        222
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/purple-light-normal.webp",
+      "native": "avatar_purple_light_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "cea973d0fd79f98e7e9442d5e76871a0c2ac97f34cbcd55e79fb196531399257",
+      "webSha256": "a7fe89c1761f383ca2908fd96ffa7aa90f58780b02c35a55ec450c89a003d3df",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_purple_light_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5020,
+          "decodedBytes": 9216,
+          "sha256": "bd051f4790d600a88a3382b19da7d14e08a6c47268488a3c07a60a61da0ed0cb"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_purple_light_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10963,
+          "decodedBytes": 20736,
+          "sha256": "c0d53e3bd405d10c28bb6e571eab8551160f238c4d909db7e7da9eeb48d59b6a"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_purple_light_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19696,
+          "decodedBytes": 36864,
+          "sha256": "b4c476ae55a4df3675a24e967e27b46a755e5dae8cfa637331683a974e594bfa"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_purple_light_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 45706,
+          "decodedBytes": 82944,
+          "sha256": "0fb26a20a3c9136dbcb01f6806563d3a3e8c39389deb7e94151f12d29aac2153"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_purple_light_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 81741,
+          "decodedBytes": 147456,
+          "sha256": "470ea2876af315f4a4c25b897664c32cb7ba186e679a5ea29f515bd989950e82"
+        }
+      ],
+      "webBytes": 103182,
+      "pngBytes": 163126,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "pink",
+      "mode": "light-normal",
+      "appearance": "light",
+      "contrast": "normal",
+      "tint": [
+        255,
+        45,
+        85
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/pink-light-normal.webp",
+      "native": "avatar_pink_light_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "54317e26707e1fa3682c18aefc97134cff42978ded95fba0685ad99ab2c027bd",
+      "webSha256": "5a82ab0a02af32a77eb3af3ec8752196700673e2a8f6b7df3a4bffe3828de52d",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_pink_light_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4880,
+          "decodedBytes": 9216,
+          "sha256": "b642324fd874d8e8710a1ea70094ae3a7a1e03fd0e8ffb6da89b064c4c5c0b05"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_pink_light_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10591,
+          "decodedBytes": 20736,
+          "sha256": "4565b313dfa7d5aade8b136f4a8d12fd68c5a2c71222a77374405541bea59dc3"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_pink_light_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 18910,
+          "decodedBytes": 36864,
+          "sha256": "49f916ca26d0297670912ae19ed7a69efa1f77febf00f670d5afe51e936c7e56"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_pink_light_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 43071,
+          "decodedBytes": 82944,
+          "sha256": "2267c5b8dcd9a2f261a616cca8c533dd8e61c292ccb67153bc74a9f10c0d53f6"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_pink_light_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 76232,
+          "decodedBytes": 147456,
+          "sha256": "109b61a1e855a018f0d71188298c9cc6fe23978bc9cdf7531fc39f60adbcb671"
+        }
+      ],
+      "webBytes": 96978,
+      "pngBytes": 153684,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "red",
+      "mode": "dark-normal",
+      "appearance": "dark",
+      "contrast": "normal",
+      "tint": [
+        255,
+        58,
+        58
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/red-dark-normal.webp",
+      "native": "avatar_red_dark_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "17f90cdc2549d8bcc5dcef36188c0a4389c06c44ade685c5517a1a099fc30828",
+      "webSha256": "fc925ac10932926d3792580bbc0ae989125be4d01431001bbc3a784c07615776",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_red_dark_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4750,
+          "decodedBytes": 9216,
+          "sha256": "4e6b236c45f2d2ab71355e2ed3b683de8379ded649b45e8719d53654223a65ce"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_red_dark_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10294,
+          "decodedBytes": 20736,
+          "sha256": "b0741c5dd95113f37dd12fd677180916e59ecb61c4cfe6fe952e49ecb69e44bc"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_red_dark_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 18266,
+          "decodedBytes": 36864,
+          "sha256": "32573b3995cc4af41eaa5176acf8a5b89bcd35bec9269fc8a8aedfe3a44c045b"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_red_dark_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 41322,
+          "decodedBytes": 82944,
+          "sha256": "cda5d85cda1b0034ae9397a4b5c3318ce8c7179339a8f852c2dafbedf294fd2d"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_red_dark_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 72583,
+          "decodedBytes": 147456,
+          "sha256": "0bd4e8b9b7a0ac82e95d3119758323c4d820f21cb79927661b5e7becd18db053"
+        }
+      ],
+      "webBytes": 78002,
+      "pngBytes": 147215,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "orange",
+      "mode": "dark-normal",
+      "appearance": "dark",
+      "contrast": "normal",
+      "tint": [
+        242,
+        121,
+        0
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/orange-dark-normal.webp",
+      "native": "avatar_orange_dark_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "adc321bd708ca758f826eefb216170ec548746c6df4c8e1f98430a6dd4f7817d",
+      "webSha256": "5e358f007c965d5c46781ae58b4b2588053e7e0013e8ab5e2ccffaf2cb239ce2",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_orange_dark_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5028,
+          "decodedBytes": 9216,
+          "sha256": "03a07683cfbdb37a9bb7406ede4d180e4b90152ffc2c30a7a8afd393de873cfa"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_orange_dark_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10948,
+          "decodedBytes": 20736,
+          "sha256": "957472832772b0bc425d398a55bb68dcbee0cc5169ab76fee9904a483a076e77"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_orange_dark_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19711,
+          "decodedBytes": 36864,
+          "sha256": "4c4d0ef5339d7ea2a799256d84538a148bbffef551f7ed2bf7ef08cb8ed99eac"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_orange_dark_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 44770,
+          "decodedBytes": 82944,
+          "sha256": "409096cdf479e0504d700158bac640b08614ac91f405beb0759f573342c1946c"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_orange_dark_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 79262,
+          "decodedBytes": 147456,
+          "sha256": "ff17f1e013cfc96e97872bb6336aefacde894c28f8d5e3aab4d1f0e52fa75d10"
+        }
+      ],
+      "webBytes": 110192,
+      "pngBytes": 159719,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "yellow",
+      "mode": "dark-normal",
+      "appearance": "dark",
+      "contrast": "normal",
+      "tint": [
+        255,
+        214,
+        10
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/yellow-dark-normal.webp",
+      "native": "avatar_yellow_dark_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "65a871ea17b5eef2a3defa8cef10357114187f7145e5303b83a9f625c26fda78",
+      "webSha256": "54cbb35f52f289e50d16c05b2169068659c7d99c513db9c52c7a5221d8e9b05f",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_yellow_dark_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4968,
+          "decodedBytes": 9216,
+          "sha256": "cb5f8093dfa807501b944f582a114a5d0d8734c83596bf6852f8c779409abdbb"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_yellow_dark_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10820,
+          "decodedBytes": 20736,
+          "sha256": "ca75582a4ab99dd46a6e9b36c337fb509432e8b4e2439276b48fb335d456919e"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_yellow_dark_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19420,
+          "decodedBytes": 36864,
+          "sha256": "ae32702878db53c156f58e8711e2cd3da420be1d9e00afc9276519122320d10d"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_yellow_dark_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 43820,
+          "decodedBytes": 82944,
+          "sha256": "9a9c133597f7a1a4f7f0b88f39856a5c8f3f2ad4bc8dbb974c56b5a4729f36be"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_yellow_dark_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 77578,
+          "decodedBytes": 147456,
+          "sha256": "3486c25b7401a61f6805073946401d1b2ddaa3a6b7ce8e39b5ba34555e71acbf"
+        }
+      ],
+      "webBytes": 104044,
+      "pngBytes": 156606,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "green",
+      "mode": "dark-normal",
+      "appearance": "dark",
+      "contrast": "normal",
+      "tint": [
+        48,
+        209,
+        88
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/green-dark-normal.webp",
+      "native": "avatar_green_dark_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "5dc34cc844200ed0e26ec3a466b06ef2139dd0855861272f69956a99ba259dd4",
+      "webSha256": "d356d726c7216ed8f823f2d05cf8c0b2b6748df1b3b35d2ff5041596166a5ab2",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_green_dark_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5050,
+          "decodedBytes": 9216,
+          "sha256": "ba3c577d0157b229d6577c662bc67139d8d76eda3b4970d2a9da6386f1b2ed1d"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_green_dark_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11025,
+          "decodedBytes": 20736,
+          "sha256": "97a670bc135dc6c89dde6d41d0842d8483a7e47e03e34ad56b74303ccf6f488b"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_green_dark_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19858,
+          "decodedBytes": 36864,
+          "sha256": "01b8b67b2b8bb184b788613805b9cb25909b0b38f165101c0e51b83686e1af37"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_green_dark_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 45278,
+          "decodedBytes": 82944,
+          "sha256": "542645ae7d9f7f311a2498daec6bd874b18652e48e1ab411c89642e2c6ca2096"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_green_dark_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 80317,
+          "decodedBytes": 147456,
+          "sha256": "017f39d6fa05e2472020daf21d864f03c2befd8c1feaa61b0514f62123945714"
+        }
+      ],
+      "webBytes": 107354,
+      "pngBytes": 161528,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "teal",
+      "mode": "dark-normal",
+      "appearance": "dark",
+      "contrast": "normal",
+      "tint": [
+        100,
+        210,
+        255
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/teal-dark-normal.webp",
+      "native": "avatar_teal_dark_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "3ef552c97904edd4a16d0462e33de06e064df4a8b6b47daba3d90a985d080596",
+      "webSha256": "2378aeab16ab022da8cf9ad52b7d2ac29574ba4a8377e61678dd8c5a1b5a9901",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_teal_dark_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5037,
+          "decodedBytes": 9216,
+          "sha256": "94f7afd244d7d3f18f5fc442018a664e1fb620f1a5694e57b5eab84656b45078"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_teal_dark_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10973,
+          "decodedBytes": 20736,
+          "sha256": "726b25f71f54c110fc104f9cce5e16a0b2d5341134fb9424d86706178edd8cc8"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_teal_dark_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19750,
+          "decodedBytes": 36864,
+          "sha256": "185305f16b39894a5aa4df98f14bf1bcf93950798f3490711c6666e3e3a33ed9"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_teal_dark_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 45410,
+          "decodedBytes": 82944,
+          "sha256": "aab45a53379073539e2c311b7056996b10d4bd75c38d59f8e811a77cd54dae2e"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_teal_dark_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 80826,
+          "decodedBytes": 147456,
+          "sha256": "b347593f2314c595a3e8c09a0856bbf506bcb350795117831d4344b2da6a03e3"
+        }
+      ],
+      "webBytes": 99890,
+      "pngBytes": 161996,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "mint",
+      "mode": "dark-normal",
+      "appearance": "dark",
+      "contrast": "normal",
+      "tint": [
+        99,
+        230,
+        226
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/mint-dark-normal.webp",
+      "native": "avatar_mint_dark_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "f67191c039c96759bb3ff07e31372db40db0cee8d418871f71aefc87f618c38a",
+      "webSha256": "18ed18dd34670e5d1716166116f77c3ac5405b8623fd0b702b031b77dd089322",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_mint_dark_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5013,
+          "decodedBytes": 9216,
+          "sha256": "8b5a9a556b1e085dc051c312dcd6601ee1667195ce0a3b9564fd6a3118c186fc"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_mint_dark_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10988,
+          "decodedBytes": 20736,
+          "sha256": "9b50ec95b55971b9798d2b9eccf3ccfb915755e5a1de70d2c3e3e15836fb0e73"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_mint_dark_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19721,
+          "decodedBytes": 36864,
+          "sha256": "a51f1d988ebb8e07632c73e170708dc6fb702016815056beedf8e48de789090c"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_mint_dark_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 45087,
+          "decodedBytes": 82944,
+          "sha256": "ad68173848eac3baa07160f3f6062ae0049c6214a1fdd05262c40a1c34f50809"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_mint_dark_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 80259,
+          "decodedBytes": 147456,
+          "sha256": "e5388defc2a3fd82f6bb42aef6bdb49d070d6faf21e42d437ac6bfa526ab9a8d"
+        }
+      ],
+      "webBytes": 91138,
+      "pngBytes": 161068,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "blue",
+      "mode": "dark-normal",
+      "appearance": "dark",
+      "contrast": "normal",
+      "tint": [
+        38,
+        120,
+        255
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/blue-dark-normal.webp",
+      "native": "avatar_blue_dark_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "e33a4671fe58174d15ddbef47d890e1b6eceda5ae7ce67b136e0c93fdcd0b24e",
+      "webSha256": "666d39d5e7fa786ba1a584487d8a13549d4a8808456c0a7ac1bd925ae7b063f3",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_blue_dark_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4866,
+          "decodedBytes": 9216,
+          "sha256": "12c881970afa6bc52b7de430c89c941810fba33d7544c969ebf64b96e2b50758"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_blue_dark_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10483,
+          "decodedBytes": 20736,
+          "sha256": "56998a5883543e71c8607631133aef9b0deae266f70d3013f601cc900796d385"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_blue_dark_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 18753,
+          "decodedBytes": 36864,
+          "sha256": "89e7639df450206b456e17d4bab4d55091b5f0efebd5640d641edab62ecdb9cd"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_blue_dark_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 42701,
+          "decodedBytes": 82944,
+          "sha256": "53fafefc746d5426ae265dc4e3139ebb3bd46c82677a8470fc2741ae216be837"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_blue_dark_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 75550,
+          "decodedBytes": 147456,
+          "sha256": "dec359bf1cfcf4368a72ef3915ca53c8d2a322f592900cf4fe9700508e2bcd53"
+        }
+      ],
+      "webBytes": 105394,
+      "pngBytes": 152353,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "indigo",
+      "mode": "dark-normal",
+      "appearance": "dark",
+      "contrast": "normal",
+      "tint": [
+        94,
+        92,
+        230
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/indigo-dark-normal.webp",
+      "native": "avatar_indigo_dark_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "fc59823b4ae5ae594e539a6270386a7c02a5e0d391eaaee6ad0fccd71ea0895b",
+      "webSha256": "bce248571632c9c4b16d6f2b8a0e0426742ea6e0c5fe1ff0aa6038b293733378",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_indigo_dark_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4756,
+          "decodedBytes": 9216,
+          "sha256": "f699fb141506b5c437e33317006d1c1f9429418bfb5c92e7beb43f0711d0f7de"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_indigo_dark_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10307,
+          "decodedBytes": 20736,
+          "sha256": "7b74dd3a458af712d3fe66778f9894dd1770d06688cd57f09a264662f23e2981"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_indigo_dark_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 18404,
+          "decodedBytes": 36864,
+          "sha256": "0de3566d945fb2e29214fc50dddfc4a3dca905bf7acf5ef8e76d082e716e7864"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_indigo_dark_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 42081,
+          "decodedBytes": 82944,
+          "sha256": "1b3b30ffba06e4dd21b1f0aa4eaf296c53bd621e089df62c3ec8860c7a9de31d"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_indigo_dark_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 74439,
+          "decodedBytes": 147456,
+          "sha256": "cdb3dd7f4245c2020de177c59cdd15b581b5c3c788c648471f729f2fedde3d89"
+        }
+      ],
+      "webBytes": 82238,
+      "pngBytes": 149987,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "purple",
+      "mode": "dark-normal",
+      "appearance": "dark",
+      "contrast": "normal",
+      "tint": [
+        191,
+        90,
+        242
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/purple-dark-normal.webp",
+      "native": "avatar_purple_dark_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "21f711f36c2e94c51f95bbe0a3671acdaf25c848fe165af4d50c8b051133010f",
+      "webSha256": "069b618fc835efbe5157fc76cf840a2e6cd40fdaedde321341a2d0ba2ef8da4f",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_purple_dark_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5003,
+          "decodedBytes": 9216,
+          "sha256": "ebfffca81e9a1b1f7f29a141cb37d38cf537b5ca25e98a55f8feeca249218416"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_purple_dark_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10907,
+          "decodedBytes": 20736,
+          "sha256": "17da20c6f90410ffba949d5a78107203f92e734704cede133f28da79aaf1752e"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_purple_dark_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19583,
+          "decodedBytes": 36864,
+          "sha256": "d66c2c86eb9ec93bf8399b14e872d3aab692a2a6a1b6b8d752011103da5c4cbd"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_purple_dark_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 45369,
+          "decodedBytes": 82944,
+          "sha256": "7b855de9f2d4b87517027d55e0fd1b0fc05b42989306aee21d6e9d877eea15a9"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_purple_dark_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 81090,
+          "decodedBytes": 147456,
+          "sha256": "d75fb333aa0c9e82f1e1322bdb2d728c3067cf01c14aa5a7d19adc1170e9e732"
+        }
+      ],
+      "webBytes": 103518,
+      "pngBytes": 161952,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "pink",
+      "mode": "dark-normal",
+      "appearance": "dark",
+      "contrast": "normal",
+      "tint": [
+        255,
+        45,
+        85
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/pink-dark-normal.webp",
+      "native": "avatar_pink_dark_normal.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "54317e26707e1fa3682c18aefc97134cff42978ded95fba0685ad99ab2c027bd",
+      "webSha256": "5a82ab0a02af32a77eb3af3ec8752196700673e2a8f6b7df3a4bffe3828de52d",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_pink_dark_normal.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4880,
+          "decodedBytes": 9216,
+          "sha256": "b642324fd874d8e8710a1ea70094ae3a7a1e03fd0e8ffb6da89b064c4c5c0b05"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_pink_dark_normal.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10591,
+          "decodedBytes": 20736,
+          "sha256": "4565b313dfa7d5aade8b136f4a8d12fd68c5a2c71222a77374405541bea59dc3"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_pink_dark_normal.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 18910,
+          "decodedBytes": 36864,
+          "sha256": "49f916ca26d0297670912ae19ed7a69efa1f77febf00f670d5afe51e936c7e56"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_pink_dark_normal.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 43071,
+          "decodedBytes": 82944,
+          "sha256": "2267c5b8dcd9a2f261a616cca8c533dd8e61c292ccb67153bc74a9f10c0d53f6"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_pink_dark_normal.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 76232,
+          "decodedBytes": 147456,
+          "sha256": "109b61a1e855a018f0d71188298c9cc6fe23978bc9cdf7531fc39f60adbcb671"
+        }
+      ],
+      "webBytes": 96978,
+      "pngBytes": 153684,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "red",
+      "mode": "light-more",
+      "appearance": "light",
+      "contrast": "more",
+      "tint": [
+        215,
+        0,
+        21
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/red-light-more.webp",
+      "native": "avatar_red_light_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "f429df0ea8d5bebffcfb3281b4993f3968a885ce010526b55d9baf174a88e890",
+      "webSha256": "16448215778cf6fa6175efcdccc38de5ea7ebb5282b0da4df2ab2e3a154b6911",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_red_light_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4878,
+          "decodedBytes": 9216,
+          "sha256": "53f655988203ccace0077a1b8a541afec69a4969f93a554679d87a0286f8ed46"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_red_light_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10606,
+          "decodedBytes": 20736,
+          "sha256": "9c8b23848e97fdbfeecff33fd07f4436523c633697a3776e8a1c4b4cd96dfa01"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_red_light_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19025,
+          "decodedBytes": 36864,
+          "sha256": "1fefccfb2959497646837fbe710d52cf9cb3074f5b05d2e1a6442663fe506f9a"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_red_light_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 43423,
+          "decodedBytes": 82944,
+          "sha256": "650bf2aaf22280a2816a44cc7b634e8dd5cbafcf479e3947550560bc7dff0722"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_red_light_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 76691,
+          "decodedBytes": 147456,
+          "sha256": "a989d7d67f1f39c5ae40f12788147658384e92b7c0fb75c57bb2f0960295736f"
+        }
+      ],
+      "webBytes": 95320,
+      "pngBytes": 154623,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "orange",
+      "mode": "light-more",
+      "appearance": "light",
+      "contrast": "more",
+      "tint": [
+        201,
+        52,
+        0
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/orange-light-more.webp",
+      "native": "avatar_orange_light_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "93b9848e46aba2d46be4eb437cc9bd15f2a96fc24a64711c40eb7767506f989d",
+      "webSha256": "584d9cc08e4a12bd60a0222260ca9f725c8f26dcd6b064d69d9d71b24dd1965d",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_orange_light_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5008,
+          "decodedBytes": 9216,
+          "sha256": "a369ed83322e851643d2c0caf303dc477082671c0849a00492fb1ed96f832402"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_orange_light_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11066,
+          "decodedBytes": 20736,
+          "sha256": "523e20c2005f4797d7a2080deb0b4b9f18147d24f76af01e42e5a48190bb2c20"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_orange_light_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19941,
+          "decodedBytes": 36864,
+          "sha256": "d064219d981d7ada69040765a256c2301540a4ed1d0ad1ca7ce66220fd91dd8c"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_orange_light_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 45613,
+          "decodedBytes": 82944,
+          "sha256": "a119b75967cf13a1c2facde37c873879bdf7583f496baf38489c1fc3c394a19e"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_orange_light_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 80938,
+          "decodedBytes": 147456,
+          "sha256": "d6ee177b3af9811898502c0e724e09a9d2e42b77ecb42e91b4cbcae1dce09512"
+        }
+      ],
+      "webBytes": 109486,
+      "pngBytes": 162566,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "yellow",
+      "mode": "light-more",
+      "appearance": "light",
+      "contrast": "more",
+      "tint": [
+        178,
+        80,
+        0
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/yellow-light-more.webp",
+      "native": "avatar_yellow_light_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "076df686dd6456b1b819a6178dfd1f4b1c63bb9e0f3226c75df1a034737f323f",
+      "webSha256": "036ff78843d1627f1e21cd60730a648612da5588e19dff18c88afc62a2a2d42b",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_yellow_light_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5056,
+          "decodedBytes": 9216,
+          "sha256": "a43f678d57a59f7dc8bfe79385316d66aac772a6bab04c3d8d25eaf9dbe7f9d9"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_yellow_light_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11136,
+          "decodedBytes": 20736,
+          "sha256": "5b75ea408cb08781fc6b2bc8543f5ca8d8abe43056644b92ef3d1020057de3de"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_yellow_light_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 20105,
+          "decodedBytes": 36864,
+          "sha256": "f75325aae14236de77bfcdb420a40a9e99a1d3a6c9af08065c55d035c951ba23"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_yellow_light_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 46110,
+          "decodedBytes": 82944,
+          "sha256": "8f83d7a5d02e41d9db0ba48e5c39463cf9c3a02f561b02206b52d8dfe34aaa06"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_yellow_light_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 82013,
+          "decodedBytes": 147456,
+          "sha256": "46c269a312522efeb37e68d7fa6f55af4c0e05c8a02ea9c5ec2364c39c992515"
+        }
+      ],
+      "webBytes": 108236,
+      "pngBytes": 164420,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "green",
+      "mode": "light-more",
+      "appearance": "light",
+      "contrast": "more",
+      "tint": [
+        36,
+        138,
+        61
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/green-light-more.webp",
+      "native": "avatar_green_light_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "bd80fb9241478a74cc04ea5c9ba69763a3e83c93be3bb11dbc5fdf6e414f0d10",
+      "webSha256": "202fc2c132e7fdd7a11fa936f68d0361f9e750e8f3de7269e288e32c238c77fd",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_green_light_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5066,
+          "decodedBytes": 9216,
+          "sha256": "60fa1205266dff7804c40ca0a671279643c120cd2eac8c24b61d883a8f887d7d"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_green_light_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11194,
+          "decodedBytes": 20736,
+          "sha256": "d4d9686831fc8a269b2d8619ae960ad2997b73263e1a252d1a68e4417d16a529"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_green_light_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 20278,
+          "decodedBytes": 36864,
+          "sha256": "c64127a9415b8fe4566ae21218e2a6b1c117f131cea8967c9ef1dcded35c9d0a"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_green_light_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 46517,
+          "decodedBytes": 82944,
+          "sha256": "53d5f7f7699f995ea5656113961d606ae286f563ad7e176c7aa9935752fd1053"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_green_light_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 82847,
+          "decodedBytes": 147456,
+          "sha256": "a7ff48828971d423cdecc7325650864e0516a903727109f902ea91a4e543ae30"
+        }
+      ],
+      "webBytes": 96772,
+      "pngBytes": 165902,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "teal",
+      "mode": "light-more",
+      "appearance": "light",
+      "contrast": "more",
+      "tint": [
+        0,
+        113,
+        164
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/teal-light-more.webp",
+      "native": "avatar_teal_light_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "e7cb39348736869dc16757d257f12cd185a29bcdfb5357972430436545be7e9f",
+      "webSha256": "b6508f2f7ca0da9d62baa32013d287d5be79f23f1ad26878ce7ebe8c6c412572",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_teal_light_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5044,
+          "decodedBytes": 9216,
+          "sha256": "5bf9ded498039087e3701b52ef27bbe5efbcab9830bfbd4e5ca91c672d82115d"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_teal_light_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11102,
+          "decodedBytes": 20736,
+          "sha256": "2ee0fa7913665b3ad1229c27ec124935ff0e73fea751f7a6f12df9fcbbc2f72f"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_teal_light_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 20100,
+          "decodedBytes": 36864,
+          "sha256": "d70e912ea34f3a09774dabdc1a7ee258136c9837e638d4c09d658453275a00ba"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_teal_light_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 46287,
+          "decodedBytes": 82944,
+          "sha256": "c13a24af3322fe567160411e267754af40cf1f5d048c361f679d3faede3f4588"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_teal_light_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 82424,
+          "decodedBytes": 147456,
+          "sha256": "83bf8121336bda69af4ba789659b51825697cf8ae6c5f14a07ecbf26f9927a74"
+        }
+      ],
+      "webBytes": 98468,
+      "pngBytes": 164957,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "mint",
+      "mode": "light-more",
+      "appearance": "light",
+      "contrast": "more",
+      "tint": [
+        12,
+        129,
+        123
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/mint-light-more.webp",
+      "native": "avatar_mint_light_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "00db1e25a40a74ac2c6275f10f665f071a40f023c06ae47f426bb0d778d07d48",
+      "webSha256": "f2d82ff2afa7f4356b68d8452a425528920f02c9c039bda949398bec8f74d791",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_mint_light_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5046,
+          "decodedBytes": 9216,
+          "sha256": "6635b842e7f5a7a4fec3444b20fede50a711a4bd28dacedd49636cb5b8f5c48e"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_mint_light_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11089,
+          "decodedBytes": 20736,
+          "sha256": "161b5feb17c8e4bac59c23074981ae2be857ee46536d508b5ef59ab07db8840b"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_mint_light_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 20128,
+          "decodedBytes": 36864,
+          "sha256": "25b1c8de33a9885c4814c26c1c23c68fc80253d54395f3bafc0b44c43a9a7ccb"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_mint_light_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 46220,
+          "decodedBytes": 82944,
+          "sha256": "5147cdf2aa23185133cf30bea2bd8355f611792e8ed284b589ecee690054332d"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_mint_light_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 82259,
+          "decodedBytes": 147456,
+          "sha256": "f43844d55bcd9668b7a121a011c2da1bd105969f293efec6a4b2a3d35e2897b8"
+        }
+      ],
+      "webBytes": 94466,
+      "pngBytes": 164742,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "blue",
+      "mode": "light-more",
+      "appearance": "light",
+      "contrast": "more",
+      "tint": [
+        0,
+        80,
+        207
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/blue-light-more.webp",
+      "native": "avatar_blue_light_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "2fd01d4e9503b4ca1bfeb5f462d92f9e0a809c94494070b215ac1a8879e30616",
+      "webSha256": "dd51d550d2ab59ba40dc168c83074c498168ade34b96e64a200f332aea552631",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_blue_light_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4910,
+          "decodedBytes": 9216,
+          "sha256": "3027c2369a41666795d3eea6920c7aaa65d241f5d3292828856eae3c7e676962"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_blue_light_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10780,
+          "decodedBytes": 20736,
+          "sha256": "5e79b2a538b41251c8179ce80645d6256adb103c6f0780747f5c99d220f951ab"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_blue_light_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19352,
+          "decodedBytes": 36864,
+          "sha256": "c2129a1274ce7236d6cd804176f572b5d8d4a9d58bdd656116eb6245c015e28b"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_blue_light_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 44321,
+          "decodedBytes": 82944,
+          "sha256": "034635c3097942deb5923ba8a7596f44a94e3ac7d8607c97c8517a868a6b2538"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_blue_light_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 78684,
+          "decodedBytes": 147456,
+          "sha256": "8558c9805f788cf3789e6c58abbc4b1afbfcb941f5ffcb994e95631d81261112"
+        }
+      ],
+      "webBytes": 108652,
+      "pngBytes": 158047,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "indigo",
+      "mode": "light-more",
+      "appearance": "light",
+      "contrast": "more",
+      "tint": [
+        54,
+        52,
+        163
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/indigo-light-more.webp",
+      "native": "avatar_indigo_light_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "9b70b55f316fa4cf36dfff51d098da02fa6cbdc233ea30b49c76d0af2343b0b9",
+      "webSha256": "fe57ba696e717df74e55d3440f523b97f15570702a54fe6edec4f96bcd67c0b0",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_indigo_light_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5015,
+          "decodedBytes": 9216,
+          "sha256": "39e1df61662b47180d0084a5e586b23b7be116727bf69b8e6f69b984b67d6a5a"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_indigo_light_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11108,
+          "decodedBytes": 20736,
+          "sha256": "0a958ff487c28b58ba19940ff94b85b641c5b397d5241ebbe680463c2c162748"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_indigo_light_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 20214,
+          "decodedBytes": 36864,
+          "sha256": "5845fb83d15d020f3cd19c2d13e7ed44f4b3101d45a3ddd7e7efaaebb3d3e9d8"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_indigo_light_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 47422,
+          "decodedBytes": 82944,
+          "sha256": "83af0383b79af1472fbcd310ff833f573c331bd7bfcfd742d1c7c7d6a9b5afd3"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_indigo_light_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 84858,
+          "decodedBytes": 147456,
+          "sha256": "8ef009809f0e2bdc828d77758d1ce832526ee4afe7a3b14c2b87a127394ffd2b"
+        }
+      ],
+      "webBytes": 93636,
+      "pngBytes": 168617,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "purple",
+      "mode": "light-more",
+      "appearance": "light",
+      "contrast": "more",
+      "tint": [
+        137,
+        68,
+        171
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/purple-light-more.webp",
+      "native": "avatar_purple_light_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "4570aea3eb412b9a5ce0f8a86f95b9fd7772755a74a4686eec825c49dc33db80",
+      "webSha256": "a6aa33684208483e3c14877ab0c98105b3ebfb5b92dbae3fd615f20412863a46",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_purple_light_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5060,
+          "decodedBytes": 9216,
+          "sha256": "1ad93810bcc146f6ef621a288a35dffdfbeca9d9e36af9496a4a22ebd2262951"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_purple_light_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11245,
+          "decodedBytes": 20736,
+          "sha256": "57830f932e7dcdd602340d7b5e8995f8c262cec11bb9c045bac4fd2dbd143ddc"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_purple_light_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 20414,
+          "decodedBytes": 36864,
+          "sha256": "dc3abedb59baca9d943d4825f6115e3671e1ab3c3cee71764ad5dc09c45615d4"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_purple_light_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 47648,
+          "decodedBytes": 82944,
+          "sha256": "2fe062929e71074a0ab67802d30da536ecec8069c185c449a06be4f93dfa56fc"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_purple_light_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 85674,
+          "decodedBytes": 147456,
+          "sha256": "f815c44c93daf0d9c2195907d04d702d36f82928cd6bebf7a880dd96e3b13998"
+        }
+      ],
+      "webBytes": 108162,
+      "pngBytes": 170041,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "pink",
+      "mode": "light-more",
+      "appearance": "light",
+      "contrast": "more",
+      "tint": [
+        211,
+        15,
+        69
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/pink-light-more.webp",
+      "native": "avatar_pink_light_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "6eb613499890ce9d55623ee3251f801d680d304542327d09751819062cfdd383",
+      "webSha256": "256a66d815ff48f9e38c623fedee4128348f6186d9503685008413f2b6ece85c",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_pink_light_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4965,
+          "decodedBytes": 9216,
+          "sha256": "b5780adb28e8849bfb12f0013b8a8a59436b05dab09c6349697ca26a42dc61b9"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_pink_light_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10829,
+          "decodedBytes": 20736,
+          "sha256": "e8d866c49a6be2b770169dbeefb8b996e98865668dad6c89d7b9225c13c9d924"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_pink_light_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19611,
+          "decodedBytes": 36864,
+          "sha256": "7e97e76c5f8c3f34e83e1261fde79667d04b7fac1c940b860fb19cea3916c049"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_pink_light_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 45010,
+          "decodedBytes": 82944,
+          "sha256": "2682628beff2216cdc44d810a4c49a65b1d288267abbe925862d093eeefc5f4f"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_pink_light_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 80135,
+          "decodedBytes": 147456,
+          "sha256": "08fd66e4cd6afea140355c71db6f88461ce4bfcb47806f5743873d1ee1099b8a"
+        }
+      ],
+      "webBytes": 106098,
+      "pngBytes": 160550,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "red",
+      "mode": "dark-more",
+      "appearance": "dark",
+      "contrast": "more",
+      "tint": [
+        255,
+        97,
+        97
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/red-dark-more.webp",
+      "native": "avatar_red_dark_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "629127b0b961459c1b98a1867e4c1d4e08cf253a9d8d9a572193b86f3f5c1f37",
+      "webSha256": "9c139a2040ba8b8411cddb7e05558874b1ce29f9d26caf98285038fad779c614",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_red_dark_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4889,
+          "decodedBytes": 9216,
+          "sha256": "8d046a01244ad0d1a3afe4b16625cf4bf48f68a9c4ecbafea06d905168cd8d53"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_red_dark_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10734,
+          "decodedBytes": 20736,
+          "sha256": "b7b97c7e5965678002f8ee0786d805045fe4dd93d32c8099b9a3bcd28200f15b"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_red_dark_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19299,
+          "decodedBytes": 36864,
+          "sha256": "e048a9304497ea09eaa144822fb9fea73057fddbe6deeb1c6a7447cbdb585f4c"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_red_dark_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 44480,
+          "decodedBytes": 82944,
+          "sha256": "0d4fd61e07d204ca11b37f52f0006b237cd94faa7e0bcca3a45290164287d031"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_red_dark_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 79121,
+          "decodedBytes": 147456,
+          "sha256": "f53cdd8e5b7b970729b71c5fa2065f1633a4b8c875dcb56d2b2393dab3bcaaa2"
+        }
+      ],
+      "webBytes": 82908,
+      "pngBytes": 158523,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "orange",
+      "mode": "dark-more",
+      "appearance": "dark",
+      "contrast": "more",
+      "tint": [
+        255,
+        169,
+        64
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/orange-dark-more.webp",
+      "native": "avatar_orange_dark_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "83ebaa6189ae6c4bb737ed170bef19958b49063edd57308d7b3e5e57e8d17f08",
+      "webSha256": "f3f48c61c24e231ca6ab172ff0f6a43a1779b0e3717f25e8c4fde5c3070d514a",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_orange_dark_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5046,
+          "decodedBytes": 9216,
+          "sha256": "ef5b121cd2a279a45eecd6576df566676680dc2569cc3a2a6b748b53d9eb2eba"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_orange_dark_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11094,
+          "decodedBytes": 20736,
+          "sha256": "2f8333d0aab7cab554cb7b98445c5dda77258471480a89fb19359682ffc82441"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_orange_dark_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 20038,
+          "decodedBytes": 36864,
+          "sha256": "140fc79a4d5992f89d0f9169e90f6bbdd581d040b6997be3d318fc1f65031361"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_orange_dark_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 45864,
+          "decodedBytes": 82944,
+          "sha256": "6ac583465609446fe4c7a074ad8d353f4de2a1c9909203a64009b460b5a142d0"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_orange_dark_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 81512,
+          "decodedBytes": 147456,
+          "sha256": "a7018463dbc7365c28dbb25ed6ea14cd1147c0a309d75a2ce65b353193cc9e00"
+        }
+      ],
+      "webBytes": 115252,
+      "pngBytes": 163554,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "yellow",
+      "mode": "dark-more",
+      "appearance": "dark",
+      "contrast": "more",
+      "tint": [
+        255,
+        212,
+        38
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/yellow-dark-more.webp",
+      "native": "avatar_yellow_dark_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "4bb873d84175e32027b59b167e5413de61a23de62d8093e381c2e05824c347d4",
+      "webSha256": "1a9ec7243ae2c787d9471f59a1c8a7c1322d532e3c6f859f104395535df03bce",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_yellow_dark_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 4983,
+          "decodedBytes": 9216,
+          "sha256": "c838364add1b1c1a7535d45fdf563637e2dd86aeadd0c32420322f3165115778"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_yellow_dark_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 10947,
+          "decodedBytes": 20736,
+          "sha256": "8018ff796facfa10f1f88b48d46a1a7b7ea5995c04a1b0816b7f5851269a86fc"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_yellow_dark_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 19778,
+          "decodedBytes": 36864,
+          "sha256": "ba18ea3d11f14913e4c361b9ee8fd924481e092eeac344e9b60dc448825094e3"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_yellow_dark_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 45014,
+          "decodedBytes": 82944,
+          "sha256": "5b16e3b773b91b67034f81e718e7d3759cabc8978cb46e0e654979ee3e512e6c"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_yellow_dark_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 79726,
+          "decodedBytes": 147456,
+          "sha256": "d1a7c9b5b1f247e11108f22793a53ab5ead056986e4bdec5d5fc4fea3d187759"
+        }
+      ],
+      "webBytes": 106460,
+      "pngBytes": 160448,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "green",
+      "mode": "dark-more",
+      "appearance": "dark",
+      "contrast": "more",
+      "tint": [
+        48,
+        219,
+        91
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/green-dark-more.webp",
+      "native": "avatar_green_dark_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "ee8c0834850b7b74ad8596e1908e5c3129cee61230528ed1d0cd629a9bc516c7",
+      "webSha256": "27680c298b08b535083012d8e45e34dc38c8fe8a7aee82d0bb97fabdc3c35772",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_green_dark_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5052,
+          "decodedBytes": 9216,
+          "sha256": "6d2f87a5568ab660568459dd9906561c615447a110d94a1311562f88e0d7c1a8"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_green_dark_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11137,
+          "decodedBytes": 20736,
+          "sha256": "df63be761af933d88cbbe78c431f93c7c345e22841ed602b7caf7d6c670f6a49"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_green_dark_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 20142,
+          "decodedBytes": 36864,
+          "sha256": "53c96702d270d45ca65c92b22afefbd9df035920641ea1a3c5f11033682b8b41"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_green_dark_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 45900,
+          "decodedBytes": 82944,
+          "sha256": "df96eee0c3e06ba1124bcc9fd2c9d2e0704e74d497ecc239b36fdc623f67fafd"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_green_dark_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 81727,
+          "decodedBytes": 147456,
+          "sha256": "f938a5798921400faf763f2282aa549c50ec82866690cd14773a53be5e2fdc28"
+        }
+      ],
+      "webBytes": 108734,
+      "pngBytes": 163958,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "teal",
+      "mode": "dark-more",
+      "appearance": "dark",
+      "contrast": "more",
+      "tint": [
+        112,
+        215,
+        255
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/teal-dark-more.webp",
+      "native": "avatar_teal_dark_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "b1323c8022dc43dcd05233793a0f6c00330aad6fd3b1f3847f42919bb828de3b",
+      "webSha256": "960b64d9078318f16a46f2a27200b51cad7c8aed855142053b36c14dee26a098",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_teal_dark_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5071,
+          "decodedBytes": 9216,
+          "sha256": "cd25c51c65fb4deb986b063ccb8003852b51f38577250d0a09594a91750f8403"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_teal_dark_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11103,
+          "decodedBytes": 20736,
+          "sha256": "7343d95cfb61ce84ff4f4dc43a095be93d40bf39c3aa1560fcf121f5e26fd08b"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_teal_dark_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 20145,
+          "decodedBytes": 36864,
+          "sha256": "84ffd2ae7364a6dc3a22a2eeda1797015438f96bc94afac8159bd59f4fa1f71e"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_teal_dark_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 46506,
+          "decodedBytes": 82944,
+          "sha256": "007ad0c4085c954245eb6ac9b047b971e13341cfc3902d5527fcd4e08ee24c40"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_teal_dark_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 82801,
+          "decodedBytes": 147456,
+          "sha256": "397e33d7e3dbc4947364d69bd12acacbe33920d715e56e01a4bc5937f4661130"
+        }
+      ],
+      "webBytes": 97160,
+      "pngBytes": 165626,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "mint",
+      "mode": "dark-more",
+      "appearance": "dark",
+      "contrast": "more",
+      "tint": [
+        108,
+        235,
+        231
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/mint-dark-more.webp",
+      "native": "avatar_mint_dark_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "9528f91798682f0577b8ae59f27dbca39cbde8daaf435520c77f9471849870bb",
+      "webSha256": "8047fa345f22d438d1e9b4d7c7325bfb91c0a2f519bb205c065720c24cbb3908",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_mint_dark_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5023,
+          "decodedBytes": 9216,
+          "sha256": "28a1317faebfae5d243e79326ed2064cdb8cf08a9978008eb202d860cf379040"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_mint_dark_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11103,
+          "decodedBytes": 20736,
+          "sha256": "121e852faafa04b9d7fe103da71ae80062faa40c4e8ab325edf49199ee7dd0b8"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_mint_dark_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 20116,
+          "decodedBytes": 36864,
+          "sha256": "b63678fbae5bedb0fff12e5838345f958e1b58d199561089b64ba05bd780278e"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_mint_dark_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 46071,
+          "decodedBytes": 82944,
+          "sha256": "37051847a9753996df954a6a65abbb2dc255976d2fd0d7933280038ede72f405"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_mint_dark_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 81940,
+          "decodedBytes": 147456,
+          "sha256": "c9f88dc057ecbddaad2c2754af4bda1cc18d525990d6fd2bd8815c7692123004"
+        }
+      ],
+      "webBytes": 90010,
+      "pngBytes": 164253,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "blue",
+      "mode": "dark-more",
+      "appearance": "dark",
+      "contrast": "more",
+      "tint": [
+        149,
+        192,
+        255
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/blue-dark-more.webp",
+      "native": "avatar_blue_dark_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "fd367e8f9d38f2875ada818e39c2447ab3a3fb967871bf9f2e6fecb6ea3779cf",
+      "webSha256": "20486c43526899942a74827beb5e8a48950b25c17b2fdf4111c23f6bad1e1200",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_blue_dark_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5047,
+          "decodedBytes": 9216,
+          "sha256": "d017513e58b3795f608bf3c11774f850d7929793acd99124f330f49e256f77dc"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_blue_dark_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11183,
+          "decodedBytes": 20736,
+          "sha256": "a8535de6b3c0a20039f813be1eb1acd49693bcc5522cc4f3d02e277019fa6d2f"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_blue_dark_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 20363,
+          "decodedBytes": 36864,
+          "sha256": "afe97a8c1b7f9837459accf5c13eb53779287ca363289237da16a4864a1e192b"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_blue_dark_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 47369,
+          "decodedBytes": 82944,
+          "sha256": "17b536fef6566ba93226f93070b236c11182ea4c2cfb7cc27ebba4bbd7b5a8a8"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_blue_dark_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 84853,
+          "decodedBytes": 147456,
+          "sha256": "2b0d56e5b559104291ccfb2c1c76a44f8c188927d74d815d9cb096de0fb70f36"
+        }
+      ],
+      "webBytes": 108044,
+      "pngBytes": 168815,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "indigo",
+      "mode": "dark-more",
+      "appearance": "dark",
+      "contrast": "more",
+      "tint": [
+        125,
+        122,
+        255
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/indigo-dark-more.webp",
+      "native": "avatar_indigo_dark_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "bf0952ea03895c193476a19a34d875152273d88fd6dd274f1fa8417895b69115",
+      "webSha256": "85b951de48bfd866ab38ff336e1db1a215c8f72ee01a5b19adce63184fc9d0d8",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_indigo_dark_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5005,
+          "decodedBytes": 9216,
+          "sha256": "7b0ed8cc36cc2c35fd9057dfb767174a952c027c7d1f09011825e2e63d926ca4"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_indigo_dark_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11032,
+          "decodedBytes": 20736,
+          "sha256": "a2e8b76b8967a364902316ffd4bd8587fd1741ac4d43069e1ddd74c46478a14c"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_indigo_dark_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 20040,
+          "decodedBytes": 36864,
+          "sha256": "a76055bd3d305880f085d3bf6fe1fd34afce43865e73884654d7eff253e31fbc"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_indigo_dark_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 46661,
+          "decodedBytes": 82944,
+          "sha256": "a5c77f656d76d930b6c7693228de50c109facfe896e9b46fd65f107adc37899f"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_indigo_dark_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 83610,
+          "decodedBytes": 147456,
+          "sha256": "76b29ea0a67d75fd224d9e167a7346025d9e35ae358fe62a2ffea33bad9aef13"
+        }
+      ],
+      "webBytes": 95596,
+      "pngBytes": 166348,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "purple",
+      "mode": "dark-more",
+      "appearance": "dark",
+      "contrast": "more",
+      "tint": [
+        218,
+        143,
+        255
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/purple-dark-more.webp",
+      "native": "avatar_purple_dark_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "28f84943c8047710a0d1208d8b5ed9ce4e4859ba6d015e2fdc287dca3d9d8ef8",
+      "webSha256": "158fff4de5d19af68ac1c603503d1d15347ac20e72668eb98942bf62b73bddc1",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_purple_dark_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5051,
+          "decodedBytes": 9216,
+          "sha256": "125735e46852c36f248555ba98d1d33ab14364958a1dfa6dc4e963f49f254b4f"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_purple_dark_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11215,
+          "decodedBytes": 20736,
+          "sha256": "728a3222b982a2fd5be505431bbbd9198b592b22ec1b3eaa9912f107259fdb3b"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_purple_dark_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 20335,
+          "decodedBytes": 36864,
+          "sha256": "091fae2652446ca6c3f40fbde302101729351c5d59fbc8764e86daaf39fbf431"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_purple_dark_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 47580,
+          "decodedBytes": 82944,
+          "sha256": "e08bae4b728a19ad8c835f5761c290b68ef461b8d56289584a681275087b50a2"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_purple_dark_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 85425,
+          "decodedBytes": 147456,
+          "sha256": "54e9d3da1c22d4d131887dce8ee6ff457b0293f39bf03ecc8851b49db8584fd2"
+        }
+      ],
+      "webBytes": 108330,
+      "pngBytes": 169606,
+      "decodedBytes": 262144
+    },
+    {
+      "color": "pink",
+      "mode": "dark-more",
+      "appearance": "dark",
+      "contrast": "more",
+      "tint": [
+        255,
+        100,
+        130
+      ],
+      "kind": "offline-derived",
+      "web": "assets/avatar/pink-dark-more.webp",
+      "native": "avatar_pink_dark_more.png",
+      "width": 256,
+      "height": 256,
+      "rgbaSha256": "fcc200140da0031c05963b9d558e01606a2e65b80c425186900f237a6b1cf6d5",
+      "webSha256": "b1281c2367f63cc85325876b30b8a3105a78005df3d8f2c61adbf6654f9fd789",
+      "nativeVariants": [
+        {
+          "resource": "drawable/avatar_pink_dark_more.png",
+          "density": 1,
+          "pixels": 48,
+          "pngBytes": 5022,
+          "decodedBytes": 9216,
+          "sha256": "b65f1c07e3e6abb193489a220e572f58f6021384529dc04446b6601da0cd7cce"
+        },
+        {
+          "resource": "drawable-hdpi/avatar_pink_dark_more.png",
+          "density": 1.5,
+          "pixels": 72,
+          "pngBytes": 11113,
+          "decodedBytes": 20736,
+          "sha256": "fb13e4fe74939bb8240cd17494ac03b5104e492a904ff4c539758fad0a555e43"
+        },
+        {
+          "resource": "drawable-xhdpi/avatar_pink_dark_more.png",
+          "density": 2,
+          "pixels": 96,
+          "pngBytes": 20109,
+          "decodedBytes": 36864,
+          "sha256": "61f27c3dd6f1c25cb8d1b4820df9a8bd5f63e6659f33f3cd48b641694e76a61a"
+        },
+        {
+          "resource": "drawable-xxhdpi/avatar_pink_dark_more.png",
+          "density": 3,
+          "pixels": 144,
+          "pngBytes": 46554,
+          "decodedBytes": 82944,
+          "sha256": "167385d6ea27a1e823dc6be764c85b8cb95d3943f749c8dda78297b2fc680b0a"
+        },
+        {
+          "resource": "drawable-xxxhdpi/avatar_pink_dark_more.png",
+          "density": 4,
+          "pixels": 192,
+          "pngBytes": 83316,
+          "decodedBytes": 147456,
+          "sha256": "5e6c4e726df2eac695bf9f49dd7fe15521419cf7095a64801e072e6ac0d622ce"
+        }
+      ],
+      "webBytes": 105256,
+      "pngBytes": 166114,
+      "decodedBytes": 262144
+    }
+  ]
+}

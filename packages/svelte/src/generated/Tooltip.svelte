@@ -4,10 +4,11 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/tooltip';
   import type { LabTooltip } from '@labpics/ui-core/tooltip';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-tooltip> — типы взяты прямо из класса ядра (LabTooltip). */
   interface Props {
@@ -20,10 +21,11 @@
     arrow?: LabTooltip['arrow'];
     onOpenChange?: (event: CustomEvent) => void;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { placement, size, content, openDelay, closeDelay, disabled, arrow, onOpenChange, children, ...rest }: Props = $props();
+  let { placement, size, content, openDelay, closeDelay, disabled, arrow, onOpenChange, children, slots, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'placement', attr: 'placement', kind: 'string' },
@@ -35,14 +37,20 @@
     { name: 'arrow', attr: 'arrow', kind: 'boolean' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-tooltip', {
+    specs, props: { placement, size, content, openDelay, closeDelay, disabled, arrow }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ...slots });
+
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { placement, size, content, openDelay, closeDelay, disabled, arrow });
-  });
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
 </script>
 
-<lab-tooltip bind:this={el} {...rest}>
+<lab-tooltip bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { placement, size, content, openDelay, closeDelay, disabled, arrow } } }}>
+  {@html server?.shadowHtml ?? ''}
   {@render children?.()}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-tooltip>

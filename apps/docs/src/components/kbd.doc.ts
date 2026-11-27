@@ -1,20 +1,10 @@
-/*
- * `lab-kbd` documentation config — a presentational primitive documented through
- * the closed docs template (the renderer is untouched; craft-arch / OCP).
- */
 import '@labpics/ui-core/kbd';
 import type { ComponentDoc } from '../template/component-doc.js';
 
-/** Build a real `<lab-kbd>` with the given attribute map applied. */
 function makeKbd(attrs: Readonly<Record<string, string | boolean>>): HTMLElement {
   const kbd = document.createElement('lab-kbd');
-  kbd.textContent = typeof attrs.__text === 'string' ? attrs.__text : '⌘';
-  for (const [key, value] of Object.entries(attrs)) {
-    if (key === '__text') continue;
-    if (value === false) continue;
-    if (value === true) kbd.setAttribute(key, '');
-    else kbd.setAttribute(key, String(value));
-  }
+  kbd.size = attrs.size === 'l' ? 'l' : 's';
+  kbd.keys = ['\u2318', '\u21e7', 'C', 'V'].slice(0, Number(attrs.keys ?? 1));
   return kbd;
 }
 
@@ -24,91 +14,96 @@ export const kbdDoc: ComponentDoc = {
   tag: 'lab-kbd',
   title: 'Kbd',
   summary:
-    'A single keyboard key, rendered as a raised, monospaced cap. Three sizes, built on a real <kbd> element so assistive tech reads it as keyboard input — styled only from semantic --lab-* roles, identical on the Lit and native-React renderers.',
+    'A key or keyboard shortcut, with one cap per key. Two sizes follow the same Geist typography as the rest of the interface.',
   status: {
     kind: 'beta',
-    note: 'API and behaviour are production-frozen and rendered identically on Lit + React. It consumes only neutral surface/border roles + the shadow stack; no PROVISIONAL colour is in its path.',
+    note: 'Small and large caps, including all four authored key counts, are available on web and Compose.',
   },
-
   statesMatrix: {
-    // One axis — Size — is the honest Figma model for Kbd (the 8 variants are the
-    // size ladder × the raised-cap styling). Each cell is a real key cap.
     axes: [
       {
         name: 'Size',
         attribute: 'size',
         options: [
-          { label: 'S', value: 's' },
-          { label: 'M', value: 'm' },
-          { label: 'L', value: 'l' },
+          { label: 'Small', value: 's' },
+          { label: 'Large', value: 'l' },
         ],
+      },
+      {
+        name: 'Keys',
+        attribute: 'keys',
+        options: [1, 2, 3, 4].map((count) => ({ label: String(count), value: String(count) })),
       },
     ],
     make: makeKbd,
   },
-
   anatomy: [
     {
       index: 1,
-      name: 'Cap (kbd)',
+      name: 'Key cap',
       description:
-        'A real <kbd> element — the semantic carrier of "keyboard input". Its surface reads --lab-fill-primary, its rim --lab-border-base, and a thin bottom-biased shadow from --lab-fx-shadow-penumbra gives the raised, standing-above-the-page look.',
+        'A subtle vertical gradient, a one-pixel inside border and a soft outside bottom edge. The first key is slightly stronger than the following keys.',
     },
     {
       index: 2,
-      name: 'Key text slot',
+      name: 'Key label',
       description:
-        'The default slot (Lit) / children (React) carrying the key glyph or name — a letter, a symbol like ⌘, or a word like Esc. Monospaced so multiple caps line up.',
+        'Geist Medium at 12 or 16 pixels. Labels stay real text; longer names such as Esc and Ctrl make the cap wider.',
+    },
+    {
+      index: 3,
+      name: 'Shortcut',
+      description:
+        'Ordered key caps with a two-pixel gap. On web, each key is a kbd element nested inside the shortcut kbd.',
     },
   ],
-
   meaning: {
     purpose:
-      'Kbd shows a key the user can press — a single key or, side by side, a shortcut like ⌘ + K. It is documentation of an input, not a control: pressing the on-screen cap does nothing; it tells the reader which physical key to hit.',
+      'Kbd tells the reader which physical key or combination to press. It has no action of its own.',
     dos: [
-      'Use one Kbd per key and place several side by side for a chord (⌘ K), with a real "+" or a gap between them.',
-      'Put the canonical key name or glyph inside — Esc, ⌘, ⏎, A — matching what is printed on the keyboard.',
-      'Match the size to the surrounding text so the cap sits on the same line without distorting it.',
+      'Use keys for a shortcut, keeping one label per physical key.',
+      'Use the default slot or children for a single key.',
+      'Use familiar key names, and provide a readable accessible label when a glyph needs explanation.',
     ],
     donts: [
-      "Don't wire a click handler to a Kbd — it documents a key, it is not a button.",
-      'Don\'t cram a whole shortcut into one cap ("Ctrl+Shift+P"); use one cap per key.',
-      "Don't hardcode a colour; the cap only ever reads --lab-* roles bound by the active theme on an ancestor.",
+      'Do not use a key cap as a clickable button.',
+      'Do not put a whole shortcut such as Ctrl+Shift+P inside a single cap.',
     ],
   },
-
   liveExample: {
-    // Size is the one reflected axis; it genuinely re-styles the live cap.
-    make: () => makeKbd({ size: 'm', __text: '⌘' }),
+    make: () => makeKbd({ size: 's', keys: '3' }),
     controls: [
       {
         kind: 'select',
         label: 'Size',
         attribute: 'size',
         options: [
-          { label: 'S', value: 's' },
-          { label: 'M', value: 'm' },
-          { label: 'L', value: 'l' },
+          { label: 'Small', value: 's' },
+          { label: 'Large', value: 'l' },
         ],
       },
     ],
   },
-
   api: {
     props: [
       {
         name: 'size',
-        type: "'s' | 'm' | 'l'",
-        default: "'m'",
-        description: 'Cap size. Drives min-size, padding, and font size from --lab-* tokens.',
+        type: "'s' | 'l'",
+        default: "'s'",
+        description:
+          'Small 16px or large 24px minimum cap height. The previous m spelling remains an alias for l.',
+      },
+      {
+        name: 'keys',
+        type: 'readonly string[]',
+        default: '[]',
+        description:
+          'An ordered shortcut. An empty list uses the default slot or children. Lit also accepts a JSON keys attribute.',
       },
     ],
     events: [],
     slots: [
-      {
-        name: '(default) / children',
-        description: 'The key glyph or name. Lit uses the default <slot>; React uses children.',
-      },
+      { name: '(default) / children', description: 'One key label when keys is empty or omitted.' },
     ],
   },
 };

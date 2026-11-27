@@ -12,7 +12,7 @@
  */
 import '@labpics/ui-core/textarea';
 import { Textarea } from '@labpics/ui-react/textarea';
-import { StrictMode } from 'react';
+import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { wireThemeSwitch } from './theme-switch.js';
 
@@ -20,6 +20,42 @@ wireThemeSwitch();
 
 const mount = document.querySelector<HTMLElement>('#react-root');
 if (!mount) throw new Error('Missing #react-root mount node in textarea.html');
+
+function FormSpecimens() {
+  const [value, setValue] = useState('Initial');
+  const [disabled, setDisabled] = useState(false);
+  return (
+    <>
+      <form data-testid="react-form" onSubmit={(event) => event.preventDefault()}>
+        <fieldset disabled={disabled} style={{ border: 0, padding: 0, margin: 0 }}>
+          <Textarea label="Form notes" name="notes" defaultValue="Initial" autoResize rows={2} />
+        </fieldset>
+        <button type="reset">Reset notes</button>
+        <button type="button" onClick={() => setDisabled(!disabled)}>
+          Toggle disabled
+        </button>
+      </form>
+      <span data-testid="react-controlled">
+        <Textarea
+          label="Controlled notes"
+          value={value}
+          onValueChange={setValue}
+          autoResize
+          rows={2}
+        />
+        <button
+          type="button"
+          onClick={() => setValue(Array.from({ length: 10 }, (_, i) => `Line ${i}`).join('\n'))}
+        >
+          Replace notes
+        </button>
+        <button type="button" onClick={() => setValue('')}>
+          Clear notes
+        </button>
+      </span>
+    </>
+  );
+}
 
 // Test ids ride on wrappers (the Textarea owns its prop API — no passthrough). The
 // spec targets the `[data-lab-textarea]` field inside each wrapper.
@@ -62,5 +98,6 @@ createRoot(mount).render(
     <span data-testid="react-autoresize">
       <Textarea label="Auto-resize" autoResize rows={2} defaultValue="grows to fit content" />
     </span>
+    <FormSpecimens />
   </StrictMode>,
 );

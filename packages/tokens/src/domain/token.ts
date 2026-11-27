@@ -12,6 +12,7 @@ export type ScaleKind =
   | 'space'
   | 'size'
   | 'radius'
+  | 'shape'
   | 'z'
   | 'font' // семейство (--lab-font-family[-mono]) + OpenType-фичи (--lab-font-feature-*)
   | 'font-size'

@@ -14,10 +14,10 @@ import { type Violation, scanAll, scanSource, targetFiles } from './no-literal-c
 describe('no colour-role literal-colour fallback (recurrence guard)', () => {
   it('finds the component sources it is meant to govern', () => {
     const files = targetFiles();
-    // The four sites the #31 audit fixed live in these files; the guard must see them.
+    // Include both the renderer and the canonical stylesheet shared by Lit/React.
     expect(files).toContain('packages/core/src/components/select/lab-select.ts');
     expect(files).toContain('packages/core/src/components/menu/lab-menu.ts');
-    expect(files).toContain('packages/react/src/select.css');
+    expect(files).toContain('packages/core/src/components/select/styles.ts');
     expect(files).toContain('packages/react/src/menu.css');
     expect(files.length).toBeGreaterThan(4);
   });

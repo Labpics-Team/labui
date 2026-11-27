@@ -1,35 +1,10 @@
 /**
- * `<lab-textarea>` — a multi-line text field: a real `<textarea>` wired to a label,
- * an optional helper/description, and an optional error message via genuine ARIA.
- *
- * OPT-OUT (documented, per core-CONTRACT §1): like `<lab-input>`, a textarea is
- * PRESENTATIONAL on the Behaviors seam — `@zag-js` ships no plain text-input
- * machine because the native `<textarea>` already owns its value, caret, selection,
- * keyboard and editing. So this element extends `LabElement` for the shared base
- * conventions but does NOT call `runMachine`.
- *
- * It OWNS the same form-field a11y wiring as Input, computed by the SAME shared
- * `field-a11y` helper — the only structural difference between the two is the
- * control element (`<textarea>` vs `<input>`) and the multi-line extras (`rows`,
- * optional `auto-resize`). Because the a11y + token contract is shared, the two
- * fields cannot drift.
- *
- * Auto-resize honesty: when `auto-resize` is set, the control grows to fit its
- * content. That is LOCAL view state (a height that tracks the text), not shared
- * interaction state — it is computed from the native `scrollHeight` on input, the
- * same way the React twin does it. It is not a faked machine.
- *
- * Axes (the form-field model — Type × Size × State + rows / auto-resize):
- *   - type:  neutral | danger | warning | success   (sentiment of the field)
- *   - size:  s | m | l
- *   - rows:  initial visible text rows (native textarea rows)
- *   - autoResize: grow to fit content (local view behaviour)
- *   - state: disabled · readonly · invalid · required   (reflected, drive CSS + ARIA)
- *
- * Token contract (core-CONTRACT §2): ONLY semantic --lab-* roles + dimensions via
- * the shared `field-styles`. No hex, no primitive, no colour-role fallback.
+ * Native multiline editing and form association. Input and Textarea use one
+ * authored outline; both renderers share field ARIA and content-size fallback.
+ * Enter, selection and IME belong to the browser, so no interaction machine runs.
  */
-import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
+import { type PropertyValues, type TemplateResult, css, html, nothing, unsafeCSS } from 'lit';
+import { live } from 'lit/directives/live.js';
 import { LabElement } from '../../lit/lab-element.js';
 import {
   type FieldA11yInput,
@@ -39,13 +14,15 @@ import {
   fieldErrorIsActive,
   fieldPartIds,
 } from '../field/field-a11y.js';
-import { fieldStyles } from '../field/field-styles.js';
+import { outlinedFieldCss } from '../field/outlined-styles.js';
+import { TextareaResize, textareaRows } from './runtime.js';
 
 export type { LabFieldSize as LabTextareaSize, LabFieldType as LabTextareaType };
 
 let textareaSeq = 0;
 
 export class LabTextarea extends LabElement {
+  static formAssociated = true;
   static override properties = {
     type: { reflect: true },
     size: { reflect: true },
@@ -74,7 +51,11 @@ export class LabTextarea extends LabElement {
     /** Invalid — drives aria-invalid / aria-errormessage and the danger styling. */
     invalid: { type: Boolean, reflect: true },
     /** Native form field name. */
-    name: {},
+    name: { reflect: true },
+    autocomplete: {},
+    maxLength: { type: Number, attribute: 'maxlength' },
+    minLength: { type: Number, attribute: 'minlength' },
+    disabledByForm: { state: true },
   };
 
   declare type: LabFieldType;
@@ -92,9 +73,16 @@ export class LabTextarea extends LabElement {
   declare required: boolean;
   declare invalid: boolean;
   declare name: string;
+  declare autocomplete: string;
+  declare maxLength: number | undefined;
+  declare minLength: number | undefined;
+  private declare disabledByForm: boolean;
+  private readonly internals?: ElementInternals;
+  private resetValue: string | undefined;
+  private resizeControl?: TextareaResize;
 
   /** Stable per-instance base id, so the part ids never collide across fields. */
-  private readonly fieldId = `lab-textarea-${++textareaSeq}`;
+  private fieldId = `lab-textarea-${++textareaSeq}`;
 
   constructor() {
     super();
@@ -113,22 +101,15 @@ export class LabTextarea extends LabElement {
     this.required = false;
     this.invalid = false;
     this.name = '';
+    this.autocomplete = '';
+    this.disabledByForm = false;
+    if (typeof ElementInternals !== 'undefined') this.internals = this.attachInternals();
   }
 
   static override styles = [
-    fieldStyles,
+    unsafeCSS(outlinedFieldCss),
     css`
-      .control {
-        display: block;
-        resize: vertical;
-        min-height: calc(var(--_field-line) * 2em);
-      }
-      /* When auto-resizing, the height is computed from content, so the manual
-         resize grip is removed and overflow is hidden to avoid a flash of scroll. */
-      :host([auto-resize]) .control {
-        resize: none;
-        overflow: hidden;
-      }
+      :host { display: block; min-width: 0; }
     `,
   ];
 
@@ -144,27 +125,85 @@ export class LabTextarea extends LabElement {
   }
 
   override updated(_changed: PropertyValues): void {
-    const control = this.renderRoot.querySelector<HTMLTextAreaElement>('textarea.control');
+    const control = this.renderRoot.querySelector<HTMLTextAreaElement>('textarea');
     if (!control) return;
+    this.resetValue ??= this.value;
     const aria = fieldControlAria(this.a11yInput());
     setOrRemove(control, 'aria-describedby', aria['aria-describedby']);
     setOrRemove(control, 'aria-invalid', aria['aria-invalid']);
     setOrRemove(control, 'aria-errormessage', aria['aria-errormessage']);
     setOrRemove(control, 'aria-required', aria['aria-required']);
-    if (control.value !== this.value) this.value = control.value;
-    if (this.autoResize) this.fitToContent(control);
+    this.syncForm(control);
+    this.resizeControl ??= new TextareaResize(control);
+    this.resizeControl.setEnabled(this.autoResize);
+    this.resizeControl.update();
   }
 
-  /** Grow the control to fit its content (auto-resize): reset, then track scrollHeight. */
-  private fitToContent(control: HTMLTextAreaElement): void {
-    control.style.height = 'auto';
-    control.style.height = `${control.scrollHeight}px`;
+  override disconnectedCallback(): void {
+    this.resizeControl?.disconnect();
+    super.disconnectedCallback();
+  }
+
+  override connectedCallback(): void {
+    const existing = this.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
+    if (!this.hasUpdated && existing) {
+      // A server may have rendered other requests before this document. Retain
+      // its identity so hydration and later updates reference the existing parts.
+      if (existing.id) this.fieldId = existing.id;
+      if (existing.value !== existing.defaultValue) {
+        this.resetValue = existing.defaultValue;
+        this.value = existing.value;
+      }
+    }
+    super.connectedCallback();
+    this.requestUpdate();
+  }
+
+  private syncForm(control: HTMLTextAreaElement): void {
+    this.internals?.setFormValue(control.disabled ? null : control.value);
+    control.setCustomValidity(this.invalid && this.error ? this.error : '');
+    this.internals?.setValidity(
+      control.willValidate ? control.validity : {},
+      control.validationMessage,
+      control,
+    );
+  }
+
+  formDisabledCallback(disabled: boolean): void {
+    this.disabledByForm = disabled;
+  }
+
+  formResetCallback(): void {
+    this.restoreValue(this.resetValue ?? '');
+  }
+
+  formStateRestoreCallback(state: string | File | FormData): void {
+    if (typeof state === 'string') this.restoreValue(state);
+  }
+
+  private restoreValue(value: string): void {
+    this.value = value;
+    const control = this.renderRoot.querySelector<HTMLTextAreaElement>('textarea');
+    if (control) {
+      control.value = value;
+      this.syncForm(control);
+    }
+    this.resizeControl?.update();
+  }
+
+  checkValidity(): boolean {
+    return this.internals?.checkValidity() ?? true;
+  }
+
+  reportValidity(): boolean {
+    return this.internals?.reportValidity() ?? true;
   }
 
   private readonly onInput = (event: Event): void => {
     const control = event.target as HTMLTextAreaElement;
     this.value = control.value;
-    if (this.autoResize) this.fitToContent(control);
+    this.syncForm(control);
+    this.resizeControl?.update();
     this.dispatchEvent(
       new CustomEvent<{ value: string }>('lab-input', {
         detail: { value: control.value },
@@ -188,34 +227,50 @@ export class LabTextarea extends LabElement {
   override render(): TemplateResult {
     const ids = fieldPartIds(this.fieldId);
     const showError = fieldErrorIsActive(this.a11yInput());
+    const aria = fieldControlAria(this.a11yInput());
+    const rows = textareaRows(this.rows);
     return html`
-      <div class="field" part="field">
-        <label id=${ids.label} class="label" for=${ids.control} part="label">
+      <div data-lab-textarea data-type=${this.type} data-size=${this.size} part="field"
+        style=${`--_textarea-rows: ${rows}`}
+        ?data-label-hidden=${this.labelHidden} ?data-unlabelled=${!this.label}
+        ?data-disabled=${this.disabled || this.disabledByForm} ?data-readonly=${this.readonly}
+        ?data-invalid=${this.invalid} ?data-filled=${!!this.value} ?data-auto-resize=${this.autoResize}>
+      <div class="lab-input-frame" part="frame">
+        <label id=${ids.label} class="lab-field-label" for=${ids.control} part="label">
           <span class="label-text">${this.label}</span
-          >${this.required ? html`<span class="required-mark" aria-hidden="true"> *</span>` : nothing}
+          >${this.required ? html`<span class="lab-field-required-mark" aria-hidden="true"> *</span>` : nothing}
         </label>
         <textarea
           id=${ids.control}
-          class="control"
+          class="lab-field-control"
           part="control"
-          .value=${this.value}
-          rows=${this.rows}
+          .value=${live(this.value)}
+          rows=${rows}
           name=${this.name || nothing}
           placeholder=${this.placeholder || nothing}
-          ?disabled=${this.disabled}
+          autocomplete=${this.autocomplete || nothing}
+          maxlength=${this.maxLength ?? nothing}
+          minlength=${this.minLength ?? nothing}
+          aria-describedby=${aria['aria-describedby'] ?? nothing}
+          aria-invalid=${aria['aria-invalid'] ?? nothing}
+          aria-errormessage=${aria['aria-errormessage'] ?? nothing}
+          aria-required=${aria['aria-required'] ?? nothing}
+          ?disabled=${this.disabled || this.disabledByForm}
           ?readonly=${this.readonly}
           ?required=${this.required}
           @input=${this.onInput}
           @change=${this.onChange}
         ></textarea>
+        <fieldset class="lab-input-outline" aria-hidden="true"><legend>${this.label}${this.required ? ' *' : ''}</legend></fieldset>
+      </div>
         ${
           this.helper
-            ? html`<span id=${ids.helper} class="helper" part="helper">${this.helper}</span>`
+            ? html`<span id=${ids.helper} class="lab-field-helper" part="helper">${this.helper}</span>`
             : nothing
         }
         ${
           showError
-            ? html`<span id=${ids.error} class="error" part="error" role="alert">${this.error}</span>`
+            ? html`<span id=${ids.error} class="lab-field-error" part="error" role="alert">${this.error}</span>`
             : nothing
         }
       </div>

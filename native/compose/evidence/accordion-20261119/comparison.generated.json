@@ -1,0 +1,18 @@
+[
+  {
+    "state": "open-rest",
+    "meanChannelDifference": 4.975412675462377
+  },
+  {
+    "state": "open-hover",
+    "meanChannelDifference": 5.565649662630279
+  },
+  {
+    "state": "closed-rest",
+    "meanChannelDifference": 1.301654359556944
+  },
+  {
+    "state": "closed-hover",
+    "meanChannelDifference": 1.8912300009467007
+  }
+]

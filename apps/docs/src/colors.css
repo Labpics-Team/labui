@@ -1,7 +1,4 @@
-@import "@labui/colors/contract.css";
-@import "@labpics/fonts/fonts.css";
-@import "@labpics/ui-tokens/tokens.css";
-@import "@labpics/ui-core/theme.css";
+@import "./foundation.css";
 
 body {
   margin: 0;

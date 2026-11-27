@@ -30,7 +30,9 @@ describe('полнота Astro-адаптера', () => {
     expect(missing, `нет .astro: ${missing.join(', ')}`).toEqual([]);
   });
 
-  it('в манифесте 27 компонентов', () => {
-    expect(manifest.components).toHaveLength(27);
+  it('SSR-экспорты точно соответствуют манифесту ядра', () => {
+    expect(Object.keys(ssr).sort()).toEqual(
+      manifest.components.map((c) => `render${c.pascal}`).sort(),
+    );
   });
 });

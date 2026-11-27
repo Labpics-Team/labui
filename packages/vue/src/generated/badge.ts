@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/badge';
 import type { LabBadge } from '@labpics/ui-core/badge';
-import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-badge>, взятые прямо из класса ядра (LabBadge). */
 export type BadgeProps = Pick<LabBadge, 'color' | 'type' | 'disabled'>;

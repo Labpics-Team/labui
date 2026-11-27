@@ -1,24 +1,30 @@
-/*
- * `lab-avatar` documentation config — a presentational primitive documented
- * through the closed docs template (the renderer is untouched; craft-arch / OCP).
- *
- * Honesty (owner's iron rule): the fallback is real — the matrix and live example
- * use INITIALS (no image src), which is exactly what a user with no photo sees.
- * No broken-image icon is dressed up as a face.
- */
 import '@labpics/ui-core/avatar';
+import { avatarProfile } from '@labpics/ui-tokens';
 import type { ComponentDoc } from '../template/component-doc.js';
 
-/** Build a real `<lab-avatar>` with the given attribute map applied. */
+const colorOptions = Object.keys(avatarProfile.colors).map((value) => ({ label: value, value }));
+const sizeOptions = Object.keys(avatarProfile.sizes).map((value) => ({
+  label: value.toUpperCase(),
+  value,
+}));
+const statusOptions = [
+  { label: 'None', value: 'none' },
+  ...Object.entries(avatarProfile.statuses).map(([value, status]) => ({
+    label: status.label,
+    value,
+  })),
+];
+const fallbackOptions = [
+  { label: 'Initials', value: 'initials' },
+  { label: 'Texture', value: 'texture' },
+];
+
 function makeAvatar(attrs: Readonly<Record<string, string | boolean>>): HTMLElement {
   const avatar = document.createElement('lab-avatar');
-  // Default to a name so the initials fallback is exercised honestly; a cell may
-  // override it via the attrs map.
-  if (!('name' in attrs)) avatar.setAttribute('name', 'Ada Lovelace');
+  avatar.name = 'Даниил';
+  avatar.initials = 'Д';
   for (const [key, value] of Object.entries(attrs)) {
-    if (value === false) continue;
-    if (value === true) avatar.setAttribute(key, '');
-    else avatar.setAttribute(key, String(value));
+    if (value !== false) avatar.setAttribute(key, value === true ? '' : value);
   }
   return avatar;
 }
@@ -29,163 +35,128 @@ export const avatarDoc: ComponentDoc = {
   tag: 'lab-avatar',
   title: 'Avatar',
   summary:
-    'A circular avatar with an honest image→initials→default fallback and an optional status dot. Three sizes, six initials-colour families, and four presence states — built only on semantic --lab-* roles, identical on the Lit and native-React renderers.',
+    'Портрет, округлённые инициалы или авторская текстура в десяти цветах. Отдельная точка сообщает о присутствии; прозрачный вырез сохраняет любой фон.',
   status: {
     kind: 'beta',
-    note: 'API and behaviour are production-frozen and rendered identically on Lit + React. The colour axis covers the six families the role contract exposes; the full Figma 10-accent set (adding teal/mint/indigo/purple/pink) lights up automatically when @labpics/colors ships their semantic roles — no API change. PROVISIONAL where the solid neutral fill the offline dot pairs is owner-pending.',
+    note: 'Web и Compose используют общий профиль. Для SF Pro Rounded Heavy поставляется открытая замена Sunghyun Sans ExtraBold; её контуры отличаются от исходного шрифта.',
   },
-
   statesMatrix: {
-    // Columns = Color (the initials-background family). Rows = Status, so the grid
-    // shows every colour with each presence indicator — all as the honest initials
-    // fallback (no image), which is what a user with no photo sees.
     axes: [
-      {
-        name: 'Color',
-        attribute: 'color',
-        options: [
-          { label: 'Neutral', value: 'neutral' },
-          { label: 'Brand', value: 'brand' },
-          { label: 'Danger', value: 'danger' },
-          { label: 'Warning', value: 'warning' },
-          { label: 'Success', value: 'success' },
-          { label: 'Info', value: 'info' },
-        ],
-      },
-      {
-        name: 'Status',
-        attribute: 'status',
-        options: [
-          { label: 'None', value: 'none' },
-          { label: 'Online', value: 'online' },
-          { label: 'Away', value: 'away' },
-          { label: 'DND', value: 'dnd' },
-          { label: 'Offline', value: 'offline' },
-        ],
-      },
+      { name: 'Color', attribute: 'color', options: colorOptions },
+      { name: 'Fallback', attribute: 'fallback', options: fallbackOptions },
     ],
     make: makeAvatar,
   },
-
   anatomy: [
     {
       index: 1,
-      name: 'Disc',
+      name: 'Круг',
       description:
-        'The circular container. With an image it clips the photo to the circle; without one it is a tinted disc — --lab-fill-{color}-primary background with --lab-label-{color}-primary text — that holds the initials or the default glyph.',
+        'Размер M повторяет авторские 32 px. S и L пропорционально масштабируют геометрию до 24 и 48 px; rem учитывает увеличение текста браузером.',
     },
     {
       index: 2,
-      name: 'Image',
+      name: 'Портрет',
       description:
-        'The photo, when src is set and it loads. If it errors, an onError/@error listener flips to the initials fallback for real — a broken URL never shows a broken-image icon.',
+        'Изображение заполняет круг с сохранением пропорций. Выбранный fallback остаётся виден до успешного декодирования и при ошибке URL.',
     },
     {
       index: 3,
-      name: 'Initials / default glyph',
+      name: 'Инициалы и текстура',
       description:
-        'The fallback when there is no usable image: initials derived from name (first + last word), or, with no name, a neutral person glyph. The disc carries role="img" + aria-label=name so it is announced as one named avatar, not read letter by letter.',
+        'name задаёт доступное имя. initials независимо задаёт до двух графем; fallback="texture" выбирает текстуру, сохраняя полное имя.',
     },
     {
       index: 4,
-      name: 'Status dot',
+      name: 'Присутствие',
       description:
-        'An optional corner indicator. online reads --lab-border-success-strong, away --lab-border-warning-strong, dnd --lab-border-danger-strong, offline the neutral fill. A ring in --lab-bg-primary separates it from the disc, and a visually-hidden label carries its meaning so it is not colour-only.',
+        'Точка 8 px с прозрачным зазором 2 px у M. Online использует Info Primary, Away — Warning Primary, DND — Danger Primary, Offline — Neutral Quaternary. Имя и статус объявляются вместе.',
     },
   ],
-
   meaning: {
     purpose:
-      'Avatar represents a person or entity in a small circle. It prefers their photo, falls back to their initials, and finally to a neutral glyph — always showing SOMETHING recognisable, never a broken image. An optional status dot shows presence (online / away / do-not-disturb / offline).',
+      'Avatar помогает узнавать человека или команду в списке и рядом с сообщением. Фото имеет приоритет; отсутствие фото сохраняет выбранное представление.',
     dos: [
-      'Always pass name — it drives the initials fallback AND the accessible name, so the avatar works with or without a photo.',
-      'Use the status dot only when presence is genuinely known and relevant; hide it (status="none") otherwise.',
-      'Pick the initials colour to disambiguate people consistently (e.g. derive it from the user id), not at random per render.',
-      'Let the fallback do its job — pass src and trust the element to drop to initials if it fails to load.',
+      'Передавайте полное name; initials меняет только видимую надпись.',
+      'Выбирайте постоянный цвет для одного человека.',
+      'Устанавливайте decorative, если соседний текст уже полностью передаёт имя и присутствие.',
+      'Передавайте statusLabel для локализованного описания присутствия.',
     ],
     donts: [
-      "Don't ship an avatar with no name and no src — it can only show the anonymous glyph and has no accessible name.",
-      'Don\'t show a status dot you can\'t back with real presence data — a stale "online" is a lie.',
-      "Don't hardcode a colour; the disc and dot only ever read --lab-* roles bound by the active theme on an ancestor.",
-      "Don't rely on the dot's colour alone — the visually-hidden label carries its meaning for screen-reader users.",
+      'Не сообщайте Online без актуальных данных о присутствии.',
+      'Не заменяйте доступное имя буквенной аббревиатурой.',
+      'Не используйте сам Avatar как кнопку: действие и его название задаёт внешний интерактивный элемент.',
     ],
   },
-
   liveExample: {
-    // Color and Status are reflected axes that genuinely re-style the live avatar;
-    // the example uses the honest initials fallback (a name, no image).
-    make: () => makeAvatar({ color: 'brand', status: 'online' }),
+    make: () => makeAvatar({ color: 'blue', status: 'online' }),
     controls: [
-      {
-        kind: 'select',
-        label: 'Size',
-        attribute: 'size',
-        options: [
-          { label: 'S', value: 's' },
-          { label: 'M', value: 'm' },
-          { label: 'L', value: 'l' },
-        ],
-      },
-      {
-        kind: 'select',
-        label: 'Color',
-        attribute: 'color',
-        options: [
-          { label: 'Neutral', value: 'neutral' },
-          { label: 'Brand', value: 'brand' },
-          { label: 'Danger', value: 'danger' },
-          { label: 'Warning', value: 'warning' },
-          { label: 'Success', value: 'success' },
-          { label: 'Info', value: 'info' },
-        ],
-      },
-      {
-        kind: 'select',
-        label: 'Status',
-        attribute: 'status',
-        options: [
-          { label: 'None', value: 'none' },
-          { label: 'Online', value: 'online' },
-          { label: 'Away', value: 'away' },
-          { label: 'DND', value: 'dnd' },
-          { label: 'Offline', value: 'offline' },
-        ],
-      },
+      { kind: 'select', label: 'Size', attribute: 'size', options: sizeOptions },
+      { kind: 'select', label: 'Color', attribute: 'color', options: colorOptions },
+      { kind: 'select', label: 'Fallback', attribute: 'fallback', options: fallbackOptions },
+      { kind: 'select', label: 'Status', attribute: 'status', options: statusOptions },
+      { kind: 'toggle', label: 'Decorative', attribute: 'decorative' },
     ],
   },
-
   api: {
     props: [
       {
         name: 'size',
         type: "'s' | 'm' | 'l'",
         default: "'m'",
-        description: 'Avatar diameter. Reflected attribute.',
+        description: 'Диаметр 24 / 32 / 48 px при базовом тексте 16 px.',
       },
       {
         name: 'color',
-        type: "'neutral' | 'brand' | 'danger' | 'warning' | 'success' | 'info'",
-        default: "'neutral'",
-        description: 'Initials background / label colour family. Reflected attribute.',
+        type: Object.keys(avatarProfile.colors)
+          .map((c) => `'${c}'`)
+          .join(' | '),
+        default: "'blue'",
+        description:
+          'Цвет fallback. Прежние neutral/brand/danger/warning/success/info остаются совместимыми псевдонимами.',
       },
       {
         name: 'status',
         type: "'none' | 'online' | 'offline' | 'away' | 'dnd'",
         default: "'none'",
-        description: 'Presence indicator. Reflected attribute; none hides the dot.',
+        description: 'Присутствие; none убирает точку и вырез.',
       },
       {
         name: 'src',
         type: 'string',
-        default: '—',
         description:
-          'Image URL. When present and it loads, the image wins; on error it falls back.',
+          'URL портрета. Во время загрузки, декодирования и при ошибке остаётся fallback.',
       },
       {
         name: 'name',
         type: 'string',
         default: "''",
-        description: 'Derives the initials AND serves as the accessible name (alt / aria-label).',
+        description: 'Полное доступное имя и источник инициалов первого и последнего слова.',
+      },
+      {
+        name: 'initials',
+        type: 'string',
+        description:
+          'До двух графем. Пустая строка выбирает текстуру; undefined вычисляет инициалы из name.',
+      },
+      {
+        name: 'fallback',
+        type: "'initials' | 'texture'",
+        default: "'initials'",
+        description: 'Вид без готового портрета. При отсутствии букв всегда используется текстура.',
+      },
+      {
+        name: 'decorative',
+        type: 'boolean',
+        default: 'false',
+        description: 'Скрывает весь Avatar от дерева доступности.',
+      },
+      {
+        name: 'statusLabel / status-label',
+        type: 'string',
+        default: "''",
+        description:
+          'Локализованное описание статуса; по умолчанию используется русское имя из профиля.',
       },
     ],
     events: [],

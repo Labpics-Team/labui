@@ -1,0 +1,973 @@
+{
+  "source": "https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1",
+  "semanticPath": "Input & Textarea / Textarea",
+  "observedAt": "2026-11-18",
+  "access": "Read-only live author source; no node, selection or mode mutations",
+  "sizeAxis": false,
+  "geometry": {
+    "frame": {
+      "height": 112,
+      "radius": 12
+    },
+    "caption": {
+      "x": 20,
+      "y": -8,
+      "fontSize": 14,
+      "lineHeight": 12,
+      "fontWeight": 500
+    },
+    "control": {
+      "x": 20,
+      "y": 16,
+      "fontSize": 16,
+      "lineHeight": 24,
+      "fontWeight": 400,
+      "letterSpacing": -0.25
+    },
+    "helper": {
+      "x": 4,
+      "y": 120,
+      "fontSize": 12,
+      "lineHeight": 12,
+      "fontWeight": 500
+    }
+  },
+  "variants": [
+    {
+      "variant": "State=Disabled, Hover=false",
+      "width": 250.6666717529297,
+      "height": 132,
+      "gap": 8,
+      "texts": [
+        {
+          "name": "Caption",
+          "characters": "Caption",
+          "font": "Geist",
+          "fontSize": 14,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.3199999928474426
+            }
+          ]
+        },
+        {
+          "name": "Placeholder text",
+          "characters": "Placeholder text",
+          "font": "Geist",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.3199999928474426
+            }
+          ]
+        },
+        {
+          "name": "Optional helper text",
+          "characters": "Optional helper text",
+          "font": "Geist",
+          "fontSize": 12,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.3199999928474426
+            }
+          ]
+        }
+      ],
+      "border": [
+        {
+          "color": {
+            "r": 0.47058823704719543,
+            "g": 0.47058823704719543,
+            "b": 0.501960813999176
+          },
+          "opacity": 0.07999999821186066
+        }
+      ]
+    },
+    {
+      "variant": "State=Default, Hover=false",
+      "width": 250.6666717529297,
+      "height": 132,
+      "gap": 8,
+      "texts": [
+        {
+          "name": "Caption",
+          "characters": "Caption",
+          "font": "Geist",
+          "fontSize": 14,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.7200000286102295
+            }
+          ]
+        },
+        {
+          "name": "Placeholder text",
+          "characters": "Placeholder text",
+          "font": "Geist",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.5199999809265137
+            }
+          ]
+        },
+        {
+          "name": "Optional helper text",
+          "characters": "Optional helper text",
+          "font": "Geist",
+          "fontSize": 12,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.7200000286102295
+            }
+          ]
+        }
+      ],
+      "border": [
+        {
+          "color": {
+            "r": 0.47058823704719543,
+            "g": 0.47058823704719543,
+            "b": 0.501960813999176
+          },
+          "opacity": 0.1599999964237213
+        }
+      ]
+    },
+    {
+      "variant": "State=Default, Hover=true",
+      "width": 250.6666717529297,
+      "height": 132,
+      "gap": 8,
+      "texts": [
+        {
+          "name": "Caption",
+          "characters": "Caption",
+          "font": "Geist",
+          "fontSize": 14,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.7200000286102295
+            }
+          ]
+        },
+        {
+          "name": "Placeholder text",
+          "characters": "Placeholder text",
+          "font": "Geist",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.5199999809265137
+            }
+          ]
+        },
+        {
+          "name": "Optional helper text",
+          "characters": "Optional helper text",
+          "font": "Geist",
+          "fontSize": 12,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.7200000286102295
+            }
+          ]
+        }
+      ],
+      "border": [
+        {
+          "color": {
+            "r": 0.47058823704719543,
+            "g": 0.47058823704719543,
+            "b": 0.501960813999176
+          },
+          "opacity": 0.1599999964237213
+        }
+      ]
+    },
+    {
+      "variant": "State=Active, Hover=false",
+      "width": 250.6666717529297,
+      "height": 132,
+      "gap": 8,
+      "texts": [
+        {
+          "name": "Caption",
+          "characters": "Caption",
+          "font": "Geist",
+          "fontSize": 14,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Input text|",
+          "characters": "Input text|",
+          "font": "Geist",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Optional helper text",
+          "characters": "Optional helper text",
+          "font": "Geist",
+          "fontSize": 12,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.7200000286102295
+            }
+          ]
+        }
+      ],
+      "border": [
+        {
+          "color": {
+            "r": 0,
+            "g": 0.47843137383461,
+            "b": 1
+          },
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "variant": "State=Danger, Hover=false",
+      "width": 250.6666717529297,
+      "height": 132,
+      "gap": 8,
+      "texts": [
+        {
+          "name": "Caption",
+          "characters": "Caption",
+          "font": "Geist",
+          "fontSize": 14,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Input text|",
+          "characters": "Input text|",
+          "font": "Geist",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Optional helper text",
+          "characters": "Optional helper text",
+          "font": "Geist",
+          "fontSize": 12,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 1,
+                "g": 0.23137255012989044,
+                "b": 0.1882352977991104
+              },
+              "opacity": 0.7200000286102295
+            }
+          ]
+        }
+      ],
+      "border": [
+        {
+          "color": {
+            "r": 1,
+            "g": 0.23137255012989044,
+            "b": 0.1882352977991104
+          },
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "variant": "State=Warning, Hover=false",
+      "width": 250.6666717529297,
+      "height": 132,
+      "gap": 8,
+      "texts": [
+        {
+          "name": "Caption",
+          "characters": "Caption",
+          "font": "Geist",
+          "fontSize": 14,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Input text|",
+          "characters": "Input text|",
+          "font": "Geist",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Optional helper text",
+          "characters": "Optional helper text",
+          "font": "Geist",
+          "fontSize": 12,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.7200000286102295
+            }
+          ]
+        }
+      ],
+      "border": [
+        {
+          "color": {
+            "r": 0.929411768913269,
+            "g": 0.4313725531101227,
+            "b": 0
+          },
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "variant": "State=Success, Hover=false",
+      "width": 250.6666717529297,
+      "height": 132,
+      "gap": 8,
+      "texts": [
+        {
+          "name": "Caption",
+          "characters": "Caption",
+          "font": "Geist",
+          "fontSize": 14,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Input text|",
+          "characters": "Input text|",
+          "font": "Geist",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Optional helper text",
+          "characters": "Optional helper text",
+          "font": "Geist",
+          "fontSize": 12,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.7200000286102295
+            }
+          ]
+        }
+      ],
+      "border": [
+        {
+          "color": {
+            "r": 0.20392157137393951,
+            "g": 0.7803921699523926,
+            "b": 0.3490196168422699
+          },
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "variant": "State=Active, Hover=true",
+      "width": 250.6666717529297,
+      "height": 132,
+      "gap": 8,
+      "texts": [
+        {
+          "name": "Caption",
+          "characters": "Caption",
+          "font": "Geist",
+          "fontSize": 14,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Input text|",
+          "characters": "Input text|",
+          "font": "Geist",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Optional helper text",
+          "characters": "Optional helper text",
+          "font": "Geist",
+          "fontSize": 12,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.7200000286102295
+            }
+          ]
+        }
+      ],
+      "border": [
+        {
+          "color": {
+            "r": 0,
+            "g": 0.47843137383461,
+            "b": 1
+          },
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "variant": "State=Danger, Hover=true",
+      "width": 250.6666717529297,
+      "height": 132,
+      "gap": 8,
+      "texts": [
+        {
+          "name": "Caption",
+          "characters": "Caption",
+          "font": "Geist",
+          "fontSize": 14,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Input text|",
+          "characters": "Input text|",
+          "font": "Geist",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Optional helper text",
+          "characters": "Optional helper text",
+          "font": "Geist",
+          "fontSize": 12,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 1,
+                "g": 0.23137255012989044,
+                "b": 0.1882352977991104
+              },
+              "opacity": 0.7200000286102295
+            }
+          ]
+        }
+      ],
+      "border": [
+        {
+          "color": {
+            "r": 1,
+            "g": 0.23137255012989044,
+            "b": 0.1882352977991104
+          },
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "variant": "State=Warning, Hover=true",
+      "width": 250.6666717529297,
+      "height": 132,
+      "gap": 8,
+      "texts": [
+        {
+          "name": "Caption",
+          "characters": "Caption",
+          "font": "Geist",
+          "fontSize": 14,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Input text|",
+          "characters": "Input text|",
+          "font": "Geist",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Optional helper text",
+          "characters": "Optional helper text",
+          "font": "Geist",
+          "fontSize": 12,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.7200000286102295
+            }
+          ]
+        }
+      ],
+      "border": [
+        {
+          "color": {
+            "r": 0.929411768913269,
+            "g": 0.4313725531101227,
+            "b": 0
+          },
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "variant": "State=Success, Hover=true",
+      "width": 250.6666717529297,
+      "height": 132,
+      "gap": 8,
+      "texts": [
+        {
+          "name": "Caption",
+          "characters": "Caption",
+          "font": "Geist",
+          "fontSize": 14,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Input text|",
+          "characters": "Input text|",
+          "font": "Geist",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Optional helper text",
+          "characters": "Optional helper text",
+          "font": "Geist",
+          "fontSize": 12,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.7200000286102295
+            }
+          ]
+        }
+      ],
+      "border": [
+        {
+          "color": {
+            "r": 0.20392157137393951,
+            "g": 0.7803921699523926,
+            "b": 0.3490196168422699
+          },
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "variant": "State=Entered, Hover=false",
+      "width": 250.6666717529297,
+      "height": 132,
+      "gap": 8,
+      "texts": [
+        {
+          "name": "Caption",
+          "characters": "Caption",
+          "font": "Geist",
+          "fontSize": 14,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Input text|",
+          "characters": "Input text|",
+          "font": "Geist",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Optional helper text",
+          "characters": "Optional helper text",
+          "font": "Geist",
+          "fontSize": 12,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.7200000286102295
+            }
+          ]
+        }
+      ],
+      "border": [
+        {
+          "color": {
+            "r": 0.47058823704719543,
+            "g": 0.47058823704719543,
+            "b": 0.501960813999176
+          },
+          "opacity": 0.1599999964237213
+        }
+      ]
+    },
+    {
+      "variant": "State=Entered, Hover=true",
+      "width": 250.6666717529297,
+      "height": 132,
+      "gap": 8,
+      "texts": [
+        {
+          "name": "Caption",
+          "characters": "Caption",
+          "font": "Geist",
+          "fontSize": 14,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Input text|",
+          "characters": "Input text|",
+          "font": "Geist",
+          "fontSize": 16,
+          "lineHeight": 24,
+          "fontWeight": 400,
+          "fills": [
+            {
+              "color": {
+                "r": 0.062745101749897,
+                "g": 0.062745101749897,
+                "b": 0.07058823853731155
+              },
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "name": "Optional helper text",
+          "characters": "Optional helper text",
+          "font": "Geist",
+          "fontSize": 12,
+          "lineHeight": 12,
+          "fontWeight": 500,
+          "fills": [
+            {
+              "color": {
+                "r": 0.23529411852359772,
+                "g": 0.23529411852359772,
+                "b": 0.26274511218070984
+              },
+              "opacity": 0.7200000286102295
+            }
+          ]
+        }
+      ],
+      "border": [
+        {
+          "color": {
+            "r": 0.47058823704719543,
+            "g": 0.47058823704719543,
+            "b": 0.501960813999176
+          },
+          "opacity": 0.1599999964237213
+        }
+      ]
+    }
+  ]
+}

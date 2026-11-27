@@ -5,12 +5,12 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/combobox';
 import type { LabCombobox } from '@labpics/ui-core/combobox';
 
 /** SSR-пропы <lab-combobox> (атрибуты/свойства), взяты из класса ядра (LabCombobox). */
-export type ComboboxSsrProps = Partial<Pick<LabCombobox, 'type' | 'size' | 'placement' | 'multiple' | 'disabled' | 'readonly' | 'required' | 'invalid' | 'name' | 'placeholder' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'items'>>;
+export type ComboboxSsrProps = Partial<Pick<LabCombobox, 'type' | 'size' | 'placement' | 'multiple' | 'disabled' | 'readonly' | 'required' | 'invalid' | 'name' | 'placeholder' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'items'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-combobox> — предрендеренные строки контента. */
 export type ComboboxSsrSlots = Record<never, never>;
 
@@ -26,19 +26,21 @@ export function renderCombobox(
       type=${ifDefined(props.type)}
       size=${ifDefined(props.size)}
       placement=${ifDefined(props.placement)}
-      ?multiple=${Boolean(props.multiple)}
-      ?disabled=${Boolean(props.disabled)}
-      ?readonly=${Boolean(props.readonly)}
-      ?required=${Boolean(props.required)}
-      ?invalid=${Boolean(props.invalid)}
+      .multiple=${props.multiple === undefined ? noChange : props.multiple}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
+      .readonly=${props.readonly === undefined ? noChange : props.readonly}
+      .required=${props.required === undefined ? noChange : props.required}
+      .invalid=${props.invalid === undefined ? noChange : props.invalid}
       name=${ifDefined(props.name)}
       placeholder=${ifDefined(props.placeholder)}
       label=${ifDefined(props.label)}
-      ?label-hidden=${Boolean(props.labelHidden)}
+      .labelHidden=${props.labelHidden === undefined ? noChange : props.labelHidden}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
-      .value=${props.value}
-      .defaultValue=${props.defaultValue}
-      .items=${props.items}
+      .value=${props.value === undefined ? noChange : props.value}
+      .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
+      .items=${props.items === undefined ? noChange : props.items}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-combobox>`);
 }

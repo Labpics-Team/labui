@@ -1,0 +1,425 @@
+[
+  {
+    "id": "6225:42454",
+    "text": "Description",
+    "fontSize": 16,
+    "weight": 400,
+    "tracking": -0.25,
+    "sourceInkWidth": 79.46588134765625,
+    "sourceInkHeight": 13.7760009765625,
+    "calibration": {
+      "identityIoU": 1,
+      "onePixelShiftIoU": 0.32357391639134364
+    },
+    "models": {
+      "1.400-variable": {
+        "advance": 81.95400000000001,
+        "inkWidth": 79.45200000000001,
+        "inkHeight": 13.776,
+        "widthError": -0.013881347656237608,
+        "sha256": "46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d",
+        "filledOutlineIoU": 0.9859501135005171
+      },
+      "1.400-static": {
+        "advance": 81.95400000000001,
+        "inkWidth": 79.45200000000001,
+        "inkHeight": 13.776,
+        "widthError": -0.013881347656237608,
+        "sha256": "5e7c3b25da393b1619253c655f95c5d123184759a4961562add5b0f5386e63c9",
+        "filledOutlineIoU": 0.9861881793386986
+      },
+      "1.800-variable": {
+        "advance": 80.818,
+        "inkWidth": 78.31600000000002,
+        "inkHeight": 13.776,
+        "widthError": -1.1498813476562333,
+        "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1",
+        "filledOutlineIoU": 0.5796085211748634
+      },
+      "1.800-static": {
+        "advance": 80.818,
+        "inkWidth": 78.31600000000002,
+        "inkHeight": 13.776,
+        "widthError": -1.1498813476562333,
+        "sha256": "85a1c6b18a6b0a06dfe9fd4f6d6a5d4979f74ec861eaef4bc7868b5492b8a117",
+        "filledOutlineIoU": 0.5795613426543572
+      }
+    }
+  },
+  {
+    "id": "6109:5889",
+    "text": "The file.png was deleted",
+    "fontSize": 16,
+    "weight": 500,
+    "tracking": 0,
+    "sourceInkWidth": 183.56700134277344,
+    "sourceInkHeight": 14.031997680664062,
+    "calibration": {
+      "identityIoU": 1,
+      "onePixelShiftIoU": 0.4197574920676788
+    },
+    "models": {
+      "1.400-variable": {
+        "advance": 185.104,
+        "inkWidth": 183.5232177734375,
+        "inkHeight": 14.0288037109375,
+        "widthError": -0.043783569335943184,
+        "sha256": "46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d",
+        "filledOutlineIoU": 0.9796266233766234
+      },
+      "1.400-static": {
+        "advance": 185.104,
+        "inkWidth": 183.52,
+        "inkHeight": 14.032,
+        "widthError": -0.04700134277342727,
+        "sha256": "0987db2030200a6b4a45d03398057c27733977b09bde67b8d0afc26b8b8d0768",
+        "filledOutlineIoU": 0.9815295283800692
+      },
+      "1.800-variable": {
+        "advance": 181.744,
+        "inkWidth": 180.3552177734375,
+        "inkHeight": 14.0288037109375,
+        "widthError": -3.2117835693359496,
+        "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1",
+        "filledOutlineIoU": 0.24927051516133986
+      },
+      "1.800-static": {
+        "advance": 181.744,
+        "inkWidth": 180.35199999999998,
+        "inkHeight": 14.032,
+        "widthError": -3.215001342773462,
+        "sha256": "3a3b36f0d0b981f4857f7f00eeef4a5ee123605575d362ab31ee7c19e3d11f2f",
+        "filledOutlineIoU": 0.24775314457358388
+      }
+    }
+  },
+  {
+    "id": "6225:42451",
+    "text": "Title",
+    "fontSize": 20,
+    "weight": 500,
+    "tracking": -0.33000001311302185,
+    "sourceInkWidth": 39.1943359375,
+    "sourceInkHeight": 14.53997802734375,
+    "calibration": {
+      "identityIoU": 1,
+      "onePixelShiftIoU": 0.4973464746019712
+    },
+    "models": {
+      "1.400-variable": {
+        "advance": 40.20999993443489,
+        "inkWidth": 39.19202143192291,
+        "inkHeight": 14.536004638671875,
+        "widthError": -0.002314505577089676,
+        "sha256": "46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d",
+        "filledOutlineIoU": 0.9919026822365091
+      },
+      "1.400-static": {
+        "advance": 40.20999993443489,
+        "inkWidth": 39.199999947547916,
+        "inkHeight": 14.540000000000001,
+        "widthError": 0.005664010047915724,
+        "sha256": "0987db2030200a6b4a45d03398057c27733977b09bde67b8d0afc26b8b8d0768",
+        "filledOutlineIoU": 0.9931290135360306
+      },
+      "1.800-variable": {
+        "advance": 38.80999993443489,
+        "inkWidth": 38.07202143192291,
+        "inkHeight": 14.536004638671875,
+        "widthError": -1.1223145055770871,
+        "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1",
+        "filledOutlineIoU": 0.6259878162930228
+      },
+      "1.800-static": {
+        "advance": 38.80999993443489,
+        "inkWidth": 38.059999947547915,
+        "inkHeight": 14.540000000000001,
+        "widthError": -1.1343359899520848,
+        "sha256": "3a3b36f0d0b981f4857f7f00eeef4a5ee123605575d362ab31ee7c19e3d11f2f",
+        "filledOutlineIoU": 0.6207327290730444
+      }
+    }
+  },
+  {
+    "id": "6225:1048",
+    "text": "Badge",
+    "fontSize": 12,
+    "weight": 500,
+    "tracking": 0,
+    "sourceInkWidth": 34.96630859375,
+    "sourceInkHeight": 10.464004516601564,
+    "calibration": {
+      "identityIoU": 1,
+      "onePixelShiftIoU": 0.35852848295943895
+    },
+    "models": {
+      "1.400-variable": {
+        "advance": 36.504,
+        "inkWidth": 34.94161669921875,
+        "inkHeight": 10.463999999999999,
+        "widthError": -0.024691894531251535,
+        "sha256": "46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d",
+        "filledOutlineIoU": 0.9881016765819362
+      },
+      "1.400-static": {
+        "advance": 36.504,
+        "inkWidth": 34.944,
+        "inkHeight": 10.463999999999999,
+        "widthError": -0.022308593749997385,
+        "sha256": "0987db2030200a6b4a45d03398057c27733977b09bde67b8d0afc26b8b8d0768",
+        "filledOutlineIoU": 0.9884926238620316
+      },
+      "1.800-variable": {
+        "advance": 36.108000000000004,
+        "inkWidth": 34.5744169921875,
+        "inkHeight": 10.463999999999999,
+        "widthError": -0.3918916015624987,
+        "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1",
+        "filledOutlineIoU": 0.8098429720413635
+      },
+      "1.800-static": {
+        "advance": 36.108000000000004,
+        "inkWidth": 34.572,
+        "inkHeight": 10.463999999999999,
+        "widthError": -0.39430859374999727,
+        "sha256": "3a3b36f0d0b981f4857f7f00eeef4a5ee123605575d362ab31ee7c19e3d11f2f",
+        "filledOutlineIoU": 0.8141151992991678
+      }
+    }
+  },
+  {
+    "id": "6227:8350",
+    "text": "Button",
+    "fontSize": 16,
+    "weight": 500,
+    "tracking": 0,
+    "sourceInkWidth": 47.73950195312499,
+    "sourceInkHeight": 11.551971435546877,
+    "calibration": {
+      "identityIoU": 1,
+      "onePixelShiftIoU": 0.4216140332463034
+    },
+    "models": {
+      "1.400-variable": {
+        "advance": 50.288000000000004,
+        "inkWidth": 47.708820312499995,
+        "inkHeight": 11.552,
+        "widthError": -0.030681640624997897,
+        "sha256": "46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d",
+        "filledOutlineIoU": 0.9857882560317286
+      },
+      "1.400-static": {
+        "advance": 50.288000000000004,
+        "inkWidth": 47.712,
+        "inkHeight": 11.552,
+        "widthError": -0.027501953124989598,
+        "sha256": "0987db2030200a6b4a45d03398057c27733977b09bde67b8d0afc26b8b8d0768",
+        "filledOutlineIoU": 0.9853404676390823
+      },
+      "1.800-variable": {
+        "advance": 49.952,
+        "inkWidth": 47.3728203125,
+        "inkHeight": 11.552,
+        "widthError": -0.3666816406249964,
+        "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1",
+        "filledOutlineIoU": 0.8823785175136526
+      },
+      "1.800-static": {
+        "advance": 49.952,
+        "inkWidth": 47.376000000000005,
+        "inkHeight": 11.552,
+        "widthError": -0.3635019531249881,
+        "sha256": "3a3b36f0d0b981f4857f7f00eeef4a5ee123605575d362ab31ee7c19e3d11f2f",
+        "filledOutlineIoU": 0.8835704595262114
+      }
+    }
+  },
+  {
+    "id": "6050:2314",
+    "text": "Input text|",
+    "fontSize": 16,
+    "weight": 400,
+    "tracking": -0.25,
+    "sourceInkWidth": 70.01416015625,
+    "sourceInkHeight": 14.39990234375,
+    "calibration": {
+      "identityIoU": 1,
+      "onePixelShiftIoU": 0.2823712306060887
+    },
+    "models": {
+      "1.400-variable": {
+        "advance": 72.706,
+        "inkWidth": 70.012,
+        "inkHeight": 14.4,
+        "widthError": -0.0021601562499995453,
+        "sha256": "46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d",
+        "filledOutlineIoU": 0.9948618625348145
+      },
+      "1.400-static": {
+        "advance": 72.706,
+        "inkWidth": 70.012,
+        "inkHeight": 14.4,
+        "widthError": -0.0021601562499995453,
+        "sha256": "5e7c3b25da393b1619253c655f95c5d123184759a4961562add5b0f5386e63c9",
+        "filledOutlineIoU": 0.9947494797502802
+      },
+      "1.800-variable": {
+        "advance": 72.226,
+        "inkWidth": 69.532,
+        "inkHeight": 14.4,
+        "widthError": -0.4821601562500035,
+        "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1",
+        "filledOutlineIoU": 0.765496469518519
+      },
+      "1.800-static": {
+        "advance": 72.226,
+        "inkWidth": 69.532,
+        "inkHeight": 14.4,
+        "widthError": -0.4821601562500035,
+        "sha256": "85a1c6b18a6b0a06dfe9fd4f6d6a5d4979f74ec861eaef4bc7868b5492b8a117",
+        "filledOutlineIoU": 0.7654571802011707
+      }
+    }
+  },
+  {
+    "id": "6088-4232-title",
+    "text": "Is it accessible?",
+    "fontSize": 16,
+    "weight": 500,
+    "tracking": 0,
+    "sourceInkWidth": 118.35470000000001,
+    "sourceInkHeight": 11.808,
+    "calibration": {
+      "identityIoU": 1,
+      "onePixelShiftIoU": 0.4293194989490566
+    },
+    "models": {
+      "1.400-variable": {
+        "advance": 120.4,
+        "inkWidth": 118.316818359375,
+        "inkHeight": 11.808,
+        "widthError": -0.03788164062500243,
+        "sha256": "46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d",
+        "filledOutlineIoU": 0.9844927193486266
+      },
+      "1.400-static": {
+        "advance": 120.4,
+        "inkWidth": 118.32,
+        "inkHeight": 11.808,
+        "widthError": -0.03470000000001505,
+        "sha256": "0987db2030200a6b4a45d03398057c27733977b09bde67b8d0afc26b8b8d0768",
+        "filledOutlineIoU": 0.9842492420211643
+      },
+      "1.800-variable": {
+        "advance": 118.864,
+        "inkWidth": 116.81921875,
+        "inkHeight": 11.808,
+        "widthError": -1.5354812500000037,
+        "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1",
+        "filledOutlineIoU": 0.5029368246424248
+      },
+      "1.800-static": {
+        "advance": 118.864,
+        "inkWidth": 116.816,
+        "inkHeight": 11.808,
+        "widthError": -1.5387000000000057,
+        "sha256": "3a3b36f0d0b981f4857f7f00eeef4a5ee123605575d362ab31ee7c19e3d11f2f",
+        "filledOutlineIoU": 0.5032969706281529
+      }
+    }
+  },
+  {
+    "id": "6088-4232-body",
+    "text": "Yes. It adheres to the WAI-ARIA design pattern.",
+    "fontSize": 16,
+    "weight": 400,
+    "tracking": -0.25,
+    "sourceInkWidth": 327.7329,
+    "sourceInkHeight": 13.967999999999996,
+    "calibration": {
+      "identityIoU": 1,
+      "onePixelShiftIoU": 0.3310475005478929
+    },
+    "models": {
+      "1.400-variable": {
+        "advance": 334.202,
+        "inkWidth": 333.364,
+        "inkHeight": 13.968,
+        "widthError": 5.6311000000000035,
+        "sha256": "46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d",
+        "filledOutlineIoU": 0.22910116344599343
+      },
+      "1.400-static": {
+        "advance": 334.202,
+        "inkWidth": 333.364,
+        "inkHeight": 13.968,
+        "widthError": 5.6311000000000035,
+        "sha256": "5e7c3b25da393b1619253c655f95c5d123184759a4961562add5b0f5386e63c9",
+        "filledOutlineIoU": 0.22907636604174283
+      },
+      "1.800-variable": {
+        "advance": 327.994,
+        "inkWidth": 327.636,
+        "inkHeight": 13.968,
+        "widthError": -0.09689999999994825,
+        "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1",
+        "filledOutlineIoU": 0.8105143442951193
+      },
+      "1.800-static": {
+        "advance": 327.994,
+        "inkWidth": 327.636,
+        "inkHeight": 13.968,
+        "widthError": -0.09689999999994825,
+        "sha256": "85a1c6b18a6b0a06dfe9fd4f6d6a5d4979f74ec861eaef4bc7868b5492b8a117",
+        "filledOutlineIoU": 0.8105232809571861
+      }
+    }
+  },
+  {
+    "id": "8980-2185-title",
+    "text": "Is it accessible?",
+    "fontSize": 16,
+    "weight": 500,
+    "tracking": 0,
+    "sourceInkWidth": 117.04090000000001,
+    "sourceInkHeight": 11.808,
+    "calibration": {
+      "identityIoU": 1,
+      "onePixelShiftIoU": 0.4287434325744308
+    },
+    "models": {
+      "1.400-variable": {
+        "advance": 120.4,
+        "inkWidth": 118.316818359375,
+        "inkHeight": 11.808,
+        "widthError": 1.275918359374998,
+        "sha256": "46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d",
+        "filledOutlineIoU": 0.5616540403200596
+      },
+      "1.400-static": {
+        "advance": 120.4,
+        "inkWidth": 118.32,
+        "inkHeight": 11.808,
+        "widthError": 1.2790999999999855,
+        "sha256": "0987db2030200a6b4a45d03398057c27733977b09bde67b8d0afc26b8b8d0768",
+        "filledOutlineIoU": 0.5624492566515379
+      },
+      "1.800-variable": {
+        "advance": 118.864,
+        "inkWidth": 116.81921875,
+        "inkHeight": 11.808,
+        "widthError": -0.22168125000000316,
+        "sha256": "2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1",
+        "filledOutlineIoU": 0.9067732517951679
+      },
+      "1.800-static": {
+        "advance": 118.864,
+        "inkWidth": 116.816,
+        "inkHeight": 11.808,
+        "widthError": -0.2249000000000052,
+        "sha256": "3a3b36f0d0b981f4857f7f00eeef4a5ee123605575d362ab31ee7c19e3d11f2f",
+        "filledOutlineIoU": 0.907268027830158
+      }
+    }
+  }
+]

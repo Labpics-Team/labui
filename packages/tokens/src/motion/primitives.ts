@@ -1,4 +1,4 @@
-import type { SpringParams } from '@labpics/motion';
+import type { SpringParams } from '@labpics/motion/driver';
 /**
  * Build-time bridge to the physical motion owner.
  *

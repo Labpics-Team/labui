@@ -5,9 +5,10 @@
  * поставляется КАК Lit web-components. Компоненты здесь — тонкие обёртки, монтирующие
  * общие `<lab-*>` из @labpics/ui-core и пробрасывающие пропы / события / слоты.
  *
- * Все обёртки СГЕНЕРИРОВАНЫ из ядра (`src/generated`, покрытие всех 27 компонентов),
+ * Все обёртки СГЕНЕРИРОВАНЫ из ядра (`src/generated`),
  * общая логика проброса — в фабрике (`src/runtime/create-lab-component.ts`, на
- * рантайм-примитивах Solid, без JSX). SSR — через вход `@labpics/ui-solid/ssr`.
+ * рантайм-примитивах Solid, без JSX). Обычный Solid SSR сохраняет host/light DOM
+ * Solid и добавляет DSD ядра; `/ssr` возвращает статические HTML-фрагменты.
  */
 export * from './generated/index.js';
 export {

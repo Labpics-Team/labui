@@ -1,0 +1,79 @@
+{
+  "archives": [
+    {
+      "name": "@labpics/ui-tokens",
+      "sha256": "205ed2fc80b478d3569cc60456c24b03b43b16660cbd63c30c3e153dd7eee196"
+    },
+    {
+      "name": "@labpics/ui-shadow",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "@labpics/ui-materials",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "@labpics/fonts",
+      "sha256": "d88c7478b94becc1ddbf77f92c4af2fb00ec882cb456847a38c2ee3bd6b35fd9"
+    },
+    {
+      "name": "@labui/colors",
+      "sha256": "2dfc01336750f554b4a4e46155bb10caaf3c804df98ec237008961fee268decb"
+    },
+    {
+      "name": "@labpics/ui-core",
+      "sha256": "f255fbedae6fe44193a37412b72f4a69367f8498e357ba79f13fb3ae335b69dd"
+    },
+    {
+      "name": "@labpics/ui-react",
+      "sha256": "312517688c82d6f0d2a9b5fae9ce6d946635ad7781ceb5c717aae4edfaa13ed4"
+    },
+    {
+      "name": "@labpics/ui-vue",
+      "sha256": "bfd7a429f2065d62b4a072e68c13992ef3690d67565b321fa202d791bc06dd12"
+    },
+    {
+      "name": "@labpics/ui-solid",
+      "sha256": "ff0fd15e659a23f3501c91bc62fcaf83aa109bc4c87d6840591bcd0f7df5ccc6"
+    },
+    {
+      "name": "@labpics/ui-svelte",
+      "sha256": "4d1b595436096a62ac414bee720f5949ea5a379a45f4cab30cfb26a4cc968925"
+    },
+    {
+      "name": "@labpics/ui-astro",
+      "sha256": "9e06829e7febb804f92ed5f70690e852849ddb722005e992dc0c4fad8e01e149"
+    }
+  ],
+  "declarations": true,
+  "records": [
+    {
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "adapters": 4,
+      "nativeReact": true,
+      "noJsFirstPaint": true,
+      "itemsRestoredFromHtml": true,
+      "shiftedServerIds": true,
+      "controlledNullAndRefusal": true,
+      "sameNodesAfterHydration": true,
+      "preHydrationDraftPreserved": true,
+      "stylesIncluded": true,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "browser": "26.0",
+      "adapters": 4,
+      "nativeReact": true,
+      "noJsFirstPaint": true,
+      "itemsRestoredFromHtml": true,
+      "shiftedServerIds": true,
+      "controlledNullAndRefusal": true,
+      "sameNodesAfterHydration": true,
+      "preHydrationDraftPreserved": true,
+      "stylesIncluded": true,
+      "errors": []
+    }
+  ]
+}

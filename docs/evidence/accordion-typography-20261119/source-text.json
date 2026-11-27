@@ -1,0 +1,564 @@
+{
+  "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+  "version": "2423213750570316842",
+  "method": "Read-only REST nodes and SVG outline exports, original file unchanged",
+  "text": [
+    {
+      "id": "6088:4196",
+      "characters": "Is it accessible?",
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 136,
+        "width": 121,
+        "height": 24
+      },
+      "absoluteRenderBounds": {
+        "x": 2337.6572265625,
+        "y": 142.38400268554688,
+        "width": 118.3544921875,
+        "height": 11.807998657226562
+      },
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Medium",
+        "fontStyle": "Medium",
+        "fontWeight": 500,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": 0,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12592"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 4
+    },
+    {
+      "id": "8980:2154",
+      "characters": "Yes. It adheres to the WAI-ARIA design pattern.",
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 168,
+        "width": 329,
+        "height": 24
+      },
+      "absoluteRenderBounds": {
+        "x": 2336.232177734375,
+        "y": 174.62399291992188,
+        "width": 327.73291015625,
+        "height": 13.968002319335938
+      },
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Regular",
+        "fontStyle": "Regular",
+        "fontWeight": 400,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": -0.25,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12580"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 5
+    },
+    {
+      "id": "8980:2187",
+      "characters": "Is it accessible?",
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 272,
+        "width": 120,
+        "height": 24
+      },
+      "absoluteRenderBounds": {
+        "x": 2337.8291015625,
+        "y": 278.3840026855469,
+        "width": 117.040771484375,
+        "height": 11.8079833984375
+      },
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Medium",
+        "fontStyle": "Medium",
+        "fontWeight": 500,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": 0,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12592"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 4
+    },
+    {
+      "id": "8980:2188",
+      "characters": "Yes. It adheres to the WAI-ARIA design pattern.",
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 304,
+        "width": 329,
+        "height": 24
+      },
+      "absoluteRenderBounds": {
+        "x": 2336.232177734375,
+        "y": 310.6239929199219,
+        "width": 327.73291015625,
+        "height": 13.968017578125
+      },
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Regular",
+        "fontStyle": "Regular",
+        "fontWeight": 400,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": -0.25,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12580"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 5
+    },
+    {
+      "id": "9951:771",
+      "characters": "Is it accessible?",
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 408,
+        "width": 120,
+        "height": 24
+      },
+      "absoluteRenderBounds": {
+        "x": 2337.8291015625,
+        "y": 414.3840026855469,
+        "width": 117.040771484375,
+        "height": 11.8079833984375
+      },
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Medium",
+        "fontStyle": "Medium",
+        "fontWeight": 500,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": 0,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12592"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 4
+    },
+    {
+      "id": "9951:772",
+      "characters": "Yes. It adheres to the WAI-ARIA design pattern.",
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 440,
+        "width": 329,
+        "height": 24
+      },
+      "absoluteRenderBounds": null,
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Regular",
+        "fontStyle": "Regular",
+        "fontWeight": 400,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": -0.25,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12580"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 5
+    },
+    {
+      "id": "9951:776",
+      "characters": "Is it accessible?",
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 512,
+        "width": 120,
+        "height": 24
+      },
+      "absoluteRenderBounds": {
+        "x": 2337.8291015625,
+        "y": 518.3839721679688,
+        "width": 117.040771484375,
+        "height": 11.80804443359375
+      },
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Medium",
+        "fontStyle": "Medium",
+        "fontWeight": 500,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": 0,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12592"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 4
+    },
+    {
+      "id": "9951:777",
+      "characters": "Yes. It adheres to the WAI-ARIA design pattern.",
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 544,
+        "width": 329,
+        "height": 24
+      },
+      "absoluteRenderBounds": null,
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Regular",
+        "fontStyle": "Regular",
+        "fontWeight": 400,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": -0.25,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12580"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 5
+    },
+    {
+      "id": "6225:42454",
+      "characters": "Description",
+      "absoluteBoundingBox": {
+        "x": 820,
+        "y": 981,
+        "width": 352,
+        "height": 24
+      },
+      "absoluteRenderBounds": {
+        "x": 821.4719848632812,
+        "y": 987.6240234375,
+        "width": 79.46588134765625,
+        "height": 13.7760009765625
+      },
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Regular",
+        "fontStyle": "Regular",
+        "fontWeight": 400,
+        "paragraphSpacing": 12,
+        "textAutoResize": "HEIGHT",
+        "textTruncation": "ENDING",
+        "maxLines": 2,
+        "fontSize": 16,
+        "textAlignHorizontal": "LEFT",
+        "textAlignVertical": "TOP",
+        "letterSpacing": -0.25,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12580"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 4
+    },
+    {
+      "id": "6109:5889",
+      "characters": "The file.png was deleted",
+      "absoluteBoundingBox": {
+        "x": 216,
+        "y": 206,
+        "width": 186,
+        "height": 24
+      },
+      "absoluteRenderBounds": {
+        "x": 216.3679962158203,
+        "y": 212.55999755859375,
+        "width": 183.56700134277344,
+        "height": 14.031997680664062
+      },
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Medium",
+        "fontStyle": "Medium",
+        "fontWeight": 500,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "LEFT",
+        "textAlignVertical": "TOP",
+        "letterSpacing": 0,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12592"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 4
+    },
+    {
+      "id": "6225:42451",
+      "characters": "Title",
+      "absoluteBoundingBox": {
+        "x": 820,
+        "y": 959,
+        "width": 41,
+        "height": 20
+      },
+      "absoluteRenderBounds": {
+        "x": 820.4600219726562,
+        "y": 961.7000122070312,
+        "width": 39.1943359375,
+        "height": 14.53997802734375
+      },
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Medium",
+        "fontStyle": "Medium",
+        "fontWeight": 500,
+        "paragraphSpacing": 4,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "textTruncation": "ENDING",
+        "maxLines": 1,
+        "fontSize": 20,
+        "textAlignHorizontal": "LEFT",
+        "textAlignVertical": "TOP",
+        "letterSpacing": -0.33000001311302185,
+        "lineHeightPx": 20,
+        "lineHeightPercent": 76.92308044433594,
+        "lineHeightPercentFontSize": 100,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12579"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 4
+    },
+    {
+      "id": "I6225:42453;6225:1048",
+      "characters": "Badge",
+      "absoluteBoundingBox": {
+        "x": 889,
+        "y": 963,
+        "width": 37,
+        "height": 12
+      },
+      "absoluteRenderBounds": null,
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Medium",
+        "fontStyle": "Medium",
+        "fontWeight": 500,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 12,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": 0,
+        "lineHeightPx": 12,
+        "lineHeightPercent": 76.92308044433594,
+        "lineHeightPercentFontSize": 100,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12581"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 4
+    },
+    {
+      "id": "6225:1048",
+      "characters": "Badge",
+      "absoluteBoundingBox": {
+        "x": 4138.625,
+        "y": 124,
+        "width": 37,
+        "height": 12
+      },
+      "absoluteRenderBounds": {
+        "x": 4139.8935546875,
+        "y": 125.47999572753906,
+        "width": 34.96630859375,
+        "height": 10.464004516601562
+      },
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Medium",
+        "fontStyle": "Medium",
+        "fontWeight": 500,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 12,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": 0,
+        "lineHeightPx": 12,
+        "lineHeightPercent": 76.92308044433594,
+        "lineHeightPercentFontSize": 100,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12581"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 4
+    },
+    {
+      "id": "6227:8350",
+      "characters": "Button",
+      "absoluteBoundingBox": {
+        "x": 2360,
+        "y": 305,
+        "width": 51,
+        "height": 24
+      },
+      "absoluteRenderBounds": {
+        "x": 2361.7197265625,
+        "y": 311.6400146484375,
+        "width": 47.739501953125,
+        "height": 11.551971435546875
+      },
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Medium",
+        "fontStyle": "Medium",
+        "fontWeight": 500,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": 0,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12592"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 4
+    },
+    {
+      "id": "6050:2314",
+      "characters": "Input text|",
+      "absoluteBoundingBox": {
+        "x": 4145.33349609375,
+        "y": 2143.166748046875,
+        "width": 214.6666717529297,
+        "height": 24
+      },
+      "absoluteRenderBounds": {
+        "x": 4146.8056640625,
+        "y": 2149.166748046875,
+        "width": 70.01416015625,
+        "height": 14.39990234375
+      },
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Regular",
+        "fontStyle": "Regular",
+        "fontWeight": 400,
+        "paragraphSpacing": 12,
+        "textAutoResize": "HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "LEFT",
+        "textAlignVertical": "TOP",
+        "letterSpacing": -0.25,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "styles": {
+        "text": "2008:12580"
+      },
+      "characterStyleOverrides": [],
+      "styleOverrideTable": {},
+      "layoutVersion": 4
+    }
+  ]
+}

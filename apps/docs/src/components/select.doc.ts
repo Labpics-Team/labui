@@ -47,7 +47,7 @@ export const selectDoc: ComponentDoc = {
   tag: 'lab-select',
   title: 'Select',
   summary:
-    'A trigger that opens a positioned listbox of options. Runs the @zag-js/select machine through the LabUI seam: the machine owns open-on-click, single/multiple selection, Arrow/Home/End navigation + typeahead, Escape / outside-click dismiss, focus restoration, role="combobox"/listbox/option + aria-activedescendant/selected/multiselectable, dynamic positioning (Floating UI), and a hidden native <select> for forms. The element only paints with semantic --lab-* roles.',
+    'Dropdown in three authored sizes, or Multiselect with a floating caption and removable chips. A single accepted selection drives the trigger, listbox and form submission.',
   status: { kind: 'stable' },
 
   statesMatrix: {
@@ -185,7 +185,7 @@ export const selectDoc: ComponentDoc = {
         name: 'size',
         type: "'s' | 'm' | 'l'",
         default: "'m'",
-        description: 'Control size — drives trigger height and listbox font band.',
+        description: 'Dropdown: S32/M48/L56. Multiselect has its own 48px composition.',
       },
       {
         name: 'placement',
@@ -208,9 +208,10 @@ export const selectDoc: ComponentDoc = {
       },
       {
         name: 'value',
-        type: 'string[]',
+        type: 'string[] | null',
+        default: 'null',
         description:
-          'Controlled selected value(s) — when set (JSON attribute or property), the consumer owns the value.',
+          'An array, including [], controls the selection through a JS property or JSON attribute. A value-change event requests an update; only the caller changes value. Null leaves selection to the component.',
       },
       {
         name: 'defaultValue',
@@ -220,7 +221,8 @@ export const selectDoc: ComponentDoc = {
       {
         name: 'name',
         type: 'string',
-        description: 'Field name of the hidden native <select> for forms.',
+        description:
+          'Form field name. FACE submits repeated FormData entries for multiple selection.',
       },
       {
         name: 'placeholder',
@@ -228,13 +230,35 @@ export const selectDoc: ComponentDoc = {
         default: "'Select…'",
         description: 'Shown in the trigger when nothing is selected.',
       },
-      { name: 'label', type: 'string', description: 'Optional control label (accessible name).' },
+      {
+        name: 'label',
+        type: 'string',
+        description: 'Accessible name; Multiselect also shows it as the internal floating caption.',
+      },
+      {
+        name: 'showLabel',
+        type: 'boolean',
+        default: 'true',
+        description: 'Show the Multiselect caption. Hiding it preserves its accessible name.',
+      },
+      {
+        name: 'required',
+        type: 'boolean',
+        default: 'false',
+        description: 'Native required validity; form reset and disabled fieldsets are supported.',
+      },
+      {
+        name: 'removeLabel',
+        type: 'string',
+        default: 'Remove',
+        description: 'Localized verb for chip removal buttons.',
+      },
     ],
     events: [
       {
         name: 'value-change',
         description:
-          'CustomEvent<ValueChangeDetails> fired when the machine changes the selected value(s). The machine is the source of truth.',
+          'CustomEvent<ValueChangeDetails> requests a selection. In controlled mode, assign detail.value to the value property to accept it; ignoring the event preserves the current selection.',
       },
       {
         name: 'open-change',
@@ -242,6 +266,6 @@ export const selectDoc: ComponentDoc = {
           'CustomEvent<OpenChangeDetails> fired when the machine opens or closes the listbox.',
       },
     ],
-    slots: [],
+    slots: [{ name: 'leading', description: 'Decorative Dropdown icon, sized16/16/20px.' }],
   },
 };

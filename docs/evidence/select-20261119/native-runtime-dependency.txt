@@ -1,0 +1,19 @@
+pics.lab:ui-compose-desktop:0.1.0-select-20261119.3
+  Variant desktopRuntimeElements-published:
+    | Attribute Name                     | Provided     | Requested    |
+    |------------------------------------|--------------|--------------|
+    | org.gradle.status                  | release      |              |
+    | org.gradle.category                | library      | library      |
+    | org.gradle.jvm.environment         | standard-jvm | standard-jvm |
+    | org.gradle.libraryelements         | jar          | jar          |
+    | org.gradle.usage                   | java-runtime | java-runtime |
+    | org.jetbrains.kotlin.platform.type | jvm          | jvm          |
+    | org.gradle.dependency.bundling     |              | external     |
+    | org.gradle.jvm.version             |              | 21           |
+
+pics.lab:ui-compose-desktop:0.1.0-select-20261119.3
+\--- pics.lab:ui-compose:0.1.0-select-20261119.3
+     +--- desktopTestRuntimeClasspath
+     \--- pics.lab:ui-colors-desktop:0.1.0-select-20261119.3
+          \--- pics.lab:ui-colors:0.1.0-select-20261119.3
+               \--- desktopTestRuntimeClasspath

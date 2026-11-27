@@ -1,5 +1,6 @@
 import type { ResolvedTokens } from '../domain/build.js';
 import { num } from '../domain/format.js';
+import { authoredTextStyles } from '../domain/text-styles.js';
 import type { ResolvedToken } from '../domain/token.js';
 
 /**
@@ -9,8 +10,13 @@ import type { ResolvedToken } from '../domain/token.js';
  * form.
  */
 interface DtcgToken {
-  $type: 'dimension' | 'number' | 'fontFamily' | 'fontFeatureSettings';
-  $value: number | { value: number; unit: 'px' | 'rem' } | string | readonly string[];
+  $type: 'dimension' | 'number' | 'fontFamily' | 'fontFeatureSettings' | 'typography';
+  $value:
+    | number
+    | { value: number; unit: 'px' | 'rem' }
+    | string
+    | readonly string[]
+    | Record<string, unknown>;
   $description?: string;
   $extensions?: Record<string, unknown>;
 }
@@ -29,6 +35,24 @@ const EXT_KEY = 'com.labpics.ui-tokens';
  */
 export function generateDtcg(tokens: ResolvedTokens): string {
   const doc: DtcgGroup = {
+    typography: Object.fromEntries(
+      Object.entries(authoredTextStyles).map(([name, style]) => [
+        name,
+        {
+          $type: 'typography',
+          $value: {
+            fontFamily: style.fontFamily,
+            fontSize: { value: style.fontSize, unit: 'px' },
+            fontWeight: style.fontWeight,
+            letterSpacing: { value: style.letterSpacing, unit: 'px' },
+            lineHeight: style.lineHeight / style.fontSize,
+          },
+          $extensions: {
+            [EXT_KEY]: { sourceNode: style.sourceNode, sourceTextStyle: style.sourceTextStyle },
+          },
+        } as DtcgToken,
+      ]),
+    ),
     space: dimensionGroup(tokens.spacing),
     size: dimensionGroup(tokens.sizes),
     radius: dimensionGroup(tokens.radii),
@@ -48,6 +72,16 @@ export function generateDtcg(tokens: ResolvedTokens): string {
     state: numberGroup(tokens.states),
     opacity: numberGroup(tokens.opacity),
   };
+  for (const token of tokens.components) {
+    doc[token.kind] ??= {};
+    const group = doc[token.kind] as DtcgGroup;
+    if (group[token.name])
+      throw new Error(`Duplicate component token: ${token.kind}/${token.name}`);
+    Object.assign(
+      group,
+      token.dtcgType === 'dimension' ? dimensionGroup([token]) : numberGroup([token]),
+    );
+  }
   return `${JSON.stringify(doc, null, 2)}\n`;
 }
 
@@ -82,7 +116,8 @@ function fontSizeGroup(list: readonly ResolvedToken[]): DtcgGroup {
     const f = t.fluid;
     group[t.name] = {
       $type: 'dimension',
-      // The canonical scalar is the wide-anchor (max) size — the "design" size.
+      // Legacy scalar: the wide anchor. Actual fluid behavior lives in extensions;
+      // authored text roles use the separate typography composite group.
       $value: { value: round(f ? f.maxPx : requireNumeric(t)), unit: 'px' },
       $extensions: {
         [EXT_KEY]: {

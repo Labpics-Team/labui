@@ -1,0 +1,568 @@
+{
+  "archives": [
+    {
+      "name": "@labpics/ui-tokens",
+      "sha256": "bda7b8b08f8baa462b8c73bc72974ba13f81ea5374a63e1cc0f9f2036892dba8"
+    },
+    {
+      "name": "@labpics/ui-shadow",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "@labui/colors",
+      "sha256": "56ba4da1572ea321215974308bf0eb76333e8b583650b69e67d69bffacee7351"
+    },
+    {
+      "name": "@labpics/ui-materials",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "@labpics/ui-core",
+      "sha256": "4d841977e083f6c52658f11747689c03ad23ed06ee6904fd2085e92660225439"
+    },
+    {
+      "name": "@labpics/ui-vue",
+      "sha256": "bb844c6cf49e39bae63cf6bd11cbd62d1f0d315be3cbc4b075a80fbb923cd406"
+    },
+    {
+      "name": "@labpics/ui-solid",
+      "sha256": "2be505c21d88373a57fb4195e6ece2daa45a4f55895430bb37db0b5d0800ee03"
+    },
+    {
+      "name": "@labpics/ui-svelte",
+      "sha256": "3a608e6b6fd641fcbcd5675969ffbc4971b0f5d9688fabf94f1fad2556cd24af"
+    }
+  ],
+  "qualification": {
+    "records": [
+      {
+        "name": "vue",
+        "browserModules": 226,
+        "browserProviders": [
+          "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
+        ],
+        "serverEngineInBrowser": false
+      },
+      {
+        "name": "solid",
+        "browserModules": 222,
+        "browserProviders": [
+          "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
+        ],
+        "serverEngineInBrowser": false
+      },
+      {
+        "name": "svelte",
+        "browserModules": 499,
+        "browserProviders": [
+          "node_modules/.pnpm/@labpics+ui-core@file+packs_f5d0d0199992c7d0af84451e896e72d5/node_modules/@labpics/ui-core/dist/ssr/element-browser.js"
+        ],
+        "serverEngineInBrowser": false
+      }
+    ],
+    "nodeEsm": ["vue", "solid", "svelte"],
+    "nodeCjs": ["vue", "solid"],
+    "viteSsr": true,
+    "types": {
+      "nodeNextEsm": true,
+      "nodeNextCjs": true,
+      "svelteSlots": true
+    }
+  },
+  "clientMount": [
+    {
+      "framework": "vue",
+      "browser": "chromium",
+      "connections": [
+        {
+          "id": "uncontrolled",
+          "label": "Uncontrolled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        },
+        {
+          "id": "controlled",
+          "label": "Controlled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": ["a"]
+        },
+        {
+          "id": "released",
+          "label": "Explicit null",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        }
+      ],
+      "uncontrolled": {
+        "selected": ["b", "c"],
+        "text": "B, Renamed C"
+      },
+      "controlled": {
+        "selected": [],
+        "text": "Choose"
+      },
+      "errors": []
+    },
+    {
+      "framework": "solid",
+      "browser": "chromium",
+      "connections": [
+        {
+          "id": "uncontrolled",
+          "label": "Uncontrolled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        },
+        {
+          "id": "controlled",
+          "label": "Controlled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": ["a"]
+        },
+        {
+          "id": "released",
+          "label": "Explicit null",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        }
+      ],
+      "uncontrolled": {
+        "selected": ["b", "c"],
+        "text": "B, Renamed C"
+      },
+      "controlled": {
+        "selected": [],
+        "text": "Choose"
+      },
+      "errors": []
+    },
+    {
+      "framework": "svelte",
+      "browser": "chromium",
+      "connections": [
+        {
+          "id": "uncontrolled",
+          "label": "Uncontrolled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        },
+        {
+          "id": "controlled",
+          "label": "Controlled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": ["a"]
+        },
+        {
+          "id": "released",
+          "label": "Explicit null",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        }
+      ],
+      "uncontrolled": {
+        "selected": ["b", "c"],
+        "text": "B, Renamed C"
+      },
+      "controlled": {
+        "selected": [],
+        "text": "Choose"
+      },
+      "errors": []
+    },
+    {
+      "framework": "vue",
+      "browser": "webkit",
+      "connections": [
+        {
+          "id": "uncontrolled",
+          "label": "Uncontrolled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        },
+        {
+          "id": "controlled",
+          "label": "Controlled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": ["a"]
+        },
+        {
+          "id": "released",
+          "label": "Explicit null",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        }
+      ],
+      "uncontrolled": {
+        "selected": ["b", "c"],
+        "text": "B, Renamed C"
+      },
+      "controlled": {
+        "selected": [],
+        "text": "Choose"
+      },
+      "errors": []
+    },
+    {
+      "framework": "solid",
+      "browser": "webkit",
+      "connections": [
+        {
+          "id": "uncontrolled",
+          "label": "Uncontrolled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        },
+        {
+          "id": "controlled",
+          "label": "Controlled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": ["a"]
+        },
+        {
+          "id": "released",
+          "label": "Explicit null",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        }
+      ],
+      "uncontrolled": {
+        "selected": ["b", "c"],
+        "text": "B, Renamed C"
+      },
+      "controlled": {
+        "selected": [],
+        "text": "Choose"
+      },
+      "errors": []
+    },
+    {
+      "framework": "svelte",
+      "browser": "webkit",
+      "connections": [
+        {
+          "id": "uncontrolled",
+          "label": "Uncontrolled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        },
+        {
+          "id": "controlled",
+          "label": "Controlled",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": ["a"]
+        },
+        {
+          "id": "released",
+          "label": "Explicit null",
+          "multiple": true,
+          "items": ["a", "b", "c"],
+          "defaultValue": ["b"],
+          "value": null
+        }
+      ],
+      "uncontrolled": {
+        "selected": ["b", "c"],
+        "text": "B, Renamed C"
+      },
+      "controlled": {
+        "selected": [],
+        "text": "Choose"
+      },
+      "errors": []
+    }
+  ],
+  "records": [
+    {
+      "framework": "vue",
+      "browser": "chromium",
+      "before": {
+        "defined": false,
+        "hosts": 1,
+        "hostCount": 6,
+        "labels": ["Draft", "History"],
+        "height": 56,
+        "background": "rgba(120, 120, 128, 0.08)",
+        "styles": 1,
+        "selected": "true",
+        "field": "Server\nfield\nwith\nbreaks"
+      },
+      "after": {
+        "hosts": 1,
+        "allHosts": true,
+        "host": true,
+        "editor": true,
+        "save": true,
+        "footer": true,
+        "trigger": true,
+        "panel": true,
+        "field": true,
+        "text": "Typed before hydration & retained",
+        "selection": [6, 12],
+        "fieldText": "My uncommitted draft",
+        "fieldSelection": [3, 10],
+        "tabs": 2,
+        "collapsible": false,
+        "nullValue": null,
+        "arrow": false,
+        "defaultArrow": true
+      },
+      "events": 2,
+      "clicks": 1,
+      "fieldUpdates": {
+        "normalized": "Server\nfield\nwith\nbreaks",
+        "external": "External\nupdate",
+        "attribute": "External\r\nupdate"
+      },
+      "errors": []
+    },
+    {
+      "framework": "solid",
+      "browser": "chromium",
+      "before": {
+        "defined": false,
+        "hosts": 1,
+        "hostCount": 6,
+        "labels": ["Draft", "History"],
+        "height": 56,
+        "background": "rgba(120, 120, 128, 0.08)",
+        "styles": 1,
+        "selected": "true",
+        "field": "Server\nfield\nwith\nbreaks"
+      },
+      "after": {
+        "hosts": 1,
+        "allHosts": true,
+        "host": true,
+        "editor": true,
+        "save": true,
+        "footer": true,
+        "trigger": true,
+        "panel": true,
+        "field": true,
+        "text": "Typed before hydration & retained",
+        "selection": [6, 12],
+        "fieldText": "My uncommitted draft",
+        "fieldSelection": [3, 10],
+        "tabs": 2,
+        "collapsible": false,
+        "nullValue": null,
+        "arrow": false,
+        "defaultArrow": true
+      },
+      "events": 2,
+      "clicks": 1,
+      "fieldUpdates": {
+        "normalized": "Server\nfield\nwith\nbreaks",
+        "external": "External\nupdate",
+        "attribute": "External\r\nupdate"
+      },
+      "errors": []
+    },
+    {
+      "framework": "svelte",
+      "browser": "chromium",
+      "before": {
+        "defined": false,
+        "hosts": 1,
+        "hostCount": 6,
+        "labels": ["Draft", "History"],
+        "height": 56,
+        "background": "rgba(120, 120, 128, 0.08)",
+        "styles": 1,
+        "selected": "true",
+        "field": "Server\nfield\nwith\nbreaks"
+      },
+      "after": {
+        "hosts": 1,
+        "allHosts": true,
+        "host": true,
+        "editor": true,
+        "save": true,
+        "footer": true,
+        "trigger": true,
+        "panel": true,
+        "field": true,
+        "text": "Typed before hydration & retained",
+        "selection": [6, 12],
+        "fieldText": "My uncommitted draft",
+        "fieldSelection": [3, 10],
+        "tabs": 2,
+        "collapsible": false,
+        "nullValue": null,
+        "arrow": false,
+        "defaultArrow": true
+      },
+      "events": 2,
+      "clicks": 1,
+      "fieldUpdates": {
+        "normalized": "Server\nfield\nwith\nbreaks",
+        "external": "External\nupdate",
+        "attribute": "External\r\nupdate"
+      },
+      "errors": []
+    },
+    {
+      "framework": "vue",
+      "browser": "webkit",
+      "before": {
+        "defined": false,
+        "hosts": 1,
+        "hostCount": 6,
+        "labels": ["Draft", "History"],
+        "height": 56,
+        "background": "rgba(120, 120, 128, 0.08)",
+        "styles": 1,
+        "selected": "true",
+        "field": "Server\nfield\nwith\nbreaks"
+      },
+      "after": {
+        "hosts": 1,
+        "allHosts": true,
+        "host": true,
+        "editor": true,
+        "save": true,
+        "footer": true,
+        "trigger": true,
+        "panel": true,
+        "field": true,
+        "text": "Typed before hydration & retained",
+        "selection": [6, 12],
+        "fieldText": "My uncommitted draft",
+        "fieldSelection": [3, 10],
+        "tabs": 2,
+        "collapsible": false,
+        "nullValue": null,
+        "arrow": false,
+        "defaultArrow": true
+      },
+      "events": 2,
+      "clicks": 1,
+      "fieldUpdates": {
+        "normalized": "Server\nfield\nwith\nbreaks",
+        "external": "External\nupdate",
+        "attribute": "External\r\nupdate"
+      },
+      "errors": []
+    },
+    {
+      "framework": "solid",
+      "browser": "webkit",
+      "before": {
+        "defined": false,
+        "hosts": 1,
+        "hostCount": 6,
+        "labels": ["Draft", "History"],
+        "height": 56,
+        "background": "rgba(120, 120, 128, 0.08)",
+        "styles": 1,
+        "selected": "true",
+        "field": "Server\nfield\nwith\nbreaks"
+      },
+      "after": {
+        "hosts": 1,
+        "allHosts": true,
+        "host": true,
+        "editor": true,
+        "save": true,
+        "footer": true,
+        "trigger": true,
+        "panel": true,
+        "field": true,
+        "text": "Typed before hydration & retained",
+        "selection": [6, 12],
+        "fieldText": "My uncommitted draft",
+        "fieldSelection": [3, 10],
+        "tabs": 2,
+        "collapsible": false,
+        "nullValue": null,
+        "arrow": false,
+        "defaultArrow": true
+      },
+      "events": 2,
+      "clicks": 1,
+      "fieldUpdates": {
+        "normalized": "Server\nfield\nwith\nbreaks",
+        "external": "External\nupdate",
+        "attribute": "External\r\nupdate"
+      },
+      "errors": []
+    },
+    {
+      "framework": "svelte",
+      "browser": "webkit",
+      "before": {
+        "defined": false,
+        "hosts": 1,
+        "hostCount": 6,
+        "labels": ["Draft", "History"],
+        "height": 56,
+        "background": "rgba(120, 120, 128, 0.08)",
+        "styles": 1,
+        "selected": "true",
+        "field": "Server\nfield\nwith\nbreaks"
+      },
+      "after": {
+        "hosts": 1,
+        "allHosts": true,
+        "host": true,
+        "editor": true,
+        "save": true,
+        "footer": true,
+        "trigger": true,
+        "panel": true,
+        "field": true,
+        "text": "Typed before hydration & retained",
+        "selection": [6, 12],
+        "fieldText": "My uncommitted draft",
+        "fieldSelection": [3, 10],
+        "tabs": 2,
+        "collapsible": false,
+        "nullValue": null,
+        "arrow": false,
+        "defaultArrow": true
+      },
+      "events": 2,
+      "clicks": 1,
+      "fieldUpdates": {
+        "normalized": "Server\nfield\nwith\nbreaks",
+        "external": "External\nupdate",
+        "attribute": "External\r\nupdate"
+      },
+      "errors": []
+    }
+  ]
+}

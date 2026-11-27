@@ -5,12 +5,12 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/kbd';
 import type { LabKbd } from '@labpics/ui-core/kbd';
-import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-kbd>, взятые прямо из класса ядра (LabKbd). */
-export type KbdProps = Pick<LabKbd, 'size'>;
+export type KbdProps = Pick<LabKbd, 'size' | 'keys'>;
 
 /** <Kbd> — тонкая Solid-обёртка над <lab-kbd>. */
 export const Kbd: LabSolidComponent<KbdProps, never> = createLabComponent<
@@ -19,6 +19,7 @@ export const Kbd: LabSolidComponent<KbdProps, never> = createLabComponent<
 >('lab-kbd', {
   specs: [
     { name: 'size', attr: 'size', kind: 'string' },
+    { name: 'keys', attr: 'keys', kind: 'prop' },
   ],
   events: [],
 });

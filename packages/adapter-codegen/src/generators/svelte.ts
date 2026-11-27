@@ -3,7 +3,7 @@
  * + барель-`index.ts` (реэкспорт). Svelte-библиотека распространяется исходными
  * `.svelte` (компилирует потребитель через svelte-package).
  *
- * Проброс: объявленные пропы → forwardDeclared (по спекам, camelCase→нужный атрибут),
+ * Проброс: объявленные пропы → DOM input binding до connection,
  * события → forwardEvents (on:-директивы избегаем — deprecated в Svelte 5; вешаем
  * addEventListener в $effect), статические именованные слоты → snippet-пропы,
  * контент по умолчанию → {@render children}. Нативные атрибуты → {...rest}.
@@ -43,8 +43,8 @@ function componentFile(c: ComponentMeta): string {
   // Именованные слоты → snippet-пропы (camelCase-имя → kebab-слот). Слот, чьё имя
   // совпадает с одноимённым пропом (напр. tooltip: проп content + слот content), из
   // типизированных snippet-пропов ИСКЛЮЧАЕМ — иначе коллизия в едином Props-интерфейсе
-  // (проп string vs snippet). Проп покрывает строковый случай; rich-контент потребитель
-  // передаёт light-DOM детьми с атрибутом slot="content".
+  // (проп string vs snippet). Имена с коллизией и динамические имена доступны
+  // через единый slots: Record<string, Snippet>.
   const namedSlots = c.slots.named
     .filter((slot) => !propNameSet.has(camel(slot)))
     .map((slot) => ({ slot, prop: camel(slot) }));
@@ -55,30 +55,41 @@ function componentFile(c: ComponentMeta): string {
 
   // children деструктурируем ВСЕГДA (иначе Snippet ушёл бы в ...rest и спреднулся
   // атрибутом); рендерим только при наличии default/динамического слота.
-  const destructure = [...propNames, ...handlerNames, 'children', ...namedSlots.map((s) => s.prop)];
+  const destructure = [
+    ...propNames,
+    ...handlerNames,
+    'children',
+    'slots',
+    ...namedSlots.map((s) => s.prop),
+  ];
   const valuesObj = propNames.join(', ');
   const eventsObj = c.events.map((e) => `'${e}': ${handlerName(e)}`).join(', ');
   const specs = c.props.map(specLiteral).join('\n');
 
-  const namedSlotMarkup = namedSlots
-    .map(
-      (s) =>
-        `  {#if ${s.prop}}<div slot="${s.slot}" style="display:contents">{@render ${s.prop}()}</div>{/if}`,
-    )
-    .join('\n');
+  const namedValues = namedSlots.map((s) => `'${s.slot}': ${s.prop}`).join(', ');
+  const namedSlotMarkup = `  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}`;
   const renderChildren = c.slots.default || c.slots.dynamic;
   const childrenMarkup = renderChildren ? '\n  {@render children?.()}' : '';
 
-  const propsBlock = [propDecls, eventDecls, slotDecls, '    children?: Snippet;']
+  const propsBlock = [
+    propDecls,
+    eventDecls,
+    slotDecls,
+    '    children?: Snippet;',
+    '    slots?: Readonly<Record<string, Snippet | undefined>>;',
+  ]
     .filter((s) => s.length > 0)
     .join('\n');
 
   return `${generatedHeader('line')}
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/${c.subpath}';
   import type { ${c.className} } from '@labpics/ui-core/${c.subpath}';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <${c.tag}> — типы взяты прямо из класса ядра (${c.className}). */
   interface Props {
@@ -92,15 +103,19 @@ ${propsBlock}
 ${specs}
   ];
 
+  const server = untrack(() => renderElementParts('${c.tag}', {
+    specs, props: { ${valuesObj} }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ ${namedValues}${namedValues ? ', ' : ''}...slots });
+
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { ${valuesObj} });
-  });
   $effect(() => forwardEvents(el, { ${eventsObj} }));
 </script>
 
-<${c.tag} bind:this={el} {...rest}>${childrenMarkup}${namedSlotMarkup ? `\n${namedSlotMarkup}` : ''}
+<${c.tag} bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { ${valuesObj} } } }}>
+  {@html server?.shadowHtml ?? ''}${childrenMarkup}
+${namedSlotMarkup}
 </${c.tag}>
 `;
 }

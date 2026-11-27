@@ -8,7 +8,12 @@
  */
 import { renderAccordion } from '@labpics/ui-astro/ssr';
 
-const dsd = renderAccordion(Astro.props, {});
+const dsd = renderAccordion(Astro.props, {
+  default: Astro.slots.has('default') ? await Astro.slots.render('default') : undefined,
+  dynamic: Object.fromEntries(await Promise.all(Object.keys(Astro.slots)
+    .filter((name) => !["default"].includes(name))
+    .map(async (name) => [name, await Astro.slots.render(name)]))),
+});
 ---
 <Fragment set:html={dsd} />
 <script>

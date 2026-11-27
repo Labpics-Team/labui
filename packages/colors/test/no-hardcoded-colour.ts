@@ -21,11 +21,14 @@
  *      flagged: they carry no brand colour (a transparent border / a
  *      `currentColor` SVG fill inherits the role-driven colour) and are
  *      legitimate everywhere. They are the documented allowed keywords.
+ *      System colours are also legitimate inside `(forced-colors: active)`:
+ *      https://www.w3.org/TR/css-color-adjust-1/#forced-colors-mode.
  *   3. A named / system colour is matched ONLY in CSS VALUE POSITION — right
  *      after a `:` (a declaration value), never as a substring of a property
  *      name (`white-space`) or identifier (`Fieldset`).
  *   4. Functional colour forms (`rgb()`/`hsl()`/`oklch()`/`color-mix()`/…) and
- *      hex are matched anywhere (they cannot occur innocently).
+ *      hex are matched anywhere. Complete mask declarations allow only literal
+ *      black/white coverage; visible paints remain governed by colour roles.
  *
  * It REUSES the fallback scanner's `NAMED_COLOURS` / `SYSTEM_COLOURS` so the two
  * guards never disagree on "what is a colour", and it does NOT touch the fallback
@@ -33,6 +36,8 @@
  */
 import { globSync, readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
+import ts from 'typescript';
+import { analyzeCssSource, readsRuntimeData, stripComments } from './css-source.js';
 import {
   NAMED_COLOURS,
   SYSTEM_COLOURS,
@@ -74,38 +79,6 @@ const ALLOWED_KEYWORDS = new Set(['transparent', 'currentcolor']);
 const FLAGGED_NAMED = NAMED_COLOURS.filter((c) => !ALLOWED_KEYWORDS.has(c.toLowerCase()));
 
 /**
- * Strip CSS/JS comments so a colour word in prose ("a transparent border", "Mark
- * a region") is never matched. Block comments first, then line comments.
- *
- * IMPORTANT — CSS has NO `//` line comments. The sequence `//` appears legitimately
- * inside CSS values as a URL protocol separator (`url(https://…)`,
- * `url(//cdn/…)`) and inside TS/TSX template literals. Applying `//` stripping to
- * a CSS file would blank the rest of that line from the first `//` onward, hiding
- * any hardcoded colour that follows the URL — a latent false-negative.
- *
- * Fix: apply `//` line-comment stripping ONLY to non-CSS files (.ts, .tsx). CSS
- * files have block comments only (`/* … *​/`). This matches the actual comment
- * models of the governed file types.
- */
-function stripComments(source: string, isCss: boolean): string {
-  // Blank out comment content but PRESERVE newlines, so a colour word in a
-  // multi-line block comment is removed without shifting the line numbers of
-  // every later finding (the guard reports file:line — that must stay exact).
-  let out = source.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
-  if (!isCss) {
-    // TS/TSX: strip `//` line comments but NOT inside string/template literals.
-    // A simple regex over raw text cannot see into string context, so we apply a
-    // conservative rule: skip the `//` replacement when it appears inside a URL
-    // context (`://` or `//` preceded by a quote or `=`). In practice the only
-    // `//` occurrences in the governed .ts/.tsx sources are genuine comments, so
-    // the simple replacement is safe and sufficient. The URL false-negative class
-    // is only in CSS (handled above by the isCss guard).
-    out = out.replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
-  }
-  return out;
-}
-
-/**
  * LICENSED spans are blanked (space-filled, newline-preserving — line numbers
  * of later findings stay exact) after comment stripping, BEFORE any matching:
  *
@@ -142,6 +115,13 @@ function blankLicensedSpans(text: string, relPath: string): string {
     licensed = licensed
       .replace(/rimPath\.setAttribute\('stroke', 'white'\);/g, blank)
       .replace(/drawing\.setAttribute\('fill', 'black'\);/g, blank);
+  }
+  if (relPath === 'packages/core/src/components/switch/styles.ts') {
+    // The thumb's data-URL is a luminance mask: these are coverage values,
+    // not its visible paint. Role-coloured CSS remains subject to the scan.
+    licensed = licensed.replace(/const svg = `<svg\b[\s\S]*?<\/svg>`/g, (svg) =>
+      svg.replace(/\bfill="(?:white|black)"/g, blank),
+    );
   }
   return licensed;
 }
@@ -328,6 +308,24 @@ function isColourValuePosition(text: string, index: number): boolean {
   return COLOUR_ATTR_RE.test(text.slice(0, delimiterAt).trimEnd());
 }
 
+/** A serializer reads data; wrapping a numeric constant in ${...} is still paint. */
+function isComputedRgb(source: string): boolean {
+  const rgb =
+    /^rgba?\(\s*\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s*[/,]\s*\$\{[^}]+\})?\s*\)/i.exec(
+      source,
+    );
+  if (!rgb) return false;
+  return [...rgb[0].matchAll(/\$\{([^}]+)\}/g)].every((channel) => {
+    const parsed = ts.createSourceFile('channel.ts', `(${channel[1]})`, ts.ScriptTarget.Latest);
+    const statement = parsed.statements[0];
+    return (
+      statement !== undefined &&
+      ts.isExpressionStatement(statement) &&
+      readsRuntimeData(statement.expression)
+    );
+  });
+}
+
 /**
  * Scan one file's (comment-stripped) text for any free-standing colour literal.
  * An allowlisted path yields nothing. The `Violation` shape matches the fallback
@@ -336,9 +334,26 @@ function isColourValuePosition(text: string, index: number): boolean {
 export function scanSource(relPath: string, source: string): Violation[] {
   if (ALLOWLIST.includes(relPath)) return [];
   const isCss = relPath.endsWith('.css');
-  const text = blankLicensedSpans(stripComments(source, isCss), relPath);
+  const clean = stripComments(source, !isCss);
+  const analyzed = analyzeCssSource(clean, !isCss);
+  const text = blankLicensedSpans(analyzed.text, relPath);
+  // System colours deliberately follow the user's forced palette, not Lab UI's
+  // theme. Only this media condition licenses them; literal paints remain errors.
+  const forcedColours = analyzed.declarations.filter(
+    (declaration) =>
+      declaration.complete && declaration.conditions.some((condition) => condition.forcedColours),
+  );
+  // Mask images describe coverage, not visible paint. Only complete declarations
+  // prove that boundary; arbitrary template holes could terminate the rule.
+  // Keep chromatic literals and functional colour expressions governed.
+  // https://www.w3.org/TR/css-masking-1/#MaskValues
+  const coverageMasks = analyzed.declarations.filter(
+    (declaration) =>
+      declaration.complete && /^(?:-webkit-)?mask(?:-image)?$/.test(declaration.property),
+  );
   const out: Violation[] = [];
-  const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
+  const lineAt = (index: number): number =>
+    clean.slice(0, analyzed.sourceIndex(index)).split('\n').length;
   // Hex/functional forms (`#fff`, `rgb(`, `color-mix(…#fff…)`) introduce a literal
   // colour and cannot occur innocently, so they are reported wherever they match. A
   // bare named/system colour keyword is ambiguous with ordinary code tokens, so it is
@@ -349,24 +364,23 @@ export function scanSource(relPath: string, source: string): Violation[] {
     const gated = valueGated.includes(re);
     re.lastIndex = 0;
     for (let m = re.exec(text); m !== null; m = re.exec(text)) {
+      if (
+        /^(?:black|white|#000(?:000)?|#fff(?:fff)?)$/i.test(m[0]) &&
+        coverageMasks.some(
+          (declaration) => m.index >= declaration.start && m.index < declaration.end,
+        )
+      )
+        continue;
       // These are JS property/index expressions, not CSS named colour values.
       if (!isCss && gated && /^\s*[.[]/.test(text.slice(m.index + m[0].length))) continue;
+      if (
+        re === VALUE_SYSTEM_RE &&
+        forcedColours.some((block) => m.index >= block.start && m.index < block.end)
+      )
+        continue;
       // A serializer receives every channel from computed data. Keep partially
       // literal colours visible to the scanner, including numeric alpha.
-      if (!isCss && re === FUNCTIONAL_HEX_RE) {
-        const serialized = text
-          .slice(m.index)
-          .match(
-            /^rgba?\(\s*\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s*[/,]\s*\$\{[^}]+\})?\s*\)/i,
-          );
-        if (
-          serialized &&
-          [...serialized[0].matchAll(/\$\{([^}]+)\}/g)].every((channel) =>
-            Number.isNaN(Number(channel[1])),
-          )
-        )
-          continue;
-      }
+      if (!isCss && re === FUNCTIONAL_HEX_RE && isComputedRgb(text.slice(m.index))) continue;
       if (gated && !isColourValuePosition(text, m.index)) continue;
       out.push({
         file: relPath,

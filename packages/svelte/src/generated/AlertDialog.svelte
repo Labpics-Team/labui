@@ -4,10 +4,11 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/alert-dialog';
   import type { LabAlertDialog } from '@labpics/ui-core/alert-dialog';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-alert-dialog> — типы взяты прямо из класса ядра (LabAlertDialog). */
   interface Props {
@@ -19,10 +20,11 @@
     onOpenChange?: (event: CustomEvent) => void;
     content?: Snippet;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { size, modal, closable, heading, description, onOpenChange, children, content, ...rest }: Props = $props();
+  let { size, modal, closable, heading, description, onOpenChange, children, slots, content, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'size', attr: 'size', kind: 'string' },
@@ -32,15 +34,20 @@
     { name: 'description', attr: 'description', kind: 'string' },
   ];
 
+  const server = untrack(() => renderElementParts('lab-alert-dialog', {
+    specs, props: { size, modal, closable, heading, description }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'content': content, ...slots });
+
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { size, modal, closable, heading, description });
-  });
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
 </script>
 
-<lab-alert-dialog bind:this={el} {...rest}>
+<lab-alert-dialog bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { size, modal, closable, heading, description } } }}>
+  {@html server?.shadowHtml ?? ''}
   {@render children?.()}
-  {#if content}<div slot="content" style="display:contents">{@render content()}</div>{/if}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-alert-dialog>

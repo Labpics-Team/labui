@@ -1,137 +1,167 @@
-/**
- * <Checkbox> — the native-React twin of the Lit `<lab-checkbox>` (ADR-0001).
- *
- * Same axes, same `@zag-js/checkbox` machine through the SAME Behaviors seam —
- * here via `useZag`. The machine owns the HONEST tri-state (`true` / `false` /
- * `"indeterminate"`), `role` + `aria-checked` (incl. `"mixed"`), Space activation,
- * focus, and the hidden input whose `.indeterminate` DOM property it sets. The
- * component spreads the prop-getters onto native elements and paints with the
- * SAME --lab-* roles, so parity is CSS, not a second behaviour implementation.
- *
- * Client Component: a checkbox is interactive. It renders as a leaf under a Server
- * Component shell — never a `'use client'` page (dive-next P1).
- */
-'use client';
-
+﻿'use client';
 import type { LabCheckboxChecked, LabCheckboxSize, LabCheckboxType } from '@labpics/ui-core';
-import type { MachineModule, SchemaOf } from '@labpics/ui-core';
-import * as checkboxMachine from '@zag-js/checkbox';
-import { type ReactNode, useCallback, useId } from 'react';
-import { useZag } from './use-zag.js';
-import './checkbox.css';
+import {
+  type LabSelectionVariant,
+  type SelectionMotion,
+  listenSelectionReset,
+  mountSelectionMotion,
+} from '@labpics/ui-core/selection/runtime';
+import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import '@labpics/ui-core/selection-controls.css';
 
-type CheckboxSchema = SchemaOf<checkboxMachine.Service>;
-type CheckboxApi = checkboxMachine.Api;
-
-const checkboxModule: MachineModule<CheckboxSchema, CheckboxApi> = checkboxMachine;
+const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 export interface CheckboxProps {
-  /** Semantic intent of the checked box. */
   type?: LabCheckboxType;
-  /** Control size. */
   size?: LabCheckboxSize;
-  /** Controlled tri-state value — boolean OR "indeterminate". */
   checked?: LabCheckboxChecked;
-  /** Uncontrolled initial tri-state value — read once by the machine at init. */
   defaultChecked?: LabCheckboxChecked;
-  /** Disables the control. */
   disabled?: boolean;
-  /** Fires when the machine changes the tri-state value (machine is source of truth). */
-  onCheckedChange?: (checked: LabCheckboxChecked) => void;
-  /** Native form field name for the hidden input. */
+  required?: boolean;
   name?: string;
-  /**
-   * Accessible name for the no-visible-label case. Parity with the Lit
-   * `aria-label`. A visible label (`children`) is preferred over it via the
-   * machine's `aria-labelledby`.
-   */
+  value?: string;
+  form?: string;
   'aria-label'?: string;
-  /** Label content (parity with the Lit default slot). */
+  labelStart?: ReactNode;
+  description?: ReactNode;
+  icon?: ReactNode;
+  /** Choicebox composes this control's card/row presentation. */
+  variant?: LabSelectionVariant;
+  onCheckedChange?: (checked: LabCheckboxChecked) => void;
   children?: ReactNode;
 }
-
 export function Checkbox({
   type = 'accent',
   size = 'm',
   checked,
-  defaultChecked,
+  defaultChecked = false,
   disabled = false,
-  onCheckedChange,
+  required = false,
   name,
+  value = 'on',
+  form,
   'aria-label': ariaLabel,
+  labelStart,
+  description,
+  icon,
+  variant = 'plain',
+  onCheckedChange,
   children,
 }: CheckboxProps): ReactNode {
-  const api = useZag(checkboxModule, {
-    id: useId(),
-    checked,
-    defaultChecked,
-    disabled,
-    name,
-    onCheckedChange: onCheckedChange ? (details) => onCheckedChange(details.checked) : undefined,
+  const id = useId();
+  const root = useRef<HTMLLabelElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const mounted = useRef(false);
+  const motion = useRef<SelectionMotion>();
+  const [localChecked, setLocalChecked] = useState(defaultChecked);
+  const state = checked ?? localChecked;
+  const mixed = state === 'indeterminate';
+  const current = useRef({ checked, defaultChecked, state });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: form changes rebind native reset ownership.
+  useEffect(() => {
+    const native = input.current;
+    if (!native || !root.current) return;
+    native.indeterminate = current.current.state === 'indeterminate';
+    motion.current = mountSelectionMotion(root.current, native);
+    const disposeReset = listenSelectionReset(native, () => {
+      const next = current.current.checked ?? current.current.defaultChecked;
+      native.checked = next === true;
+      native.indeterminate = next === 'indeterminate';
+      if (current.current.checked === undefined) setLocalChecked(next);
+      motion.current?.update();
+    });
+    return () => {
+      disposeReset();
+      motion.current?.dispose();
+      motion.current = undefined;
+    };
+  }, [form]);
+  useClientLayoutEffect(() => {
+    current.current = { checked, defaultChecked, state };
+    if (input.current) {
+      const next =
+        !mounted.current && checked === undefined
+          ? defaultChecked === 'indeterminate' && !input.current.checked
+            ? 'indeterminate'
+            : input.current.checked
+          : state;
+      if (!mounted.current && checked === undefined) setLocalChecked(next);
+      input.current.checked = next === true;
+      input.current.indeterminate = next === 'indeterminate';
+    }
+    mounted.current = true;
+    motion.current?.update();
   });
-
-  // The machine sets `aria-labelledby` on the hidden input pointing at the label
-  // part. With a visible label that resolves and names the control; with NO
-  // visible label it would dangle (and per ARIA outrank `aria-label`), so we drop
-  // it and name the input via `aria-label` instead — exactly one real name source.
-  const hasVisibleLabel = children != null;
-  const hiddenInputProps = api.getHiddenInputProps();
-  const inputProps = hasVisibleLabel
-    ? hiddenInputProps
-    : { ...hiddenInputProps, 'aria-labelledby': undefined, 'aria-label': ariaLabel };
-
-  // `indeterminate` is a DOM PROPERTY with no attribute — it is what AT reads as
-  // aria-checked="mixed". Sync it imperatively via a callback ref so the native
-  // control's mixed state matches the machine, mirroring the Lit twin exactly.
-  const indeterminate = api.indeterminate;
-  const inputRef = useCallback(
-    (el: HTMLInputElement | null) => {
-      if (el) el.indeterminate = indeterminate;
-    },
-    [indeterminate],
-  );
-
+  const hasStart = labelStart != null && labelStart !== false && labelStart !== '';
+  const hasEnd = children != null && children !== false && children !== '';
+  const labels = [hasStart ? `${id}-start` : '', hasEnd ? `${id}-label` : '']
+    .filter(Boolean)
+    .join(' ');
   return (
     <label
-      {...api.getRootProps()}
+      ref={root}
       data-lab-checkbox=""
+      data-lab-selection=""
+      data-kind="checkbox"
       data-type={type}
-      data-size={size}
-      data-checked={(api.checked && !api.indeterminate) || undefined}
-      data-indeterminate={api.indeterminate || undefined}
-      data-disabled={api.disabled || undefined}
+      data-size={variant === 'plain' ? size : 'l'}
+      data-variant={variant}
+      data-checked={state === true || undefined}
+      data-selected={state !== false || undefined}
+      data-indeterminate={mixed || undefined}
+      data-disabled={disabled || undefined}
     >
-      <span {...api.getControlProps()} className="lab-checkbox-control">
-        {/* Mutually exclusive glyphs — the machine's state CSS picks which shows. */}
-        <svg
-          className="lab-checkbox-glyph lab-checkbox-glyph-check"
-          viewBox="0 0 16 16"
-          fill="none"
-          aria-hidden="true"
-        >
-          <path
-            d="M3.5 8.5l3 3 6-6.5"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <svg
-          className="lab-checkbox-glyph lab-checkbox-glyph-mixed"
-          viewBox="0 0 16 16"
-          fill="none"
-          aria-hidden="true"
-        >
-          <path d="M3.5 8h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
+      {hasStart && (
+        <span className="lab-selection-label-start" id={`${id}-start`}>
+          {labelStart}
+        </span>
+      )}
+      {variant !== 'plain' && (
+        <span className="lab-selection-icon" aria-hidden="true">
+          {icon}
+        </span>
+      )}
+      <span
+        className="lab-selection-control lab-checkbox-control"
+        aria-hidden="true"
+        data-state={mixed ? 'indeterminate' : state ? 'checked' : 'unchecked'}
+      >
+        <span className="lab-selection-mark" />
       </span>
-      {/* The hidden input is a SIBLING of the (aria-hidden) control, NOT a
-          descendant, so it stays in the accessibility tree. */}
-      <input {...inputProps} ref={inputRef} />
-      {hasVisibleLabel && (
-        <span {...api.getLabelProps()} className="lab-checkbox-label">
-          {children}
+      <input
+        ref={input}
+        id={id}
+        type="checkbox"
+        defaultChecked={(checked ?? defaultChecked) === true}
+        aria-checked={mixed ? 'mixed' : state}
+        disabled={disabled}
+        required={required}
+        name={name}
+        value={value}
+        form={form}
+        aria-labelledby={labels || undefined}
+        aria-label={labels ? undefined : ariaLabel}
+        aria-describedby={description != null ? `${id}-description` : undefined}
+        onInput={(event) => {
+          const native = event.currentTarget;
+          const next = native.checked;
+          if (checked === undefined) setLocalChecked(next);
+          onCheckedChange?.(next);
+          const committed = current.current.checked;
+          if (input.current === native && committed !== undefined) {
+            native.checked = committed === true;
+            native.indeterminate = committed === 'indeterminate';
+          }
+        }}
+      />
+      {(hasEnd || description != null) && (
+        <span className="lab-selection-label lab-checkbox-label">
+          {hasEnd && <span id={`${id}-label`}>{children}</span>}
+          {description != null && (
+            <span className="lab-selection-description" id={`${id}-description`}>
+              {description}
+            </span>
+          )}
         </span>
       )}
     </label>

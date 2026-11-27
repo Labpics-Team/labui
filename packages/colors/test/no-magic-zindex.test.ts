@@ -5,6 +5,7 @@ import { repoRoot } from './no-literal-colour-fallback.js';
 import {
   canonicalZLevels,
   consumedZLevels,
+  cssArtifactSources,
   materialsZIndexLiterals,
   scanZIndexSource,
   scanZIndexSurface,
@@ -21,7 +22,7 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
   const zLevels = canonicalZLevels();
 
   // ── (1) Живое дерево: вся компонентная поверхность едет на именованных слоях.
-  it('every component z-index rides a named --lab-z-* layer (repo-wide, ZERO magic)', () => {
+  it('every component z-index uses a named global layer or an isolated local stack', () => {
     const violations = scanZIndexSurface();
     const report = violations
       .map((v) => `  ${v.file}:${v.line} [${v.rule}] ${v.token} — ${v.detail}`)
@@ -37,6 +38,27 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
     expect(scanZIndexSource('p.css', '.x { z-index: 9999; }', zLevels)).toMatchObject([
       { rule: 'magic-zindex', token: 'z-index: 9999' },
     ]);
+  });
+
+  it('allows integer layers only on descendants of an unconditional isolated context', () => {
+    const isolated = '.surface { isolation: isolate; }';
+    expect(
+      scanZIndexSource('p.css', `${isolated} .surface > .paint { z-index: -2; }`, zLevels),
+    ).toEqual([]);
+    expect(
+      scanZIndexSource('p.css', `${isolated} .surface .label { z-index: 1; }`, zLevels),
+    ).toEqual([]);
+    for (const source of [
+      '.surface > .paint { z-index: -2; }',
+      `${isolated} .other { z-index: 1; }`,
+      '.surface { isolation: isolate; z-index: 1; }',
+      `${isolated} .surface .paint, .outside { z-index: 1; }`,
+      `${isolated} .surface + .outside { z-index: 1; }`,
+      `${isolated} .surface ~ .outside { z-index: 1; }`,
+      '@media (min-width: 1px) { .surface { isolation: isolate; } } .surface .paint { z-index: 1; }',
+      `${isolated} .surface .paint { z-index: calc(var(--lab-z-modal) + 1); }`,
+    ])
+      expect(scanZIndexSource('p.css', source, zLevels)).toMatchObject([{ rule: 'magic-zindex' }]);
   });
 
   it('DETECTS a wrong-family token in z-index (a dimension token that is not a layer)', () => {
@@ -152,14 +174,30 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
   it('each component uses the SAME z-layers on the Lit and React renderers', () => {
     const { core, react } = zLevelsByComponent();
     const shared = [...core.keys()].filter((name) => react.has(name)).sort();
-    // Сегодня z-index кладут dialog, popover, menu, select, combobox, tooltip —
-    // все шесть присутствуют на ОБОИХ рендерерах.
-    expect(shared).toEqual(['combobox', 'dialog', 'menu', 'popover', 'select', 'tooltip']);
+    // Shared stylesheets include Select and Sheet, even without a React-local CSS file.
+    expect(shared).toEqual(['combobox', 'dialog', 'menu', 'popover', 'select', 'sheet', 'tooltip']);
     for (const name of shared) {
       const coreSet = [...(core.get(name) as Set<string>)].sort();
       const reactSet = [...(react.get(name) as Set<string>)].sort();
       expect(reactSet, `${name}: z-layer parity core↔react`).toEqual(coreSet);
     }
+  });
+
+  it('follows shared CSS artifacts through their producer rather than guessing source names', () => {
+    expect([
+      ...cssArtifactSources(`
+      import { sharedCss as paint } from '../src/components/field/appearance.js';
+      writeFileSync(join(dist, 'choice.css'), paint);
+      writeFileSync(join(dist, 'ignored.json'), paint);
+    `),
+    ]).toEqual([['choice.css', '../src/components/field/appearance.js']]);
+    const { core, react } = zLevelsByComponent();
+    expect([...(core.get('select') ?? [])]).toEqual(['--lab-z-dropdown']);
+    expect([...(react.get('select') ?? [])]).toEqual(['--lab-z-dropdown']);
+    expect([...(react.get('sheet') ?? [])].sort()).toEqual([
+      '--lab-z-modal',
+      '--lab-z-modal-underlay',
+    ]);
   });
 
   // ── (7) Доказательство скоупа — поверхность накрывает реальные компонент-файлы

@@ -47,15 +47,9 @@ export interface MotionViolation {
  */
 export const LOOP_ALLOWLIST: Readonly<Record<string, readonly string[]>> = {
   // 0.7s — период спиннера: заметно быстрее секунды (воспринимается «занят,
-  // работает»), но без стробоскопа; общий для кнопки и лоадера на обоих стеках.
+  // работает»), но без стробоскопа; legacy CSS-исполнение кнопки.
   'packages/react/src/button.css': ['0.7s'],
-  'packages/react/src/loader.css': ['0.7s'],
   'packages/core/src/components/button/lab-button.ts': ['0.7s'],
-  'packages/core/src/components/loader/lab-loader.ts': ['0.7s'],
-  // 1.2s — проезд indeterminate-полосы: медленнее спиннера, потому что бежит
-  // по длинной дорожке; короче — мельтешит, длиннее — выглядит зависшим.
-  'packages/react/src/progress.css': ['1.2s'],
-  'packages/core/src/components/progress/lab-progress.ts': ['1.2s'],
 };
 
 const TRANSITION_PROPS = new Set(['transition', 'transition-duration', 'transition-delay']);

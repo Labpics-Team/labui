@@ -11,7 +11,10 @@ Schema3 добавляет `expression-face`: спокойствие, груст
 Публичный `sequence` Lab Motion исполняет opacity stages с явным первым кадром
 из видимой позы; новый control создаётся до остановки прежнего. Reload остаётся
 в том же приложении.
-Harness принимает три готовых архива и независимые авторские references. Он не
+Schema4 устанавливает также Materials и Tokens — зависимости Core. Список
+архивов и параметров следует общему контракту пакетов; заголовок сохраняет
+dependency ranges из настоящего tarball после преобразования `workspace:*`.
+Harness принимает пять готовых архивов и независимые авторские references. Он не
 клонирует producer-репозитории и не собирает их вместо владельцев пакетов.
 
 ## Запуск
@@ -28,6 +31,8 @@ node apps/docs/tests/icons-packed.mjs \
   --icons-tarball /artifacts/labpics-icons.tgz \
   --ui-core-tarball /artifacts/labpics-ui-core.tgz \
   --ui-shadow-tarball /artifacts/labpics-ui-shadow.tgz \
+  --ui-materials-tarball /artifacts/labpics-ui-materials.tgz \
+  --ui-tokens-tarball /artifacts/labpics-ui-tokens.tgz \
   --subject /artifacts/icons-subject.json \
   --out /artifacts/icons-consumer-result
 ```

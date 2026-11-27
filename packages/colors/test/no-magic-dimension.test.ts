@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { repoRoot } from './no-literal-colour-fallback.js';
@@ -81,6 +81,19 @@ describe('no magic dimensions in migrated components (dimension contract)', () =
     ).toMatchObject([{ rule: 'fallback-drift' }]);
   });
 
+  it('runtime contour properties are not caches of generated dimension tokens', () => {
+    expect(
+      scanDimensionSource(
+        'p.css',
+        '.x { inset: var(--lab-contour-inset, 0px); clip-path: var(--lab-contour-clip, none); }',
+        canon,
+      ),
+    ).toEqual([]);
+    expect(
+      scanDimensionSource('p.css', '.x { width: var(--lab-contour-typo, 1rem); }', canon),
+    ).toMatchObject([{ rule: 'fallback-drift' }]);
+  });
+
   it('DETECTS violations through the Lit litVar() form (normalizeLit)', () => {
     const lit = "a: ${litVar('--lab-space-md', '0.75rem')};";
     expect(normalizeLit(lit)).toBe('a: var(--lab-space-md, 0.75rem);');
@@ -156,14 +169,18 @@ describe('no magic dimensions in migrated components (dimension contract)', () =
 
   // ── (5) Доказательство скоупа — гард правит ТОЛЬКО списком мигрированных;
   // немигрированный компонент с легаси-литералами здесь покраснеть не может.
-  it('scopes to MIGRATED components only (radio-group is the first entry)', () => {
-    expect(Object.keys(MIGRATED)).toContain('radio-group');
+  it('follows migrated component imports including shared styles without obsolete twin paths', () => {
     const governed = Object.values(MIGRATED).flat();
     // Честный скоуп (аудит 2026-07-09): мигрированы 22 компонента;
     // menu / select / pagination НЕ мигрированы — гард их не трогает.
     expect(governed).not.toContain('packages/core/src/components/menu/lab-menu.ts');
-    expect(Object.keys(MIGRATED)).toHaveLength(22);
-    expect(governed.length).toBeGreaterThanOrEqual(40); // 45 файлов на 2026-07-09
+    expect(MIGRATED.card).toContain('packages/core/src/components/card/styles.ts');
+    expect(MIGRATED.input).toContain('packages/core/src/components/input/styles.ts');
+    expect(MIGRATED.input).toContain('packages/core/src/components/field/outlined-styles.ts');
+    expect(MIGRATED.textarea).toContain('packages/core/src/components/field/outlined-styles.ts');
+    expect(MIGRATED['radio-group']).toContain('packages/core/src/components/selection/styles.ts');
+    expect(governed).not.toContain('packages/react/src/radio-group.css');
+    expect(governed).not.toContain('packages/react/src/card.css');
   });
 
   // ── (6) RED-proof (диверсия): прогон сканера по ДО-миграционному блоку
@@ -182,20 +199,5 @@ describe('no magic dimensions in migrated components (dimension contract)', () =
       'magic-length',
       'magic-length',
     ]);
-  });
-
-  // ── (7) Живой кросс-чек: мигрированный Lit-исходник реально потребляет
-  // контракт (точечные якоря: откат к литералам падает и ЗДЕСЬ, с именованной
-  // причиной, а не только через общий скан).
-  it('lab-radio-group consumes --lab-size-control-* and derives the dot', () => {
-    const lit = readFileSync(
-      resolve(repoRoot, 'packages/core/src/components/radio-group/lab-radio-group.ts'),
-      'utf8',
-    );
-    expect(lit).toContain("litVar('--lab-size-control-s', '0.75rem')");
-    expect(lit).toContain('calc(var(--_ring) / 2)');
-    const react = readFileSync(resolve(repoRoot, 'packages/react/src/radio-group.css'), 'utf8');
-    expect(react).toContain('var(--lab-size-control-s, 0.75rem)');
-    expect(react).toContain('calc(var(--_lab-rg-ring) / 2)');
   });
 });

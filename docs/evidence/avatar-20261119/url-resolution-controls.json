@@ -1,0 +1,23 @@
+[
+  {
+    "kind": "url",
+    "urls": [
+      "url(\"http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp\")",
+      "url(\"http://127.0.0.1:4390/dist/assets/blue-light-normal-MP3OSARU.webp\")"
+    ]
+  },
+  {
+    "kind": "image",
+    "urls": [
+      "url(\"http://127.0.0.1:4390/assets/blue-light-normal-MP3OSARU.webp\")",
+      "url(\"http://127.0.0.1:4390/assets/blue-light-normal-MP3OSARU.webp\")"
+    ]
+  },
+  {
+    "kind": "unregistered",
+    "urls": [
+      "url(\"http://127.0.0.1:4390/assets/blue-light-normal-MP3OSARU.webp\")",
+      "url(\"http://127.0.0.1:4390/assets/blue-light-normal-MP3OSARU.webp\")"
+    ]
+  }
+]

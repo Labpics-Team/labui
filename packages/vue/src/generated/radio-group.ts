@@ -5,12 +5,12 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/radio-group';
 import type { LabRadioGroup } from '@labpics/ui-core/radio-group';
-import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-radio-group>, взятые прямо из класса ядра (LabRadioGroup). */
-export type RadioGroupProps = Pick<LabRadioGroup, 'type' | 'size' | 'orientation' | 'value' | 'defaultValue' | 'disabled' | 'name' | 'label' | 'items'>;
+export type RadioGroupProps = Pick<LabRadioGroup, 'type' | 'size' | 'variant' | 'orientation' | 'value' | 'defaultValue' | 'controlled' | 'disabled' | 'required' | 'name' | 'label' | 'items'>;
 
 /**
  * <RadioGroup> — тонкая Vue-обёртка над <lab-radio-group>.
@@ -23,10 +23,13 @@ export const RadioGroup: LabComponent<RadioGroupProps, 'value-change'> = createL
   specs: [
       { name: 'type', attr: 'type', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },
+      { name: 'variant', attr: 'variant', kind: 'string' },
       { name: 'orientation', attr: 'orientation', kind: 'string' },
       { name: 'value', attr: 'value', kind: 'string' },
       { name: 'defaultValue', attr: 'default-value', kind: 'string' },
+      { name: 'controlled', attr: 'controlled', kind: 'boolean' },
       { name: 'disabled', attr: 'disabled', kind: 'boolean' },
+      { name: 'required', attr: 'required', kind: 'boolean' },
       { name: 'name', attr: 'name', kind: 'string' },
       { name: 'label', attr: 'label', kind: 'string' },
       { name: 'items', attr: 'items', kind: 'prop' },

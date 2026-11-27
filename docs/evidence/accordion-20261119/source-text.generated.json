@@ -1,0 +1,215 @@
+{
+  "source": "https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1",
+  "componentSet": "6088:4234",
+  "version": "2423213750570316842",
+  "text": [
+    {
+      "id": "6088:4196",
+      "characters": "Is it accessible?",
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Medium",
+        "fontStyle": "Medium",
+        "fontWeight": 500,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": 0,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 136,
+        "width": 121,
+        "height": 24
+      }
+    },
+    {
+      "id": "8980:2154",
+      "characters": "Yes. It adheres to the WAI-ARIA design pattern.",
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Regular",
+        "fontStyle": "Regular",
+        "fontWeight": 400,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": -0.25,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 168,
+        "width": 329,
+        "height": 24
+      }
+    },
+    {
+      "id": "8980:2187",
+      "characters": "Is it accessible?",
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Medium",
+        "fontStyle": "Medium",
+        "fontWeight": 500,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": 0,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 272,
+        "width": 120,
+        "height": 24
+      }
+    },
+    {
+      "id": "8980:2188",
+      "characters": "Yes. It adheres to the WAI-ARIA design pattern.",
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Regular",
+        "fontStyle": "Regular",
+        "fontWeight": 400,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": -0.25,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 304,
+        "width": 329,
+        "height": 24
+      }
+    },
+    {
+      "id": "9951:771",
+      "characters": "Is it accessible?",
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Medium",
+        "fontStyle": "Medium",
+        "fontWeight": 500,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": 0,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 408,
+        "width": 120,
+        "height": 24
+      }
+    },
+    {
+      "id": "9951:772",
+      "characters": "Yes. It adheres to the WAI-ARIA design pattern.",
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Regular",
+        "fontStyle": "Regular",
+        "fontWeight": 400,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": -0.25,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 440,
+        "width": 329,
+        "height": 24
+      }
+    },
+    {
+      "id": "9951:776",
+      "characters": "Is it accessible?",
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Medium",
+        "fontStyle": "Medium",
+        "fontWeight": 500,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": 0,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 512,
+        "width": 120,
+        "height": 24
+      }
+    },
+    {
+      "id": "9951:777",
+      "characters": "Yes. It adheres to the WAI-ARIA design pattern.",
+      "style": {
+        "fontFamily": "Geist",
+        "fontPostScriptName": "Geist-Regular",
+        "fontStyle": "Regular",
+        "fontWeight": 400,
+        "paragraphSpacing": 12,
+        "textAutoResize": "WIDTH_AND_HEIGHT",
+        "fontSize": 16,
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "letterSpacing": -0.25,
+        "lineHeightPx": 24,
+        "lineHeightPercent": 115.38461303710938,
+        "lineHeightPercentFontSize": 150,
+        "lineHeightUnit": "PIXELS"
+      },
+      "absoluteBoundingBox": {
+        "x": 2336,
+        "y": 544,
+        "width": 329,
+        "height": 24
+      }
+    }
+  ]
+}

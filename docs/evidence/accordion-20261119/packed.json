@@ -1,0 +1,79 @@
+{
+  "archives": [
+    {
+      "name": "@labpics/ui-tokens",
+      "sha256": "32a0c13811235938dc1cf90409ec327fcc069e063a5bcfd719d4cdf342d7dabd"
+    },
+    {
+      "name": "@labpics/ui-shadow",
+      "sha256": "e9bb44d6de103d764c50ef24eb328851786d42f833fb713d5552ec74f42516da"
+    },
+    {
+      "name": "@labpics/ui-materials",
+      "sha256": "de350bb688b8c423e17b907daa7c66724d51cf589f37794b766cfee44befa611"
+    },
+    {
+      "name": "@labpics/fonts",
+      "sha256": "d88c7478b94becc1ddbf77f92c4af2fb00ec882cb456847a38c2ee3bd6b35fd9"
+    },
+    {
+      "name": "@labui/colors",
+      "sha256": "2dfc01336750f554b4a4e46155bb10caaf3c804df98ec237008961fee268decb"
+    },
+    {
+      "name": "@labpics/ui-core",
+      "sha256": "3cc16b5873388f3d253422339c506de0eb062efca6ba821121665d977d045161"
+    },
+    {
+      "name": "@labpics/ui-react",
+      "sha256": "f55cd82c77df1acd21321a0478c68112af4c569ffd8a87004587157da57dd56b"
+    },
+    {
+      "name": "@labpics/ui-vue",
+      "sha256": "ac7f77432c4789b309790eea7b668bdbdbf190dafa5302ca5259c2d44be68391"
+    },
+    {
+      "name": "@labpics/ui-solid",
+      "sha256": "c287ec23f2cfcf115139d2ac6bf564370d15e1e21fdfcad273bbc76a0f53b646"
+    },
+    {
+      "name": "@labpics/ui-svelte",
+      "sha256": "62a51fa4cdaefe2617fd08617e3a01f99cceae352af73def1115829a0e049f1b"
+    },
+    {
+      "name": "@labpics/ui-astro",
+      "sha256": "e324b744b9d4fb9142dcf98899d318a24e060d284099571eee77e3c43712549e"
+    }
+  ],
+  "declarations": true,
+  "records": [
+    {
+      "engine": "chromium",
+      "browser": "140.0.7339.186",
+      "SSRHelpers": ["vue", "solid", "svelte", "astro"],
+      "nativeReact": true,
+      "noJsFirstPaint": true,
+      "shiftedServerIds": true,
+      "controlledEmptyAndRefusal": true,
+      "explicitFalseSurvivesUpgrade": true,
+      "sameNodesAfterHydration": true,
+      "preHydrationDraftPreserved": true,
+      "itemsRestoredFromHTML": true,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "browser": "26.0",
+      "SSRHelpers": ["vue", "solid", "svelte", "astro"],
+      "nativeReact": true,
+      "noJsFirstPaint": true,
+      "shiftedServerIds": true,
+      "controlledEmptyAndRefusal": true,
+      "explicitFalseSurvivesUpgrade": true,
+      "sameNodesAfterHydration": true,
+      "preHydrationDraftPreserved": true,
+      "itemsRestoredFromHTML": true,
+      "errors": []
+    }
+  ]
+}

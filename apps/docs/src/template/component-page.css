@@ -11,10 +11,7 @@
  * stand-in values of its own — it reads the real contract, so what the docs
  * show IS the design system.
  */
-@import "@labui/colors/contract.css";
-@import "@labpics/ui-tokens/tokens.css";
-@import "@labpics/ui-core/theme.css";
-@import "@labpics/ui-core/selection.css";
+@import "../foundation.css";
 @import "@labpics/ui-materials/material.css";
 
 /* ── Reset + page frame ───────────────────────────────────────────────────── */
@@ -29,12 +26,12 @@ body {
   min-height: 100vh;
   background: var(--lab-bg-primary);
   color: var(--lab-label-primary);
-  font-family: system-ui, sans-serif;
+  font-family: var(--lab-font-family);
   line-height: var(--lab-line-height-md, 1.5);
 }
 
 code {
-  font-family: ui-monospace, "SF Mono", monospace;
+  font-family: var(--lab-font-family-mono);
   font-size: 0.9em;
 }
 
@@ -59,6 +56,181 @@ code {
 .doc-sidebar {
   position: sticky;
   top: var(--lab-space-6, 1.5rem);
+}
+
+.doc-main {
+  min-width: 0;
+}
+.doc-loading {
+  max-width: 60rem;
+  margin: 3rem auto;
+  padding: 1.5rem;
+}
+.catalog-home {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin: 0 0 1.25rem 0.75rem;
+}
+.nav-group {
+  margin-top: 1.25rem;
+}
+.nav-group > summary {
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+}
+.nav-group > summary::marker {
+  color: var(--lab-label-secondary);
+}
+.catalog-eyebrow {
+  color: var(--lab-label-secondary);
+  font-size: 0.875rem;
+  margin: 0 0 0.75rem;
+}
+.catalog-header {
+  padding-block: 1rem 0.5rem;
+}
+.catalog-group {
+  margin-block: 2.5rem;
+}
+.catalog-group h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 2rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.catalog-item {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.25rem 0;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: var(--lab-stroke-hairline) solid var(--lab-border-base);
+}
+.catalog-item h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+.catalog-item p {
+  margin: 0.5rem 0 1rem;
+  font-size: 0.875rem;
+  color: var(--lab-label-secondary);
+}
+.catalog-item:hover h3 {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.catalog-item:focus-visible {
+  outline: 2px solid var(--lab-border-accent);
+  outline-offset: 0.25rem;
+}
+.catalog-capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.75rem;
+  color: var(--lab-label-secondary);
+  margin-top: auto;
+}
+.catalog-capabilities [data-capability="available"] {
+  color: var(--lab-label-primary);
+}
+.doc-header > .catalog-capabilities {
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+}
+.catalog-api-note {
+  color: var(--lab-label-secondary);
+  font-size: 0.875rem;
+  max-width: 65ch;
+}
+.catalog-coverage {
+  margin-block: 1.5rem 2.5rem;
+  padding-block: 1rem;
+  border-block: var(--lab-stroke-hairline) solid var(--lab-border-base);
+  font-size: 0.875rem;
+}
+.catalog-coverage > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.catalog-coverage a,
+.catalog-unavailable a,
+.doc-header > a {
+  color: var(--lab-label-primary);
+  text-underline-offset: 0.2em;
+}
+.catalog-table-scroll {
+  overflow-x: auto;
+}
+.catalog-source-table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 34rem;
+  text-align: left;
+}
+.catalog-source-table caption {
+  text-align: left;
+  padding-block: 1rem;
+  font-weight: 600;
+}
+.catalog-source-table th,
+.catalog-source-table td {
+  padding: 0.75rem 1rem 0.75rem 0;
+  border-top: var(--lab-stroke-hairline) solid var(--lab-border-base);
+  vertical-align: top;
+}
+.catalog-source-table th {
+  font-weight: 500;
+}
+.source-page {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--lab-label-secondary);
+}
+.catalog-unavailable {
+  margin-block: 2rem;
+  max-width: 60ch;
+}
+.catalog-unavailable h2 {
+  font-size: 1.25rem;
+}
+.catalog-unavailable p {
+  color: var(--lab-label-secondary);
+}
+@media (max-width: 59.999rem) {
+  .doc-sidebar {
+    position: static;
+  }
+  .doc-sidebar .nav-group {
+    display: none;
+  }
+  .catalog-home {
+    margin-bottom: 0.5rem;
+  }
+  .doc-layout {
+    gap: 1rem;
+  }
+}
+@media (max-width: 38rem) {
+  .catalog-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .doc-layout {
+    padding: 1rem;
+  }
 }
 
 .sidebar-title {
@@ -98,14 +270,6 @@ code {
   background: var(--lab-fill-primary);
 }
 
-.nav-planned {
-  /* Де-эмфаза цветом (не наклоном): ДС осознанно не подключает italic-фейс
-   * (эмфаза весом/цветом, решение 2026-07-08), а базовый слой ставит
-   * font-synthesis: none — синтетический наклон тут был бы мёртвой декларацией. */
-  color: var(--lab-label-secondary);
-  cursor: default;
-}
-
 /* ── Header ───────────────────────────────────────────────────────────────── */
 .doc-header {
   margin-bottom: var(--lab-space-8, 2rem);
@@ -121,6 +285,7 @@ code {
 .doc-header h1 {
   margin: 0;
   font-size: var(--lab-font-size-3xl, 2.25rem);
+  overflow-wrap: anywhere;
 }
 
 .doc-summary {
@@ -190,6 +355,19 @@ input:focus-visible {
   margin-bottom: var(--lab-space-10, 2.5rem);
   padding-top: var(--lab-space-6, 1.5rem);
   border-top: var(--lab-stroke-hairline) solid var(--lab-border-base);
+}
+
+.catalog-coverage + .doc-section {
+  border-top: 0;
+  padding-top: 0;
+}
+.catalog-example-note {
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--lab-label-secondary);
+}
+.catalog-example-note > summary {
+  cursor: pointer;
 }
 
 .doc-section > h2 {
@@ -391,6 +569,6 @@ input:focus-visible {
 .empty-state {
   margin: 0;
   padding: var(--lab-space-4, 1rem);
-  /* Де-эмфаза цветом, не наклоном — см. .nav-planned (font-synthesis: none). */
+  /* De-emphasize with color; the font family has no italic face. */
   color: var(--lab-label-secondary);
 }

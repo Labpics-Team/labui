@@ -81,6 +81,8 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
     expect(classify('--lab-state-hover')).toBe('dimension');
     expect(classify('--lab-state-pressed')).toBe('dimension');
     expect(classify('--lab-surface-shadow-tint')).toBe('local-or-gap');
+    expect(classify('--lab-sheet-ghost-overlap')).toBe('local-or-gap');
+    expect(classify('--lab-sheet-ghost-typo')).toBe('unclassified');
     expect(classify('--lab-bogus-xyz')).toBe('unclassified');
   });
 

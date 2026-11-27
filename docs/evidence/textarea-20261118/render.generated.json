@@ -1,0 +1,28 @@
+[
+  {
+    "engine": "chromium",
+    "browser": "140.0.7339.186",
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "narrow": {
+      "width": 390,
+      "fontScale": 2
+    },
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "browser": "26.0",
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "narrow": {
+      "width": 390,
+      "fontScale": 2
+    },
+    "errors": []
+  }
+]

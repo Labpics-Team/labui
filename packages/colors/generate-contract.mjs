@@ -1,6 +1,7 @@
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { initializeNodeColors } from './engine.mjs';
+import { themeProfile } from './profile.mjs';
 import { createThemeProgram } from './program.mjs';
 
 export const RETIRED_ROLES = new Set([
@@ -57,4 +58,20 @@ ${moreDark}
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   await writeFile(new URL('./contract.css', import.meta.url), await generateContract());
+  const path = new URL('./roles.json', import.meta.url);
+  const taxonomy = JSON.parse(await readFile(path, 'utf8'));
+  const existing = new Set(
+    Object.entries(taxonomy.groups)
+      .filter(([name]) => name !== 'AuthoredBadge' && name !== 'AuthoredAvatar')
+      .flatMap(([, roles]) => roles),
+  );
+  taxonomy.groups.AuthoredBadge = Object.keys(themeProfile().roles)
+    .filter((role) => role.startsWith('badge-'))
+    .map((role) => `--lab-${role}`)
+    .filter((role) => !existing.has(role));
+  taxonomy.groups.AuthoredAvatar = Object.keys(themeProfile().roles)
+    .filter((role) => role.startsWith('avatar-'))
+    .map((role) => `--lab-${role}`)
+    .filter((role) => !existing.has(role));
+  await writeFile(path, `${JSON.stringify(taxonomy, null, 2)}\n`);
 }

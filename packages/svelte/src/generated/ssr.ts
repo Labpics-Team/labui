@@ -13,6 +13,8 @@ export { renderBreadcrumb, type BreadcrumbSsrProps, type BreadcrumbSsrSlots } fr
 export { renderButton, type ButtonSsrProps, type ButtonSsrSlots } from './button.ssr.js';
 export { renderCard, type CardSsrProps, type CardSsrSlots } from './card.ssr.js';
 export { renderCheckbox, type CheckboxSsrProps, type CheckboxSsrSlots } from './checkbox.ssr.js';
+export { renderChip, type ChipSsrProps, type ChipSsrSlots } from './chip.ssr.js';
+export { renderChoicebox, type ChoiceboxSsrProps, type ChoiceboxSsrSlots } from './choicebox.ssr.js';
 export { renderCombobox, type ComboboxSsrProps, type ComboboxSsrSlots } from './combobox.ssr.js';
 export { renderDialog, type DialogSsrProps, type DialogSsrSlots } from './dialog.ssr.js';
 export { renderInput, type InputSsrProps, type InputSsrSlots } from './input.ssr.js';
@@ -25,8 +27,11 @@ export { renderPinInput, type PinInputSsrProps, type PinInputSsrSlots } from './
 export { renderPopover, type PopoverSsrProps, type PopoverSsrSlots } from './popover.ssr.js';
 export { renderProgress, type ProgressSsrProps, type ProgressSsrSlots } from './progress.ssr.js';
 export { renderRadioGroup, type RadioGroupSsrProps, type RadioGroupSsrSlots } from './radio-group.ssr.js';
+export { renderSegmentedControl, type SegmentedControlSsrProps, type SegmentedControlSsrSlots } from './segmented-control.ssr.js';
 export { renderSelect, type SelectSsrProps, type SelectSsrSlots } from './select.ssr.js';
+export { renderSheet, type SheetSsrProps, type SheetSsrSlots } from './sheet.ssr.js';
 export { renderSlider, type SliderSsrProps, type SliderSsrSlots } from './slider.ssr.js';
+export { renderSnackbar, type SnackbarSsrProps, type SnackbarSsrSlots } from './snackbar.ssr.js';
 export { renderSwitch, type SwitchSsrProps, type SwitchSsrSlots } from './switch.ssr.js';
 export { renderTabs, type TabsSsrProps, type TabsSsrSlots } from './tabs.ssr.js';
 export { renderTagsInput, type TagsInputSsrProps, type TagsInputSsrSlots } from './tags-input.ssr.js';

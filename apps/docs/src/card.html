@@ -1,80 +1,39 @@
 <!doctype html>
-<html class="lab-scope" lang="en" data-theme="dark" data-material="ambient">
+<html class="lab-scope" lang="ru" data-theme="light" data-material="acrylic">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LabUI — Card parity (Lit ↔ React)</title>
-    <link rel="stylesheet" href="./primitives-demo.css" />
+    <title>LabUI · Card</title>
+    <link rel="stylesheet" href="./card.css" />
+    <style>
+      .card-samples { display: grid; gap: 32px; grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 400px)); }
+      .card-samples > * { width: 400px; max-width: 100%; }
+    </style>
   </head>
   <body>
     <main>
-      <h1 data-testid="card-title">
-        Card parity — <code>&lt;lab-card&gt;</code> (Lit) ↔ <code>&lt;Card&gt;</code> (React)
-      </h1>
-      <p>
-        Two renderers, one design system. Same variants (elevated / outlined / filled),
-        same header / body / footer regions, same semantic <code>--lab-*</code> roles.
-        Card is presentational — it carries no machine; both renderers render native
-        <code>&lt;article&gt;</code> semantics. This page mounts both so the Playwright
-        suite can assert structure and visual parity on each.
-      </p>
-
+      <h1>Card</h1>
+      <p>Изображение, описание и действия над одним предметом.</p>
       <div class="row">
-        <label for="theme-select">Theme</label>
+        <label for="theme-select">Тема</label>
         <select id="theme-select" data-testid="theme-select">
-          <option value="dark">Dark</option>
-          <option value="light">Light</option>
+          <option value="light">Светлая</option><option value="dark">Тёмная</option>
         </select>
       </div>
-
-      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+      <section aria-label="Lit">
         <h2>Lit</h2>
-        <div class="specimens">
-          <lab-card data-testid="lit-elevated" variant="elevated">
-            <div slot="header">Elevated</div>
-            <div>A raised surface that floats above the page.</div>
-            <div slot="footer">Footer</div>
+        <div class="card-samples">
+          <lab-card data-testid="lit-source" image="./assets/card-source.png" heading="Title" description="Description"></lab-card>
+          <lab-card data-testid="lit-elevated" heading="Рабочее пространство" description="Проекты и материалы команды">
+            <div slot="footer"><lab-button size="s" data-testid="lit-interactive-control">Открыть пространство</lab-button></div>
           </lab-card>
-          <lab-card data-testid="lit-outlined" variant="outlined">
-            <div slot="header">Outlined</div>
-            <div>A flat surface delineated by a real border.</div>
-            <div slot="footer">Footer</div>
-          </lab-card>
-          <lab-card data-testid="lit-filled" variant="filled" interactive>
-            <div slot="header">Filled · interactive</div>
-            <div>A tinted surface that recedes; hoverable as a whole-card target.</div>
-            <div slot="footer">Footer</div>
-          </lab-card>
-          <!-- INTERACTIVE with a real focusable control. The component flags
-               interactive-without-keyboard as a P5 a11y trap; the actionable
-               semantics live on a real <button> the consumer slots in (the element
-               never fabricates a role). The host delegates focus, so focusing the
-               inner control lights the :focus-within ring (--lab-border-focus). -->
-          <lab-card data-testid="lit-interactive" variant="elevated" interactive>
-            <div slot="header">Interactive</div>
-            <div>
-              A whole-card target whose action is a real control.
-              <!-- Deliberately a bare native <button> (proves the card never
-                   fabricates a role) — color:initial undoes the ambient
-                   dark-theme text colour this fixture inherits from the page,
-                   which otherwise clashes with the browser's own unstyled
-                   native button face (WCAG contrast fail on WebKit). -->
-              <button
-                type="button"
-                data-testid="lit-interactive-control"
-                style="color: initial"
-              >
-                Open
-              </button>
-            </div>
-            <div slot="footer">Footer</div>
-          </lab-card>
+          <lab-card data-testid="lit-outlined" variant="outlined" heading="Оформление" description="Тема и контраст"></lab-card>
+          <lab-card data-testid="lit-filled" variant="filled" heading="Общее" description="Материалы команды"></lab-card>
         </div>
       </section>
-
-      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+      <section aria-label="React">
         <h2>React</h2>
-        <div id="react-root" class="specimens"></div>
+        <div id="react-root" class="card-samples"></div>
       </section>
     </main>
     <script type="module" src="./card-demo.tsx"></script>

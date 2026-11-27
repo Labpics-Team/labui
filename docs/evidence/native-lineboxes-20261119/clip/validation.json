@@ -1,0 +1,66 @@
+{
+  "platform": "Windows headless SOFTWARE",
+  "compose": "1.12.2",
+  "skiko": "0.150.2",
+  "java": "Zulu 21",
+  "command": "native/compose/gradlew.bat -p native/compose :desktopTest --tests pics.lab.ui.TextClipRenderTest --tests pics.lab.ui.TextEllipsisInkRenderTest --tests pics.lab.ui.TextLineBoxRenderTest --tests pics.lab.ui.BadgeRenderTest --tests pics.lab.ui.InputRenderTest",
+  "suites": [
+    {
+      "name": "BadgeRenderTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "1.105"
+    },
+    {
+      "name": "InputRenderTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "37.002"
+    },
+    {
+      "name": "TextClipRenderTest[desktop]",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "3.601"
+    },
+    {
+      "name": "TextEllipsisInkRenderTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.561"
+    },
+    {
+      "name": "TextLineBoxRenderTest[desktop]",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.883"
+    }
+  ],
+  "tests": 17,
+  "failures": 0,
+  "testRuntimeSeconds": 43.152,
+  "negativeControl": [
+    {
+      "name": "restoredTextUnderTransformsKeepsTheFiniteWidthClip[desktop]",
+      "failure": "java.lang.AssertionError: Text rotation=0.0 scale=1.0 lost ink or clip: max=60 mean=1.2751937984496124"
+    },
+    {
+      "name": "callerHeightAndMultilineLimitsMatchTheNativeParagraph[desktop]",
+      "failure": "java.lang.AssertionError: Caller clip density=1.0 scale=1.0 row=0 pixel=1/6 expected:<-1> but was:<-1776412>"
+    },
+    {
+      "name": "horizontalOverflowKeepsTheNativeClip[desktop]",
+      "failure": "java.lang.AssertionError: Horizontal clip pixel 17/30 expected:<-1> but was:<-1776412>"
+    }
+  ]
+}

@@ -2,19 +2,8 @@ import { type Locator, type Page, expect, test } from '@playwright/test';
 import { litInputIds, probeInput } from './support/accessible-name.js';
 
 /**
- * Checkbox suite — a PRODUCTION component CONSUMING the @zag-js/checkbox machine
- * through the LabUI seam, with the HONEST tri-state, verified on BOTH renderers.
- *
- * The fixture (`checkbox.html`) mounts the Lit `<lab-checkbox>` and native-React
- * `<Checkbox>` with identical specimens — including the real indeterminate
- * (mixed) state. Definition of done:
- *   1. Render — both renderers paint a real box with a token.
- *   2. Machine behaviour — clicking toggles the machine: the host state follows.
- *   3. HONEST mixed state — the indeterminate specimen carries the machine's real
- *      "indeterminate" value (data-state="indeterminate" / host attribute), and
- *      clicking it resolves to a concrete checked value — not a faked glyph.
- *   4. Disabled — the machine blocks the toggle.
- *   5. Visual parity + tokens + theme across both renderers.
+ * Native checkbox behavior, mixed state, accessible names and authored paint
+ * on the Lit and React renderers mounted by checkbox.html.
  */
 
 function litHost(page: Page, testid: string): Locator {
@@ -40,7 +29,7 @@ function reactInput(page: Page, testid: string): Locator {
 
 const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
 
-/** The machine's data-state on the Lit control (checked | unchecked | indeterminate). */
+/** Current visual state on the Lit control (checked | unchecked | indeterminate). */
 function litControlState(page: Page, testid: string): Promise<string | null> {
   return litHost(page, testid).evaluate(
     (host) =>
@@ -61,7 +50,7 @@ test('delivered HTML carries the Lit element (React island mounts client-side)',
   expect(body).toContain('id="react-root"');
 });
 
-test('machine behaviour: clicking toggles checked on both renderers', async ({ page }) => {
+test('native selection: clicking toggles checked on both renderers', async ({ page }) => {
   const lit = litHost(page, 'lit-unchecked');
   await expect(lit).toBeVisible();
   await expect(lit).not.toHaveAttribute('checked', /.*/);
@@ -75,10 +64,8 @@ test('machine behaviour: clicking toggles checked on both renderers', async ({ p
   await expect(react).toHaveAttribute('data-checked', 'true');
 });
 
-test('HONEST mixed state: the machine carries a real "indeterminate" value', async ({ page }) => {
-  // The Lit mixed specimen reflects the host `indeterminate` attribute, and the
-  // machine reports data-state="indeterminate" on the control — a real third
-  // state, not a faked dash.
+test('mixed state: activation resolves indeterminate to checked', async ({ page }) => {
+  // Mixed is reflected on the host and on the visual control.
   const lit = litHost(page, 'lit-mixed');
   await expect(lit).toHaveAttribute('indeterminate', '');
   expect(await litControlState(page, 'lit-mixed')).toBe('indeterminate');
@@ -87,10 +74,7 @@ test('HONEST mixed state: the machine carries a real "indeterminate" value', asy
   const react = reactBox(page, 'react-mixed');
   await expect(react).toHaveAttribute('data-indeterminate', 'true');
 
-  // Clicking a mixed box runs the machine, which RESOLVES it to a concrete
-  // checked value. Zag is deterministic here: from indeterminate it always goes
-  // to checked (machine `toggleChecked`: indeterminate ? true : !checked), and a
-  // native checkbox click sets .checked=true first — so the outcome is `checked`.
+  // The native input resolves mixed to checked on activation.
   await litControl(page, 'lit-mixed').click();
   await expect(lit).not.toHaveAttribute('indeterminate', /.*/);
   expect(await litControlState(page, 'lit-mixed')).toBe('checked');
@@ -109,7 +93,7 @@ test('a11y name: the hidden input is exposed and named by the visible label (bot
   page,
 }) => {
   // The control IS the hidden <input>. It must live in the a11y tree (NOT inside
-  // an aria-hidden subtree) and be named by the machine's resolved aria-labelledby.
+  // an aria-hidden subtree) and be named by its resolved aria-labelledby.
   await expect(reactBox(page, 'react-unchecked')).toBeVisible();
 
   const lit = await probeInput(litInput(page, 'lit-unchecked'));
@@ -169,7 +153,7 @@ test('a11y checked: the native input reflects checked AND the mixed (indetermina
   expect(reactMixed.indeterminate, 'React mixed input must be indeterminate').toBe(true);
 });
 
-test('disabled: the machine blocks the toggle on both renderers', async ({ page }) => {
+test('disabled: the native input blocks the toggle on both renderers', async ({ page }) => {
   const lit = litHost(page, 'lit-disabled');
   expect(
     await lit.evaluate(

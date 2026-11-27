@@ -47,3 +47,17 @@ export const motionSemantic = {
 } as const;
 
 export type MotionSemanticToken = keyof typeof motionSemantic;
+
+/** Калибровка тех же ролей для LabMotion runtime; не редактировать. */
+export const motionSpringRuntime = {
+  smooth: { response: 350, bounce: 0 },
+  expressive: { response: 500, bounce: 0.3 },
+} as const;
+
+/** База относительной скорости runtime; CSS override сохраняет своё действие. */
+export const motionSemanticRuntime = {
+  entrance: { durationMs: 200 },
+  exit: { durationMs: 100 },
+  transition: { durationMs: 100 },
+  emphasis: { durationMs: 300 },
+} as const;

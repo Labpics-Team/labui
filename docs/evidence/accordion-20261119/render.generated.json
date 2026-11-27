@@ -1,0 +1,40 @@
+[
+  {
+    "engine": "chromium",
+    "browser": "140.0.7339.186",
+    "sourceWidth": 503,
+    "sourceHeights": [
+      56,
+      88
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "fontScales": [
+      1,
+      2
+    ],
+    "narrowWidth": 320,
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "browser": "26.0",
+    "sourceWidth": 503,
+    "sourceHeights": [
+      56,
+      88
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "fontScales": [
+      1,
+      2
+    ],
+    "narrowWidth": 320,
+    "errors": []
+  }
+]

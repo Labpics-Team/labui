@@ -5,12 +5,12 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/slider';
 import type { LabSlider } from '@labpics/ui-core/slider';
 
 /** SSR-пропы <lab-slider> (атрибуты/свойства), взяты из класса ядра (LabSlider). */
-export type SliderSsrProps = Partial<Pick<LabSlider, 'size' | 'orientation' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'min' | 'max' | 'step' | 'marks' | 'showValue' | 'readonly' | 'disabled' | 'invalid' | 'name'>>;
+export type SliderSsrProps = Partial<Pick<LabSlider, 'size' | 'orientation' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'defaultValue' | 'min' | 'max' | 'step' | 'marks' | 'showValue' | 'readonly' | 'disabled' | 'invalid' | 'name'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-slider> — предрендеренные строки контента. */
 export type SliderSsrSlots = Record<never, never>;
 
@@ -26,19 +26,21 @@ export function renderSlider(
       size=${ifDefined(props.size)}
       orientation=${ifDefined(props.orientation)}
       label=${ifDefined(props.label)}
-      ?label-hidden=${Boolean(props.labelHidden)}
+      .labelHidden=${props.labelHidden === undefined ? noChange : props.labelHidden}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
-      .value=${props.value}
-      .defaultValue=${props.defaultValue}
+      .value=${props.value === undefined ? noChange : props.value}
+      .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
       min=${ifDefined(props.min)}
       max=${ifDefined(props.max)}
       step=${ifDefined(props.step)}
-      .marks=${props.marks}
-      ?show-value=${Boolean(props.showValue)}
-      ?readonly=${Boolean(props.readonly)}
-      ?disabled=${Boolean(props.disabled)}
-      ?invalid=${Boolean(props.invalid)}
+      .marks=${props.marks === undefined ? noChange : props.marks}
+      .showValue=${props.showValue === undefined ? noChange : props.showValue}
+      .readonly=${props.readonly === undefined ? noChange : props.readonly}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
+      .invalid=${props.invalid === undefined ? noChange : props.invalid}
       name=${ifDefined(props.name)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-slider>`);
 }

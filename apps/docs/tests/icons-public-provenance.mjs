@@ -432,6 +432,12 @@ const packageNames = Object.freeze({
   uiTokens: '@labpics/ui-tokens',
   uiShadow: '@labpics/ui-shadow',
 });
+// The archive list and CLI options follow the same package contract as receipts.
+export function consumerPackages(schemaVersion = 4) {
+  return Object.entries(packageNames)
+    .filter(([key]) => schemaVersion >= 4 || !['uiMaterials', 'uiTokens'].includes(key))
+    .map(([key, name]) => ({ key, name, option: `--${name.slice('@labpics/'.length)}-tarball` }));
+}
 const runtimePackageName = text(/^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/);
 const runtimeRangePart =
   '[~^<>=]{0,2}\\s*(?:\\d+|[xX*])(?:\\.(?:\\d+|[xX*])){0,2}(?:-(?:alpha|beta|rc)(?:\\.\\d+)?)?';

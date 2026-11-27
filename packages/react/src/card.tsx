@@ -1,54 +1,54 @@
-/**
- * <Card> — the native-React twin of the Lit `<lab-card>` (ADR-0001).
- *
- * Same public axes, same semantic --lab-* roles, same structure (media / header /
- * body / footer regions on a single surface) — so parity with the Lit element is
- * a matter of CSS, not a second implementation. No Lit in this path.
- *
- * Presentational (no interaction state) — it renders as a leaf under a Server
- * Component shell, but it carries no `'use client'` need of its own: it has no
- * state, effects, or handlers. The Lit element opts out of the Zag seam for the
- * same reason (no machine-eligible state); this twin opts out identically — it is
- * a forwardRef'd `<article>`, not a state machine. It is marked a Client Component
- * only so the shared package boundary is consistent and the scoped stylesheet
- * ships with it; a Server Component may also render the Lit element directly.
- *
- * The Lit "slots" become React props: `media` / `header` / `footer` are the named
- * regions and `children` is the body — the idiomatic React shape for the same
- * composition. An empty region simply isn't rendered, so it adds no padding (the
- * parity of the Lit element's `data-empty` collapse).
- *
- * The axis types come from @labpics/ui-core (type-only — no Lit runtime), so the
- * Lit and React APIs share ONE source of truth and cannot drift.
- */
 'use client';
 
 import type { LabCardPadding, LabCardVariant } from '@labpics/ui-core';
-import { type HTMLAttributes, type ReactNode, forwardRef } from 'react';
-import './card.css';
+import { mountCardRuntime } from '@labpics/ui-core/card/runtime';
+import {
+  type HTMLAttributes,
+  type ReactNode,
+  forwardRef,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+} from 'react';
+import '@labpics/ui-materials/material.css';
+import '@labpics/ui-core/card.css';
+
+const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 export interface CardProps extends HTMLAttributes<HTMLElement> {
-  /** Surface treatment. */
   variant?: LabCardVariant;
-  /** Inner spacing of the body region. */
   padding?: LabCardPadding;
-  /** Hover + focus affordance for whole-card interactive targets. */
+  /** Highlights focus inside the card; actions remain real links and buttons. */
   interactive?: boolean;
-  /** Edge-to-edge media region (parity with the Lit `media` slot). */
+  /** The same image is used for the media and the backdrop under the content. */
+  image?: string;
+  imageAlt?: string;
+  heading?: string;
+  headingHint?: string;
+  description?: string;
+  caption?: string;
+  lowerCaption?: string;
+  badge?: ReactNode;
   media?: ReactNode;
-  /** Header region (parity with the Lit `header` slot). */
+  /** Replaces the built-in text layout. */
   header?: ReactNode;
-  /** Footer region (parity with the Lit `footer` slot). */
   footer?: ReactNode;
-  /** Body content (parity with the Lit default slot). */
   children?: ReactNode;
 }
 
 export const Card = forwardRef<HTMLElement, CardProps>(function Card(
   {
     variant = 'elevated',
-    padding = 'm',
+    padding = 'l',
     interactive = false,
+    image,
+    imageAlt = '',
+    heading,
+    headingHint,
+    description,
+    caption,
+    lowerCaption,
+    badge,
     media,
     header,
     footer,
@@ -57,19 +57,79 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
   },
   ref,
 ) {
+  const element = useRef<HTMLElement | null>(null);
+  const runtime = useRef<ReturnType<typeof mountCardRuntime>>();
+  useClientLayoutEffect(() => {
+    if (!element.current) return;
+    runtime.current ??= mountCardRuntime(element.current);
+    runtime.current.refresh();
+  });
+  useClientLayoutEffect(
+    () => () => {
+      runtime.current?.dispose();
+      runtime.current = undefined;
+    },
+    [],
+  );
+  const text =
+    heading || description || caption || lowerCaption ? (
+      <div className="lab-card-text">
+        {caption && <p className="lab-card-caption">{caption}</p>}
+        {(heading || description) && (
+          <div className="lab-card-title-group">
+            {heading && (
+              <div className="lab-card-title-row">
+                <h2 className="lab-card-title">{heading}</h2>
+                {headingHint && <span className="lab-card-hint">{headingHint}</span>}
+                {badge}
+              </div>
+            )}
+            {description && <p className="lab-card-description">{description}</p>}
+          </div>
+        )}
+        {lowerCaption && <p className="lab-card-caption">{lowerCaption}</p>}
+      </div>
+    ) : null;
+  const hasMedia = media != null || !!image;
+  const headerContent = header ?? text;
   return (
     <article
       {...rest}
-      ref={ref}
+      ref={(node) => {
+        element.current = node;
+        if (typeof ref === 'function') ref(node);
+        else if (ref) ref.current = node;
+      }}
       data-lab-card=""
       data-variant={variant}
       data-padding={padding}
+      data-image={image ? '' : undefined}
+      data-media={hasMedia ? '' : undefined}
       data-interactive={interactive || undefined}
     >
-      {media != null ? <div className="lab-card-media">{media}</div> : null}
-      {header != null ? <header className="lab-card-header">{header}</header> : null}
-      <div className="lab-card-body">{children}</div>
-      {footer != null ? <footer className="lab-card-footer">{footer}</footer> : null}
+      {image && (
+        <div className="lab-card-image" aria-hidden="true">
+          <img src={image} alt="" />
+        </div>
+      )}
+      {hasMedia && (
+        <div className="lab-card-media">
+          {media ?? <img className="lab-card-default-image" src={image} alt={imageAlt} />}
+        </div>
+      )}
+      <div
+        className={
+          variant === 'elevated'
+            ? 'lab-card-content lab-material lab-material--elevated'
+            : 'lab-card-content'
+        }
+      >
+        {headerContent != null && (
+          <header className="lab-card-region lab-card-header">{headerContent}</header>
+        )}
+        {children != null && <div className="lab-card-region lab-card-body">{children}</div>}
+        {footer != null && <footer className="lab-card-region lab-card-footer">{footer}</footer>}
+      </div>
     </article>
   );
 });

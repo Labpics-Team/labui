@@ -4,10 +4,11 @@
 <!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
 <!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
 <script lang="ts">
+  import { renderElementParts } from '@labpics/ui-core/element-ssr';
   import '@labpics/ui-core/input';
   import type { LabInput } from '@labpics/ui-core/input';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { LAB_INPUTS_PROPERTY, type LabPropSpec, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-input> — типы взяты прямо из класса ядра (LabInput). */
   interface Props {
@@ -26,13 +27,19 @@
     required?: LabInput['required'];
     invalid?: LabInput['invalid'];
     name?: LabInput['name'];
+    maxLength?: LabInput['maxLength'];
+    minLength?: LabInput['minLength'];
+    pattern?: LabInput['pattern'];
     onLabChange?: (event: CustomEvent) => void;
     onLabInput?: (event: CustomEvent) => void;
+    leading?: Snippet;
+    trailing?: Snippet;
     children?: Snippet;
+    slots?: Readonly<Record<string, Snippet | undefined>>;
     [key: string]: unknown;
   }
 
-  let { type, size, label, labelHidden, helper, error, value, placeholder, inputType, autocomplete, readonly, disabled, required, invalid, name, onLabChange, onLabInput, children, ...rest }: Props = $props();
+  let { type, size, label, labelHidden, helper, error, value, placeholder, inputType, autocomplete, readonly, disabled, required, invalid, name, maxLength, minLength, pattern, onLabChange, onLabInput, children, slots, leading, trailing, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -50,15 +57,24 @@
     { name: 'required', attr: 'required', kind: 'boolean' },
     { name: 'invalid', attr: 'invalid', kind: 'boolean' },
     { name: 'name', attr: 'name', kind: 'string' },
+    { name: 'maxLength', attr: 'maxlength', kind: 'string' },
+    { name: 'minLength', attr: 'minlength', kind: 'string' },
+    { name: 'pattern', attr: 'pattern', kind: 'string' },
   ];
+
+  const server = untrack(() => renderElementParts('lab-input', {
+    specs, props: { type, size, label, labelHidden, helper, error, value, placeholder, inputType, autocomplete, readonly, disabled, required, invalid, name, maxLength, minLength, pattern }, attributes: rest,
+  }));
+  let namedContent: Readonly<Record<string, Snippet | undefined>> = $derived({ 'leading': leading, 'trailing': trailing, ...slots });
 
   let el: HTMLElement | undefined = $state();
 
-  $effect(() => {
-    forwardDeclared(el, specs, { type, size, label, labelHidden, helper, error, value, placeholder, inputType, autocomplete, readonly, disabled, required, invalid, name });
-  });
   $effect(() => forwardEvents(el, { 'lab-change': onLabChange, 'lab-input': onLabInput }));
 </script>
 
-<lab-input bind:this={el} {...rest}>
+<lab-input bind:this={el} {...server?.attributes} {...rest} {...server ? {} : { [LAB_INPUTS_PROPERTY]: { specs, props: { type, size, label, labelHidden, helper, error, value, placeholder, inputType, autocomplete, readonly, disabled, required, invalid, name, maxLength, minLength, pattern } } }}>
+  {@html server?.shadowHtml ?? ''}
+  {#each Object.entries(namedContent) as [name, content] (name)}
+    {#if content}<div {...{ slot: name }} style="display:contents">{@render content()}</div>{/if}
+  {/each}
 </lab-input>

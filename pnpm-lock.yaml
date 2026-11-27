@@ -156,10 +156,22 @@ importers:
       '@labpics/colors':
         specifier: 1.0.3
         version: 1.0.3
+      '@labpics/ui-tokens':
+        specifier: workspace:*
+        version: link:../tokens
     devDependencies:
+      '@types/css-tree':
+        specifier: 3.2.0
+        version: 3.2.0
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
+      css-tree:
+        specifier: 3.2.1
+        version: 3.2.1
+      postcss:
+        specifier: 8.5.28
+        version: 8.5.28
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -169,13 +181,19 @@ importers:
 
   packages/core:
     dependencies:
+      '@labpics/motion':
+        specifier: 0.5.0
+        version: 0.5.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))
+      '@labpics/ui-materials':
+        specifier: workspace:*
+        version: link:../materials
       '@labpics/ui-shadow':
         specifier: workspace:*
         version: link:../shadow
+      '@labpics/ui-tokens':
+        specifier: workspace:*
+        version: link:../tokens
       '@zag-js/accordion':
-        specifier: 1.41.2
-        version: 1.41.2
-      '@zag-js/checkbox':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/combobox':
@@ -185,6 +203,9 @@ importers:
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/dialog':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/dom-query':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/menu':
@@ -200,12 +221,6 @@ importers:
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/popover':
-        specifier: 1.41.2
-        version: 1.41.2
-      '@zag-js/progress':
-        specifier: 1.41.2
-        version: 1.41.2
-      '@zag-js/radio-group':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/select':
@@ -287,13 +302,16 @@ importers:
       '@labpics/ui-core':
         specifier: workspace:*
         version: link:../core
+      '@labpics/ui-materials':
+        specifier: workspace:*
+        version: link:../materials
       '@labpics/ui-shadow':
         specifier: workspace:*
         version: link:../shadow
+      '@labpics/ui-tokens':
+        specifier: workspace:*
+        version: link:../tokens
       '@zag-js/accordion':
-        specifier: 1.41.2
-        version: 1.41.2
-      '@zag-js/checkbox':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/combobox':
@@ -315,12 +333,6 @@ importers:
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/popover':
-        specifier: 1.41.2
-        version: 1.41.2
-      '@zag-js/progress':
-        specifier: 1.41.2
-        version: 1.41.2
-      '@zag-js/radio-group':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/react':
@@ -447,8 +459,8 @@ importers:
   packages/tokens:
     devDependencies:
       '@labpics/motion':
-        specifier: 0.3.0
-        version: 0.3.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))
+        specifier: 0.5.0
+        version: 0.5.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
@@ -1307,8 +1319,8 @@ packages:
     resolution: {integrity: sha512-ekmI75wAicArJsipg4VFZtLXLyDgPymaRKoCW/MpJ/fQindFZf1DgiyYa3v2ykycTyhPftt/x+teMNb1lzmwAg==}
     engines: {node: '>=22.11.0'}
 
-  '@labpics/motion@0.3.0':
-    resolution: {integrity: sha512-mGgd7tB9bTPBRU0Yj+kJU7P6WktMX4wAQm0005XQH8owtC1vhDWlYi6cGcz7r7qEb9xgnYXywkriKSW6k2ajcw==}
+  '@labpics/motion@0.5.0':
+    resolution: {integrity: sha512-HtZceGmhBc4ldefBRpW6mg0cTLSINsyH1fXGKm9TXn57btjTnA3LPwq41Rdkd+cWWd2dA3qXGulPnJo+EcRFlQ==}
     engines: {node: '>=22'}
     peerDependencies:
       '@angular/core': '>=16.0.0'
@@ -1693,6 +1705,9 @@ packages:
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
 
+  '@types/css-tree@3.2.0':
+    resolution: {integrity: sha512-J5KXmk6BFIepOT7280FdFyNs4c5fh0Uee0otjKEvzchrRs38Ii9qminqc4ds0L19X8Zd/rT+brR9jkBthygjWw==}
+
   '@types/debug@4.1.13':
     resolution: {integrity: sha512-KSVgmQmzMwPlmtljOomayoR89W4FynCAi3E8PPs7vmDVPe84hT+vGPKkJfThkmXs0x0jAaa9U8uW8bbfyS2fWw==}
 
@@ -1823,9 +1838,6 @@ packages:
   '@zag-js/auto-resize@1.41.2':
     resolution: {integrity: sha512-CYq+JQ1TTkEiK7OcNcMTS0f4wFvtmManvUltije5o50gDQ7vFYA81oQh4A9pAB1keUi9Zv06CNefFARaTcne5w==}
 
-  '@zag-js/checkbox@1.41.2':
-    resolution: {integrity: sha512-aQ5dZWHUHRIw4cbLtzrR+dc8M0N6wSiiCml/zbU3ciHOTBXSrs2rKnp/L99xhi97Lj2uCEhpIZ704Ou/MjGuCg==}
-
   '@zag-js/collection@1.41.2':
     resolution: {integrity: sha512-ZZWuvfPZI8ccWd4aLpuU47k1jSc9eO+F3FM3iBJuvgegCH6g3+HDEwGN6wdePHnYfv7zyIKCGKr816zXcIWQbw==}
 
@@ -1873,12 +1885,6 @@ packages:
 
   '@zag-js/popper@1.41.2':
     resolution: {integrity: sha512-Iz4D5YAIiIPn4IHGjhX3QatR/RyGaDt43lBSZv0RYcPQYtFg9sUuek3wizjW9qXgdvItevvNMqRdpl7f3es09g==}
-
-  '@zag-js/progress@1.41.2':
-    resolution: {integrity: sha512-SnzrqN+Z568NoO4rrgjrIc/S4EXMEne5CDgWwt2kQ8yq9VysdH8TtHAjyciFRIio7cdgEZNHKw9jSccpMWgRwA==}
-
-  '@zag-js/radio-group@1.41.2':
-    resolution: {integrity: sha512-EZjos61jKHZlNw8ez80vG2T9gUwpooxcVpYOKS2hyhuEXn3wEoefS5v1WFbmpoA/8TUpUQnYxisAeNuQfEQCuQ==}
 
   '@zag-js/react@1.41.2':
     resolution: {integrity: sha512-5Bx7mQAron4LFWI8Hhs/uw5kwQ19s2Tn30HhctozLqmCu4nnJSTSh7GRvX+uwRZnztGXBXoOrgBWIepU4RXFGg==}
@@ -4108,7 +4114,7 @@ snapshots:
 
   '@labpics/colors@1.0.3': {}
 
-  '@labpics/motion@0.3.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))':
+  '@labpics/motion@0.5.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))':
     optionalDependencies:
       lit: 3.3.3
       react: 18.3.1
@@ -4406,6 +4412,8 @@ snapshots:
       '@types/deep-eql': 4.0.2
       assertion-error: 2.0.1
 
+  '@types/css-tree@3.2.0': {}
+
   '@types/debug@4.1.13':
     dependencies:
       '@types/ms': 2.1.0
@@ -4593,15 +4601,6 @@ snapshots:
     dependencies:
       '@zag-js/dom-query': 1.41.2
 
-  '@zag-js/checkbox@1.41.2':
-    dependencies:
-      '@zag-js/anatomy': 1.41.2
-      '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
-      '@zag-js/focus-visible': 1.41.2
-      '@zag-js/types': 1.41.2
-      '@zag-js/utils': 1.41.2
-
   '@zag-js/collection@1.41.2':
     dependencies:
       '@zag-js/utils': 1.41.2
@@ -4715,23 +4714,6 @@ snapshots:
     dependencies:
       '@floating-ui/dom': 1.7.6
       '@zag-js/dom-query': 1.41.2
-      '@zag-js/utils': 1.41.2
-
-  '@zag-js/progress@1.41.2':
-    dependencies:
-      '@zag-js/anatomy': 1.41.2
-      '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
-      '@zag-js/types': 1.41.2
-      '@zag-js/utils': 1.41.2
-
-  '@zag-js/radio-group@1.41.2':
-    dependencies:
-      '@zag-js/anatomy': 1.41.2
-      '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
-      '@zag-js/focus-visible': 1.41.2
-      '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
   '@zag-js/react@1.41.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':

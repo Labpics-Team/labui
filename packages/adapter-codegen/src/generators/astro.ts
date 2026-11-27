@@ -24,7 +24,7 @@ function camelSlot(name: string): string {
 
 function astroFile(c: ComponentMeta): string {
   const slotEntries: Array<{ key: string; name: string }> = [
-    ...(c.slots.default ? [{ key: 'default', name: 'default' }] : []),
+    ...(c.slots.default || c.slots.dynamic ? [{ key: 'default', name: 'default' }] : []),
     ...c.slots.named.map((s) => ({ key: camelSlot(s), name: s })),
   ];
   const slotLines = slotEntries
@@ -33,7 +33,11 @@ function astroFile(c: ComponentMeta): string {
         `  ${s.key}: Astro.slots.has('${s.name}') ? await Astro.slots.render('${s.name}') : undefined,`,
     )
     .join('\n');
-  const slotsArg = slotEntries.length > 0 ? `{\n${slotLines}\n}` : '{}';
+  const dynamicSlots = c.slots.dynamic
+    ? `  dynamic: Object.fromEntries(await Promise.all(Object.keys(Astro.slots)\n    .filter((name) => !${JSON.stringify(slotEntries.map((s) => s.name))}.includes(name))\n    .map(async (name) => [name, await Astro.slots.render(name)]))),`
+    : '';
+  const allSlotLines = [slotLines, dynamicSlots].filter(Boolean).join('\n');
+  const slotsArg = slotEntries.length > 0 ? `{\n${allSlotLines}\n}` : '{}';
 
   return `---
 ${generatedHeader()}

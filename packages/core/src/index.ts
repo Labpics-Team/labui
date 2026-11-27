@@ -72,15 +72,16 @@ export type { LabKbdSize } from './components/kbd/lab-kbd.js';
 export type { LabLoaderSize } from './components/loader/lab-loader.js';
 export type {
   LabAvatarColor,
+  LabAvatarFallback,
   LabAvatarSize,
   LabAvatarStatus,
 } from './components/avatar/lab-avatar.js';
 export type { LabCardPadding, LabCardVariant } from './components/card/lab-card.js';
 
-// Machine-driven form controls — the first PRODUCTION consumers of the Behaviors
-// seam (they own checked/indeterminate state, so they MUST run a Zag machine,
-// unlike Button which honestly opted out). Type-only: no Lit runtime pulled in.
+// Native form control axes. Selection components share their authored profile.
+// Type-only: no Lit runtime is pulled into the React renderer.
 export type { LabSwitchSize, LabSwitchType } from './components/switch/lab-switch.js';
+export type { LabChoiceboxLayout, LabChoiceboxItem } from './components/choicebox/lab-choicebox.js';
 export type {
   LabCheckboxChecked,
   LabCheckboxSize,
@@ -119,14 +120,14 @@ export {
 } from './components/field/field-a11y.js';
 
 // Disclosure — the compound `<lab-accordion>` (a GROUP machine, the Radio/Tabs
-// canon) and the single-machine `<lab-progress>`. Type-only: no Lit runtime
+// canon) and the measured `<lab-progress>`. Type-only: no Lit runtime
 // pulled into the React bundle.
 export type {
   LabAccordionItem,
   LabAccordionOrientation,
   LabAccordionSize,
 } from './components/accordion/lab-accordion.js';
-export type { LabProgressSize } from './components/progress/lab-progress.js';
+export type { LabProgressSize, LabProgressVariant } from './components/progress/lab-progress.js';
 
 // Compound + positioned controls — the canon fusing the keyed-compound group
 // machine (radio-group) with the positioned, dismissable overlay (popover). Each
@@ -183,3 +184,5 @@ export type {
 export { tagsInputTranslations } from './components/tags-input/lab-tags-input.js';
 
 export const PACKAGE_NAME = '@labpics/ui-core';
+
+export type { LabChipMode, LabChipSize } from './components/chip/contract.js';

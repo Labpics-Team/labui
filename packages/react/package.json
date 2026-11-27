@@ -10,14 +10,24 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./*": {
-      "types": "./dist/*.d.ts",
-      "import": "./dist/*.js",
-      "require": "./dist/*.cjs"
+      "import": {
+        "types": "./dist/*.d.ts",
+        "default": "./dist/*.js"
+      },
+      "require": {
+        "types": "./dist/*.d.cts",
+        "default": "./dist/*.cjs"
+      }
     },
     "./package.json": "./package.json"
   },
@@ -25,22 +35,22 @@
   "sideEffects": ["**/*.css"],
   "scripts": {
     "build": "tsup",
-    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@labpics/ui-core": "workspace:*",
+    "@labpics/ui-materials": "workspace:*",
     "@labpics/ui-shadow": "workspace:*",
+    "@labpics/ui-tokens": "workspace:*",
     "@zag-js/accordion": "1.41.2",
-    "@zag-js/checkbox": "1.41.2",
     "@zag-js/combobox": "1.41.2",
     "@zag-js/dialog": "1.41.2",
     "@zag-js/menu": "1.41.2",
     "@zag-js/number-input": "1.41.2",
+    "@zag-js/pagination": "1.41.2",
     "@zag-js/pin-input": "1.41.2",
     "@zag-js/popover": "1.41.2",
-    "@zag-js/pagination": "1.41.2",
-    "@zag-js/progress": "1.41.2",
-    "@zag-js/radio-group": "1.41.2",
     "@zag-js/react": "1.41.2",
     "@zag-js/select": "1.41.2",
     "@zag-js/slider": "1.41.2",

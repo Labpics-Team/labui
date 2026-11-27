@@ -1,0 +1,22 @@
+[
+  {
+    "engine": "chromium",
+    "browser": "140.0.7339.186",
+    "strictMode": true,
+    "earlySelectionAdopted": true,
+    "requiredAfterReset": true,
+    "resetThenInput": true,
+    "callbacks": true,
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "browser": "26.0",
+    "strictMode": true,
+    "earlySelectionAdopted": true,
+    "requiredAfterReset": true,
+    "resetThenInput": true,
+    "callbacks": true,
+    "errors": []
+  }
+]

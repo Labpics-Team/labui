@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/menu';
 import type { LabMenu } from '@labpics/ui-core/menu';
-import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-menu>, взятые прямо из класса ядра (LabMenu). */
 export type MenuProps = Pick<LabMenu, 'size' | 'placement' | 'disabled' | 'label' | 'items'>;

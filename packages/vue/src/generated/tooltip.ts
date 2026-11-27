@@ -5,9 +5,9 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
+import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 import '@labpics/ui-core/tooltip';
 import type { LabTooltip } from '@labpics/ui-core/tooltip';
-import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-tooltip>, взятые прямо из класса ядра (LabTooltip). */
 export type TooltipProps = Pick<LabTooltip, 'placement' | 'size' | 'content' | 'openDelay' | 'closeDelay' | 'disabled' | 'arrow'>;

@@ -5,12 +5,12 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/breadcrumb';
 import type { LabBreadcrumb } from '@labpics/ui-core/breadcrumb';
 
 /** SSR-пропы <lab-breadcrumb> (атрибуты/свойства), взяты из класса ядра (LabBreadcrumb). */
-export type BreadcrumbSsrProps = Partial<Pick<LabBreadcrumb, 'size' | 'separator' | 'items'>>;
+export type BreadcrumbSsrProps = Partial<Pick<LabBreadcrumb, 'size' | 'separator' | 'items' | 'maxItems' | 'label' | 'expandLabel'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-breadcrumb> — предрендеренные строки контента. */
 export type BreadcrumbSsrSlots = Record<never, never>;
 
@@ -25,6 +25,11 @@ export function renderBreadcrumb(
   return renderToString(html`<lab-breadcrumb
       size=${ifDefined(props.size)}
       separator=${ifDefined(props.separator)}
-      .items=${props.items}
+      .items=${props.items === undefined ? noChange : props.items}
+      max-items=${ifDefined(props.maxItems)}
+      label=${ifDefined(props.label)}
+      expand-label=${ifDefined(props.expandLabel)}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     ></lab-breadcrumb>`);
 }

@@ -5,12 +5,12 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/tooltip';
 import type { LabTooltip } from '@labpics/ui-core/tooltip';
 
 /** SSR-пропы <lab-tooltip> (атрибуты/свойства), взяты из класса ядра (LabTooltip). */
-export type TooltipSsrProps = Partial<Pick<LabTooltip, 'placement' | 'size' | 'content' | 'openDelay' | 'closeDelay' | 'disabled' | 'arrow'>>;
+export type TooltipSsrProps = Partial<Pick<LabTooltip, 'placement' | 'size' | 'content' | 'openDelay' | 'closeDelay' | 'disabled' | 'arrow'>> & { 'aria-label'?: string; 'form'?: string };
 /** SSR-слоты <lab-tooltip> — предрендеренные строки контента. */
 export type TooltipSsrSlots = { default?: string; content?: string };
 
@@ -29,7 +29,9 @@ export function renderTooltip(
       content=${ifDefined(props.content)}
       open-delay=${ifDefined(props.openDelay)}
       close-delay=${ifDefined(props.closeDelay)}
-      ?disabled=${Boolean(props.disabled)}
-      ?arrow=${Boolean(props.arrow)}
+      .disabled=${props.disabled === undefined ? noChange : props.disabled}
+      .arrow=${props.arrow === undefined ? noChange : props.arrow}
+      aria-label=${ifDefined(props['aria-label'])}
+      form=${ifDefined(props['form'])}
     >${slots.content ? html`<span slot="content">${unsafeHTML(slots.content)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-tooltip>`);
 }

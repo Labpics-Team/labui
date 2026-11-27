@@ -12,9 +12,10 @@
  * [data-theme].
  */
 import '@labpics/ui-core/accordion';
+import '@labpics/ui-core/textarea';
 import type { LabAccordion, LabAccordionItem } from '@labpics/ui-core/accordion';
 import { Accordion, AccordionItem } from '@labpics/ui-react/accordion';
-import { StrictMode } from 'react';
+import { StrictMode, createElement, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { wireThemeSwitch } from './theme-switch.js';
 
@@ -50,11 +51,109 @@ for (const testid of ['lit-accordion-multiple', 'lit-accordion-collapsible']) {
   if (host) host.items = AXIS_ITEMS;
 }
 
+for (const expanded of [false, true]) {
+  const host = document.createElement('lab-accordion');
+  host.items = [{ value: 'source', label: 'Is it accessible?' }];
+  host.defaultValue = expanded ? ['source'] : [];
+  host.dataset.testid = `lit-source-${expanded}`;
+  host.style.width = '503px';
+  const panel = document.createElement('span');
+  panel.slot = 'source';
+  panel.textContent = 'Yes. It adheres to the WAI-ARIA design pattern.';
+  host.append(panel);
+  document.querySelector('main')?.append(host);
+}
+
+const controlled = document.createElement('lab-accordion');
+controlled.items = AXIS_ITEMS;
+controlled.value = ['one'];
+controlled.dataset.testid = 'lit-controlled';
+controlled.innerHTML =
+  '<textarea slot="one" aria-label="Draft">Original</textarea><span slot="two">Second</span>';
+document.querySelector('main')?.append(controlled);
+
+const focusExample = document.createElement('section');
+focusExample.dataset.testid = 'lit-focus';
+const focusAccordion = document.createElement('lab-accordion');
+focusAccordion.items = AXIS_ITEMS.slice(0, 2);
+focusAccordion.value = ['one', 'two'];
+focusAccordion.multiple = true;
+for (const value of ['one', 'two']) {
+  const field = document.createElement('lab-textarea');
+  field.slot = value;
+  field.label = `Panel ${value} draft`;
+  field.value = `Original ${value}`;
+  focusAccordion.append(field);
+}
+for (const [action, values] of Object.entries({
+  'close-all': [],
+  'close-first': ['two'],
+  'open-both': ['one', 'two'],
+})) {
+  const control = document.createElement('button');
+  control.type = 'button';
+  control.dataset.action = action;
+  control.textContent = action;
+  control.addEventListener('click', () => {
+    focusAccordion.value = values;
+  });
+  focusExample.append(control);
+}
+focusExample.append(focusAccordion);
+document.querySelector('main')?.append(focusExample);
+
+function ReactFocusExample() {
+  const [value, setValue] = useState(['one', 'two']);
+  return (
+    <section data-testid="react-focus">
+      <button type="button" data-action="close-all" onClick={() => setValue([])}>
+        close-all
+      </button>
+      <button type="button" data-action="close-first" onClick={() => setValue(['two'])}>
+        close-first
+      </button>
+      <button type="button" data-action="open-both" onClick={() => setValue(['one', 'two'])}>
+        open-both
+      </button>
+      <Accordion value={value} multiple>
+        {['one', 'two'].map((section) => (
+          <AccordionItem key={section} value={section} label={`Panel ${section}`}>
+            {createElement('lab-textarea', {
+              label: `Panel ${section} draft`,
+              value: `Original ${section}`,
+            })}
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </section>
+  );
+}
+
 const mount = document.querySelector<HTMLElement>('#react-root');
 if (!mount) throw new Error('Missing #react-root mount node in accordion.html');
 
 createRoot(mount).render(
   <StrictMode>
+    <ReactFocusExample />
+    {[false, true].map((expanded) => (
+      <div key={String(expanded)} data-testid={`react-source-${expanded}`} style={{ width: 503 }}>
+        <Accordion defaultValue={expanded ? ['source'] : []}>
+          <AccordionItem value="source" label="Is it accessible?">
+            Yes. It adheres to the WAI-ARIA design pattern.
+          </AccordionItem>
+        </Accordion>
+      </div>
+    ))}
+    <div data-testid="react-controlled">
+      <Accordion value={['one']}>
+        <AccordionItem value="one" label="Panel one">
+          <textarea aria-label="Draft" defaultValue="Original" />
+        </AccordionItem>
+        <AccordionItem value="two" label="Panel two">
+          Second
+        </AccordionItem>
+      </Accordion>
+    </div>
     <span data-testid="react-accordion">
       <Accordion defaultValue={['what']}>
         <AccordionItem value="what" label="What is LabUI?">
